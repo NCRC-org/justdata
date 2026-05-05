@@ -1,0 +1,692 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ firm_name }} | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ElectWatch Design System */
+        :root {
+            /* Primary Palette */
+            --ew-primary: #2D8659;
+            --ew-secondary: #3B5998;
+            --ew-accent: #D4A017;
+
+            /* Neutral Palette */
+            --ew-neutral-900: #1A1A2E;
+            --ew-neutral-700: #4A4A5A;
+            --ew-neutral-500: #8A8A9A;
+            --ew-neutral-200: #E5E5EA;
+            --ew-neutral-50: #F8F8FA;
+
+            /* Status Colors */
+            --ew-success: #28A745;
+            --ew-error: #DC3545;
+
+            /* Party Colors */
+            --party-r: #DC3545;
+            --party-d: #2563EB;
+            --party-i: #6B7280;
+
+            /* Legacy mappings */
+            --ncrc-primary-blue: var(--ew-secondary);
+            --ncrc-justdata-blue: var(--ew-primary);
+            --ncrc-gold: var(--ew-accent);
+            --ncrc-gray: var(--ew-neutral-500);
+            --ncrc-gray-light: var(--ew-neutral-50);
+            --ncrc-gray-dark: var(--ew-neutral-900);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--ew-secondary);
+            color: white;
+            padding: 12px 24px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo img { height: 36px; }
+        .logo-text h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.15s;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            padding: 8px 24px;
+            background: var(--ew-neutral-50);
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .breadcrumbs-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--ew-neutral-500);
+        }
+
+        .breadcrumbs a { color: var(--ew-primary); text-decoration: none; }
+        .breadcrumbs a:hover { text-decoration: underline; }
+        .breadcrumbs .separator { color: var(--ew-neutral-200); }
+        .breadcrumbs .current { color: var(--ew-neutral-700); font-weight: 500; }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Firm Header */
+        .firm-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .firm-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--ncrc-primary-blue), var(--ncrc-justdata-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .firm-info { flex: 1; min-width: 200px; }
+        .firm-name {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+        }
+        .firm-ticker { display: inline-block; margin-left: 10px; padding: 4px 10px; background: var(--ew-neutral-50); border-radius: 4px; font-size: 0.9rem; color: var(--ew-neutral-500); font-weight: 600; }
+
+        .firm-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            color: var(--ncrc-gray);
+        }
+
+        .meta-item i { color: var(--ncrc-justdata-blue); }
+
+        .industry-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Industry Tags - Muted pastels */
+        .industry-tag {
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .industry-tag.banking { background: #e8f4fc; color: #1565c0; }
+        .industry-tag.crypto { background: #fcf8e8; color: #f57c00; }
+        .industry-tag.investment { background: #f3e8fc; color: #7b1fa2; }
+        .industry-tag.mortgage { background: #e8f0fc; color: #1976d2; }
+        .industry-tag.insurance { background: #e8fcf8; color: #00796b; }
+        .industry-tag.fintech { background: #fcf8e8; color: #f57c00; }
+        .industry-tag.consumer_lending { background: #fce8e8; color: #c62828; }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--ew-neutral-200);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+        .card-body { padding: 20px; }
+
+        /* Officials Table */
+        .officials-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .officials-table th,
+        .officials-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .officials-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+        }
+
+        .officials-table tr:hover { background: #f8fafc; }
+
+        .official-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        .official-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+        }
+
+        .official-name:hover { text-decoration: underline; }
+        .official-meta { font-size: 0.75rem; color: var(--ncrc-gray); }
+
+        .amount-cell {
+            text-align: right;
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+        }
+
+        .type-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .type-badge.pac { background: #ede9fe; color: #7c3aed; }
+        .type-badge.stock { background: #fef3c7; color: #d97706; }
+        .type-badge.both { background: #d1fae5; color: #059669; }
+
+        /* Party Split */
+        .party-split-section { margin-bottom: 24px; }
+
+        .party-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-bar {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .party-fill-r { background: var(--party-r); height: 100%; }
+        .party-fill-d { background: var(--party-d); height: 100%; }
+
+        .party-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .party-legend span { font-weight: 600; }
+        .party-legend .r-label { color: var(--party-r); }
+        .party-legend .d-label { color: var(--party-d); }
+
+        /* Activity Timeline */
+        .timeline { display: flex; flex-direction: column; gap: 12px; }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding: 12px;
+            border-left: 3px solid var(--ncrc-justdata-blue);
+            background: var(--ncrc-gray-light);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .timeline-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .timeline-icon.contribution { background: var(--ncrc-primary-blue); }
+        .timeline-icon.trade { background: var(--ncrc-gold); color: var(--ncrc-gray-dark); }
+
+        .timeline-content { flex: 1; }
+        .timeline-title { font-weight: 600; color: var(--ncrc-gray-dark); }
+        .timeline-detail { font-size: 0.85rem; color: var(--ncrc-gray); }
+        .timeline-date { font-size: 0.75rem; color: var(--ncrc-gray); margin-top: 4px; }
+        .timeline-amount { font-weight: 700; color: var(--ncrc-justdata-blue); font-family: monospace; }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        /* SEC Filings */
+        .filing-item {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filing-item:hover {
+            background: #f8fafc;
+        }
+
+        .filing-item:last-child {
+            border-bottom: none;
+        }
+
+        .filing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .filing-form {
+            font-weight: 700;
+            color: var(--ncrc-primary-blue);
+            padding: 4px 10px;
+            background: #ede9fe;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .filing-date {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .filing-highlights {
+            margin-top: 10px;
+            padding-left: 16px;
+        }
+
+        .filing-highlights li {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .filing-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+        }
+
+        .filing-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Regulatory/Litigation */
+        .reg-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .reg-item:last-child {
+            border-bottom: none;
+        }
+
+        .reg-agency {
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            min-width: 60px;
+        }
+
+        .reg-matter {
+            flex: 1;
+            margin: 0 16px;
+            font-size: 0.9rem;
+        }
+
+        .reg-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .reg-status.ongoing {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .reg-status.settled {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .reg-status.pending {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .litigation-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .litigation-item:last-child {
+            border-bottom: none;
+        }
+
+        .litigation-case {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .litigation-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* News */
+        .news-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .news-item:hover {
+            background: #f8fafc;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .news-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .news-source {
+            font-weight: 500;
+        }
+
+        .source-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Three columns layout */
+        .three-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .three-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* AI Summary */
+        .ai-summary {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .ai-summary-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--ncrc-justdata-blue);
+            margin-bottom: 8px;
+        }
+
+        .ai-summary-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a { color: var(--ncrc-gold); text-decoration: none; }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container, .main-content {
+                padding: 10px;
+            }
+
+            .stats-grid, .stats-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .two-column, .three-column {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .filter-controls, .filters {
+                flex-direction: column;
+            }
+
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .firm-header { flex-direction: column; text-align: center; }
+        }
+
+        @media (max-width: 480px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .badge {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+            }
+        }
+    </style>

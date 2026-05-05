@@ -138,7 +138,7 @@ All filters default to the following values (can be modified by user):
 - `apps/dataexplorer/static/js/wizard-steps.js` - Step definitions and handlers
 - `apps/dataexplorer/static/js/api-client.js` - API communication
 - `apps/dataexplorer/templates/wizard.html` - HTML template and CSS
-- `apps/dataexplorer/app.py` - Flask routes and API endpoints
+- `apps/dataexplorer/blueprint.py` - Flask routes and API endpoints
 - `apps/dataexplorer/data_utils.py` - BigQuery data utilities
 
 ### Key Functions

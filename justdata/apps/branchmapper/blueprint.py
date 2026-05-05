@@ -135,16 +135,22 @@ def counties_by_state(state_code):
 def api_census_tracts(county):
     """Return census tract boundaries with income and/or minority data for a county"""
     try:
+        # URL decode the county name (handles apostrophes and special characters)
+        from urllib.parse import unquote
+        county = unquote(county)
+
         from justdata.apps.branchmapper.census_tract_utils import (
             extract_fips_from_county_state,
+            get_cbsa_for_county,
             get_county_median_family_income,
             get_county_minority_percentage,
             get_tract_income_data,
             get_tract_minority_data,
+            get_tract_minority_data_by_cbsa,
             get_tract_boundaries_geojson,
             categorize_income_level,
             categorize_minority_level,
-            get_census_api_key
+            get_census_api_key,
         )
         
         # Check which data types to include
@@ -162,7 +168,9 @@ def api_census_tracts(county):
         state_fips = fips_data['state_fips']
         county_fips = fips_data['county_fips']
         
-        # Get tract boundaries first
+        print(f"Using county-level baselines for {county} (State FIPS: {state_fips}, County FIPS: {county_fips})")
+        
+        # Get tract boundaries first (needed for all data types)
         tract_boundaries = get_tract_boundaries_geojson(state_fips, county_fips)
         if not tract_boundaries:
             return jsonify({
@@ -179,23 +187,30 @@ def api_census_tracts(county):
         if include_income:
             api_key = get_census_api_key()
             if not api_key:
+                print(f"WARNING: CENSUS_API_KEY not set. Cannot fetch income data.")
                 return jsonify({
                     'success': False,
-                    'error': 'CENSUS_API_KEY environment variable is not set.'
+                    'error': 'CENSUS_API_KEY environment variable is not set. Please configure it to use income layers.'
                 }), 500
             
             baseline_income = get_county_median_family_income(state_fips, county_fips)
-            if not baseline_income:
+            if baseline_income:
+                print(f"[OK] Using county median income: ${baseline_income:,.0f} for {county}")
+            else:
+                print(f"[ERROR] Failed to fetch county median income for {county}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch county median income data from Census API. Please try again.'
+                    'error': f'Could not fetch county median income data from Census API. Please try again.'
                 }), 500
 
             tract_income_data = get_tract_income_data(state_fips, county_fips)
+            print(f"Fetched {len(tract_income_data)} tracts with income data")
+
             if not tract_income_data:
+                print(f"[ERROR] No tract income data returned for {county}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch tract income data from Census API. Please try again.'
+                    'error': f'Could not fetch tract income data from Census API. Please try again.'
                 }), 500
 
             for tract in tract_income_data:
@@ -203,29 +218,38 @@ def api_census_tracts(county):
                 geoid_normalized = str(geoid).zfill(11)
                 income_lookup[geoid_normalized] = tract
                 income_lookup[geoid] = tract
-
+            print(f"Created income lookup with {len(income_lookup)} entries")
+        
         # Get minority data if requested
         county_minority_pct = None
+        minority_quartiles = None  # Will store Q1, Q2 (median), Q3 quartile values
         if include_minority:
             api_key = get_census_api_key()
             if not api_key:
+                print(f"WARNING: CENSUS_API_KEY not set. Cannot fetch minority data.")
                 return jsonify({
                     'success': False,
-                    'error': 'CENSUS_API_KEY environment variable is not set.'
+                    'error': 'CENSUS_API_KEY environment variable is not set. Please configure it to use minority layers.'
                 }), 500
-
+            
             county_minority_pct = get_county_minority_percentage(state_fips, county_fips)
-            if county_minority_pct is None:
+            if county_minority_pct is not None:
+                print(f"[OK] Using county minority percentage: {county_minority_pct:.1f}% for {county}")
+            else:
+                print(f"[ERROR] Failed to fetch county minority percentage for {county}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch county minority data from Census API. Please try again.'
+                    'error': f'Could not fetch county minority data from Census API. Please try again.'
                 }), 500
 
             tract_minority_data = get_tract_minority_data(state_fips, county_fips)
+            print(f"Fetched {len(tract_minority_data)} tracts with minority data")
+
             if not tract_minority_data:
+                print(f"[ERROR] No tract minority data returned for {county}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch tract minority data from Census API. Please try again.'
+                    'error': f'Could not fetch tract minority data from Census API. Please try again.'
                 }), 500
 
             for tract in tract_minority_data:
@@ -233,9 +257,64 @@ def api_census_tracts(county):
                 geoid_normalized = str(geoid).zfill(11)
                 minority_lookup[geoid_normalized] = tract
                 minority_lookup[geoid] = tract
+            print(f"Created minority lookup with {len(minority_lookup)} entries")
+
+            # Look up CBSA for this county to scope quartiles to metro area
+            cbsa_info = get_cbsa_for_county(county)
+            quartile_source_tracts = tract_minority_data  # default: single county
+            quartile_scope = county
+            cbsa_found = False
+
+            if cbsa_info:
+                cbsa_code = cbsa_info['cbsa_code']
+                cbsa_name = cbsa_info.get('cbsa_name', cbsa_code)
+                print(f"[OK] Found CBSA {cbsa_code} ({cbsa_name}) for {county}, using CBSA-scoped quartiles")
+                cbsa_tracts = get_tract_minority_data_by_cbsa(cbsa_code, api_key)
+                if cbsa_tracts:
+                    quartile_source_tracts = cbsa_tracts
+                    quartile_scope = cbsa_name
+                    cbsa_found = True
+                    print(f"[OK] Using {len(cbsa_tracts)} CBSA tracts for quartile calculation")
+                else:
+                    print(f"[WARNING] CBSA tract data empty, falling back to county-level quartiles")
+            else:
+                print(f"[INFO] No CBSA found for {county} (rural county), using county-level quartiles")
+
+            # Calculate quartiles from CBSA-scoped (or fallback county) tracts
+            minority_percentages = []
+            for tract in quartile_source_tracts:
+                minority_pct = tract.get('minority_percentage')
+                if minority_pct is not None and minority_pct >= 0 and minority_pct <= 100:
+                    minority_percentages.append(minority_pct)
+
+            if minority_percentages:
+                # Use numpy for accurate quartile calculation
+                try:
+                    q1 = np.percentile(minority_percentages, 25)
+                    q2 = np.percentile(minority_percentages, 50)  # Median
+                    q3 = np.percentile(minority_percentages, 75)
+                    minority_quartiles = {'q1': float(q1), 'q2': float(q2), 'q3': float(q3)}
+                    print(f"[OK] Calculated minority quartiles: Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={len(minority_percentages)} tracts, scope={quartile_scope})")
+                except Exception as e:
+                    # Fallback to manual calculation if numpy fails
+                    print(f"[WARNING] Error using numpy for quartiles: {e}, using manual calculation")
+                    minority_percentages.sort()
+                    n = len(minority_percentages)
+                    q1_idx = int(n * 0.25)
+                    q2_idx = int(n * 0.50)
+                    q3_idx = int(n * 0.75)
+                    q1 = minority_percentages[q1_idx] if q1_idx < n else minority_percentages[-1]
+                    q2 = minority_percentages[q2_idx] if q2_idx < n else minority_percentages[-1]
+                    q3 = minority_percentages[q3_idx] if q3_idx < n else minority_percentages[-1]
+                    minority_quartiles = {'q1': q1, 'q2': q2, 'q3': q3}
+                    print(f"[OK] Calculated minority quartiles (manual): Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={n} tracts, scope={quartile_scope})")
+            else:
+                print(f"[WARNING] No valid minority percentages found to calculate quartiles")
         
         # Merge data with boundaries
         valid_features = []
+        matched_count = 0
+        filtered_count = 0
         
         for feature in tract_boundaries['features']:
             geoid = feature['properties'].get('GEOID')
@@ -262,10 +341,25 @@ def api_census_tracts(county):
                         feature['properties']['baseline_median_income'] = baseline_income
                         feature['properties']['baseline_type'] = 'county'
                         feature['properties']['income_ratio'] = (median_income / baseline_income) if median_income and baseline_income and baseline_income > 0 else None
+                        matched_count += 1
                     else:
-                        continue
+                        # Invalid income data - still include tract with Unknown category
+                        if geoid:
+                            print(f"Tract {geoid}: Invalid income data: {median_income}, marking as Unknown")
+                        feature['properties']['median_family_income'] = None
+                        feature['properties']['income_category'] = 'Unknown'
+                        feature['properties']['baseline_median_income'] = baseline_income
+                        feature['properties']['baseline_type'] = 'county'
+                        feature['properties']['income_ratio'] = None
                 else:
-                    continue
+                    # No income data found - still include tract with Unknown category
+                    if geoid:
+                        print(f"Tract {geoid}: No income data found, marking as Unknown")
+                    feature['properties']['median_family_income'] = None
+                    feature['properties']['income_category'] = 'Unknown'
+                    feature['properties']['baseline_median_income'] = baseline_income
+                    feature['properties']['baseline_type'] = 'county'
+                    feature['properties']['income_ratio'] = None
             
             # Add minority data
             if include_minority:
@@ -274,32 +368,66 @@ def api_census_tracts(county):
                 if tract_data:
                     minority_pct = tract_data.get('minority_percentage')
                     total_pop = tract_data.get('total_population')
+                    minority_pop = tract_data.get('minority_population')
                     
                     if minority_pct is not None and minority_pct >= 0 and minority_pct <= 100 and total_pop is not None and total_pop > 0:
-                        minority_category, minority_ratio = categorize_minority_level(minority_pct, county_minority_pct) if county_minority_pct else ('Unknown', None)
-                        
+                        # Categorize by quartile instead of ratio
+                        if minority_quartiles:
+                            q1_pct = round(minority_quartiles['q1'], 1)
+                            q2_pct = round(minority_quartiles['q2'], 1)
+                            q3_pct = round(minority_quartiles['q3'], 1)
+
+                            if minority_pct < minority_quartiles['q1']:
+                                minority_category = f'Lowest (<{q1_pct}%)'
+                            elif minority_pct < minority_quartiles['q2']:
+                                minority_category = f'Below median ({q1_pct}-{q2_pct}%)'
+                            elif minority_pct < minority_quartiles['q3']:
+                                minority_category = f'Above median ({q2_pct}-{q3_pct}%)'
+                            else:
+                                minority_category = f'Highest (>{q3_pct}%)'
+                            minority_ratio = None  # Not using ratio for quartile-based categorization
+                        else:
+                            # Fallback to old method if quartiles not available
+                            minority_category, minority_ratio = categorize_minority_level(minority_pct, county_minority_pct) if county_minority_pct else ('Unknown', None)
+
                         feature['properties']['minority_percentage'] = minority_pct
                         feature['properties']['minority_category'] = minority_category
                         feature['properties']['county_minority_percentage'] = county_minority_pct
                         feature['properties']['minority_ratio'] = minority_ratio
                         feature['properties']['total_population'] = total_pop
+                        feature['properties']['minority_population'] = minority_pop
                     else:
-                        if not include_income:
-                            continue
+                        # Invalid minority data - still include tract with Unknown category
+                        if geoid:
+                            print(f"Tract {geoid}: Invalid minority data (pct: {minority_pct}, pop: {total_pop}), marking as Unknown")
                         feature['properties']['minority_percentage'] = None
                         feature['properties']['minority_category'] = 'Unknown'
+                        feature['properties']['county_minority_percentage'] = county_minority_pct
+                        feature['properties']['minority_ratio'] = None
+                        feature['properties']['total_population'] = None
+                        feature['properties']['minority_population'] = None
                 else:
-                    if not include_income:
-                        continue
+                    # No minority data found - still include tract with Unknown category
+                    if geoid:
+                        print(f"Tract {geoid}: No minority data found, marking as Unknown")
                     feature['properties']['minority_percentage'] = None
                     feature['properties']['minority_category'] = 'Unknown'
+                    feature['properties']['county_minority_percentage'] = county_minority_pct
+                    feature['properties']['minority_ratio'] = None
+                    feature['properties']['total_population'] = None
+                    feature['properties']['minority_population'] = None
             
             if include_income or include_minority:
                 valid_features.append(feature)
         
-        # Update GeoJSON
+        # Update GeoJSON to only include features with valid data
         if include_income or include_minority:
             tract_boundaries['features'] = valid_features
+            if include_income:
+                print(f"Income layer: {matched_count} valid tracts, {filtered_count} invalid/water tracts filtered out")
+            if include_minority:
+                minority_matched = sum(1 for f in valid_features if f['properties'].get('minority_percentage') is not None and f['properties'].get('minority_percentage') >= 0)
+                print(f"Minority layer: {minority_matched} valid tracts with minority data, {filtered_count} invalid/water tracts filtered out")
         
         result = {
             'success': True,
@@ -314,15 +442,24 @@ def api_census_tracts(county):
         
         if include_minority:
             result['county_minority_percentage'] = county_minority_pct
-        
+            if minority_quartiles:
+                result['minority_quartiles'] = minority_quartiles
+                result['quartile_scope'] = quartile_scope
+                result['quartile_tract_count'] = len(quartile_source_tracts)
+
         return jsonify(result)
-        
+
     except Exception as e:
+        error_msg = str(e)
+        print(f"ERROR in api_census_tracts endpoint for county '{county}': {error_msg}")
         import traceback
+        print("Full traceback:")
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': error_msg,
+            'county': county,
+            'message': f'Failed to load census tract data for {county}: {error_msg}'
         }), 500
 
 
@@ -340,7 +477,7 @@ def api_census_tracts_by_state(state_fips):
             get_tract_boundaries_by_state,
             categorize_income_level,
             categorize_minority_level,
-            get_census_api_key
+            get_census_api_key,
         )
 
         # Check which data types to include
@@ -348,6 +485,8 @@ def api_census_tracts_by_state(state_fips):
         include_minority = request.args.get('minority', 'true').lower() == 'true'
 
         state_fips = str(state_fips).strip().zfill(2)
+
+        print(f"Using state-level baselines for state FIPS: {state_fips}")
 
         # Get tract boundaries for the entire state
         tract_boundaries = get_tract_boundaries_by_state(state_fips)
@@ -366,23 +505,30 @@ def api_census_tracts_by_state(state_fips):
         if include_income:
             api_key = get_census_api_key()
             if not api_key:
+                print(f"WARNING: CENSUS_API_KEY not set. Cannot fetch income data.")
                 return jsonify({
                     'success': False,
-                    'error': 'CENSUS_API_KEY environment variable is not set.'
+                    'error': 'CENSUS_API_KEY environment variable is not set. Please configure it to use income layers.'
                 }), 500
 
             baseline_income = get_state_median_family_income(state_fips)
-            if not baseline_income:
+            if baseline_income:
+                print(f"[OK] Using state median income: ${baseline_income:,.0f} for state {state_fips}")
+            else:
+                print(f"[ERROR] Failed to fetch state median income for state {state_fips}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch state median income data from Census API. Please try again.'
+                    'error': f'Could not fetch state median income data from Census API. Please try again.'
                 }), 500
 
             tract_income_data = get_tract_income_data_by_state(state_fips)
+            print(f"Fetched {len(tract_income_data)} tracts with income data")
+
             if not tract_income_data:
+                print(f"[ERROR] No tract income data returned for state {state_fips}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch tract income data from Census API. Please try again.'
+                    'error': f'Could not fetch tract income data from Census API. Please try again.'
                 }), 500
 
             for tract in tract_income_data:
@@ -390,6 +536,7 @@ def api_census_tracts_by_state(state_fips):
                 geoid_normalized = str(geoid).zfill(11)
                 income_lookup[geoid_normalized] = tract
                 income_lookup[geoid] = tract
+            print(f"Created income lookup with {len(income_lookup)} entries")
 
         # Get minority data if requested
         state_minority_pct = None
@@ -397,23 +544,30 @@ def api_census_tracts_by_state(state_fips):
         if include_minority:
             api_key = get_census_api_key()
             if not api_key:
+                print(f"WARNING: CENSUS_API_KEY not set. Cannot fetch minority data.")
                 return jsonify({
                     'success': False,
-                    'error': 'CENSUS_API_KEY environment variable is not set.'
+                    'error': 'CENSUS_API_KEY environment variable is not set. Please configure it to use minority layers.'
                 }), 500
 
             state_minority_pct = get_state_minority_percentage(state_fips)
-            if state_minority_pct is None:
+            if state_minority_pct is not None:
+                print(f"[OK] Using state minority percentage: {state_minority_pct:.1f}% for state {state_fips}")
+            else:
+                print(f"[ERROR] Failed to fetch state minority percentage for state {state_fips}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch state minority data from Census API. Please try again.'
+                    'error': f'Could not fetch state minority data from Census API. Please try again.'
                 }), 500
 
             tract_minority_data = get_tract_minority_data_by_state(state_fips)
+            print(f"Fetched {len(tract_minority_data)} tracts with minority data")
+
             if not tract_minority_data:
+                print(f"[ERROR] No tract minority data returned for state {state_fips}")
                 return jsonify({
                     'success': False,
-                    'error': 'Could not fetch tract minority data from Census API. Please try again.'
+                    'error': f'Could not fetch tract minority data from Census API. Please try again.'
                 }), 500
 
             for tract in tract_minority_data:
@@ -421,6 +575,7 @@ def api_census_tracts_by_state(state_fips):
                 geoid_normalized = str(geoid).zfill(11)
                 minority_lookup[geoid_normalized] = tract
                 minority_lookup[geoid] = tract
+            print(f"Created minority lookup with {len(minority_lookup)} entries")
 
             # Calculate quartiles for minority percentage
             minority_percentages = []
@@ -430,12 +585,16 @@ def api_census_tracts_by_state(state_fips):
                     minority_percentages.append(minority_pct)
 
             if minority_percentages:
+                # Use numpy for accurate quartile calculation
                 try:
                     q1 = np.percentile(minority_percentages, 25)
-                    q2 = np.percentile(minority_percentages, 50)
+                    q2 = np.percentile(minority_percentages, 50)  # Median
                     q3 = np.percentile(minority_percentages, 75)
                     minority_quartiles = {'q1': float(q1), 'q2': float(q2), 'q3': float(q3)}
-                except Exception:
+                    print(f"[OK] Calculated minority quartiles: Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={len(minority_percentages)} tracts)")
+                except Exception as e:
+                    # Fallback to manual calculation if numpy fails
+                    print(f"[WARNING] Error using numpy for quartiles: {e}, using manual calculation")
                     minority_percentages.sort()
                     n = len(minority_percentages)
                     q1_idx = int(n * 0.25)
@@ -445,9 +604,14 @@ def api_census_tracts_by_state(state_fips):
                     q2 = minority_percentages[q2_idx] if q2_idx < n else minority_percentages[-1]
                     q3 = minority_percentages[q3_idx] if q3_idx < n else minority_percentages[-1]
                     minority_quartiles = {'q1': q1, 'q2': q2, 'q3': q3}
+                    print(f"[OK] Calculated minority quartiles (manual): Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={n} tracts)")
+            else:
+                print(f"[WARNING] No valid minority percentages found to calculate quartiles")
 
         # Merge data with boundaries
         valid_features = []
+        matched_count = 0
+        filtered_count = 0
 
         for feature in tract_boundaries['features']:
             geoid = feature['properties'].get('GEOID')
@@ -474,10 +638,25 @@ def api_census_tracts_by_state(state_fips):
                         feature['properties']['baseline_median_income'] = baseline_income
                         feature['properties']['baseline_type'] = 'state'
                         feature['properties']['income_ratio'] = (median_income / baseline_income) if median_income and baseline_income and baseline_income > 0 else None
+                        matched_count += 1
                     else:
-                        continue
+                        # Invalid income data - still include tract with Unknown category
+                        if geoid:
+                            print(f"Tract {geoid}: Invalid income data: {median_income}, marking as Unknown")
+                        feature['properties']['median_family_income'] = None
+                        feature['properties']['income_category'] = 'Unknown'
+                        feature['properties']['baseline_median_income'] = baseline_income
+                        feature['properties']['baseline_type'] = 'state'
+                        feature['properties']['income_ratio'] = None
                 else:
-                    continue
+                    # No income data found - still include tract with Unknown category
+                    if geoid:
+                        print(f"Tract {geoid}: No income data found, marking as Unknown")
+                    feature['properties']['median_family_income'] = None
+                    feature['properties']['income_category'] = 'Unknown'
+                    feature['properties']['baseline_median_income'] = baseline_income
+                    feature['properties']['baseline_type'] = 'state'
+                    feature['properties']['income_ratio'] = None
 
             # Add minority data
             if include_minority:
@@ -486,20 +665,26 @@ def api_census_tracts_by_state(state_fips):
                 if tract_data:
                     minority_pct = tract_data.get('minority_percentage')
                     total_pop = tract_data.get('total_population')
+                    minority_pop = tract_data.get('minority_population')
 
                     if minority_pct is not None and minority_pct >= 0 and minority_pct <= 100 and total_pop is not None and total_pop > 0:
-                        # Categorize by quartile
+                        # Categorize by quartile instead of ratio
                         if minority_quartiles:
+                            q1_pct = round(minority_quartiles['q1'], 1)
+                            q2_pct = round(minority_quartiles['q2'], 1)
+                            q3_pct = round(minority_quartiles['q3'], 1)
+
                             if minority_pct < minority_quartiles['q1']:
-                                minority_category = 'Q1 (Lowest 25%)'
+                                minority_category = f'Lowest (<{q1_pct}%)'
                             elif minority_pct < minority_quartiles['q2']:
-                                minority_category = 'Q2 (25-50%)'
+                                minority_category = f'Below median ({q1_pct}-{q2_pct}%)'
                             elif minority_pct < minority_quartiles['q3']:
-                                minority_category = 'Q3 (50-75%)'
+                                minority_category = f'Above median ({q2_pct}-{q3_pct}%)'
                             else:
-                                minority_category = 'Q4 (Highest 25%)'
-                            minority_ratio = None
+                                minority_category = f'Highest (>{q3_pct}%)'
+                            minority_ratio = None  # Not using ratio for quartile-based categorization
                         else:
+                            # Fallback to old method if quartiles not available
                             minority_category, minority_ratio = categorize_minority_level(minority_pct, state_minority_pct) if state_minority_pct else ('Unknown', None)
 
                         feature['properties']['minority_percentage'] = minority_pct
@@ -507,23 +692,39 @@ def api_census_tracts_by_state(state_fips):
                         feature['properties']['state_minority_percentage'] = state_minority_pct
                         feature['properties']['minority_ratio'] = minority_ratio
                         feature['properties']['total_population'] = total_pop
+                        feature['properties']['minority_population'] = minority_pop
                     else:
-                        if not include_income:
-                            continue
+                        # Invalid minority data - still include tract with Unknown category
+                        if geoid:
+                            print(f"Tract {geoid}: Invalid minority data (pct: {minority_pct}, pop: {total_pop}), marking as Unknown")
                         feature['properties']['minority_percentage'] = None
                         feature['properties']['minority_category'] = 'Unknown'
+                        feature['properties']['state_minority_percentage'] = state_minority_pct
+                        feature['properties']['minority_ratio'] = None
+                        feature['properties']['total_population'] = None
+                        feature['properties']['minority_population'] = None
                 else:
-                    if not include_income:
-                        continue
+                    # No minority data found - still include tract with Unknown category
+                    if geoid:
+                        print(f"Tract {geoid}: No minority data found, marking as Unknown")
                     feature['properties']['minority_percentage'] = None
                     feature['properties']['minority_category'] = 'Unknown'
+                    feature['properties']['state_minority_percentage'] = state_minority_pct
+                    feature['properties']['minority_ratio'] = None
+                    feature['properties']['total_population'] = None
+                    feature['properties']['minority_population'] = None
 
             if include_income or include_minority:
                 valid_features.append(feature)
 
-        # Update GeoJSON
+        # Update GeoJSON to only include features with valid data
         if include_income or include_minority:
             tract_boundaries['features'] = valid_features
+            if include_income:
+                print(f"Income layer: {matched_count} valid tracts, {filtered_count} invalid/water tracts filtered out")
+            if include_minority:
+                minority_matched = sum(1 for f in valid_features if f['properties'].get('minority_percentage') is not None and f['properties'].get('minority_percentage') >= 0)
+                print(f"Minority layer: {minority_matched} valid tracts with minority data, {filtered_count} invalid/water tracts filtered out")
 
         result = {
             'success': True,
@@ -538,17 +739,25 @@ def api_census_tracts_by_state(state_fips):
 
         if include_minority:
             result['state_minority_percentage'] = state_minority_pct
+            if minority_quartiles:
+                result['minority_quartiles'] = minority_quartiles
+                result['quartile_scope'] = f'State {state_fips}'
+                result['quartile_tract_count'] = len(tract_minority_data)
 
         return jsonify(result)
 
     except Exception as e:
+        error_msg = str(e)
+        print(f"ERROR in api_census_tracts_by_state endpoint for state '{state_fips}': {error_msg}")
         import traceback
+        print("Full traceback:")
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': error_msg,
+            'state_fips': state_fips,
+            'message': f'Failed to load census tract data for state {state_fips}: {error_msg}'
         }), 500
-
 
 @branchmapper_bp.route('/api/branches')
 @login_required

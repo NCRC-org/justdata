@@ -1,157 +1,48 @@
 #!/usr/bin/env python3
 """
-BigQuery Client for BizSight
-Self-contained BigQuery client for small business lending data.
+BigQuery Client for BizSight.
+
+Provides the BigQueryClient wrapper class with bizsight-specific query
+helpers. Client initialization delegates to the shared client at
+justdata.shared.utils.bigquery_client (passing app_name='bizsight' so
+BIZSIGHT_CREDENTIALS_JSON / BIZSIGHT_BIGQUERY_CREDENTIALS_JSON are
+honored via the shared client's VALID_APP_NAMES list).
 """
 
-from google.cloud import bigquery
-from google.oauth2 import service_account
-from pathlib import Path
-from typing import List
 import os
-import json
-import tempfile
 import logging
+from typing import List
+
+from justdata.shared.utils.bigquery_client import (
+    get_bigquery_client as shared_get_bigquery_client,
+)
 
 logger = logging.getLogger(__name__)
-
-# Cache for temp credential file
-_temp_cred_file = None
-
-
-def get_bigquery_client(project_id: str = None, credentials_path: str = None):
-    """
-    Get a BigQuery client instance for BizSight app.
-
-    Uses per-app credentials if BIZSIGHT_CREDENTIALS_JSON is set,
-    otherwise falls back to GOOGLE_APPLICATION_CREDENTIALS_JSON.
-
-    Args:
-        project_id: GCP project ID (defaults to env var)
-        credentials_path: Path to service account JSON (defaults to env var)
-
-    Returns:
-        BigQuery client instance
-    """
-    global _temp_cred_file
-
-    # First, ensure unified environment is loaded (like shared client)
-    try:
-        from justdata.shared.utils.unified_env import ensure_unified_env_loaded
-        ensure_unified_env_loaded(verbose=False)
-    except ImportError:
-        logger.debug("Could not import unified_env, continuing with local config")
-
-    if not project_id:
-        # Use JUSTDATA_PROJECT_ID (where bizsight tables live), not GCP_PROJECT_ID (hdma1-242116)
-        project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-
-    # Check for app-specific credentials first, then fall back to shared
-    # Support both naming conventions used across environments
-    creds_json = (os.getenv('BIZSIGHT_CREDENTIALS_JSON')
-                  or os.getenv('BIZSIGHT_BIGQUERY_CREDENTIALS_JSON')
-                  or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON'))
-    if creds_json:
-        try:
-            creds_dict = json.loads(creds_json)
-            credentials = service_account.Credentials.from_service_account_info(creds_dict)
-            client = bigquery.Client(credentials=credentials, project=project_id)
-            # Log which credential is being used
-            client_email = creds_dict.get('client_email', 'unknown')
-            cred_source = 'BIZSIGHT_CREDENTIALS_JSON' if os.getenv('BIZSIGHT_CREDENTIALS_JSON') else 'GOOGLE_APPLICATION_CREDENTIALS_JSON'
-            logger.info(f"BigQuery client initialized using {cred_source} (service account: {client_email})")
-            return client
-        except Exception as e:
-            logger.warning(f"Failed to use credentials JSON: {e}")
-
-    # Try to find credentials file (fallback - prefer environment variables above)
-    cred_path = None
-    base_dir = Path(__file__).parent.parent
-    possible_paths = [
-        # Local credentials directory
-        base_dir / 'credentials' / 'bigquery_service_account.json',
-        # Project root credentials
-        Path(__file__).parent.parent.parent.parent / 'credentials' / 'bigquery_service_account.json',
-        Path(__file__).parent.parent.parent.parent / 'config' / 'credentials' / 'bigquery_service_account.json',
-    ]
-
-    # First, check if credentials_path is provided and exists
-    if credentials_path and os.path.exists(credentials_path):
-        cred_path = Path(credentials_path)
-        logger.info(f"Using provided credentials: {cred_path}")
-    # Check environment variable
-    elif os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
-        env_cred_path = Path(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
-        if env_cred_path.exists():
-            cred_path = env_cred_path
-            logger.info(f"Using credentials from environment: {cred_path}")
-        else:
-            logger.warning(f"GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
-
-    # If not found yet, search common locations (like shared client)
-    if not cred_path or not cred_path.exists():
-        for path in possible_paths:
-            if path.exists():
-                cred_path = path
-                logger.info(f"Found credentials at: {cred_path}")
-                break
-
-    # Initialize client with credentials if found
-    try:
-        if cred_path and cred_path.exists():
-            # Use explicit credentials loading (like shared client)
-            credentials = service_account.Credentials.from_service_account_file(str(cred_path))
-            client = bigquery.Client(credentials=credentials, project=project_id)
-            logger.info(f"BigQuery client initialized for project: {project_id} using credentials: {cred_path}")
-            return client
-        else:
-            # Fallback: try default service account (for cloud deployments)
-            logger.warning("No credentials file found, trying default service account...")
-            logger.warning("Tried locations:")
-            for path in possible_paths:
-                logger.warning(f"  - {path}")
-            client = bigquery.Client(project=project_id)
-            logger.info(f"BigQuery client initialized for project: {project_id} using default credentials")
-            return client
-    except Exception as e:
-        logger.error(f"Failed to initialize BigQuery client: {e}")
-        # Try one more time with default credentials
-        try:
-            logger.info("Attempting to use default application credentials...")
-            client = bigquery.Client(project=project_id)
-            return client
-        except Exception as e2:
-            logger.error(f"Error with default credentials: {e2}")
-            return None
 
 
 class BigQueryClient:
     """Wrapper class for BigQuery operations."""
 
     def __init__(self, project_id: str = None, credentials_path: str = None):
-        """Initialize BigQuery client using shared client (same pattern as LendSight)."""
-        self.client = None
+        """Initialize the BigQuery client via the shared utility.
+
+        Args:
+            project_id: GCP project ID (defaults to JUSTDATA_PROJECT_ID env var
+                or 'justdata-ncrc')
+            credentials_path: Ignored — the shared client picks credentials from
+                env vars. Argument kept for backward compatibility with
+                callers that still pass it.
+        """
         resolved_project = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-        # Use shared client as primary path (handles per-app credentials consistently)
-        try:
-            from justdata.shared.utils.bigquery_client import get_bigquery_client as shared_get_bigquery_client
-            self.client = shared_get_bigquery_client(
-                project_id=resolved_project,
-                app_name='bizsight'
-            )
-        except Exception as e:
-            logger.warning(f"Shared client init failed: {e}")
-        # Fallback to local client if shared client unavailable
-        if self.client is None:
-            logger.info("Falling back to local BigQuery client init")
-            self.client = get_bigquery_client(project_id, credentials_path)
-        self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-        # New optimized project with summary tables
-        self.summary_project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+        # Shared client raises on unrecoverable init errors — let them surface
+        # rather than fall back to a local re-implementation.
+        self.client = shared_get_bigquery_client(
+            project_id=resolved_project,
+            app_name='bizsight',
+        )
+        self.project_id = resolved_project
+        self.summary_project_id = resolved_project
         self.use_summary_tables = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
-        
-        if self.client is None:
-            raise RuntimeError("BigQuery client could not be initialized. Check credentials.")
     
     def query(self, sql: str, **kwargs):
         """Execute a BigQuery SQL query and return QueryJob."""

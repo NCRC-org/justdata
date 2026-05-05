@@ -1,0 +1,464 @@
+    {% include "shared_header.html" %}
+    <div class="report-container">
+        <!-- Header Actions Row - Excel export only -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="/bizsight/download?format=zip&job_id={{ job_id }}" class="action-btn primary" id="downloadZipBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 1rem; transition: background-color 0.2s;">
+                <i class="fas fa-download"></i> Export Report
+            </a>
+        </div>
+
+        <div class="report-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 8px;">
+            <h1 style="margin: 0 0 10px 0;">Small Business Lending Analysis</h1>
+            <p id="reportMetadata" style="margin: 10px 0 0 0; opacity: 0.9;">Loading report data...</p>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;">
+            <div class="loading-spinner" style="width: 50px; height: 50px; border: 4px solid #e0e0e0; border-top: 4px solid var(--ncrc-primary-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <p id="loadingMessage" style="font-size: 1.1rem; color: #666; margin: 0;">Loading report data...</p>
+            <p id="loadingSubMessage" style="font-size: 0.9rem; color: #999; margin-top: 10px;">This may take a few moments.</p>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+
+        <div id="reportContent" style="display: none;">
+        
+        <!-- Section 1: Introduction -->
+        <div class="report-section" id="section1" style="margin-bottom: 30px;">
+            <h2 class="section-title">Section 1: Introduction</h2>
+            <div id="section1Intro" style="margin-bottom: 20px; line-height: 1.8; color: #333;">
+                <p>This report provides a comprehensive analysis of small business lending activity in <span id="introCountyName">the selected county</span> for the most recent five years (2020-2024). The analysis is based on data collected under the <a href="https://ncrc.org/communityreinvestmentact" target="_blank" rel="noopener noreferrer">Community Reinvestment Act</a> (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
+            </div>
+        </div>
+        
+        <div class="intro-and-summary-container">
+            <!-- Introduction Section -->
+            <div class="intro-container">
+                <h3><i class="fas fa-info-circle"></i> About This Report</h3>
+                <div class="intro-content" id="introContent">
+                    <p id="introParagraph1">Loading report introduction...</p>
+                    <p id="introParagraph2"></p>
+                    <p id="introParagraph3"></p>
+                </div>
+            </div>
+
+            <!-- Summary Statistics Boxes - All 5 in one row -->
+            <div class="summary-table-container">
+                <h3><i class="fas fa-chart-bar"></i> Summary Statistics (2024)</h3>
+                <div class="summary-boxes-container" id="summaryBoxesContainer">
+                    <div class="summary-box">
+                        <div class="summary-box-label">Number of Loans</div>
+                        <div class="summary-box-value" id="summaryBoxLoans">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount of Loans</div>
+                        <div class="summary-box-value" id="summaryBoxAmount">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Average Loan Amount</div>
+                        <div class="summary-box-value" id="summaryBoxAvgLoan">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount to Businesses Under $1M Revenue</div>
+                        <div class="summary-box-value" id="summaryBoxUnder1M">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount in LMI Neighborhoods</div>
+                        <div class="summary-box-value" id="summaryBoxLMI">-</div>
+                    </div>
+                </div>
+                <!-- Data Notes -->
+                <div class="info-tooltips-container" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div class="info-tooltip-item info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Data Coverage</span>
+                        <div class="info-tooltip-content">
+                            This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories, lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts.
+                        </div>
+                    </div>
+                    <div class="info-tooltip-item warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>PPP Impact</span>
+                        <div class="info-tooltip-content">
+                            In 2020 and 2021, the Paycheck Protection Program (PPP) significantly impacted small business lending patterns. Loan counts and amounts may be elevated during these years.
+                        </div>
+                    </div>
+                    <div class="info-tooltip-item alert">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Section 1071</span>
+                        <div class="info-tooltip-content">
+                            Section 1071 of the Dodd-Frank Act has still not been implemented. This report does not include borrower demographics.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: County Summary (2020-2024) -->
+        <div class="report-section print-break" id="section2" style="margin-top: 40px;">
+            <h2 class="section-title">Section 2: County Summary (2020-2024)</h2>
+
+            <!-- Table 1: Number of Loans -->
+            <h3 class="table-number" style="margin: 30px 0 10px 0; font-size: 1rem; color: #333;">Table 1: County Summary - Number of Loans (2020-2024)</h3>
+            <div class="table-intro" id="countySummaryNumberIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="countySummaryTableNumber" role="table" aria-label="County Summary - Number of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Change (2020→2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="countySummaryTableNumberBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC.
+            </p>
+            <div class="table-narrative" id="countySummaryNumberNarrative" role="region" aria-label="County Summary Number Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+
+            <!-- Table 2: Amount of Loans -->
+            <h3 class="table-number" style="margin: 40px 0 10px 0; font-size: 1rem; color: #333;">Table 2: County Summary - Amount of Loans (2020-2024)</h3>
+            <div class="table-intro" id="countySummaryAmountIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="countySummaryTableAmount" role="table" aria-label="County Summary - Amount of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Change (2020→2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="countySummaryTableAmountBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC. Amounts in thousands of dollars.
+            </p>
+            <div class="table-narrative" id="countySummaryAmountNarrative" role="region" aria-label="County Summary Amount Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+            <p id="countySummaryAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
+        </div>
+        
+        <!-- Section 3: County, State, and National Comparison (2024) -->
+        <div class="report-section print-break" id="section3">
+            <h2 class="section-title">Section 3: County, State, and National Comparison (2024)</h2>
+
+            <!-- Table 1: Comparison - Number of Loans -->
+            <h3 class="table-number" style="margin: 30px 0 10px 0; font-size: 1rem; color: #333;">Table 1: Geographic Comparison - Number of Loans (2024)</h3>
+            <div class="table-intro" id="comparisonNumberIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="comparisonTableNumber" role="table" aria-label="Comparison - Number of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Metric</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">County (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">State (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">National (2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableNumberBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC.
+            </p>
+            <div class="table-narrative" id="comparisonNumberNarrative" role="region" aria-label="Comparison Number Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+
+            <!-- Table 2: Comparison - Amount of Loans -->
+            <h3 class="table-number" style="margin: 40px 0 10px 0; font-size: 1rem; color: #333;">Table 2: Geographic Comparison - Amount of Loans (2024)</h3>
+            <div class="table-intro" id="comparisonAmountIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="comparisonTableAmount" role="table" aria-label="Comparison - Amount of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Metric</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">County (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">State (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">National (2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableAmountBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC. Amounts in thousands of dollars.
+            </p>
+            <div class="table-narrative" id="comparisonAmountNarrative" role="region" aria-label="Comparison Amount Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+            <p id="comparisonAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
+        </div>
+        
+        <!-- Section 4: Top Lenders (2024) -->
+        <div class="report-section print-break" id="section4">
+            <h2 class="section-title">Section 4: Top Lenders (2024)</h2>
+
+            <!-- Table 1: Top Lenders - Number of Loans -->
+            <h3 class="table-number" style="margin: 30px 0 10px 0; font-size: 1rem; color: #333;">Table 1: Top Lenders - Number of Loans (2024)</h3>
+            <div class="table-intro" id="topLendersNumberIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <button class="expand-btn" id="expandTopLendersBtnNumber" onclick="expandTopLendersTable('number')" style="display: none;">
+                        <i class="fas fa-chevron-down"></i> Show All Lenders
+                    </button>
+                </div>
+                <table class="data-table collapsible-table" id="topLendersTableNumber" role="table" aria-label="Top Lenders - Number of Loans" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 180px;" onclick="sortTable('topLendersTableNumber', 0)">Lender Name</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 1)">Total</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 2)">&lt;100K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 3)">100-250K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 4)">250K-1M</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 5)">Sm Biz</th>
+                            <th id="headerLowNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 6)">Low</th>
+                            <th id="headerModNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 7)">Mod</th>
+                            <th id="headerMidNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 8)">Mid</th>
+                            <th id="headerUpperNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 9)">Upper</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topLendersTableBodyNumber">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data. Column key: &lt;100K/100-250K/250K-1M = loan size categories; Sm Biz = loans to businesses with &lt;$1M revenue; Low/Mod/Mid/Upper = census tract income levels.
+            </p>
+            <div class="table-narrative" id="topLendersNumberNarrative" role="region" aria-label="Top Lenders Number Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+
+            <!-- Table 2: Top Lenders - Amount of Loans -->
+            <h3 class="table-number" style="margin: 40px 0 10px 0; font-size: 1rem; color: #333;">Table 2: Top Lenders - Amount of Loans (2024)</h3>
+            <div class="table-intro" id="topLendersAmountIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <button class="expand-btn" id="expandTopLendersBtnAmount" onclick="expandTopLendersTable('amount')" style="display: none;">
+                        <i class="fas fa-chevron-down"></i> Show All Lenders
+                    </button>
+                </div>
+                <table class="data-table collapsible-table" id="topLendersTableAmount" role="table" aria-label="Top Lenders - Amount of Loans" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 180px;" onclick="sortTable('topLendersTableAmount', 0)">Lender Name</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 1)">$000s</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 2)">&lt;100K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 3)">100-250K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 4)">250K-1M</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 5)">Sm Biz</th>
+                            <th id="headerLowAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 6)">Low</th>
+                            <th id="headerModAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 7)">Mod</th>
+                            <th id="headerMidAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 8)">Mid</th>
+                            <th id="headerUpperAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 9)">Upper</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topLendersTableBodyAmount">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data. $000s = amounts in thousands. Column key: &lt;100K/100-250K/250K-1M = loan size categories; Sm Biz = loans to businesses with &lt;$1M revenue; Low/Mod/Mid/Upper = census tract income levels.
+            </p>
+            <div class="table-narrative" id="topLendersAmountNarrative" role="region" aria-label="Top Lenders Amount Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+            <p id="topLendersAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
+        </div>
+        
+        <!-- Section 5: Market Concentration (Moved to end, before Methods) -->
+        <div class="report-section print-break" id="section5" style="margin-top: 40px;">
+            <h2 class="section-title">Section 5: Market Concentration</h2>
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <!-- Intro Text - 1/3 width -->
+                <div style="flex: 0 0 33.333%;">
+                    <div class="ai-insight-card">
+                        <div class="ai-content" id="hhiTrendsIntro">
+                            <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+                            <p>HHI for small business lending in the selected counties across the selected years:</p>
+                        </div>
+                    </div>
+                    <p class="table-caption" style="margin-top: 15px;">
+                        <strong>Source:</strong> FFIEC CRA Small Business Lending data, compiled and maintained in NCRC's curated databases. 
+                        <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. 
+                        HHI values range from 0 to 10,000. 
+                        <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.
+                    </p>
+                </div>
+                
+                <!-- Chart and Table - 2/3 width -->
+                <div style="flex: 0 0 66.667%;">
+                    <h3 class="table-number" style="margin-bottom: 10px; font-size: 1rem; color: #333;">Figure 1: Market Concentration (HHI) by Year</h3>
+                    <div class="chart-container" style="height: 400px; margin-bottom: 20px;">
+                        <canvas id="hhiByYearChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="table-narrative" id="hhiTrendsDiscussion" role="region" aria-label="Market Concentration Trends Analysis">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+            <p id="hhiTrendsAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
+        </div>
+        
+        <!-- Section 6: Methods, Definitions, and AI Disclosure -->
+        <div class="report-section print-break" id="section6" style="margin-top: 40px;">
+            <h2 class="section-title">Section 6: Methods, Definitions, and AI Disclosure</h2>
+            <div id="methodsContent" style="line-height: 1.8;">
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Sources</h3>
+                <p><strong>CRA Small Business Lending Data:</strong> This report uses data collected under the Community Reinvestment Act (CRA), which requires depository institutions to report information about small business loans. The data is collected by the Federal Financial Institutions Examination Council (FFIEC) and includes lending activity from banks regulated by the Office of the Comptroller of the Currency (OCC), Federal Reserve, and Federal Deposit Insurance Corporation (FDIC). For more information, visit the <a href="https://www.ffiec.gov/cra/craproducts.htm" target="_blank">FFIEC CRA website</a>.</p>
+
+                <p><strong>Data Coverage:</strong> CRA small business lending data includes loans with original amounts of $1 million or less for commercial and industrial purposes. The data is reported at the county level and includes information about loan size categories, loans to businesses with revenues under $1 million, and lending in census tracts of different income levels.</p>
+
+                <p><strong>NCRC Data Processing:</strong> The data used in this report is sourced from NCRC's curated small business lending databases, compiled and maintained by NCRC Research staff. State and national benchmark data is aggregated from the same FFIEC source data to enable geographic comparisons.</p>
+
+                <p><strong>Important Data Notes:</strong>
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        <li><strong>PPP Impact (2020-2021):</strong> Small business lending volumes in 2020 and 2021 were significantly influenced by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years.</li>
+                        <li><strong>Section 1071 Limitation:</strong> Section 1071 of the Dodd-Frank Act, which will require demographic data on small business loan applicants, has not yet been fully implemented. This report does not include borrower demographic information such as race, ethnicity, or gender of business owners.</li>
+                    </ul>
+                </p>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Definitions</h3>
+
+                <p><strong>Small Business Loan:</strong> A loan with an original amount of $1 million or less made for commercial or industrial purposes to businesses.</p>
+
+                <p><strong>Small Business (Revenue Under $1M):</strong> Businesses with gross annual revenues of less than $1 million. CRA regulations require lenders to report the portion of small business loans made to these smaller enterprises.</p>
+
+                <h4 style="margin-top: 15px; color: #333;">Loan Size Categories</h4>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Under $100K:</strong> Loans with original amounts less than $100,000</li>
+                    <li><strong>$100K-$250K:</strong> Loans with original amounts from $100,000 to $250,000</li>
+                    <li><strong>$250K-$1M:</strong> Loans with original amounts from $250,000 to $1,000,000</li>
+                </ul>
+
+                <h4 style="margin-top: 15px; color: #333;">Census Tract Income Categories</h4>
+                <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+                    <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+                    <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+                    <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+                    <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                </ul>
+
+                <h4 style="margin-top: 15px; color: #333;">Income Tract Data Encoding</h4>
+                <p>The FFIEC CRA disclosure data reports lending by census tract income category using three different encoding formats, depending on the reporting institution and data year:</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Summary codes:</strong> A single row per income category (Low, Moderate, Middle, Upper, Unknown)</li>
+                    <li><strong>Subcategory codes:</strong> Granular rows representing 10-percentage-point bands of area median income (e.g., 0&ndash;10%, 10&ndash;20%, through 120%+), which map to the standard income categories above</li>
+                    <li><strong>Legacy codes:</strong> Simplified single-digit identifiers used by some institutions in earlier reporting years</li>
+                </ul>
+                <p>A given institution, county, and year combination uses only one encoding format. NCRC maps all three formats to the consistent income categories listed above.</p>
+
+                <h4 style="margin-top: 15px; color: #333;">Table Column Definitions</h4>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Total:</strong> Total number or amount of small business loans</li>
+                    <li><strong>&lt;100K / 100-250K / 250K-1M:</strong> Percentage of loans in each size category</li>
+                    <li><strong>Sm Biz:</strong> Percentage of loans to businesses with annual revenues under $1 million</li>
+                    <li><strong>Low / Mod / Mid / Upper:</strong> Percentage of loans in census tracts of each income level</li>
+                    <li><strong>$000s:</strong> Dollar amounts expressed in thousands</li>
+                </ul>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Calculations</h3>
+
+                <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) &times; 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) &times; 100.</p>
+
+                <p><strong>Income Tract Percentage Calculations:</strong> For percentages by census tract income category (Low, Moderate, Middle, Upper, and LMI), the denominator excludes loans where the tract income classification is unknown or unavailable. Some census tracts lack income classifications due to data suppression, boundary changes, or other Census Bureau limitations. Including these unclassified loans in the denominator would artificially deflate all income category percentages. The formula used is: (income category loans / total loans with known tract income classification) &times; 100. Total loan counts and dollar amounts reported elsewhere in this report include all loans regardless of tract income classification.</p>
+
+                <p><strong>Change Over Time:</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). Positive changes are displayed in blue; negative changes in red.</p>
+
+                <p><strong>Dollar Amount Aggregation:</strong> Loan amounts are aggregated from individual lender reports. All dollar figures in tables are expressed in thousands ($000s) or millions ($M) as noted.</p>
+
+                <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
+                <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
+                <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = &Sigma;(market share<sub>i</sub>)<sup>2</sup></p>
+                <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
+                <p><strong>Concentration Levels:</strong></p>
+                <ul style="padding-left: 20px;">
+                    <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+                    <li>HHI 1,500-2,500: Moderate concentration</li>
+                    <li>HHI &gt; 2,500: High concentration</li>
+                </ul>
+                <p><strong>Note on HHI Calculation:</strong> In this report, HHI is calculated using the dollar amount of small business loans from all lenders that reported CRA data for the county, not just the top lenders shown in the tables.</p>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Abbreviations</h3>
+                <ul style="padding-left: 20px; column-count: 2; column-gap: 40px;">
+                    <li><strong>AMFI:</strong> Area Median Family Income</li>
+                    <li><strong>CRA:</strong> Community Reinvestment Act</li>
+                    <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
+                    <li><strong>FFIEC:</strong> Federal Financial Institutions Examination Council</li>
+                    <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                    <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                    <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                    <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+                    <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
+                    <li><strong>OCC:</strong> Office of the Comptroller of the Currency</li>
+                    <li><strong>pp:</strong> Percentage Points</li>
+                    <li><strong>PPP:</strong> Paycheck Protection Program</li>
+                    <li><strong>Sm Biz:</strong> Small Business (revenue under $1M)</li>
+                </ul>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Quality and AI Disclosure</h3>
+                <p><strong>Data Validation:</strong> NCRC performs systematic quality assurance on all data used in this report, including cross-verification of loan counts and amounts against FFIEC published aggregate totals. Income tract classifications are validated against FFIEC Census tract income level designations.</p>
+
+                <p><strong>AI-Generated Narrative Content:</strong> The analytical narrative sections of this report (Sections 1 and 5) are generated using artificial intelligence (Claude, developed by Anthropic) based on the underlying data tables and calculations. All AI-generated narratives are reviewed for accuracy against the source data. The data tables, calculations, and statistical measures presented in this report are computed directly from FFIEC CRA disclosure data and are not AI-generated.</p>
+
+                <p><strong>Limitations:</strong> CRA data reflects lending reported by covered depository institutions and may not capture all small business lending activity in a market. Lending by non-bank lenders, credit unions below the reporting threshold, and fintech companies is generally not included. Market share calculations and HHI values should be interpreted in this context.</p>
+
+                <p><strong>Suggested Citation:</strong> National Community Reinvestment Coalition. (2026). <em>BizSight Small Business Lending Report: [County Name], [State].</em> Washington, DC: NCRC. Data source: FFIEC CRA Small Business Lending Data.</p>
+
+                <p style="margin-top: 20px; text-align: center; color: #666;">&copy; 2026 National Community Reinvestment Coalition</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS disabled - map will be added in future version -->
+    <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> -->

@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
 from justdata.apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
-from justdata.apps.lenderprofile.processors.data_collector import DataCollector
+from justdata.apps.lenderprofile.processors.collector import DataCollector
 
 # Configure logging
 logging.basicConfig(

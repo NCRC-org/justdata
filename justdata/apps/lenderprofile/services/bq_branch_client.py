@@ -7,7 +7,7 @@ Uses branches.sod and branches.sod_legacy tables.
 import os
 import logging
 from typing import List, Dict, Any, Optional, Tuple
-from google.cloud import bigquery
+
 from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class BigQueryBranchClient:
     def _get_client(self):
         """Get BigQuery client (lazy initialization)."""
         if self.client is None:
-            self.client = get_bigquery_client(self.project_id)
+            self.client = get_bigquery_client(self.project_id, app_name='lenderprofile')
         return self.client
     
     def get_branches(self, rssd: str, year: int) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:

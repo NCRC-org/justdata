@@ -43,6 +43,7 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from google.cloud import bigquery
+from justdata.apps.analytics.sql_loader import load_sql
 
 # Source project (JustData app data)
 SOURCE_PROJECT = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
@@ -327,32 +328,7 @@ def create_unified_view(client: bigquery.Client) -> None:
     """
     # For now, just create a simple view of backfilled events
     # Firebase Analytics will be added later once export is enabled
-    view_sql = f"""
-    CREATE OR REPLACE VIEW `{TARGET_PROJECT}.{TARGET_DATASET}.all_events` AS
-
-    -- Backfilled events from usage_log
-    SELECT
-        event_id,
-        event_name,
-        event_timestamp,
-        user_id,
-        user_type,
-        county_fips,
-        county_name,
-        state,
-        lender_name,
-        lender_id,
-        year_range,
-        source,
-        hubspot_contact_id,
-        hubspot_company_id,
-        organization_name
-    FROM `{TARGET_PROJECT}.{TARGET_DATASET}.backfilled_events`
-
-    -- TODO: Add UNION ALL with Firebase Analytics events once export is enabled
-    -- The Firebase data will be in justdata-f7da7.analytics_*.events_*
-    -- You'll need cross-project access or copy the data to this project
-    """
+    view_sql = load_sql("backfill_view.sql").format(TARGET_DATASET=TARGET_DATASET, TARGET_PROJECT=TARGET_PROJECT)
 
     try:
         client.query(view_sql).result()

@@ -1,0 +1,32 @@
+        <!-- Firms Panel -->
+        <div id="firms" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-building"></i> Top Firms & PACs by Total Contributions</h2>
+                    <div class="search-box" style="max-width: 300px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="firm-search" placeholder="Filter firms...">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                    <table class="leaderboard-table" id="firms-table">
+                        <thead>
+                            <tr>
+                                <th class="rank">#</th>
+                                <th>Firm / PAC</th>
+                                <th>Industry</th>
+                                <th style="text-align: right;">Total Contributions</th>
+                                <th style="text-align: center;">Officials</th>
+                                <th style="text-align: center;">Stock Trades</th>
+                            </tr>
+                        </thead>
+                        <tbody id="firms-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    </div>
+                    <div id="firms-loading" class="loading">Loading firms...</div>
+                </div>
+            </div>
+        </div>

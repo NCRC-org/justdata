@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS `hdma1-242116.justdata.de_hmda` (
   total_units STRING,
   construction_method STRING,
   reverse_mortgage STRING,
-  
+  lien_status STRING,
+
   -- Loan amounts and values
   loan_amount INT64,
   property_value INT64,
@@ -125,7 +126,8 @@ SELECT
   h.total_units,
   h.construction_method,
   h.reverse_mortgage,
-  
+  h.lien_status,
+
   -- Loan amounts and values
   h.loan_amount,
   h.property_value,

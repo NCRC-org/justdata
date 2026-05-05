@@ -1,0 +1,3607 @@
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+    <!-- Mapbox GL Draw -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+    <!-- Turf.js for point-in-polygon -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+    <!-- Mapbox GL Geocoder -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
+    
+    <script>
+        // Base URL for API calls (handles blueprint prefix)
+        const APP_BASE_URL = '{{ app_base_url|default("/branchmapper") }}';
+
+        // Mapbox configuration
+        const MAPBOX_TOKEN = '{{ mapbox_token|default("pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg", true) }}';
+        const MAPBOX_STYLE = '{{ mapbox_style|default("mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3", true) }}';
+
+        let branchMap = null;
+        let currentPopup = null;
+        let incomeLayerVisible = false;
+        let minorityLayerVisible = false;
+        let incomeLayerAbortController = null;
+        let minorityLayerAbortController = null;
+        let relocationLines = [];
+        let countyBoundaryIds = [];
+        let cachedUserType = null;
+
+        // Legacy compat
+        let oscrMarkers = [];
+
+        // Phase 2 state
+        let selectedBanks = [];          // [{name, color, branches, oscrEvents, _layerIds}]
+        let showAllBanksActive = false;
+        let allBanksInView = [];
+        let loadedBounds = null;         // {sw:{lat,lng}, ne:{lat,lng}}
+        let currentViewMode = 'sod';
+        let currentZoom = 4;
+        let allBankNames = [];
+        let viewportCounties = [];
+        let currentGeographyName = '';   // Set by geocoder result
+
+        const BANK_COLORS = ['#1a8fc9', '#e67e22', '#8e44ad'];
+        const METRO_ZOOM_THRESHOLD = 6;
+        const CENSUS_TILESET_ID = 'jedlebi.census-tracts';
+        const CENSUS_SOURCE_LAYER = 'census_tracts';
+
+        // Geocoder state
+        let geocoder = null;
+        let geocoderBoundarySourceId = null;
+        let geocoderBoundaryPolygon = null;  // Turf-compatible GeoJSON for clipping
+
+        // Draw area state
+        let drawControl = null;
+        let isDrawing = false;
+        let drawnPolygon = null;       // Current active polygon GeoJSON
+        let activeDrawFilter = null;   // Turf polygon used to filter all markers
+        let savedAreas = [];           // [{name, polygon, color}]
+        let savedAreaCounter = 0;
+        const DRAW_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6'];
+
+        // Fetch user type and open appropriate Slack support channel
+        async function openSlackSupport(event) {
+            event.preventDefault();
+
+            // Fetch user type if not cached
+            if (!cachedUserType) {
+                try {
+                    const response = await fetch('/api/auth/status');
+                    if (response.ok) {
+                        const data = await response.json();
+                        cachedUserType = data.user_type || 'public_anonymous';
+                    } else {
+                        cachedUserType = 'public_anonymous';
+                    }
+                } catch (error) {
+                    console.log('Could not fetch user type, defaulting to public');
+                    cachedUserType = 'public_anonymous';
+                }
+            }
+
+            const isInternalUser = ['staff', 'senior_executive', 'admin'].includes(cachedUserType);
+
+            // Staff channel for internal users, public support channel for everyone else
+            const slackChannelUrl = isInternalUser
+                ? 'https://ncrcgroup.slack.com/app_redirect?channel=C0A0BBWRT36'  // justdata_staff
+                : 'https://ncrcgroup.slack.com/app_redirect?channel=C0AAHCK98A0'; // public support
+
+            window.open(slackChannelUrl, '_blank');
+        }
+
+        // State center coordinates and zoom levels (approximate)
+        const stateCenters = {
+            '01': { lat: 32.806671, lng: -86.791130, zoom: 7 }, // Alabama
+            '04': { lat: 34.048928, lng: -111.093731, zoom: 7 }, // Arizona
+            '06': { lat: 36.116203, lng: -119.681564, zoom: 6 }, // California
+            '10': { lat: 39.318523, lng: -75.507141, zoom: 8 }, // Delaware
+            '12': { lat: 27.766279, lng: -81.686783, zoom: 7 }, // Florida
+            '13': { lat: 33.040619, lng: -83.643074, zoom: 7 }, // Georgia
+            '17': { lat: 40.349457, lng: -88.986137, zoom: 7 }, // Illinois
+            '24': { lat: 39.063946, lng: -76.802101, zoom: 7 }, // Maryland
+            '26': { lat: 43.326618, lng: -84.536095, zoom: 7 }, // Michigan
+            '36': { lat: 42.165726, lng: -74.948051, zoom: 7 }, // New York
+            '39': { lat: 40.388783, lng: -82.764915, zoom: 7 }, // Ohio
+            '42': { lat: 40.590752, lng: -77.209755, zoom: 7 }, // Pennsylvania
+            '48': { lat: 31.054487, lng: -97.563461, zoom: 6 }, // Texas
+            '53': { lat: 47.400902, lng: -121.490494, zoom: 7 }  // Washington
+        };
+        
+        // ===== Phase 2: View Mode & Bank Search =====
+
+        // Unified popup builder for all marker types
+        function buildPopupHTML(data) {
+            // data: { bank_name, branch_name, branch_type, address, city, state, zip,
+            //         lmi, minority, deposits, lat, lng, change_type, effective_date }
+            const lines = [];
+
+            // Bank name header
+            lines.push(`<div class="bank-name-header" style="font-weight: 700; font-size: 1rem; margin-bottom: 6px;">${data.bank_name || 'Unknown'}</div>`);
+
+            // Change type badge (if OSCR event)
+            if (data.change_type) {
+                const isOpen = data.change_type === 'opening';
+                const color = isOpen ? '#2e7d32' : '#c62828';
+                const label = isOpen ? 'Opening' : 'Closing';
+                lines.push(`<div style="display: inline-block; background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 6px;">${label}</div>`);
+            }
+
+            lines.push('<div class="branch-info" style="font-size: 0.85rem; line-height: 1.5;">');
+
+            if (data.branch_name) lines.push(`<strong>Branch:</strong> ${data.branch_name}<br>`);
+            if (data.branch_type) lines.push(`<strong>Type:</strong> ${data.branch_type}<br>`);
+
+            // Address
+            const addr = data.address || '';
+            const cityStateZip = [data.city, data.state].filter(Boolean).join(', ') + (data.zip ? ' ' + data.zip : '');
+            if (addr || cityStateZip) {
+                lines.push(`<strong>Address:</strong> ${addr}<br>${cityStateZip}<br>`);
+            }
+
+            // Deposits
+            if (data.deposits) {
+                lines.push(`<strong>Deposits:</strong> $${Number(data.deposits).toLocaleString('en-US')}<br>`);
+            }
+
+            // Date (OSCR events) — normalize to YYYY-MM-DD
+            if (data.effective_date) {
+                let dateStr = data.effective_date;
+                // If it contains 'T', strip time portion
+                if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
+                // If MM/DD/YYYY format, convert to YYYY-MM-DD
+                const mdyMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (mdyMatch) dateStr = `${mdyMatch[3]}-${mdyMatch[1].padStart(2,'0')}-${mdyMatch[2].padStart(2,'0')}`;
+                lines.push(`<strong>Date:</strong> ${dateStr}<br>`);
+            }
+
+            // Tract tags
+            const tags = [];
+            if (data.lmi) tags.push('<span style="background: #e65100; color: white; padding: 1px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;">LMI</span>');
+            if (data.minority) tags.push('<span style="background: #4a148c; color: white; padding: 1px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;">Majority-Minority</span>');
+            if (tags.length > 0) lines.push(`<div style="margin-top: 4px;">${tags.join(' ')}</div>`);
+
+            // Google Maps link
+            if (data.lat && data.lng) {
+                const q = encodeURIComponent(`${addr}, ${cityStateZip}`.trim().replace(/^,\s*/, ''));
+                lines.push(`<a href="https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}" target="_blank" rel="noopener" style="display: inline-block; margin-top: 6px; color: #1a73e8; font-size: 0.8rem; text-decoration: none;"><i class="fas fa-map-marker-alt"></i> View on Google Maps</a>`);
+            }
+
+            lines.push('</div>');
+            return `<div class="popup-content">${lines.join('')}</div>`;
+        }
+
+        // Helper: get simplified branch type from service_type code
+        function getSimplifiedBranchType(serviceType) {
+            if (!serviceType) return null;
+            const st = String(serviceType).trim();
+            if (['11', '12'].includes(st) || /^full service/i.test(st)) return 'Full Service';
+            if (st === '13' || /cyber/i.test(st)) return 'Cyber Office';
+            if (['21', '22', '23', '24', '25', '26', '27', '28', '29', '30'].includes(st) || /^limited service/i.test(st)) return 'Limited Service';
+            if (/loan production/i.test(st)) return 'Loan Production';
+            if (/atm/i.test(st)) return 'ATM';
+            if (/mobile/i.test(st)) return 'Mobile';
+            return st;
+        }
+
+        function showOnboardingOverlay() {
+            const modal = document.getElementById('welcomeModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function hideOnboardingOverlay() {
+            const modal = document.getElementById('welcomeModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // ===== Bank Search =====
+        async function initializeBankSearch() {
+            try {
+                const response = await fetch(`${APP_BASE_URL}/api/bank-list`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allBankNames = data.banks || [];
+                    console.log('Loaded', allBankNames.length, 'bank names');
+                    const input = document.getElementById('bankSearchInput');
+                    if (allBankNames.length > 0) {
+                        input.placeholder = `Search ${allBankNames.length} banks...`;
+                    } else {
+                        input.placeholder = 'Bank list unavailable';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load bank list:', err);
+            }
+
+            const input = document.getElementById('bankSearchInput');
+            let debounceTimer = null;
+
+            input.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const query = this.value.trim();
+                    if (query.length < 2) {
+                        hideSearchResults();
+                        return;
+                    }
+                    showSearchResults(query);
+                }, 150);
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') hideSearchResults();
+            });
+
+            // Close search results on click outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#bankSearchInput') && !e.target.closest('#bankSearchResults')) {
+                    hideSearchResults();
+                }
+            });
+        }
+
+        function showSearchResults(query) {
+            const container = document.getElementById('bankSearchResults');
+            const lowerQuery = query.toLowerCase();
+            const alreadySelected = selectedBanks.map(b => b.name);
+            const filtered = allBankNames
+                .filter(name => name.toLowerCase().includes(lowerQuery) && !alreadySelected.includes(name))
+                .slice(0, 20);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="bank-search-item" style="color: #999;">No matches found</div>';
+            } else {
+                container.innerHTML = filtered.map(name =>
+                    `<div class="bank-search-item" onclick="addBank('${name.replace(/'/g, "\\'")}')">${name}</div>`
+                ).join('');
+            }
+            container.style.display = 'block';
+        }
+
+        function hideSearchResults() {
+            document.getElementById('bankSearchResults').style.display = 'none';
+        }
+
+        async function addBank(bankName) {
+            if (selectedBanks.length >= 3) {
+                updateInfoPanel('Maximum 3 banks can be compared at once.');
+                return;
+            }
+            if (selectedBanks.find(b => b.name === bankName)) return;
+
+            hideSearchResults();
+            document.getElementById('bankSearchInput').value = '';
+            hideOnboardingOverlay();
+
+            const isFirst = selectedBanks.length === 0;
+            const color = BANK_COLORS[selectedBanks.length];
+
+            const bank = {
+                name: bankName,
+                color: color,
+                branches: [],
+                oscrEvents: [],
+                _layerIds: []
+            };
+            selectedBanks.push(bank);
+
+            renderBankChips();
+            updateContextBar();
+            updateShowAllButton();
+
+            // Load data
+            if (currentViewMode === 'sod') {
+                await loadBankBranches(bank);
+                renderBankSODMarkers(bank);
+            } else {
+                await loadBankOSCREvents(bank);
+                renderBankOSCRMarkers(bank);
+            }
+
+            const count = currentViewMode === 'sod' ? bank.branches.length : bank.oscrEvents.length;
+            updateInfoPanel(`${bankName}: ${count} branches nationwide`);
+        }
+
+        function removeBank(bankName) {
+            const idx = selectedBanks.findIndex(b => b.name === bankName);
+            if (idx === -1) return;
+
+            const bank = selectedBanks[idx];
+
+            // Remove this bank's layers
+            bank._layerIds.forEach(id => {
+                if (branchMap.getLayer(id)) branchMap.removeLayer(id);
+                if (branchMap.getSource(id)) branchMap.removeSource(id);
+            });
+
+            // Remove OSCR markers if any
+            if (bank._oscrMarkers) {
+                bank._oscrMarkers.forEach(m => m.remove());
+            }
+
+            selectedBanks.splice(idx, 1);
+
+            // Reassign colors
+            selectedBanks.forEach((b, i) => {
+                const oldLayerIds = [...b._layerIds];
+                oldLayerIds.forEach(id => {
+                    if (branchMap.getLayer(id)) branchMap.removeLayer(id);
+                    if (branchMap.getSource(id)) branchMap.removeSource(id);
+                });
+                if (b._oscrMarkers) b._oscrMarkers.forEach(m => m.remove());
+                b.color = BANK_COLORS[i];
+                b._layerIds = [];
+                b._oscrMarkers = [];
+            });
+
+            // Re-render all
+            renderAllSelectedBankMarkers();
+            renderBankChips();
+            updateContextBar();
+            updateShowAllButton();
+
+            if (selectedBanks.length === 0) {
+                showOnboardingOverlay();
+            }
+        }
+
+        function renderBankChips() {
+            const container = document.getElementById('bankChipsContainer');
+            container.innerHTML = selectedBanks.map(bank => {
+                const count = currentViewMode === 'sod' ? bank.branches.length : bank.oscrEvents.length;
+                return `<span class="bank-chip" style="background: ${bank.color};">
+                    ${bank.name} (${count})
+                    <span class="chip-remove" onclick="removeBank('${bank.name.replace(/'/g, "\\'")}')">&times;</span>
+                </span>`;
+            }).join('');
+        }
+
+        async function loadBankBranches(bank) {
+            try {
+                const response = await fetch(
+                    `${APP_BASE_URL}/api/branches-by-bank?bank_name=${encodeURIComponent(bank.name)}&year=2025`
+                );
+                const data = await response.json();
+                if (data.success) {
+                    bank.branches = data.branches || [];
+                }
+            } catch (err) {
+                console.error(`Error loading branches for ${bank.name}:`, err);
+            }
+        }
+
+        async function loadBankOSCREvents(bank) {
+            try {
+                const dateRange = getOSCRDateRange();
+                const response = await fetch(
+                    `${APP_BASE_URL}/api/oscr-events-by-bank?bank_name=${encodeURIComponent(bank.name)}` +
+                    `&start_date=${dateRange.start}&end_date=${dateRange.end}`
+                );
+                const data = await response.json();
+                if (data.success) {
+                    bank.oscrEvents = data.events || [];
+                }
+            } catch (err) {
+                console.error(`Error loading OSCR events for ${bank.name}:`, err);
+            }
+        }
+
+        function renderBankSODMarkers(bank) {
+            const sourceId = `bank-${bank.name.replace(/\W/g, '_')}`;
+            const features = [];
+
+            // Store branch data for popups
+            if (!window.branchDataMap) window.branchDataMap = {};
+
+            bank.branches.forEach(branch => {
+                if (branch.latitude == null || branch.longitude == null) return;
+                let lat = branch.latitude, lng = branch.longitude;
+                if (typeof lat === 'string') lat = parseFloat(lat);
+                if (typeof lng === 'string') lng = parseFloat(lng);
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+
+                // Check if branch is inside clip polygon (draw filter or geocoder boundary)
+                const clipPolygon = activeDrawFilter || geocoderBoundaryPolygon;
+                const isOutside = clipPolygon && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon);
+
+                const branchId = `${branch.uninumbr || ''}_${lat}_${lng}`;
+                window.branchDataMap[branchId] = branch;
+
+                features.push({
+                    type: 'Feature',
+                    properties: {
+                        id: branchId,
+                        bank_name: branch.bank_name || bank.name,
+                        branch_name: branch.branch_name || 'Branch',
+                        color: bank.color,
+                        outside: isOutside ? 1 : 0
+                    },
+                    geometry: { type: 'Point', coordinates: [lng, lat] }
+                });
+            });
+
+            if (features.length === 0) return;
+
+            if (branchMap.getSource(sourceId)) {
+                branchMap.getSource(sourceId).setData({ type: 'FeatureCollection', features });
+            } else {
+                branchMap.addSource(sourceId, {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features }
+                });
+            }
+
+            const layerId = sourceId + '-fill';
+            if (!branchMap.getLayer(layerId)) {
+                branchMap.addLayer({
+                    id: layerId,
+                    type: 'circle',
+                    source: sourceId,
+                    paint: {
+                        'circle-radius': 6,
+                        'circle-color': bank.color,
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': ['case', ['==', ['get', 'outside'], 1], 0.2, 1],
+                        'circle-stroke-opacity': ['case', ['==', ['get', 'outside'], 1], 0.2, 1]
+                    }
+                });
+
+                // Click handler
+                branchMap.on('click', layerId, function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    const feature = e.features[0];
+                    const coords = feature.geometry.coordinates.slice();
+                    const props = feature.properties;
+                    const branch = window.branchDataMap[props.id] || {};
+                    const html = buildPopupHTML({
+                        bank_name: props.bank_name,
+                        branch_name: props.branch_name,
+                        branch_type: getSimplifiedBranchType(branch.service_type) || branch.branch_type,
+                        address: branch.address,
+                        city: branch.city,
+                        state: branch.state_abbrv || branch.state,
+                        zip: branch.zip,
+                        lmi: branch.lmict,
+                        minority: branch.mmct,
+                        deposits: branch.total_deposits,
+                        lat: coords[1],
+                        lng: coords[0]
+                    });
+                    if (currentPopup) currentPopup.remove();
+                    currentPopup = new mapboxgl.Popup({ maxWidth: '300px' }).setLngLat(coords).setHTML(html).addTo(branchMap);
+                });
+
+                branchMap.on('mouseenter', layerId, () => branchMap.getCanvas().style.cursor = 'pointer');
+                branchMap.on('mouseleave', layerId, () => branchMap.getCanvas().style.cursor = '');
+            }
+
+            bank._layerIds = [sourceId, layerId];
+        }
+
+        function renderBankOSCRMarkers(bank) {
+            // Use individual DOM markers for OSCR events (existing pattern)
+            if (!bank._oscrMarkers) bank._oscrMarkers = [];
+            bank._oscrMarkers.forEach(m => m.remove());
+            bank._oscrMarkers = [];
+
+            const showOpenings = document.getElementById('filterOpenings').checked;
+            const showClosings = document.getElementById('filterClosings').checked;
+
+            const filtered = bank.oscrEvents.filter(e => {
+                if (e.display_type === 'opening' && !showOpenings) return false;
+                if (e.display_type === 'closing' && !showClosings) return false;
+                return true;
+            });
+
+            let validEvents = filtered.filter(e => e.latitude && e.longitude);
+
+            // Check clip polygon for inside/outside status
+            const clipPolygon1 = activeDrawFilter || geocoderBoundaryPolygon;
+
+            validEvents.forEach(event => {
+                const lat = parseFloat(event.latitude), lng = parseFloat(event.longitude);
+                const isOutside = clipPolygon1 && !isNaN(lat) && !isNaN(lng) && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon1);
+                const opacityStyle = isOutside ? ' opacity: 0.2;' : '';
+
+                const el = document.createElement('div');
+                if (event.display_type === 'opening') {
+                    el.style.cssText = `width: 18px; height: 18px; background-color: #2e7d32; border: 2px solid ${bank.color}; border-radius: 50%; cursor: pointer;${opacityStyle}`;
+                } else {
+                    el.style.cssText = `width: 18px; height: 18px; background-color: #c62828; border: 2px solid ${bank.color}; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;${opacityStyle}`;
+                    el.textContent = '\u2715';
+                }
+
+                const marker = new mapboxgl.Marker({ element: el })
+                    .setLngLat([event.longitude, event.latitude])
+                    .addTo(branchMap);
+
+                // Add click popup
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (currentPopup) currentPopup.remove();
+                    const html = buildPopupHTML({
+                        bank_name: event.institution || bank.name,
+                        branch_name: event.branch_name,
+                        branch_type: getSimplifiedBranchType(event.service_type),
+                        address: event.address,
+                        city: event.city,
+                        state: event.state,
+                        zip: event.zip,
+                        deposits: null,
+                        lmi: false,
+                        minority: false,
+                        lat: event.latitude,
+                        lng: event.longitude,
+                        change_type: event.display_type,
+                        effective_date: event.effective_date || event.processed_date
+                    });
+                    currentPopup = new mapboxgl.Popup({ maxWidth: '300px' })
+                        .setLngLat([event.longitude, event.latitude])
+                        .setHTML(html)
+                        .addTo(branchMap);
+                });
+
+                bank._oscrMarkers.push(marker);
+            });
+        }
+
+        function renderAllSelectedBankMarkers() {
+            selectedBanks.forEach(bank => {
+                if (currentViewMode === 'sod') {
+                    renderBankSODMarkers(bank);
+                } else {
+                    renderBankOSCRMarkers(bank);
+                }
+            });
+        }
+
+        function reRenderAllMarkers() {
+            renderAllSelectedBankMarkers();
+            if (showAllBanksActive) {
+                if (currentViewMode === 'sod') {
+                    renderAllBanksInView();
+                } else {
+                    renderAllBanksInViewOSCR();
+                }
+            }
+        }
+
+        // ===== Show All Banks =====
+        function updateShowAllButton() {
+            const btn = document.getElementById('showAllBanksBtn');
+            if (currentZoom >= METRO_ZOOM_THRESHOLD) {
+                btn.disabled = false;
+                btn.style.cursor = 'pointer';
+                btn.style.opacity = '1';
+                if (showAllBanksActive) {
+                    btn.style.background = 'var(--ncrc-primary-blue)';
+                    btn.style.boxShadow = '0 0 8px rgba(26, 143, 201, 0.5)';
+                } else {
+                    // Bright purple when enabled but not active
+                    btn.style.background = '#8e44ad';
+                    btn.style.boxShadow = '0 0 6px rgba(142, 68, 173, 0.4)';
+                }
+            } else {
+                btn.disabled = true;
+                btn.style.cursor = 'not-allowed';
+                btn.style.opacity = '0.4';
+                btn.style.background = '#adb5bd';
+                btn.style.boxShadow = 'none';
+            }
+        }
+
+        function toggleShowAllBanks() {
+            if (currentZoom < METRO_ZOOM_THRESHOLD) return;
+            // Flash effect on click
+            const btn = document.getElementById('showAllBanksBtn');
+            btn.style.background = '#ffffff';
+            btn.style.color = '#8e44ad';
+            setTimeout(() => {
+                btn.style.color = 'white';
+                if (showAllBanksActive) {
+                    deactivateShowAll();
+                } else {
+                    activateShowAll();
+                }
+            }, 150);
+        }
+
+        async function activateShowAll() {
+            showAllBanksActive = true;
+            updateShowAllButton();
+            await loadAllBanksInView();
+            updateMapTitle();
+            updateMapLegend();
+        }
+
+        function deactivateShowAll() {
+            showAllBanksActive = false;
+            loadedBounds = null;
+            clearGrayMarkers();
+            updateShowAllButton();
+            updateMapTitle();
+            updateMapLegend();
+        }
+
+        async function loadAllBanksInView() {
+            if (!branchMap) return;
+            const bounds = branchMap.getBounds();
+            const sw = bounds.getSouthWest();
+            const ne = bounds.getNorthEast();
+
+            // Pad bounds by 10%
+            const latPad = (ne.lat - sw.lat) * 0.1;
+            const lngPad = (ne.lng - sw.lng) * 0.1;
+            const padded = {
+                sw: { lat: sw.lat - latPad, lng: sw.lng - lngPad },
+                ne: { lat: ne.lat + latPad, lng: ne.lng + lngPad }
+            };
+
+            // Check if within loaded bounds
+            if (loadedBounds && isWithinBounds(
+                { sw: { lat: sw.lat, lng: sw.lng }, ne: { lat: ne.lat, lng: ne.lng } },
+                loadedBounds
+            )) {
+                return; // Already loaded this area
+            }
+
+            updateInfoPanel('Loading all banks in view...');
+
+            try {
+                if (currentViewMode === 'sod') {
+                    const response = await fetch(
+                        `${APP_BASE_URL}/api/branches-in-bounds?sw_lat=${padded.sw.lat}&sw_lng=${padded.sw.lng}` +
+                        `&ne_lat=${padded.ne.lat}&ne_lng=${padded.ne.lng}&year=2025`
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                        allBanksInView = data.branches || [];
+                        renderAllBanksInView();
+                        updateInfoPanel(`Showing ${allBanksInView.length} branches from all banks in view`);
+                    }
+                } else {
+                    const dateRange = getOSCRDateRange();
+                    const response = await fetch(
+                        `${APP_BASE_URL}/api/oscr-events-in-bounds?sw_lat=${padded.sw.lat}&sw_lng=${padded.sw.lng}` +
+                        `&ne_lat=${padded.ne.lat}&ne_lng=${padded.ne.lng}` +
+                        `&start_date=${dateRange.start}&end_date=${dateRange.end}`
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                        allBanksInView = data.events || [];
+                        renderAllBanksInViewOSCR();
+                        updateInfoPanel(`Showing ${allBanksInView.length} events from all banks in view`);
+                    }
+                }
+                loadedBounds = padded;
+            } catch (err) {
+                console.error('Error loading all banks in view:', err);
+                updateInfoPanel(`Error: ${err.message}`);
+            }
+        }
+
+        function renderAllBanksInView() {
+            clearGrayMarkers();
+            if (!window.branchDataMap) window.branchDataMap = {};
+
+            const selectedNames = selectedBanks.map(b => b.name);
+            const features = [];
+
+            allBanksInView.forEach(branch => {
+                // Skip branches from selected banks
+                if (selectedNames.some(n => (branch.bank_name || '').includes(n))) return;
+
+                if (branch.latitude == null || branch.longitude == null) return;
+                let lat = branch.latitude, lng = branch.longitude;
+                if (typeof lat === 'string') lat = parseFloat(lat);
+                if (typeof lng === 'string') lng = parseFloat(lng);
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+
+                // Check if branch is inside clip polygon (draw filter or geocoder boundary)
+                const clipPolygon = activeDrawFilter || geocoderBoundaryPolygon;
+                const isOutside = clipPolygon && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon);
+
+                const branchId = `gray_${branch.uninumbr || ''}_${lat}_${lng}`;
+                window.branchDataMap[branchId] = branch;
+
+                features.push({
+                    type: 'Feature',
+                    properties: {
+                        id: branchId,
+                        bank_name: branch.bank_name || 'Unknown',
+                        branch_name: branch.branch_name || 'Branch',
+                        outside: isOutside ? 1 : 0
+                    },
+                    geometry: { type: 'Point', coordinates: [lng, lat] }
+                });
+            });
+
+            if (features.length === 0) return;
+
+            const sourceId = 'gray-all-banks';
+            if (branchMap.getSource(sourceId)) {
+                branchMap.getSource(sourceId).setData({ type: 'FeatureCollection', features });
+            } else {
+                branchMap.addSource(sourceId, {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features }
+                });
+
+                branchMap.addLayer({
+                    id: 'gray-all-banks-fill',
+                    type: 'circle',
+                    source: sourceId,
+                    paint: {
+                        'circle-radius': 4,
+                        'circle-color': '#000000',
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': ['case', ['==', ['get', 'outside'], 1], 0.2, 1],
+                        'circle-stroke-opacity': ['case', ['==', ['get', 'outside'], 1], 0.2, 1]
+                    }
+                }, selectedBanks.length > 0 ? selectedBanks[0]._layerIds[1] : undefined);
+
+                // Click handler for gray markers
+                branchMap.on('click', 'gray-all-banks-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    const feature = e.features[0];
+                    const coords = feature.geometry.coordinates.slice();
+                    const props = feature.properties;
+                    const branch = window.branchDataMap[props.id] || {};
+                    const html = buildPopupHTML({
+                        bank_name: props.bank_name,
+                        branch_name: props.branch_name,
+                        branch_type: getSimplifiedBranchType(branch.service_type) || branch.branch_type,
+                        address: branch.address,
+                        city: branch.city,
+                        state: branch.state_abbrv || branch.state,
+                        zip: branch.zip,
+                        lmi: branch.lmict,
+                        minority: branch.mmct,
+                        deposits: branch.total_deposits,
+                        lat: coords[1],
+                        lng: coords[0]
+                    });
+                    if (currentPopup) currentPopup.remove();
+                    currentPopup = new mapboxgl.Popup({ maxWidth: '300px' }).setLngLat(coords).setHTML(html).addTo(branchMap);
+                });
+
+                branchMap.on('mouseenter', 'gray-all-banks-fill', () => branchMap.getCanvas().style.cursor = 'pointer');
+                branchMap.on('mouseleave', 'gray-all-banks-fill', () => branchMap.getCanvas().style.cursor = '');
+            }
+        }
+
+        function renderAllBanksInViewOSCR() {
+            // For OSCR view, render gray OSCR markers for non-selected banks
+            clearGrayMarkers();
+            // Store gray OSCR markers on window for cleanup
+            window._grayOscrMarkers = [];
+
+            const selectedNames = selectedBanks.map(b => b.name);
+            const showOpenings = document.getElementById('filterOpenings').checked;
+            const showClosings = document.getElementById('filterClosings').checked;
+
+            allBanksInView.forEach(event => {
+                if (selectedNames.some(n => (event.institution || '').includes(n))) return;
+                if (!event.latitude || !event.longitude) return;
+                if (event.display_type === 'opening' && !showOpenings) return;
+                if (event.display_type === 'closing' && !showClosings) return;
+
+                // Check clip polygon for inside/outside status
+                const clipPolygon2 = activeDrawFilter || geocoderBoundaryPolygon;
+                const lat2 = parseFloat(event.latitude), lng2 = parseFloat(event.longitude);
+                const isOutside2 = clipPolygon2 && !isNaN(lat2) && !isNaN(lng2) && !turf.booleanPointInPolygon(turf.point([lng2, lat2]), clipPolygon2);
+                const baseOpacity = isOutside2 ? 0.15 : 0.7;
+
+                const el = document.createElement('div');
+                if (event.display_type === 'opening') {
+                    el.style.cssText = `width: 12px; height: 12px; background: #2e7d32; border: 1px solid #fff; border-radius: 50%; opacity: ${baseOpacity}; cursor: pointer;`;
+                } else {
+                    el.style.cssText = `width: 12px; height: 12px; background: #c62828; border: 1px solid #fff; border-radius: 2px; opacity: ${baseOpacity}; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 8px; font-weight: bold;`;
+                    el.textContent = '\u2715';
+                }
+
+                const marker = new mapboxgl.Marker({ element: el })
+                    .setLngLat([event.longitude, event.latitude])
+                    .addTo(branchMap);
+
+                // Add click popup
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (currentPopup) currentPopup.remove();
+                    const html = buildPopupHTML({
+                        bank_name: event.institution || 'Unknown',
+                        branch_name: event.branch_name,
+                        branch_type: getSimplifiedBranchType(event.service_type),
+                        address: event.address,
+                        city: event.city,
+                        state: event.state,
+                        zip: event.zip,
+                        deposits: null,
+                        lmi: false,
+                        minority: false,
+                        lat: event.latitude,
+                        lng: event.longitude,
+                        change_type: event.display_type,
+                        effective_date: event.effective_date || event.processed_date
+                    });
+                    currentPopup = new mapboxgl.Popup({ maxWidth: '300px' })
+                        .setLngLat([event.longitude, event.latitude])
+                        .setHTML(html)
+                        .addTo(branchMap);
+                });
+
+                window._grayOscrMarkers.push(marker);
+            });
+        }
+
+        function clearGrayMarkers() {
+            // Clear GeoJSON gray layer
+            if (branchMap.getLayer('gray-all-banks-fill')) branchMap.removeLayer('gray-all-banks-fill');
+            if (branchMap.getSource('gray-all-banks')) branchMap.removeSource('gray-all-banks');
+
+            // Clear gray OSCR markers
+            if (window._grayOscrMarkers) {
+                window._grayOscrMarkers.forEach(m => m.remove());
+                window._grayOscrMarkers = [];
+            }
+        }
+
+        function clearAllMarkers() {
+            // Clear selected bank markers
+            selectedBanks.forEach(bank => {
+                bank._layerIds.forEach(id => {
+                    if (branchMap.getLayer(id)) branchMap.removeLayer(id);
+                    if (branchMap.getSource(id)) branchMap.removeSource(id);
+                });
+                if (bank._oscrMarkers) bank._oscrMarkers.forEach(m => m.remove());
+                bank._layerIds = [];
+                bank._oscrMarkers = [];
+            });
+
+            // Clear gray markers
+            clearGrayMarkers();
+
+            // Clear relocation lines
+            relocationLines.forEach(id => {
+                if (branchMap.getLayer(id)) branchMap.removeLayer(id);
+                if (branchMap.getSource(id)) branchMap.removeSource(id);
+            });
+            relocationLines = [];
+
+            if (currentPopup) { currentPopup.remove(); currentPopup = null; }
+        }
+
+        function isWithinBounds(inner, outer) {
+            return inner.sw.lat >= outer.sw.lat && inner.sw.lng >= outer.sw.lng &&
+                   inner.ne.lat <= outer.ne.lat && inner.ne.lng <= outer.ne.lng;
+        }
+
+        function fitMapToAllSelectedBanks() {
+            const bounds = new mapboxgl.LngLatBounds();
+            let hasPoints = false;
+
+            selectedBanks.forEach(bank => {
+                bank.branches.forEach(b => {
+                    let lat = b.latitude, lng = b.longitude;
+                    if (typeof lat === 'string') lat = parseFloat(lat);
+                    if (typeof lng === 'string') lng = parseFloat(lng);
+                    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                        bounds.extend([lng, lat]);
+                        hasPoints = true;
+                    }
+                });
+            });
+
+            if (hasPoints && !bounds.isEmpty()) {
+                branchMap.fitBounds(bounds, { padding: 50 });
+            }
+        }
+
+        // ===== View Mode =====
+        function setViewMode(mode) {
+            currentViewMode = mode;
+
+            document.getElementById('btnSODMode').classList.toggle('active', mode === 'sod');
+            document.getElementById('btnOSCRMode').classList.toggle('active', mode === 'oscr');
+            document.getElementById('oscrControls').style.display = mode === 'oscr' ? 'block' : 'none';
+
+            // Census toggle always visible (tileset handles zoom levels)
+            const censusGroup = document.getElementById('censusToggleGroup');
+            if (censusGroup) censusGroup.style.display = 'block';
+
+            // Clear all markers (not map position!) but preserve census layers
+            clearAllMarkers();
+
+            // Load data for all selected banks in new mode
+            (async () => {
+                for (const bank of selectedBanks) {
+                    if (mode === 'sod') {
+                        if (bank.branches.length === 0) await loadBankBranches(bank);
+                        renderBankSODMarkers(bank);
+                    } else {
+                        if (bank.oscrEvents.length === 0) await loadBankOSCREvents(bank);
+                        renderBankOSCRMarkers(bank);
+                    }
+                }
+                renderBankChips();
+
+                if (showAllBanksActive) {
+                    loadedBounds = null;
+                    await loadAllBanksInView();
+                }
+
+                if (mode === 'oscr') showOSCRLegend();
+                else hideOSCRLegend();
+            })();
+
+            updateContextBar();
+        }
+
+        function updateContextBar(html) {
+            const ctx = document.getElementById('mapContextBar');
+            if (html) {
+                ctx.innerHTML = html;
+                return;
+            }
+            if (selectedBanks.length === 0) {
+                ctx.innerHTML = '<p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;"><i class="fas fa-info-circle"></i> <strong>About:</strong> Search a bank to get started.</p>';
+            } else {
+                const bankList = selectedBanks.map(b => {
+                    const count = currentViewMode === 'sod' ? b.branches.length : b.oscrEvents.length;
+                    return `<span style="color: ${b.color}; font-weight: 600;">${b.name}</span> (${count})`;
+                }).join(' | ');
+                const modeLabel = currentViewMode === 'sod' ? 'SOD June 30, 2025' : 'FDIC structural changes';
+                ctx.innerHTML = `<p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;"><i class="fas fa-info-circle"></i> ${bankList} &mdash; ${modeLabel}</p>`;
+            }
+            updateMapTitle();
+            updateMapLegend();
+        }
+
+        function updateMapTitle() {
+            const titleEl = document.getElementById('mapOverlayTitle');
+            if (!titleEl) return;
+
+            const parts = [];
+
+            // Geography part
+            if (currentGeographyName) {
+                parts.push(currentGeographyName);
+            }
+
+            // Bank part
+            if (selectedBanks.length > 0) {
+                const names = selectedBanks.map(b => b.name);
+                if (names.length <= 2) {
+                    parts.push(names.join(' & '));
+                } else {
+                    parts.push(names.slice(0, 2).join(', ') + ' + ' + (names.length - 2) + ' more');
+                }
+                parts.push('Branch Locations');
+            } else if (showAllBanksActive && currentGeographyName) {
+                parts.push('All Bank Branch Locations');
+            }
+
+            // Only show title if there's meaningful content
+            if (parts.length > 0 && (currentGeographyName || selectedBanks.length > 0)) {
+                titleEl.textContent = parts.join(' | ');
+                titleEl.style.display = 'block';
+            } else {
+                titleEl.style.display = 'none';
+            }
+        }
+
+        function buildMinorityLegendHtml() {
+            var q = window._minorityQuartiles;
+            if (q && q.q1 !== undefined && q.q2 !== undefined && q.q3 !== undefined) {
+                return '<strong>% Minority Population (CBSA quartiles)</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest 25% (>' + q.q3.toFixed(1) + '%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median (' + q.q2.toFixed(1) + '\u2013' + q.q3.toFixed(1) + '%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median (' + q.q1.toFixed(1) + '\u2013' + q.q2.toFixed(1) + '%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest 25% (<' + q.q1.toFixed(1) + '%)</div>';
+            } else {
+                return '<strong>% Minority Population (CBSA quartiles)</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest 25%</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest 25%</div>';
+            }
+        }
+
+        function updateMapLegend() {
+            const mapLegend = document.getElementById('mapOverlayLegend');
+            if (!mapLegend) return;
+
+            // Build branch symbols section
+            let branchHtml = '';
+            const hasBranches = selectedBanks.length > 0 || showAllBanksActive;
+            if (hasBranches) {
+                branchHtml += '<div style="margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">';
+                branchHtml += '<strong>Branches</strong>';
+                if (showAllBanksActive && selectedBanks.length === 0) {
+                    branchHtml += '<div class="legend-item"><span class="legend-swatch" style="background:#333; border-radius: 50%;"></span> All bank branches</div>';
+                } else {
+                    selectedBanks.forEach(b => {
+                        branchHtml += `<div class="legend-item"><span class="legend-swatch" style="background:${b.color}; border-radius: 50%;"></span> ${b.name}</div>`;
+                    });
+                }
+                branchHtml += '</div>';
+            }
+
+            // Get current census overlay content (if any)
+            const activeBtn = document.querySelector('.tract-btn.active');
+            const censusType = activeBtn ? activeBtn.dataset.census : 'off';
+
+            let censusHtml = '';
+            if (censusType === 'income') {
+                censusHtml += '<strong>Income Levels</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#333333"></span> Low (\u226450%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Moderate (\u226480%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
+            } else if (censusType === 'minority') {
+                censusHtml += buildMinorityLegendHtml();
+            }
+
+            if (branchHtml || censusHtml) {
+                mapLegend.innerHTML = branchHtml + censusHtml;
+                mapLegend.style.display = 'block';
+            } else {
+                mapLegend.style.display = 'none';
+            }
+        }
+
+        function setCensusOverlay(type) {
+            document.querySelectorAll('.tract-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.census === type);
+            });
+
+            const column2Legend = document.getElementById('column2Legend');
+            const column2IncomeLegend = document.getElementById('column2IncomeLegend');
+            const column2MinorityLegend = document.getElementById('column2MinorityLegend');
+
+            // Hide all census tileset layers first
+            ['census-income-fill', 'census-income-outline', 'census-minority-fill', 'census-minority-outline'].forEach(id => {
+                if (branchMap.getLayer(id)) branchMap.setLayoutProperty(id, 'visibility', 'none');
+            });
+            // Also remove any legacy GeoJSON census layers
+            removeSourceAndLayers('income-tracts');
+            removeSourceAndLayers('minority-tracts');
+            incomeLayerVisible = false;
+            minorityLayerVisible = false;
+
+            if (column2Legend) column2Legend.style.display = 'none';
+            if (column2IncomeLegend) column2IncomeLegend.style.display = 'none';
+            if (column2MinorityLegend) column2MinorityLegend.style.display = 'none';
+
+            if (type === 'off') {
+                updateMapLegend();
+                return;
+            }
+
+            // Move census layers below labels/roads
+            const firstSymbol = findFirstSymbolLayer();
+
+            if (type === 'income') {
+                if (firstSymbol) {
+                    branchMap.moveLayer('census-income-fill', firstSymbol);
+                    branchMap.moveLayer('census-income-outline', firstSymbol);
+                }
+                branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
+                branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
+                incomeLayerVisible = true;
+            } else if (type === 'minority') {
+                if (firstSymbol) {
+                    branchMap.moveLayer('census-minority-fill', firstSymbol);
+                    branchMap.moveLayer('census-minority-outline', firstSymbol);
+                }
+                branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
+                branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
+                minorityLayerVisible = true;
+            }
+
+            updateMapLegend();
+        }
+
+        // ── Draw Area Functions ──
+
+        function initDrawControl() {
+            drawControl = new MapboxDraw({
+                displayControlsDefault: false,
+                defaultMode: 'simple_select',
+                styles: [
+                    // Polygon fill
+                    { id: 'gl-draw-polygon-fill', type: 'fill', filter: ['all', ['==', '$type', 'Polygon']],
+                      paint: { 'fill-color': '#e74c3c', 'fill-opacity': 0.15 } },
+                    // Polygon outline
+                    { id: 'gl-draw-polygon-stroke', type: 'line', filter: ['all', ['==', '$type', 'Polygon']],
+                      paint: { 'line-color': '#e74c3c', 'line-width': 2.5, 'line-dasharray': [2, 2] } },
+                    // Vertices
+                    { id: 'gl-draw-point', type: 'circle', filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']],
+                      paint: { 'circle-radius': 5, 'circle-color': '#e74c3c' } },
+                    // Midpoints
+                    { id: 'gl-draw-point-mid', type: 'circle', filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+                      paint: { 'circle-radius': 3, 'circle-color': '#e74c3c' } },
+                    // Active line (while drawing)
+                    { id: 'gl-draw-line', type: 'line', filter: ['all', ['==', '$type', 'LineString']],
+                      paint: { 'line-color': '#e74c3c', 'line-width': 2, 'line-dasharray': [2, 2] } }
+                ]
+            });
+            branchMap.addControl(drawControl, 'top-right');
+
+            branchMap.on('draw.create', onDrawCreate);
+            branchMap.on('draw.update', onDrawUpdate);
+        }
+
+        function startDrawing() {
+            if (!drawControl) initDrawControl();
+            isDrawing = true;
+            drawControl.changeMode('draw_polygon');
+            document.getElementById('drawStartBtn').style.display = 'none';
+            document.getElementById('drawActiveControls').style.display = 'block';
+            document.getElementById('drawResultControls').style.display = 'none';
+            updateInfoPanel('Click on the map to draw a polygon boundary. Double-click to finish.');
+        }
+
+        function cancelDrawing() {
+            if (drawControl) {
+                drawControl.deleteAll();
+                drawControl.changeMode('simple_select');
+            }
+            isDrawing = false;
+            drawnPolygon = null;
+            document.getElementById('drawStartBtn').style.display = 'block';
+            document.getElementById('drawActiveControls').style.display = 'none';
+            document.getElementById('drawResultControls').style.display = 'none';
+            updateInfoPanel('Drawing cancelled.');
+        }
+
+        function onDrawCreate(e) {
+            isDrawing = false;
+            const feature = e.features[0];
+            drawnPolygon = feature;
+
+            document.getElementById('drawActiveControls').style.display = 'none';
+            document.getElementById('drawResultControls').style.display = 'block';
+
+            // Set the active filter polygon (used by all render functions)
+            activeDrawFilter = feature.geometry
+                ? turf.polygon(feature.geometry.coordinates)
+                : turf.polygon(feature.coordinates);
+
+            // Count branches inside polygon BEFORE re-rendering
+            const stats = countBranchesInPolygon(feature);
+            const summary = document.getElementById('drawAreaSummary');
+            const area = turf.area(feature);
+            const areaSqMi = (area / 2589988).toFixed(1);
+            let html = `<strong>${stats.total} branches</strong> in drawn area (${areaSqMi} sq mi)`;
+            if (stats.byBank.length > 0) {
+                html += '<br>' + stats.byBank.map(b => `<span style="color:${b.color};font-weight:600;">${b.name}</span>: ${b.count}`).join(', ');
+            }
+            if (stats.grayCount > 0) {
+                html += `<br><span style="color:#666;">Other banks: ${stats.grayCount}</span>`;
+            }
+            summary.innerHTML = html;
+
+            // Re-render all markers with the filter active — hides everything outside
+            reRenderAllMarkers();
+            updateInfoPanel(`Filtered to drawn area: ${stats.total} branches in ${areaSqMi} sq mi.`);
+        }
+
+        function onDrawUpdate(e) {
+            if (e.features.length > 0) {
+                drawnPolygon = e.features[0];
+                onDrawCreate(e);
+            }
+        }
+
+        function countBranchesInPolygon(polygon) {
+            let total = 0;
+            let grayCount = 0;
+            const byBank = [];
+
+            // Ensure polygon is a proper Turf polygon
+            const turfPoly = polygon.geometry ? turf.polygon(polygon.geometry.coordinates) : turf.polygon(polygon.coordinates);
+            console.log('Draw polygon coords:', turfPoly.geometry.coordinates[0].length, 'vertices');
+
+            // Count selected bank branches
+            for (const bank of selectedBanks) {
+                const data = currentViewMode === 'sod' ? bank.branches : bank.oscrEvents;
+                let count = 0;
+                console.log(`Checking ${data.length} branches for ${bank.name}`);
+                for (const b of data) {
+                    const lat = parseFloat(b.latitude);
+                    const lng = parseFloat(b.longitude);
+                    if (!isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), turfPoly)) {
+                        count++;
+                    }
+                }
+                if (count > 0) byBank.push({ name: bank.name, color: bank.color, count });
+                total += count;
+            }
+
+            // Count gray "show all" branches
+            if (showAllBanksActive && allBanksInView.length > 0) {
+                const selectedNames = new Set(selectedBanks.map(b => b.name));
+                let checked = 0;
+                for (const b of allBanksInView) {
+                    if (selectedNames.has(b.bank_name)) continue;
+                    const lat = parseFloat(b.latitude);
+                    const lng = parseFloat(b.longitude);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        checked++;
+                        if (turf.booleanPointInPolygon(turf.point([lng, lat]), turfPoly)) {
+                            grayCount++;
+                        }
+                    }
+                }
+                console.log(`Checked ${checked} gray branches, ${grayCount} inside polygon`);
+                total += grayCount;
+            }
+
+            console.log(`Total in polygon: ${total} (${byBank.length} banks, ${grayCount} gray)`);
+            return { total, byBank, grayCount };
+        }
+
+        function saveDrawnArea() {
+            if (!drawnPolygon) return;
+
+            savedAreaCounter++;
+            const color = DRAW_COLORS[(savedAreaCounter - 1) % DRAW_COLORS.length];
+            const name = `Area ${savedAreaCounter}`;
+            const stats = countBranchesInPolygon(drawnPolygon);
+            const area = turf.area(drawnPolygon);
+            const areaSqMi = (area / 2589988).toFixed(1);
+
+            const savedArea = {
+                id: `saved-area-${savedAreaCounter}`,
+                name,
+                polygon: JSON.parse(JSON.stringify(drawnPolygon)),
+                color,
+                stats,
+                areaSqMi
+            };
+            savedAreas.push(savedArea);
+
+            // Remove draw control polygon and add as a permanent layer
+            if (drawControl) {
+                drawControl.deleteAll();
+                drawControl.changeMode('simple_select');
+            }
+
+            // Add saved polygon as permanent map layer
+            branchMap.addSource(savedArea.id, {
+                type: 'geojson',
+                data: savedArea.polygon
+            });
+            branchMap.addLayer({
+                id: `${savedArea.id}-fill`, type: 'fill', source: savedArea.id,
+                paint: { 'fill-color': color, 'fill-opacity': 0.1 }
+            });
+            branchMap.addLayer({
+                id: `${savedArea.id}-outline`, type: 'line', source: savedArea.id,
+                paint: { 'line-color': color, 'line-width': 2.5 }
+            });
+            branchMap.addLayer({
+                id: `${savedArea.id}-label`, type: 'symbol', source: savedArea.id,
+                layout: {
+                    'text-field': name,
+                    'text-size': 12,
+                    'text-anchor': 'center',
+                    'text-allow-overlap': true
+                },
+                paint: { 'text-color': color, 'text-halo-color': '#ffffff', 'text-halo-width': 2 }
+            });
+
+            drawnPolygon = null;
+            activeDrawFilter = null;
+            document.getElementById('drawStartBtn').style.display = 'block';
+            document.getElementById('drawResultControls').style.display = 'none';
+            renderSavedAreas();
+            // Restore all markers after saving (filter released)
+            reRenderAllMarkers();
+            updateInfoPanel(`Saved "${name}" — ${stats.total} branches, ${areaSqMi} sq mi.`);
+        }
+
+        function clearDrawnArea() {
+            if (drawControl) {
+                drawControl.deleteAll();
+                drawControl.changeMode('simple_select');
+            }
+            isDrawing = false;
+            drawnPolygon = null;
+            activeDrawFilter = null;
+            document.getElementById('drawStartBtn').style.display = 'block';
+            document.getElementById('drawActiveControls').style.display = 'none';
+            document.getElementById('drawResultControls').style.display = 'none';
+            // Re-render all markers without the filter
+            reRenderAllMarkers();
+            updateInfoPanel('Filter cleared — showing all branches.');
+        }
+
+        function deleteSavedArea(areaId) {
+            removeSourceAndLayers(areaId);
+            savedAreas = savedAreas.filter(a => a.id !== areaId);
+            renderSavedAreas();
+        }
+
+        function clearAllSavedAreas() {
+            for (const area of savedAreas) {
+                removeSourceAndLayers(area.id);
+            }
+            savedAreas = [];
+            savedAreaCounter = 0;
+            renderSavedAreas();
+        }
+
+        function renderSavedAreas() {
+            const container = document.getElementById('savedAreasContainer');
+            if (savedAreas.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '<div style="font-size: 0.75rem; color: #666; margin-top: 4px;">';
+            for (const area of savedAreas) {
+                html += `<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee;">
+                    <span><span style="display:inline-block;width:10px;height:10px;background:${area.color};border-radius:2px;margin-right:4px;"></span>
+                    <strong>${area.name}</strong> — ${area.stats.total} branches, ${area.areaSqMi} sq mi</span>
+                    <button onclick="deleteSavedArea('${area.id}')" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.8rem;padding:2px 4px;" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>`;
+            }
+            if (savedAreas.length > 1) {
+                html += `<button onclick="clearAllSavedAreas()" style="margin-top:4px;width:100%;padding:4px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.75rem;">Clear All Areas</button>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ── End Draw Area Functions ──
+
+        async function loadCountyBoundariesForViewport() {
+            if (!branchMap || currentZoom < METRO_ZOOM_THRESHOLD) return;
+
+            const bounds = branchMap.getBounds();
+            const sw = bounds.getSouthWest();
+            const ne = bounds.getNorthEast();
+
+            try {
+                const response = await fetch(
+                    `${APP_BASE_URL}/api/counties-in-bounds?sw_lat=${sw.lat}&sw_lng=${sw.lng}&ne_lat=${ne.lat}&ne_lng=${ne.lng}`
+                );
+                const data = await response.json();
+                if (data.success) {
+                    viewportCounties = data.counties || [];
+                    // Load boundaries for new counties
+                    const newFips = viewportCounties
+                        .map(c => c.geoid5)
+                        .filter(Boolean)
+                        .filter(f => !countyBoundaryIds.includes(`county-boundary-${f}`));
+                    if (newFips.length > 0) addCountyBoundaries(newFips);
+                }
+            } catch (err) {
+                console.warn('Failed to load counties for viewport:', err);
+            }
+        }
+
+        function resetMap() {
+            clearAllMarkers();
+            clearCountyBoundaries();
+            clearGeocoderBoundary();
+            hideOSCRLegend();
+            clearAllSavedAreas();
+            cancelDrawing();
+            if (geocoder) geocoder.clear();
+
+            selectedBanks = [];
+            showAllBanksActive = false;
+            allBanksInView = [];
+            loadedBounds = null;
+            viewportCounties = [];
+
+            // Hide census tileset layers
+            ['census-income-fill', 'census-income-outline', 'census-minority-fill', 'census-minority-outline'].forEach(id => {
+                if (branchMap && branchMap.getLayer(id)) branchMap.setLayoutProperty(id, 'visibility', 'none');
+            });
+            removeSourceAndLayers('income-tracts');
+            removeSourceAndLayers('minority-tracts');
+            incomeLayerVisible = false;
+            minorityLayerVisible = false;
+
+            document.getElementById('bankSearchInput').value = '';
+            document.getElementById('bankChipsContainer').innerHTML = '';
+
+            currentViewMode = 'sod';
+            document.getElementById('btnSODMode').classList.add('active');
+            document.getElementById('btnOSCRMode').classList.remove('active');
+            document.getElementById('oscrControls').style.display = 'none';
+            document.getElementById('censusToggleGroup').style.display = 'none';
+
+            document.querySelectorAll('.tract-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.census === 'off');
+            });
+
+            const column2Legend = document.getElementById('column2Legend');
+            if (column2Legend) column2Legend.style.display = 'none';
+
+            updateShowAllButton();
+
+            if (branchMap) {
+                branchMap.flyTo({ center: [-98.5, 38.0], zoom: 3 });
+            }
+
+            showOnboardingOverlay();
+            updateContextBar();
+            updateInfoPanel('Map reset. Search a bank to get started.');
+        }
+
+        function refilterOSCR() {
+            if (currentViewMode !== 'oscr') return;
+
+            // Re-render selected banks' OSCR markers
+            selectedBanks.forEach(bank => {
+                if (bank._oscrMarkers) bank._oscrMarkers.forEach(m => m.remove());
+                bank._oscrMarkers = [];
+                renderBankOSCRMarkers(bank);
+            });
+
+            // Re-render gray OSCR if active
+            if (showAllBanksActive && allBanksInView.length > 0) {
+                renderAllBanksInViewOSCR();
+            }
+        }
+
+        async function addCountyBoundaries(fipsList) {
+            clearCountyBoundaries();
+            if (!branchMap || !fipsList || fipsList.length === 0) return;
+
+            fipsList.forEach(async (fips) => {
+                const sourceId = `county-boundary-${fips}`;
+                if (branchMap.getSource(sourceId)) return;
+
+                try {
+                    const geojson = await fetchEsriBoundary('county', fips);
+                    if (!geojson || !geojson.features || geojson.features.length === 0) return;
+                    if (branchMap.getSource(sourceId)) return; // double-check after async
+
+                    branchMap.addSource(sourceId, { type: 'geojson', data: geojson });
+                    branchMap.addLayer({
+                        id: sourceId + '-outline',
+                        type: 'line',
+                        source: sourceId,
+                        paint: {
+                            'line-color': '#1e3a5f',
+                            'line-width': 2,
+                            'line-opacity': 0.6,
+                            'line-dasharray': [3, 2]
+                        }
+                    }, findFirstSymbolLayer());
+                    countyBoundaryIds.push(sourceId);
+                } catch (err) {
+                    console.warn('Failed to load county boundary for', fips, err);
+                }
+            });
+        }
+
+        function clearCountyBoundaries() {
+            countyBoundaryIds.forEach(id => {
+                if (branchMap && branchMap.getLayer(id + '-outline')) branchMap.removeLayer(id + '-outline');
+                if (branchMap && branchMap.getSource(id)) branchMap.removeSource(id);
+            });
+            countyBoundaryIds = [];
+        }
+
+        function getOSCRDateRange() {
+            const selection = document.getElementById('dateRangeSelect').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            switch (selection) {
+                case 'since_sod':
+                    return { start: '2025-06-30', end: today };
+                case '12months':
+                    const oneYearAgo = new Date();
+                    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                    return { start: oneYearAgo.toISOString().split('T')[0], end: today };
+                case '3years':
+                    const threeYearsAgo = new Date();
+                    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+                    return { start: threeYearsAgo.toISOString().split('T')[0], end: today };
+                case 'custom':
+                    return {
+                        start: document.getElementById('startDate').value,
+                        end: document.getElementById('endDate').value || today
+                    };
+                default:
+                    const defaultStart = new Date();
+                    defaultStart.setFullYear(defaultStart.getFullYear() - 3);
+                    return { start: defaultStart.toISOString().split('T')[0], end: today };
+            }
+        }
+
+        // Geocode an address using Mapbox Geocoding API
+        async function geocodeAddress(address, city, state, zip) {
+            const query = `${address}, ${city}, ${state} ${zip}`;
+            try {
+                const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=1&country=US`;
+                const resp = await fetch(url);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.features && data.features.length > 0) {
+                        const [lng, lat] = data.features[0].center;
+                        return { latitude: lat, longitude: lng };
+                    }
+                }
+            } catch (e) {
+                console.warn('Geocoding failed for:', query, e.message);
+            }
+            return null;
+        }
+
+        // Geocode events that are missing coordinates (batched with delay)
+        async function geocodeOSCREvents(events) {
+            let geocoded = 0;
+            for (const event of events) {
+                if (event.latitude && event.longitude) continue;
+                if (!event.address || !event.city) continue;
+
+                const coords = await geocodeAddress(event.address, event.city, event.state, event.zip);
+                if (coords) {
+                    event.latitude = coords.latitude;
+                    event.longitude = coords.longitude;
+                    geocoded++;
+                }
+
+                // Small delay to avoid rate limits (Mapbox allows ~600/min)
+                if (geocoded % 10 === 0) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+            }
+            if (geocoded > 0) {
+                console.log(`Geocoded ${geocoded} events via Mapbox`);
+            }
+        }
+
+        function renderOSCRMarkers(events, fitBoundsToMarkers) {
+            if (fitBoundsToMarkers === undefined) fitBoundsToMarkers = true;
+            const validEvents = events.filter(e => e.latitude && e.longitude);
+
+            // Format ISO datetime to date only
+            const fmtDate = (d) => {
+                if (!d) return 'N/A';
+                return d.split('T')[0];
+            };
+
+            // Group co-located events (same address) so hover shows all events at that spot
+            const COLOCATE_THRESHOLD = 0.0003; // ~33 meters
+            const groups = [];
+            const assigned = new Set();
+            validEvents.forEach((evt, i) => {
+                if (assigned.has(i)) return;
+                const group = [evt];
+                assigned.add(i);
+                for (let j = i + 1; j < validEvents.length; j++) {
+                    if (assigned.has(j)) continue;
+                    if (Math.abs(evt.latitude - validEvents[j].latitude) < COLOCATE_THRESHOLD &&
+                        Math.abs(evt.longitude - validEvents[j].longitude) < COLOCATE_THRESHOLD) {
+                        group.push(validEvents[j]);
+                        assigned.add(j);
+                    }
+                }
+                groups.push(group);
+            });
+
+            // Helper to build popup HTML for one event
+            function buildEventHTML(event) {
+                let html = `
+                    <div style="margin-bottom: 6px;">
+                        <div class="bank-name-header">${event.institution || 'Unknown'}</div>
+                        <div class="branch-info"><strong>Branch:</strong> ${event.branch_name || 'N/A'}</div>
+                        <div class="branch-info"><strong>Address:</strong> ${event.address || ''}, ${event.city || ''}, ${event.state || ''} ${event.zip || ''}</div>
+                        <div class="branch-info"><strong>Event:</strong> ${event.display_type === 'opening' ? 'Branch Opening' : 'Branch Closing'}${event.is_relocation ? ' (Relocation)' : ''}</div>
+                        ${event.service_type ? `<div class="branch-info"><strong>Service Type:</strong> ${event.service_type}</div>` : ''}
+                        <div class="branch-info"><strong>Effective Date:</strong> ${fmtDate(event.effective_date)}</div>
+                        <div class="branch-info"><strong>Processed Date:</strong> ${fmtDate(event.processed_date)}</div>
+                `;
+                if (event.is_relocation && event.relocation_pair_address) {
+                    const label = event.display_type === 'closing' ? 'Relocated to' : 'Relocated from';
+                    html += `<div class="branch-info" style="margin-top: 4px;"><strong>${label}:</strong> ${event.relocation_pair_address}</div>`;
+                }
+                html += `</div>`;
+                return html;
+            }
+
+            groups.forEach(group => {
+                // Build combined popup for all events at this location
+                const mapsQuery = encodeURIComponent(`${group[0].address}, ${group[0].city}, ${group[0].state} ${group[0].zip}`);
+                let popupHTML = '<div class="popup-content">';
+                group.forEach((event, idx) => {
+                    if (idx > 0) popupHTML += '<hr style="margin: 6px 0; border: none; border-top: 1px solid #ddd;">';
+                    popupHTML += buildEventHTML(event);
+                });
+                popupHTML += `
+                    <div style="margin-top: 8px;">
+                        <a href="https://www.google.com/maps/search/?api=1&query=${mapsQuery}"
+                           target="_blank" style="color: var(--ncrc-primary-blue); font-size: 0.85rem;">
+                           <i class="fas fa-external-link-alt"></i> View in Google Maps
+                        </a>
+                    </div>
+                </div>`;
+
+                // Popup: hover to preview, click to pin, X to close
+                const popup = new mapboxgl.Popup({
+                    offset: 15,
+                    maxWidth: '350px',
+                    closeButton: true,
+                    closeOnClick: false
+                }).setHTML(popupHTML);
+
+                let pinned = false;
+                let hideTimer = null;
+
+                function showPopup(lngLat) {
+                    clearTimeout(hideTimer);
+                    if (!popup.isOpen()) {
+                        popup.setLngLat(lngLat).addTo(branchMap);
+                    }
+                    // Listen on the popup DOM element so hovering the popup keeps it alive
+                    const popupEl = popup.getElement();
+                    if (popupEl && !popupEl._oscrListeners) {
+                        popupEl._oscrListeners = true;
+                        popupEl.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+                        popupEl.addEventListener('mouseleave', () => { if (!pinned) scheduleHide(); });
+                    }
+                }
+
+                function scheduleHide() {
+                    if (pinned) return;
+                    clearTimeout(hideTimer);
+                    hideTimer = setTimeout(() => { if (!pinned) popup.remove(); }, 300);
+                }
+
+                popup.on('close', () => { pinned = false; });
+
+                function wireEvents(el, lngLat) {
+                    el.addEventListener('mouseenter', () => showPopup(lngLat));
+                    el.addEventListener('mouseleave', () => { if (!pinned) scheduleHide(); });
+                    el.addEventListener('click', () => {
+                        clearTimeout(hideTimer);
+                        pinned = true;
+                        showPopup(lngLat);
+                    });
+                }
+
+                if (group.length > 1) {
+                    // Multiple events at same location — combined marker
+                    const el = document.createElement('div');
+                    el.style.cssText = `display: flex; align-items: center; gap: 2px; cursor: pointer;`;
+
+                    const sorted = [...group].sort((a, b) => {
+                        if (a.display_type === 'closing' && b.display_type === 'opening') return -1;
+                        if (a.display_type === 'opening' && b.display_type === 'closing') return 1;
+                        return 0;
+                    });
+
+                    sorted.forEach(event => {
+                        const icon = document.createElement('div');
+                        if (event.display_type === 'opening') {
+                            icon.style.cssText = `width: 16px; height: 16px; background-color: #2e7d32; border: 1px solid #000000; border-radius: 50%;`;
+                        } else {
+                            icon.style.cssText = `width: 16px; height: 16px; background-color: #c62828; border: 1px solid #000000; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 10px; line-height: 1;`;
+                            icon.textContent = '\u2715';
+                        }
+                        el.appendChild(icon);
+                    });
+
+                    const lngLat = [group[0].longitude, group[0].latitude];
+                    const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+                        .setLngLat(lngLat)
+                        .addTo(branchMap);
+
+                    wireEvents(el, lngLat);
+                    oscrMarkers.push(marker);
+                } else {
+                    // Single event
+                    const event = group[0];
+                    const el = document.createElement('div');
+                    if (event.display_type === 'opening') {
+                        el.style.cssText = `width: 18px; height: 18px; background-color: #2e7d32; border: 1px solid #000000; border-radius: 50%; cursor: pointer;`;
+                    } else {
+                        el.style.cssText = `width: 18px; height: 18px; background-color: #c62828; border: 1px solid #000000; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; line-height: 1;`;
+                        el.textContent = '\u2715';
+                    }
+
+                    const lngLat = [event.longitude, event.latitude];
+                    const marker = new mapboxgl.Marker({ element: el })
+                        .setLngLat(lngLat)
+                        .addTo(branchMap);
+
+                    wireEvents(el, lngLat);
+                    oscrMarkers.push(marker);
+                }
+            });
+
+            // Fit map to markers (only if requested)
+            if (fitBoundsToMarkers && oscrMarkers.length > 0) {
+                const bounds = new mapboxgl.LngLatBounds();
+                oscrMarkers.forEach(m => bounds.extend(m.getLngLat()));
+                branchMap.fitBounds(bounds, { padding: 50 });
+            }
+        }
+
+        function renderRelocationLines(events) {
+            // Draw one line per pair — use closing side only to avoid duplicates
+            const closingRelocs = events.filter(e =>
+                e.is_relocation &&
+                e.display_type === 'closing' &&
+                e.relocation_pair_lat && e.relocation_pair_lng &&
+                e.latitude && e.longitude &&
+                (Math.abs(e.latitude - e.relocation_pair_lat) > 0.0005 ||
+                 Math.abs(e.longitude - e.relocation_pair_lng) > 0.0005)
+            );
+
+            closingRelocs.forEach(closing => {
+                const sourceId = `relocation-line-${closing.cert}-${closing.effective_date}`;
+                if (branchMap.getSource(sourceId)) return;
+
+                branchMap.addSource(sourceId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: [
+                                [closing.longitude, closing.latitude],
+                                [closing.relocation_pair_lng, closing.relocation_pair_lat]
+                            ]
+                        }
+                    }
+                });
+
+                branchMap.addLayer({
+                    id: sourceId,
+                    type: 'line',
+                    source: sourceId,
+                    paint: {
+                        'line-color': '#E67E22',
+                        'line-width': 2,
+                        'line-dasharray': [4, 4]
+                    }
+                });
+
+                relocationLines.push(sourceId);
+            });
+        }
+
+        function clearOSCRMarkers() {
+            oscrMarkers.forEach(m => m.remove());
+            oscrMarkers = [];
+
+            relocationLines.forEach(id => {
+                if (branchMap && branchMap.getLayer(id)) branchMap.removeLayer(id);
+                if (branchMap && branchMap.getSource(id)) branchMap.removeSource(id);
+            });
+            relocationLines = [];
+
+        }
+
+        function showOSCRLegend() {
+            const existingLegend = document.getElementById('oscrLegend');
+            if (existingLegend) existingLegend.remove();
+
+            const legend = document.createElement('div');
+            legend.id = 'oscrLegend';
+            legend.style.cssText = `
+                position: absolute; bottom: 30px; left: 10px; z-index: 1000;
+                background: rgba(255,255,255,0.92); padding: 8px 10px;
+                border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;
+                max-width: 200px;
+            `;
+            legend.innerHTML = `
+                <div style="font-weight: 600; color: var(--ncrc-dark-blue); margin-bottom: 2px;">Legend</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="display: inline-block; width: 14px; height: 14px; background: #2e7d32; border: 1px solid #000; border-radius: 50%;"></span>
+                    Branch Opening
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; background: #c62828; border: 1px solid #000; border-radius: 3px; color: white; font-size: 9px; font-weight: bold;">\u2715</span>
+                    Branch Closing
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="display: inline-block; width: 20px; border-top: 2px dashed #E67E22;"></span>
+                    Inferred Relocation
+                </div>
+                <div style="margin-top: 4px; font-size: 0.7rem; color: #666; border-top: 1px solid #ddd; padding-top: 4px; line-height: 1.3;">
+                    Relocations inferred when the same institution closes and opens a branch within 2 miles and 90 days of each other.
+                </div>
+            `;
+
+            const mapContainer = document.getElementById('branchMap').parentElement;
+            mapContainer.style.position = 'relative';
+            mapContainer.appendChild(legend);
+        }
+
+        function hideOSCRLegend() {
+            const legend = document.getElementById('oscrLegend');
+            if (legend) legend.remove();
+        }
+
+        // Find the first symbol (label/text) layer in the map style
+        // All data layers are inserted below this so labels/roads/borders stay on top
+        function findFirstSymbolLayer() {
+            if (!branchMap) return undefined;
+            const layers = branchMap.getStyle().layers;
+            for (const layer of layers) {
+                if (layer.type === 'symbol') {
+                    return layer.id;
+                }
+            }
+            return undefined;
+        }
+
+        // Clear geocoder boundary outline from map
+        function clearGeocoderBoundary() {
+            if (!branchMap || !geocoderBoundarySourceId) return;
+            if (branchMap.getLayer(geocoderBoundarySourceId + '-outline')) {
+                branchMap.removeLayer(geocoderBoundarySourceId + '-outline');
+            }
+            if (branchMap.getLayer(geocoderBoundarySourceId + '-fill')) {
+                branchMap.removeLayer(geocoderBoundarySourceId + '-fill');
+            }
+            if (branchMap.getSource(geocoderBoundarySourceId)) {
+                branchMap.removeSource(geocoderBoundarySourceId);
+            }
+            geocoderBoundarySourceId = null;
+            geocoderBoundaryPolygon = null;
+        }
+
+        // Handle geocoder search result — zoom to area and show boundary
+        function handleGeocoderResult(result) {
+            clearGeocoderBoundary();
+
+            // Store geography name for map title (strip country suffix like ", United States")
+            if (result.place_name) {
+                currentGeographyName = result.place_name.replace(/,\s*United States$/, '');
+            }
+            updateMapTitle();
+
+            // If result has a bounding box, use fitBounds
+            if (result.bbox) {
+                branchMap.fitBounds(result.bbox, { padding: 50, duration: 1500 });
+            } else if (result.center) {
+                // Point result (zip code, small place) — fly to it
+                branchMap.flyTo({ center: result.center, zoom: 12, duration: 1500 });
+            }
+
+            // Try to fetch and display a boundary polygon
+            fetchGeocoderBoundary(result);
+        }
+
+        // Fetch boundary polygon for geocoder result
+        // Tries ESRI Living Atlas first (reliable), falls back to TIGERweb
+        async function fetchGeocoderBoundary(result) {
+            const placeType = result.place_type ? result.place_type[0] : '';
+            let boundaryGeojson = null;
+
+            if (placeType === 'region') {
+                // State boundary
+                const stateFips = extractStateFips(result);
+                if (stateFips) {
+                    boundaryGeojson = await fetchEsriBoundary('state', stateFips);
+                    if (!boundaryGeojson || !boundaryGeojson.features || boundaryGeojson.features.length === 0) {
+                        boundaryGeojson = await fetchTigerBoundary('state', stateFips);
+                    }
+                }
+            } else if (placeType === 'district') {
+                // County boundary — use FCC API to resolve FIPS, then ESRI
+                if (result.center) {
+                    boundaryGeojson = await fetchCountyBoundaryByPoint(result.center[0], result.center[1]);
+                }
+            } else if (placeType === 'postcode') {
+                // Zip code boundary — try ESRI, fallback to TIGERweb
+                const zipCode = result.text;
+                if (zipCode) {
+                    boundaryGeojson = await fetchEsriBoundary('zcta', zipCode);
+                    if (!boundaryGeojson || !boundaryGeojson.features || boundaryGeojson.features.length === 0) {
+                        boundaryGeojson = await fetchTigerZipBoundary(zipCode, result.center);
+                    }
+                }
+            } else if (placeType === 'place' || placeType === 'locality') {
+                // City/place — try ESRI spatial query, fallback to TIGERweb
+                if (result.center) {
+                    boundaryGeojson = await fetchEsriBoundary('place', `${result.center[0]},${result.center[1]}`);
+                    if (!boundaryGeojson || !boundaryGeojson.features || boundaryGeojson.features.length === 0) {
+                        boundaryGeojson = await fetchTigerPlaceBoundary(result.center[0], result.center[1]);
+                    }
+                }
+            }
+
+            if (boundaryGeojson && boundaryGeojson.features && boundaryGeojson.features.length > 0) {
+                addGeocoderBoundary(boundaryGeojson);
+
+                // If no bbox from geocoder, fit to the boundary we fetched
+                if (!result.bbox) {
+                    const bbox = turf.bbox(boundaryGeojson);
+                    branchMap.fitBounds(bbox, { padding: 50, duration: 1500 });
+                }
+            }
+        }
+
+        // Extract state FIPS from geocoder result
+        function extractStateFips(result) {
+            // Check result properties for short_code like 'US-MD'
+            if (result.properties && result.properties.short_code) {
+                const code = result.properties.short_code.replace('US-', '');
+                const fips = stateAbbrToFips[code];
+                if (fips) return fips;
+            }
+            // Check context for region
+            if (result.context) {
+                for (const ctx of result.context) {
+                    if (ctx.id && ctx.id.startsWith('region')) {
+                        if (ctx.short_code) {
+                            const code = ctx.short_code.replace('US-', '');
+                            const fips = stateAbbrToFips[code];
+                            if (fips) return fips;
+                        }
+                    }
+                }
+            }
+            // If this IS a region, check its own short_code
+            if (result.place_type && result.place_type[0] === 'region') {
+                if (result.properties && result.properties.short_code) {
+                    const code = result.properties.short_code.replace('US-', '');
+                    return stateAbbrToFips[code] || null;
+                }
+            }
+            return null;
+        }
+
+        // Fetch boundary from TIGERweb Census API
+        async function fetchTigerBoundary(type, fips) {
+            let url;
+            if (type === 'state') {
+                // MapServer layer 84 = states
+                url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/84/query?where=STATE%3D%27${fips}%27&outFields=*&outSR=4326&f=geojson`;
+            } else if (type === 'county') {
+                const stateFips = fips.substring(0, 2);
+                const countyFips = fips.substring(2);
+                url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/86/query?where=STATE%3D%27${stateFips}%27+AND+COUNTY%3D%27${countyFips}%27&outFields=*&outSR=4326&f=geojson`;
+            }
+            try {
+                const resp = await fetch(url);
+                return await resp.json();
+            } catch (err) {
+                console.warn('TIGERweb boundary fetch failed:', err);
+                return null;
+            }
+        }
+
+        // Fetch city/place boundary from TIGERweb using spatial query
+        async function fetchTigerPlaceBoundary(lng, lat) {
+            // MapServer layer 28 = incorporated places
+            const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/28/query?geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&outSR=4326&f=geojson`;
+            try {
+                const resp = await fetch(url);
+                return await resp.json();
+            } catch (err) {
+                console.warn('TIGERweb place boundary fetch failed:', err);
+                return null;
+            }
+        }
+
+        // Fetch zip code (ZCTA) boundary from TIGERweb
+        async function fetchTigerZipBoundary(zipCode, center) {
+            // Try attribute query first (ZCTA5CE field), fall back to spatial
+            const attrUrl = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/82/query?where=ZCTA5CE%3D%27${zipCode}%27&outFields=*&outSR=4326&f=geojson`;
+            try {
+                const resp = await fetch(attrUrl);
+                const data = await resp.json();
+                if (data.features && data.features.length > 0) return data;
+            } catch (err) {
+                console.warn('TIGERweb ZCTA attribute query failed:', err);
+            }
+            // Spatial fallback using center point
+            if (center) {
+                const spatialUrl = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/82/query?geometry=${center[0]},${center[1]}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&outSR=4326&f=geojson`;
+                try {
+                    const resp2 = await fetch(spatialUrl);
+                    return await resp2.json();
+                } catch (err2) {
+                    console.warn('TIGERweb ZCTA spatial query failed:', err2);
+                }
+            }
+            return null;
+        }
+
+        // Fetch county boundary — resolve center point to FIPS via FCC API, then query ESRI Living Atlas
+        async function fetchCountyBoundaryByPoint(lng, lat) {
+            try {
+                // Step 1: Get county FIPS from FCC Census Area API
+                const fccResp = await fetch(`https://geo.fcc.gov/api/census/area?lat=${lat}&lon=${lng}&format=json`);
+                const fccData = await fccResp.json();
+                if (!fccData.results || fccData.results.length === 0) {
+                    console.warn('FCC API returned no results');
+                    return null;
+                }
+                const countyFips = fccData.results[0].county_fips;
+
+                // Step 2: Fetch boundary from ESRI Living Atlas
+                return await fetchEsriBoundary('county', countyFips);
+            } catch (err) {
+                console.warn('County boundary fetch failed:', err);
+                return null;
+            }
+        }
+
+        // Fetch boundary from ESRI Living Atlas (primary source, replaces TIGERweb)
+        async function fetchEsriBoundary(type, fips) {
+            let url;
+            if (type === 'state') {
+                url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_States/FeatureServer/0/query?where=STATE_FIPS%3D%27${fips}%27&outFields=*&outSR=4326&f=geojson`;
+            } else if (type === 'county') {
+                url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0/query?where=FIPS%3D%27${fips}%27&outFields=*&outSR=4326&f=geojson`;
+            } else if (type === 'zcta') {
+                url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Boundaries_2023/FeatureServer/3/query?where=ZIP_CODE%3D%27${fips}%27&outFields=*&outSR=4326&f=geojson`;
+            } else if (type === 'place') {
+                // fips here is actually "lng,lat" for spatial queries
+                url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Populated_Places/FeatureServer/0/query?geometry=${fips}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&outSR=4326&f=geojson`;
+            }
+            if (!url) return null;
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) {
+                    console.warn(`ESRI boundary fetch failed (${resp.status}):`, url);
+                    return null;
+                }
+                return await resp.json();
+            } catch (err) {
+                console.warn('ESRI boundary fetch error:', err);
+                return null;
+            }
+        }
+
+        // Add boundary polygon to map
+        function addGeocoderBoundary(geojson) {
+            clearGeocoderBoundary();
+            const sourceId = 'geocoder-boundary';
+            geocoderBoundarySourceId = sourceId;
+            // Normalize to a Turf-compatible polygon for clipping
+            // booleanPointInPolygon accepts: Polygon Geometry, MultiPolygon Geometry, or Feature wrapping either
+            try {
+                let poly = null;
+                if (geojson.type === 'FeatureCollection' && geojson.features && geojson.features.length > 0) {
+                    poly = geojson.features[0];
+                } else {
+                    poly = geojson;
+                }
+
+                // If it's a Feature, validate it has a usable geometry
+                if (poly.type === 'Feature') {
+                    if (!poly.geometry || !poly.geometry.coordinates) {
+                        console.warn('[BranchMapper] Geocoder boundary Feature has no geometry — skipping clip polygon');
+                        geocoderBoundaryPolygon = null;
+                    } else if (poly.geometry.type === 'Polygon' || poly.geometry.type === 'MultiPolygon') {
+                        geocoderBoundaryPolygon = poly;
+                    } else if (poly.geometry.type === 'GeometryCollection') {
+                        // Extract first Polygon/MultiPolygon from the collection
+                        const usable = poly.geometry.geometries.find(
+                            g => g.type === 'Polygon' || g.type === 'MultiPolygon'
+                        );
+                        if (usable) {
+                            geocoderBoundaryPolygon = turf.feature(usable);
+                        } else {
+                            console.warn('[BranchMapper] GeometryCollection has no Polygon — skipping clip polygon');
+                            geocoderBoundaryPolygon = null;
+                        }
+                    } else {
+                        console.warn('[BranchMapper] Unexpected geometry type:', poly.geometry.type, '— skipping clip polygon');
+                        geocoderBoundaryPolygon = null;
+                    }
+                } else if (poly.type === 'Polygon' || poly.type === 'MultiPolygon') {
+                    // Raw geometry object — wrap in a Feature for Turf
+                    geocoderBoundaryPolygon = turf.feature(poly);
+                } else {
+                    console.warn('[BranchMapper] Unexpected GeoJSON type:', poly.type, '— skipping clip polygon');
+                    geocoderBoundaryPolygon = null;
+                }
+            } catch (err) {
+                console.error('[BranchMapper] Failed to normalize geocoder boundary:', err);
+                geocoderBoundaryPolygon = null;
+            }
+
+            branchMap.addSource(sourceId, { type: 'geojson', data: geojson });
+
+            // Add fill with low opacity
+            branchMap.addLayer({
+                id: sourceId + '-fill',
+                type: 'fill',
+                source: sourceId,
+                paint: {
+                    'fill-color': '#1a73e8',
+                    'fill-opacity': 0.08
+                }
+            }, findFirstSymbolLayer());
+
+            // Add boundary outline
+            branchMap.addLayer({
+                id: sourceId + '-outline',
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#1a73e8',
+                    'line-width': 2.5,
+                    'line-opacity': 0.8
+                }
+            }, findFirstSymbolLayer());
+        }
+
+        // State abbreviation to FIPS lookup
+        const stateAbbrToFips = {
+            'AL': '01', 'AK': '02', 'AZ': '04', 'AR': '05', 'CA': '06',
+            'CO': '08', 'CT': '09', 'DE': '10', 'DC': '11', 'FL': '12',
+            'GA': '13', 'HI': '15', 'ID': '16', 'IL': '17', 'IN': '18',
+            'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'ME': '23',
+            'MD': '24', 'MA': '25', 'MI': '26', 'MN': '27', 'MS': '28',
+            'MO': '29', 'MT': '30', 'NE': '31', 'NV': '32', 'NH': '33',
+            'NJ': '34', 'NM': '35', 'NY': '36', 'NC': '37', 'ND': '38',
+            'OH': '39', 'OK': '40', 'OR': '41', 'PA': '42', 'PR': '72',
+            'RI': '44', 'SC': '45', 'SD': '46', 'TN': '47', 'TX': '48',
+            'UT': '49', 'VT': '50', 'VA': '51', 'WA': '53', 'WV': '54',
+            'WI': '55', 'WY': '56'
+        };
+
+        // Initialize map using Mapbox GL JS
+        function initMap() {
+            if (branchMap) {
+                branchMap.remove();
+            }
+            
+            // Set access token
+            mapboxgl.accessToken = MAPBOX_TOKEN;
+            
+            // Create Mapbox GL JS map - centered on continental US
+            branchMap = new mapboxgl.Map({
+                container: 'branchMap',
+                style: MAPBOX_STYLE,
+                center: [-98.5, 38.0], // [lng, lat] centered to show all US including Hawaii/Alaska
+                zoom: 3, // Show full US including Hawaii and Alaska
+                preserveDrawingBuffer: true  // Required for canvas.toDataURL() map capture
+            });
+            
+            // Add navigation controls
+            branchMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+            // Initialize geocoder search bar (clear previous if reinitializing)
+            const geocoderEl = document.getElementById('geocoderContainer');
+            geocoderEl.innerHTML = '';
+            geocoder = new MapboxGeocoder({
+                accessToken: MAPBOX_TOKEN,
+                mapboxgl: mapboxgl,
+                countries: 'us',
+                types: 'country,region,postcode,district,place,locality,neighborhood',
+                placeholder: 'Search city, county, state, zip...',
+                marker: false,
+                flyTo: false  // We handle zoom ourselves to show boundaries
+            });
+            document.getElementById('geocoderContainer').appendChild(geocoder.onAdd(branchMap));
+
+            geocoder.on('result', function(e) {
+                handleGeocoderResult(e.result);
+            });
+            geocoder.on('clear', function() {
+                clearGeocoderBoundary();
+                currentGeographyName = '';
+                updateMapTitle();
+            });
+
+            // Wait for map to load before adding census tileset layers
+            branchMap.on('load', function() {
+                console.log('Mapbox GL JS map loaded');
+
+                // Find first symbol layer so data layers render below labels/roads/borders
+                const firstSymbolId = findFirstSymbolLayer();
+
+                // Add census tileset as vector source (same account as map token)
+                branchMap.addSource('census-tileset', {
+                    type: 'vector',
+                    url: `mapbox://${CENSUS_TILESET_ID}`,
+                    minzoom: 5,
+                    maxzoom: 12
+                });
+
+                // Income fill layer (hidden by default) — below labels
+                branchMap.addLayer({
+                    id: 'census-income-fill',
+                    type: 'fill',
+                    source: 'census-tileset',
+                    'source-layer': CENSUS_SOURCE_LAYER,
+                    paint: {
+                        'fill-color': getIncomeColorExpression(),
+                        'fill-opacity': 0.5
+                    },
+                    layout: { visibility: 'none' }
+                }, firstSymbolId);
+                branchMap.addLayer({
+                    id: 'census-income-outline',
+                    type: 'line',
+                    source: 'census-tileset',
+                    'source-layer': CENSUS_SOURCE_LAYER,
+                    paint: { 'line-color': '#666666', 'line-width': 0.5, 'line-opacity': 0.4 },
+                    layout: { visibility: 'none' }
+                }, firstSymbolId);
+
+                // Minority fill layer (hidden by default) — below labels
+                branchMap.addLayer({
+                    id: 'census-minority-fill',
+                    type: 'fill',
+                    source: 'census-tileset',
+                    'source-layer': CENSUS_SOURCE_LAYER,
+                    paint: {
+                        'fill-color': getMinorityColorExpression(),
+                        'fill-opacity': 0.5
+                    },
+                    layout: { visibility: 'none' }
+                }, firstSymbolId);
+                branchMap.addLayer({
+                    id: 'census-minority-outline',
+                    type: 'line',
+                    source: 'census-tileset',
+                    'source-layer': CENSUS_SOURCE_LAYER,
+                    paint: { 'line-color': '#666666', 'line-width': 0.5, 'line-opacity': 0.4 },
+                    layout: { visibility: 'none' }
+                }, firstSymbolId);
+
+                // ── Declutter base map for thematic cartography ──
+                // Keep: background, landcover, water, major roads (motorway/trunk),
+                // admin boundaries, major city/state/country labels, interstate shields.
+                // Hide everything else — this is a thematic map, not a navigation map.
+
+                const hideLayers = [
+                    // Land use, parks, structures, buildings
+                    'national-park', 'landuse', 'hillshade',
+                    'land-structure-polygon', 'land-structure-line',
+                    'aeroway-polygon', 'aeroway-line', 'building',
+
+                    // Tunnel: everything except motorway-trunk
+                    'tunnel-minor-case', 'tunnel-street-case', 'tunnel-minor-link-case',
+                    'tunnel-secondary-tertiary-case', 'tunnel-primary-case', 'tunnel-major-link-case',
+                    'tunnel-motorway-trunk-case', 'tunnel-construction',
+                    'tunnel-minor', 'tunnel-minor-link', 'tunnel-major-link',
+                    'tunnel-street', 'tunnel-street-low',
+                    'tunnel-secondary-tertiary', 'tunnel-primary',
+                    'tunnel-oneway-arrow-blue', 'tunnel-oneway-arrow-white',
+
+                    // Road: everything except motorway-trunk
+                    'road-polygon', 'turning-feature-outline', 'turning-feature',
+                    'road-minor-case', 'road-street-case', 'road-minor-link-case',
+                    'road-secondary-tertiary-case', 'road-primary-case',
+                    'road-major-link-case', 'road-motorway-trunk-case',
+                    'road-construction',
+                    'road-minor', 'road-minor-link', 'road-major-link',
+                    'road-street', 'road-street-low',
+                    'road-secondary-tertiary', 'road-primary',
+                    'level-crossing',
+                    'road-oneway-arrow-blue', 'road-oneway-arrow-white',
+                    'road-rail', 'road-rail-tracks',
+
+                    // Bridge: everything except motorway-trunk
+                    'bridge-minor-case', 'bridge-street-case', 'bridge-minor-link-case',
+                    'bridge-secondary-tertiary-case', 'bridge-primary-case',
+                    'bridge-major-link-case', 'bridge-motorway-trunk-case',
+                    'bridge-construction',
+                    'bridge-minor', 'bridge-minor-link', 'bridge-major-link',
+                    'bridge-street', 'bridge-street-low',
+                    'bridge-secondary-tertiary', 'bridge-primary',
+                    'bridge-major-link-2-case', 'bridge-motorway-trunk-2-case',
+                    'bridge-major-link-2',
+                    'bridge-oneway-arrow-blue', 'bridge-oneway-arrow-white',
+                    'bridge-rail', 'bridge-rail-tracks',
+
+                    // Labels: hide all except major cities, states, countries
+                    'building-entrance', 'building-number-label', 'block-number-label',
+                    'road-label', 'road-label copy', 'road-intersection', 'road-exit-shield',
+                    'natural-line-label', 'natural-point-label',
+                    'poi-label', 'transit-label', 'airport-label',
+                    'settlement-subdivision-label', 'settlement-minor-label',
+                    'continent-label'
+                ];
+
+                hideLayers.forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setLayoutProperty(id, 'visibility', 'none');
+                    }
+                });
+
+                // Satellite imagery: hard transition at zoom 13
+                if (branchMap.getLayer('mapbox-satellite')) {
+                    branchMap.setLayoutProperty('mapbox-satellite', 'visibility', 'visible');
+                    branchMap.setPaintProperty('mapbox-satellite', 'raster-opacity', [
+                        'interpolate', ['linear'], ['zoom'],
+                        0, 0,
+                        12.9, 0,
+                        13, 1,
+                        22, 1
+                    ]);
+                }
+
+                // Mute kept roads to light gray so they don't compete with data
+                ['road-motorway-trunk', 'bridge-motorway-trunk', 'bridge-motorway-trunk-2', 'tunnel-motorway-trunk'].forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setPaintProperty(id, 'line-color', '#c0c0c0');
+                        branchMap.setPaintProperty(id, 'line-width', 1.5);
+                    }
+                });
+
+                // Filter road shields to motorway/trunk only (hide local route markers)
+                if (branchMap.getLayer('road-number-shield')) {
+                    branchMap.setFilter('road-number-shield', [
+                        'match', ['get', 'class'],
+                        ['motorway', 'trunk'], true,
+                        false
+                    ]);
+                }
+
+                // Mute admin boundaries to thin light gray
+                ['admin-0-boundary', 'admin-1-boundary', 'admin-2-boundary',
+                 'admin-0-boundary-bg', 'admin-1-boundary-bg', 'admin-2-boundary-bg'].forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setPaintProperty(id, 'line-color', '#bbbbbb');
+                    }
+                });
+
+                // Keep major water labels, hide minor ones
+                ['waterway-label'].forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setLayoutProperty(id, 'visibility', 'none');
+                    }
+                });
+
+                // Click popup for income layer
+                branchMap.on('click', 'census-income-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    const props = e.features[0].properties;
+                    const fmt = (v) => v ? '$' + Math.round(parseFloat(v)).toLocaleString('en-US') : 'N/A';
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(`<div style="min-width:200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br><hr style="margin:8px 0;">
+                            <strong>Income Category:</strong> ${props.income_category || 'Unknown'}<br>
+                            <strong>Tract Median Income:</strong> ${fmt(props.median_family_income)}<br>
+                            <strong>State Median:</strong> ${fmt(props.baseline_median_income)}<br>
+                            ${props.income_ratio ? `<strong>Ratio:</strong> ${parseFloat(props.income_ratio).toFixed(2)}x<br>` : ''}
+                            <hr style="margin:8px 0;">
+                            <small style="color:#666;">Low (≤50%), Moderate (≤80%), Middle (≤120%), Upper (>120%)</small>
+                        </div>`)
+                        .addTo(branchMap);
+                });
+
+                // Click popup for minority layer
+                branchMap.on('click', 'census-minority-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    const props = e.features[0].properties;
+                    const pct = props.minority_percentage != null ? parseFloat(props.minority_percentage).toFixed(1) + '%' : 'N/A';
+                    const pop = props.total_population ? Math.round(parseFloat(props.total_population)).toLocaleString() : 'N/A';
+                    const scope = props.cbsa_name || 'rural tracts in state';
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(`<div style="min-width:200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br><hr style="margin:8px 0;">
+                            <strong>Category:</strong> ${props.minority_category || 'Unknown'}<br>
+                            <strong>Minority Pop:</strong> ${pct}<br>
+                            <strong>Total Pop:</strong> ${pop}<br>
+                            <hr style="margin:8px 0;">
+                            <small style="color:#666;">Based on quartile distribution within ${scope}</small>
+                        </div>`)
+                        .addTo(branchMap);
+                });
+
+                // Hover cursors
+                ['census-income-fill', 'census-minority-fill'].forEach(id => {
+                    branchMap.on('mouseenter', id, () => branchMap.getCanvas().style.cursor = 'pointer');
+                    branchMap.on('mouseleave', id, () => branchMap.getCanvas().style.cursor = '');
+                });
+            });
+
+            branchMap.on('zoomend', function() {
+                const prevZoom = currentZoom;
+                currentZoom = branchMap.getZoom();
+                updateShowAllButton();
+
+                // Deactivate show-all if zoomed out
+                if (currentZoom < METRO_ZOOM_THRESHOLD && showAllBanksActive) {
+                    deactivateShowAll();
+                }
+
+                // Census toggle always visible (tileset handles zoom)
+                const censusGroup = document.getElementById('censusToggleGroup');
+                if (censusGroup) censusGroup.style.display = 'block';
+
+                // Load county boundaries at metro zoom
+                if (currentZoom >= METRO_ZOOM_THRESHOLD && prevZoom < METRO_ZOOM_THRESHOLD) {
+                    loadCountyBoundariesForViewport();
+                } else if (currentZoom < METRO_ZOOM_THRESHOLD) {
+                    clearCountyBoundaries();
+                }
+            });
+
+            branchMap.on('moveend', function() {
+                if (showAllBanksActive && currentZoom >= METRO_ZOOM_THRESHOLD) {
+                    loadAllBanksInView();
+                }
+                if (currentZoom >= METRO_ZOOM_THRESHOLD) {
+                    loadCountyBoundariesForViewport();
+                }
+            });
+
+        }
+        
+        // Helper function to remove a source and its layers
+        function removeSourceAndLayers(sourceId) {
+            if (!branchMap) return;
+            
+            // Remove layers first
+            const layerIds = [sourceId + '-fill', sourceId + '-outline'];
+            layerIds.forEach(function(layerId) {
+                if (branchMap.getLayer(layerId)) {
+                    branchMap.removeLayer(layerId);
+                }
+            });
+            
+            // Then remove source
+            if (branchMap.getSource(sourceId)) {
+                branchMap.removeSource(sourceId);
+            }
+        }
+        
+        // Get gray shade for income category (darker = lower income)
+        function getIncomeColor(category) {
+            switch(category) {
+                case 'Low':
+                    return '#333333';      // Dark gray - Low income
+                case 'Moderate':
+                    return '#666666';     // Medium-dark gray - Moderate income
+                case 'Middle':
+                    return '#999999';     // Medium gray - Middle income
+                case 'Upper':
+                    return '#cccccc';     // Light gray - Upper income
+                default:
+                    return '#e0e0e0';      // Very light gray - Unknown
+            }
+        }
+        
+        // Update the sidebar minority legend with percentage cutoffs
+        function updateMinoritySidebarLegend(quartiles, scope) {
+            const q4 = document.getElementById('minority-legend-q4');
+            const q3 = document.getElementById('minority-legend-q3');
+            const q2 = document.getElementById('minority-legend-q2');
+            const q1 = document.getElementById('minority-legend-q1');
+            const scopeEl = document.getElementById('minority-legend-scope');
+            if (q4) q4.querySelector('span:last-child').textContent = `Highest (>${quartiles.q3.toFixed(1)}%)`;
+            if (q3) q3.querySelector('span:last-child').textContent = `Above median (${quartiles.q2.toFixed(1)}-${quartiles.q3.toFixed(1)}%)`;
+            if (q2) q2.querySelector('span:last-child').textContent = `Below median (${quartiles.q1.toFixed(1)}-${quartiles.q2.toFixed(1)}%)`;
+            if (q1) q1.querySelector('span:last-child').textContent = `Lowest (<${quartiles.q1.toFixed(1)}%)`;
+            if (scopeEl) {
+                scopeEl.innerHTML = `Minority = All non-Hispanic White excluded<br>Quartiles within ${scope || 'metro area'}`;
+            }
+            // Also update the map overlay legend
+            updateMapLegend();
+        }
+
+        // Get gray shade for minority category (darker = higher minority percentage quartile)
+        function getMinorityColor(category) {
+            switch(category) {
+                case 'Q4 (Highest 25%)':
+                    return '#0a0a0a';      // Near black - Highest quartile
+                case 'Q3 (50-75%)':
+                    return '#555555';      // Medium-dark gray - Third quartile
+                case 'Q2 (25-50%)':
+                    return '#aaaaaa';      // Medium-light gray - Second quartile
+                case 'Q1 (Lowest 25%)':
+                    return '#d9d9d9';      // Light gray - Lowest quartile
+                // Legacy support for old categories
+                case 'Very High':
+                    return '#0a0a0a';
+                case 'High':
+                    return '#333333';
+                case 'Above Average':
+                    return '#555555';
+                case 'Average':
+                    return '#aaaaaa';
+                case 'Below Average':
+                    return '#d9d9d9';
+                default:
+                    return '#e0e0e0';      // Very light gray - Unknown
+            }
+        }
+        
+        // Get fill color expression for income layer (Mapbox GL JS style)
+        function getIncomeColorExpression() {
+            return [
+                'match',
+                ['get', 'income_category'],
+                'Low', '#333333',
+                'Moderate', '#666666',
+                'Middle', '#999999',
+                'Upper', '#cccccc',
+                '#e0e0e0' // default
+            ];
+        }
+        
+        // Get fill color expression for minority layer (Mapbox GL JS style)
+        // Uses match expression on minority_category (CBSA-scoped quartiles baked into tileset)
+        function getMinorityColorExpression() {
+            // Match on pre-computed minority_category baked into the tileset
+            // Quartiles are CBSA-scoped (metro tracts) or state-rural-scoped
+            return [
+                'match', ['get', 'minority_category'],
+                'Q1 (Lowest 25%)', '#d9d9d9',
+                'Q2 (25-50%)', '#aaaaaa',
+                'Q3 (50-75%)', '#555555',
+                'Q4 (Highest 25%)', '#0a0a0a',
+                '#cccccc'  // fallback for Unknown
+            ];
+        }
+        
+        // Load income layer for one or more states, merge features, render as single layer
+        async function loadIncomeLayerByStates(stateFipsList) {
+            if (!branchMap) { initMap(); return; }
+            if (incomeLayerAbortController) incomeLayerAbortController.abort();
+            incomeLayerAbortController = new AbortController();
+            const signal = incomeLayerAbortController.signal;
+
+            removeSourceAndLayers('income-tracts');
+            incomeLayerVisible = false;
+
+            try {
+                updateInfoPanel(`Loading census income data for ${stateFipsList.length} state(s)...`);
+                const allFeatures = [];
+                let totalTracts = 0;
+
+                const fetches = stateFipsList.map(async (fips) => {
+                    const url = `${APP_BASE_URL}/api/census-tracts-by-state/${fips}?income=true&minority=false`;
+                    const resp = await fetch(url, { signal });
+                    if (!resp.ok) { console.warn(`Census state ${fips} failed: ${resp.status}`); return; }
+                    const data = await resp.json();
+                    if (data.success && data.geojson && data.geojson.features) {
+                        allFeatures.push(...data.geojson.features);
+                        totalTracts += data.tract_count || data.geojson.features.length;
+                    }
+                });
+                await Promise.all(fetches);
+
+                if (allFeatures.length === 0) {
+                    updateInfoPanel('No census income data available for this area.');
+                    return;
+                }
+
+                const mergedGeojson = { type: 'FeatureCollection', features: allFeatures };
+
+                branchMap.addSource('income-tracts', { type: 'geojson', data: mergedGeojson });
+
+                const firstBankLayer = selectedBanks.length > 0 && selectedBanks[0]._layerIds.length > 1
+                    ? selectedBanks[0]._layerIds[1] : undefined;
+                const beforeLayer = branchMap.getLayer('gray-all-banks-fill') ? 'gray-all-banks-fill' : firstBankLayer;
+
+                branchMap.addLayer({
+                    id: 'income-tracts-fill', type: 'fill', source: 'income-tracts',
+                    paint: { 'fill-color': getIncomeColorExpression(), 'fill-opacity': 0.5 }
+                }, beforeLayer);
+
+                branchMap.addLayer({
+                    id: 'income-tracts-outline', type: 'line', source: 'income-tracts',
+                    paint: { 'line-color': '#666666', 'line-width': 1, 'line-opacity': 0.6 }
+                }, beforeLayer);
+
+                incomeLayerVisible = true;
+
+                branchMap.on('click', 'income-tracts-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    const props = e.features[0].properties;
+                    const formatIncome = (val) => val ? '$' + Math.round(parseFloat(val)).toLocaleString('en-US') : 'N/A';
+                    let baselineLabel = props.baseline_type === 'cbsa' ? 'Metro Area Median' : (props.baseline_type === 'state' ? 'State Median' : 'County Median');
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(`<div style="min-width:200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br><hr style="margin:8px 0;">
+                            <strong>Income Category:</strong> ${props.income_category || 'Unknown'}<br>
+                            <strong>Tract Median Family Income:</strong> ${formatIncome(props.median_family_income)}<br>
+                            <strong>${baselineLabel}:</strong> ${formatIncome(props.baseline_median_income)}<br>
+                            ${props.income_ratio ? `<strong>Ratio:</strong> ${parseFloat(props.income_ratio).toFixed(2)}x<br>` : ''}
+                            <hr style="margin:8px 0;">
+                            <small style="color:#666;">Categories: Low (≤50%), Moderate (≤80%), Middle (≤120%), Upper (>120%)</small>
+                        </div>`)
+                        .addTo(branchMap);
+                });
+
+                branchMap.on('mouseenter', 'income-tracts-fill', () => branchMap.getCanvas().style.cursor = 'pointer');
+                branchMap.on('mouseleave', 'income-tracts-fill', () => branchMap.getCanvas().style.cursor = '');
+
+                updateInfoPanel(`Loaded income data for ${totalTracts} census tracts across ${stateFipsList.length} state(s).`);
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                console.error('Error loading income layer by state:', error);
+                updateInfoPanel(`Error loading income data: ${error.message || error}`);
+            }
+        }
+
+        // Load minority layer for one or more states, merge features, render as single layer
+        async function loadMinorityLayerByStates(stateFipsList) {
+            if (!branchMap) { initMap(); return; }
+            if (minorityLayerAbortController) minorityLayerAbortController.abort();
+            minorityLayerAbortController = new AbortController();
+            const signal = minorityLayerAbortController.signal;
+
+            removeSourceAndLayers('minority-tracts');
+            minorityLayerVisible = false;
+
+            try {
+                updateInfoPanel(`Loading census minority data for ${stateFipsList.length} state(s)...`);
+                const allFeatures = [];
+                let totalTracts = 0;
+
+                const fetches = stateFipsList.map(async (fips) => {
+                    const url = `${APP_BASE_URL}/api/census-tracts-by-state/${fips}?income=false&minority=true`;
+                    const resp = await fetch(url, { signal });
+                    if (!resp.ok) { console.warn(`Census state ${fips} failed: ${resp.status}`); return; }
+                    const data = await resp.json();
+                    if (data.success && data.geojson && data.geojson.features) {
+                        allFeatures.push(...data.geojson.features);
+                        totalTracts += data.tract_count || data.geojson.features.length;
+                        // Store quartile data from state-level response
+                        if (data.minority_quartiles) {
+                            window._minorityQuartiles = data.minority_quartiles;
+                            window._quartileScope = data.quartile_scope || 'state';
+                        }
+                    }
+                });
+                await Promise.all(fetches);
+
+                if (allFeatures.length === 0) {
+                    updateInfoPanel('No census minority data available for this area.');
+                    return;
+                }
+
+                const mergedGeojson = { type: 'FeatureCollection', features: allFeatures };
+
+                branchMap.addSource('minority-tracts', { type: 'geojson', data: mergedGeojson });
+
+                const firstBankLayer = selectedBanks.length > 0 && selectedBanks[0]._layerIds.length > 1
+                    ? selectedBanks[0]._layerIds[1] : undefined;
+                const beforeLayer = branchMap.getLayer('gray-all-banks-fill') ? 'gray-all-banks-fill' : firstBankLayer;
+
+                branchMap.addLayer({
+                    id: 'minority-tracts-fill', type: 'fill', source: 'minority-tracts',
+                    paint: { 'fill-color': getMinorityColorExpression(), 'fill-opacity': 0.5 }
+                }, beforeLayer);
+
+                branchMap.addLayer({
+                    id: 'minority-tracts-outline', type: 'line', source: 'minority-tracts',
+                    paint: { 'line-color': '#666666', 'line-width': 1, 'line-opacity': 0.6 }
+                }, beforeLayer);
+
+                minorityLayerVisible = true;
+
+                branchMap.on('click', 'minority-tracts-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    const props = e.features[0].properties;
+                    const pct = props.minority_percentage != null ? parseFloat(props.minority_percentage).toFixed(1) + '%' : 'N/A';
+                    const pop = props.total_population ? Math.round(parseFloat(props.total_population)).toLocaleString() : 'N/A';
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(`<div style="min-width:200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br><hr style="margin:8px 0;">
+                            <strong>Minority Category:</strong> ${props.minority_category || 'Unknown'}<br>
+                            <strong>Minority Population:</strong> ${pct}<br>
+                            <strong>Total Population:</strong> ${pop}<br>
+                            <hr style="margin:8px 0;">
+                            <small style="color:#666;">Based on quartile distribution within ${window._quartileScope || 'state'}</small>
+                        </div>`)
+                        .addTo(branchMap);
+                });
+
+                branchMap.on('mouseenter', 'minority-tracts-fill', () => branchMap.getCanvas().style.cursor = 'pointer');
+                branchMap.on('mouseleave', 'minority-tracts-fill', () => branchMap.getCanvas().style.cursor = '');
+
+                updateInfoPanel(`Loaded minority data for ${totalTracts} census tracts across ${stateFipsList.length} state(s).`);
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                console.error('Error loading minority layer by state:', error);
+                updateInfoPanel(`Error loading minority data: ${error.message || error}`);
+            }
+        }
+
+        // Legacy: Load and display income layer using Mapbox GL JS
+        async function loadIncomeLayer(county) {
+            if (!branchMap) {
+                initMap();
+                return;
+            }
+
+            // Cancel any previous in-flight request
+            if (incomeLayerAbortController) {
+                incomeLayerAbortController.abort();
+            }
+            incomeLayerAbortController = new AbortController();
+            const signal = incomeLayerAbortController.signal;
+
+            // Remove existing income layer
+            removeSourceAndLayers('income-tracts');
+            incomeLayerVisible = false;
+
+            try {
+                updateInfoPanel('Loading census tract income data...');
+                console.log('Loading income layer for county:', county);
+
+                const url = `${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=true&minority=false`;
+                console.log('Fetching from URL:', url);
+
+                const response = await fetch(url, { signal });
+                console.log('Response status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        console.error('API error response:', errorData);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch (jsonError) {
+                        // Response is not JSON, try to get text
+                        try {
+                            const errorText = await response.text();
+                            console.error('API error response (text):', errorText);
+                            errorMessage = errorText || errorMessage;
+                        } catch (textError) {
+                            console.error('Could not parse error response:', textError);
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('API response data:', data);
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON response:', jsonError);
+                    throw new Error('Invalid JSON response from server');
+                }
+                
+                if (!data.success) {
+                    console.error('API returned success=false:', data);
+                    throw new Error(data.error || data.message || 'Failed to load census tract data');
+                }
+                
+                if (!data.geojson || !data.geojson.features) {
+                    console.error('Invalid GeoJSON data:', data);
+                    throw new Error('Invalid GeoJSON data received from server');
+                }
+                
+                console.log('Creating GeoJSON layer with', data.geojson.features.length, 'features');
+                
+                // Add GeoJSON source
+                branchMap.addSource('income-tracts', {
+                    type: 'geojson',
+                    data: data.geojson
+                });
+                
+                // Find the first bank marker layer to insert census layers below it
+                const firstBankLayer = selectedBanks.length > 0 && selectedBanks[0]._layerIds.length > 1
+                    ? selectedBanks[0]._layerIds[1] : undefined;
+                const grayLayer = branchMap.getLayer('gray-all-banks-fill') ? 'gray-all-banks-fill' : firstBankLayer;
+
+                // Add fill layer (below bank markers)
+                branchMap.addLayer({
+                    id: 'income-tracts-fill',
+                    type: 'fill',
+                    source: 'income-tracts',
+                    paint: {
+                        'fill-color': getIncomeColorExpression(),
+                        'fill-opacity': 0.5
+                    }
+                }, grayLayer);
+
+                // Add outline layer (below bank markers)
+                branchMap.addLayer({
+                    id: 'income-tracts-outline',
+                    type: 'line',
+                    source: 'income-tracts',
+                    paint: {
+                        'line-color': '#666666',
+                        'line-width': 1,
+                        'line-opacity': 0.6
+                    }
+                }, grayLayer);
+                
+                incomeLayerVisible = true;
+                
+                // Add click handler for popups
+                branchMap.on('click', 'income-tracts-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    
+                    const props = e.features[0].properties;
+                    const income = props.median_family_income;
+                    const category = props.income_category || 'Unknown';
+                    const baselineIncome = props.baseline_median_income || props.cbsa_median_income;
+                    const baselineType = props.baseline_type;
+                    const ratio = props.income_ratio;
+                    
+                    const formatIncome = (val) => {
+                        if (!val) return 'N/A';
+                        return '$' + Math.round(parseFloat(val)).toLocaleString('en-US');
+                    };
+                    
+                    let baselineLabel = 'County Median';
+                    if (baselineType === 'state') baselineLabel = 'State Median';
+                    else if (baselineType === 'cbsa') baselineLabel = 'Metro Area Median';
+                    
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br>
+                            <hr style="margin: 8px 0;">
+                            <strong>Income Category:</strong> ${category}<br>
+                            <strong>Tract Median Family Income:</strong> ${formatIncome(income)}<br>
+                            <strong>${baselineLabel}:</strong> ${formatIncome(baselineIncome)}<br>
+                            ${ratio ? `<strong>Ratio:</strong> ${parseFloat(ratio).toFixed(2)}x county average<br>` : ''}
+                            <hr style="margin: 8px 0;">
+                            <small style="color: #666;">
+                                Categories: Low (≤50%), Moderate (≤80%), Middle (≤120%), Upper (>120%)
+                            </small>
+                        </div>
+                    `;
+                    
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(popupContent)
+                        .addTo(branchMap);
+                });
+                
+                // Change cursor on hover
+                branchMap.on('mouseenter', 'income-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = 'pointer';
+                });
+                branchMap.on('mouseleave', 'income-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = '';
+                });
+                
+                console.log('Income layer added to map (no zoom change)');
+                
+                const countyIncome = data.baseline_median_family_income;
+                const countyIncomeStr = (countyIncome !== null && countyIncome !== undefined) ? '$' + Math.round(countyIncome).toLocaleString() : 'N/A';
+                updateInfoPanel(`Loaded income data for ${data.tract_count} census tracts. County median: ${countyIncomeStr}`);
+                
+            } catch (error) {
+                // Don't show error for aborted requests (user switched counties)
+                if (error.name === 'AbortError') {
+                    console.log('Income layer request was cancelled');
+                    return;
+                }
+                console.error('Error loading income layer:', error);
+                const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    error: error
+                });
+                updateInfoPanel(`Error loading income data: ${errorMessage}`);
+            }
+        }
+
+        // Load and display minority layer using Mapbox GL JS
+        async function loadMinorityLayer(county) {
+            if (!branchMap) {
+                initMap();
+                return;
+            }
+
+            // Cancel any previous in-flight request
+            if (minorityLayerAbortController) {
+                minorityLayerAbortController.abort();
+            }
+            minorityLayerAbortController = new AbortController();
+            const signal = minorityLayerAbortController.signal;
+
+            // Remove existing minority layer
+            removeSourceAndLayers('minority-tracts');
+            minorityLayerVisible = false;
+
+            try {
+                updateInfoPanel('Loading census tract minority population data...');
+
+                const response = await fetch(`${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`, { signal });
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch (jsonError) {
+                        try {
+                            const errorText = await response.text();
+                            errorMessage = errorText || errorMessage;
+                        } catch (textError) {
+                            console.error('Could not parse error response:', textError);
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON response:', jsonError);
+                    throw new Error('Invalid JSON response from server');
+                }
+                
+                if (!data.success) {
+                    throw new Error(data.error || data.message || 'Failed to load census tract data');
+                }
+                
+                // Add GeoJSON source
+                branchMap.addSource('minority-tracts', {
+                    type: 'geojson',
+                    data: data.geojson
+                });
+                
+                // Find the first bank marker layer to insert census layers below it
+                const firstBankLayer = selectedBanks.length > 0 && selectedBanks[0]._layerIds.length > 1
+                    ? selectedBanks[0]._layerIds[1] : undefined;
+                const grayLayer = branchMap.getLayer('gray-all-banks-fill') ? 'gray-all-banks-fill' : firstBankLayer;
+
+                // Add fill layer (below bank markers)
+                branchMap.addLayer({
+                    id: 'minority-tracts-fill',
+                    type: 'fill',
+                    source: 'minority-tracts',
+                    paint: {
+                        'fill-color': getMinorityColorExpression(),
+                        'fill-opacity': 0.5
+                    }
+                }, grayLayer);
+
+                // Add outline layer (below bank markers)
+                branchMap.addLayer({
+                    id: 'minority-tracts-outline',
+                    type: 'line',
+                    source: 'minority-tracts',
+                    paint: {
+                        'line-color': '#666666',
+                        'line-width': 1,
+                        'line-opacity': 0.6
+                    }
+                }, grayLayer);
+                
+                minorityLayerVisible = true;
+                
+                // Add click handler for popups
+                branchMap.on('click', 'minority-tracts-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    
+                    const props = e.features[0].properties;
+                    const minorityPct = props.minority_percentage;
+                    const category = props.minority_category || 'Unknown';
+                    const countyMinorityPct = props.county_minority_percentage;
+                    const ratio = props.minority_ratio;
+                    const totalPop = props.total_population;
+                    const minorityPop = props.minority_population;
+                    
+                    const formatNumber = (val) => {
+                        if (!val && val !== 0) return 'N/A';
+                        return Math.round(parseFloat(val)).toLocaleString('en-US');
+                    };
+                    
+                    const formatPercent = (val) => {
+                        if (val === null || val === undefined || (val !== 0 && !val)) return 'N/A';
+                        try {
+                            return parseFloat(val).toFixed(1) + '%';
+                        } catch (e) {
+                            return 'N/A';
+                        }
+                    };
+                    
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br>
+                            <hr style="margin: 8px 0;">
+                            <strong>Minority Category:</strong> ${category}<br>
+                            <strong>Tract Minority %:</strong> ${formatPercent(minorityPct)}<br>
+                            <strong>County Minority %:</strong> ${formatPercent(countyMinorityPct)}<br>
+                            ${ratio !== null && ratio !== undefined ? `<strong>Ratio:</strong> ${parseFloat(ratio).toFixed(2)}x county average<br>` : ''}
+                            <hr style="margin: 8px 0;">
+                            <strong>Total Population:</strong> ${formatNumber(totalPop)}<br>
+                            <strong>Minority Population:</strong> ${formatNumber(minorityPop)}<br>
+                            <hr style="margin: 8px 0;">
+                            <small style="color: #666;">
+                                Minority = Non-Hispanic White excluded<br>
+                                Based on quartile distribution within ${window._quartileScope || 'metro area'}
+                            </small>
+                        </div>
+                    `;
+                    
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(popupContent)
+                        .addTo(branchMap);
+                });
+                
+                // Change cursor on hover
+                branchMap.on('mouseenter', 'minority-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = 'pointer';
+                });
+                branchMap.on('mouseleave', 'minority-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = '';
+                });
+                
+                // Store quartile data for legend and paint expression
+                if (data.minority_quartiles) {
+                    window._minorityQuartiles = data.minority_quartiles;
+                    window._quartileScope = data.quartile_scope || 'metro area';
+                    // Update sidebar legend with percentage cutoffs
+                    updateMinoritySidebarLegend(data.minority_quartiles, data.quartile_scope);
+                }
+
+                const countyMinorityPct = data.county_minority_percentage;
+                const countyMinorityStr = (countyMinorityPct !== null && countyMinorityPct !== undefined) ? countyMinorityPct.toFixed(1) + '%' : 'N/A';
+                updateInfoPanel(`Loaded minority data for ${data.tract_count} census tracts. County: ${countyMinorityStr} minority`);
+                
+            } catch (error) {
+                // Don't show error for aborted requests (user switched counties)
+                if (error.name === 'AbortError') {
+                    console.log('Minority layer request was cancelled');
+                    return;
+                }
+                console.error('Error loading minority layer:', error);
+                const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    error: error
+                });
+                updateInfoPanel(`Error loading minority data: ${errorMessage}`);
+            }
+        }
+
+        // Toggle income layer visibility
+        function toggleIncomeLayer(county) {
+            if (incomeLayerVisible && branchMap.getLayer('income-tracts-fill')) {
+                branchMap.setLayoutProperty('income-tracts-fill', 'visibility', 'none');
+                branchMap.setLayoutProperty('income-tracts-outline', 'visibility', 'none');
+                incomeLayerVisible = false;
+                updateInfoPanel('Income layer hidden');
+            } else if (branchMap.getLayer('income-tracts-fill')) {
+                branchMap.setLayoutProperty('income-tracts-fill', 'visibility', 'visible');
+                branchMap.setLayoutProperty('income-tracts-outline', 'visibility', 'visible');
+                incomeLayerVisible = true;
+                updateInfoPanel('Income layer shown');
+            } else if (county) {
+                loadIncomeLayer(county);
+            }
+        }
+        
+        // Zoom map to state using Mapbox GL JS
+        function zoomToState(stateCode) {
+            if (!branchMap) {
+                initMap();
+                return;
+            }
+            
+            if (stateCenters[stateCode]) {
+                const center = stateCenters[stateCode];
+                branchMap.flyTo({
+                    center: [center.lng, center.lat], // [lng, lat] for Mapbox
+                    zoom: center.zoom
+                });
+                console.log('Zoomed to state:', stateCode, center);
+            } else {
+                // Default to US center if state not found
+                branchMap.flyTo({
+                    center: [-98.5, 38.0],
+                    zoom: 3
+                });
+            }
+        }
+        
+        // Format deposits for display
+        function formatDeposits(deposits) {
+            if (!deposits && deposits !== 0) return 'N/A';
+            return '$' + deposits.toLocaleString('en-US');
+        }
+        
+        // Collect all visible branch data (shared by export functions)
+        async function collectExportData() {
+            const loadPromises = [];
+            for (const bank of selectedBanks) {
+                if (bank.branches.length === 0) loadPromises.push(loadBankBranches(bank));
+                if (bank.oscrEvents.length === 0) loadPromises.push(loadBankOSCREvents(bank));
+            }
+
+            let allBanksBranches = [];
+            let allBanksOscrData = [];
+            if (showAllBanksActive) {
+                const bounds = branchMap.getBounds();
+                const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+                const latPad = (ne.lat - sw.lat) * 0.1, lngPad = (ne.lng - sw.lng) * 0.1;
+                const params = `sw_lat=${sw.lat - latPad}&sw_lng=${sw.lng - lngPad}&ne_lat=${ne.lat + latPad}&ne_lng=${ne.lng + lngPad}`;
+                const dateRange = getOSCRDateRange();
+                loadPromises.push(
+                    fetch(`${APP_BASE_URL}/api/branches-in-bounds?${params}&year=2025`)
+                        .then(r => r.json()).then(d => { if (d.success) allBanksBranches = d.branches || []; }).catch(() => {})
+                );
+                loadPromises.push(
+                    fetch(`${APP_BASE_URL}/api/oscr-events-in-bounds?${params}&start_date=${dateRange.start}&end_date=${dateRange.end}`)
+                        .then(r => r.json()).then(d => { if (d.success) allBanksOscrData = d.events || []; }).catch(() => {})
+                );
+            }
+
+            if (loadPromises.length > 0) await Promise.all(loadPromises);
+
+            let allBranches = [];
+            let allOscrEvents = [];
+            selectedBanks.forEach(b => { allBranches.push(...b.branches); allOscrEvents.push(...b.oscrEvents); });
+            if (showAllBanksActive) { allBranches.push(...allBanksBranches); allOscrEvents.push(...allBanksOscrData); }
+
+            const exportClipPoly = activeDrawFilter || geocoderBoundaryPolygon;
+            if (exportClipPoly) {
+                const polyGeom = exportClipPoly.type === 'Feature' ? exportClipPoly : (exportClipPoly.type === 'FeatureCollection' ? exportClipPoly : { type: 'Feature', geometry: exportClipPoly, properties: {} });
+                allBranches = allBranches.filter(b => {
+                    const lat = parseFloat(b.latitude), lng = parseFloat(b.longitude);
+                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
+                });
+                allOscrEvents = allOscrEvents.filter(e => {
+                    const lat = parseFloat(e.latitude), lng = parseFloat(e.longitude);
+                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
+                });
+            }
+
+            // Deduplicate branches
+            const seen = new Set();
+            const unique = [];
+            allBranches.forEach(branch => {
+                const key = [(branch.bank_name || '').toLowerCase().trim(), (branch.branch_name || '').toLowerCase().trim(), branch.latitude || '', branch.longitude || ''].join('|');
+                if (!seen.has(key)) { seen.add(key); unique.push(branch); }
+            });
+            unique.sort((a, b) => {
+                const c1 = (a.bank_name || '').localeCompare(b.bank_name || '');
+                if (c1 !== 0) return c1;
+                const c2 = (a.state_abbrv || a.state || '').localeCompare(b.state_abbrv || b.state || '');
+                if (c2 !== 0) return c2;
+                return (a.city || '').localeCompare(b.city || '');
+            });
+
+            return { branches: unique, oscrEvents: allOscrEvents };
+        }
+
+        // Get geography name for filenames and context
+        function getGeographyName() {
+            const bankNames = selectedBanks.map(b => b.name).join(', ');
+            if (bankNames) return bankNames;
+            if (showAllBanksActive) return 'All Banks';
+            return 'BranchMap';
+        }
+
+        // Capture the map as a JPG blob
+        async function captureMapAsJPG() {
+            const mapCanvas = branchMap.getCanvas();
+
+            // Force a fresh render
+            branchMap.triggerRepaint();
+            await new Promise(resolve => { branchMap.once('render', resolve); });
+
+            let mapDataUrl;
+            try {
+                mapDataUrl = mapCanvas.toDataURL('image/jpeg', 0.95);
+            } catch (e) {
+                console.error('Canvas capture failed:', e);
+                throw new Error('Map capture failed. Please try again.');
+            }
+
+            const container = branchMap.getContainer();
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+
+            const scale = 3;  // 3x resolution for crisp presentation output
+            const footerHeight = 36;
+            const composite = document.createElement('canvas');
+            composite.width = width * scale;
+            composite.height = (height + footerHeight) * scale;
+            const ctx = composite.getContext('2d');
+            ctx.scale(scale, scale);
+
+            // Draw the map
+            const mapImg = new Image();
+            mapImg.src = mapDataUrl;
+            await new Promise((resolve, reject) => { mapImg.onload = resolve; mapImg.onerror = reject; });
+            ctx.drawImage(mapImg, 0, 0, width, height);
+
+            // Try to capture HTML overlays (markers, popups)
+            const markerOverlay = container.querySelector('.mapboxgl-canvas-container');
+            if (markerOverlay) {
+                try {
+                    const overlayCanvas = await html2canvas(markerOverlay, {
+                        backgroundColor: null, scale: scale, logging: false, useCORS: true, width, height
+                    });
+                    ctx.drawImage(overlayCanvas, 0, 0, width, height);
+                } catch (e) {
+                    console.log('Overlay capture skipped:', e);
+                }
+            }
+
+            // Ensure legend is up to date before capture
+            updateMapLegend();
+
+            // Capture map overlay elements (logo, legend)
+            const mapContainer = container.closest('.map-container');
+            for (const el of [document.getElementById('mapOverlayTitle'), document.getElementById('mapOverlayLogo'), document.getElementById('mapOverlayLegend')]) {
+                if (el && getComputedStyle(el).display !== 'none' && el.offsetWidth > 0) {
+                    try {
+                        const elCanvas = await html2canvas(el, {
+                            backgroundColor: null, scale: scale, logging: false, useCORS: true
+                        });
+                        const rect = el.getBoundingClientRect();
+                        const containerRect = mapContainer.getBoundingClientRect();
+                        const x = rect.left - containerRect.left;
+                        const y = rect.top - containerRect.top;
+                        ctx.drawImage(elCanvas, 0, 0, elCanvas.width, elCanvas.height, x, y, rect.width, rect.height);
+                    } catch (e) {
+                        console.log('Map overlay capture skipped:', e);
+                    }
+                }
+            }
+
+            // Add branded footer bar below the map (not overlaid)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, height, width, footerHeight);
+            ctx.fillStyle = '#dddddd';
+            ctx.fillRect(0, height, width, 1);  // subtle top border
+            ctx.fillStyle = '#333333';
+            ctx.font = '12px Georgia, serif';
+            ctx.fillText('Source: FDIC Summary of Deposits | NCRC JustData BranchMapper', 12, height + 22);
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const dateWidth = ctx.measureText(dateStr).width;
+            ctx.fillText(dateStr, width - dateWidth - 12, height + 22);
+
+            return new Promise(resolve => {
+                composite.toBlob(blob => resolve(blob), 'image/jpeg', 0.95);
+            });
+        }
+
+        // Generate branch data CSV
+        function generateBranchCSV(branches) {
+            const headers = [
+                'institution_name', 'branch_name', 'address', 'city', 'state', 'zip',
+                'county', 'latitude', 'longitude', 'total_deposits', 'assets_000s',
+                'service_type', 'rssd', 'uninumbr', 'lmi_tract', 'majority_minority_tract'
+            ];
+            let csv = headers.join(',') + '\n';
+            branches.forEach(b => {
+                const row = [
+                    escapeCSV(b.bank_name || ''),
+                    escapeCSV(b.branch_name || ''),
+                    escapeCSV(b.address || ''),
+                    escapeCSV(b.city || ''),
+                    escapeCSV(b.state_abbrv || b.state || ''),
+                    escapeCSV(b.zip || ''),
+                    escapeCSV(b.county || ''),
+                    b.latitude != null ? b.latitude : '',
+                    b.longitude != null ? b.longitude : '',
+                    b.total_deposits != null ? b.total_deposits : '',
+                    b.assets_000s != null ? b.assets_000s : '',
+                    escapeCSV(b.service_type || ''),
+                    b.rssd || '',
+                    b.uninumbr || '',
+                    b.lmict ? 'Yes' : 'No',
+                    b.mmct ? 'Yes' : 'No'
+                ];
+                csv += row.join(',') + '\n';
+            });
+            return csv;
+        }
+
+        // Generate AI-ready markdown
+        function generateAIMarkdown(branches) {
+            const geography = getGeographyName();
+            const totalBranches = branches.length;
+            const institutions = [...new Set(branches.map(b => b.bank_name || 'Unknown'))];
+            const totalDeposits = branches.reduce((sum, b) => sum + (parseFloat(b.total_deposits) || 0), 0);
+
+            // Count by institution
+            const instCounts = {};
+            branches.forEach(b => {
+                const name = b.bank_name || 'Unknown';
+                instCounts[name] = (instCounts[name] || 0) + 1;
+            });
+            const sorted = Object.entries(instCounts).sort((a, b) => b[1] - a[1]);
+
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const selectedBankNames = selectedBanks.length > 0
+                ? selectedBanks.map(b => b.name).join(' and ')
+                : 'All Banks';
+
+            // AI instructions and NCRC style guide at the top
+            let md = `## Instructions for AI analysis\n\n`;
+            md += `You are analyzing bank branch data for ${selectedBankNames} from the FDIC Summary of Deposits. `;
+            md += `This data was exported from NCRC's BranchMapper tool on ${dateStr}.\n\n`;
+            md += `Please provide a plain-language analysis covering:\n\n`;
+            md += `1. **Market structure:** Which institutions dominate this market? How concentrated is branch presence? Is this a competitive market or dominated by a few large banks?\n`;
+            md += `2. **Community access:** If LMI tract data is available, are low and moderate income communities adequately served by bank branches? Are there potential "banking deserts" where branch access is limited?\n`;
+            md += `3. **Deposit concentration:** How are deposits distributed across institutions? Does any single institution hold a disproportionate share?\n`;
+            md += `4. **Notable patterns:** Are there any geographic clusters, institutional patterns or access gaps worth highlighting?\n\n`;
+            md += `### Writing style requirements\n\n`;
+            md += `Follow these NCRC editorial standards:\n\n`;
+            md += `- **Tone:** Purely descriptive and factual. No causal claims, no policy recommendations in findings, no speculation.\n`;
+            md += `- **Language:** Use "demonstrates," "reveals," "indicates," "shows" \u2014 never "proves."\n`;
+            md += `- **Disparities:** Present findings as "disparities" or "gaps" rather than "discrimination." Note "underperformance" rather than "exclusion."\n`;
+            md += `- **Intent:** Acknowledge patterns without attributing intent. Describe patterns as "requiring attention" rather than "violations."\n`;
+            md += `- **Hedging:** Do not use "Research shows" as an opener. Note that this data represents a single point in time and may not capture recent changes.\n`;
+            md += `- **Numbers:** Format percentages as ##.#%. Format integers with commas. Spell out one through nine, use figures for 10 and above.\n`;
+            md += `- **Geography:** State names spelled out, not abbreviated (exception: Washington, DC).\n`;
+            md += `- **Race/ethnicity:** Capitalize racial and ethnic descriptors: Black, White, Hispanic, Asian, Indigenous. No hyphens in compound descriptors (e.g., "African American" not "African-American").\n`;
+            md += `- **No Oxford comma** unless needed for clarity.\n`;
+            md += `- **No em-dashes** \u2014 use commas, semicolons, or restructure the sentence.\n\n`;
+            md += `---\n\n`;
+
+            // Data sections
+            md += `# BranchMapper data export: ${geography}\n\n`;
+            md += `**Exported:** ${dateStr}\n`;
+            md += `**Source:** FDIC Summary of Deposits, compiled by NCRC JustData\n\n`;
+
+            md += `## Summary\n\n`;
+            md += `- **Total branches in view:** ${totalBranches.toLocaleString()}\n`;
+            md += `- **Number of institutions:** ${institutions.length}\n`;
+            md += `- **Total deposits:** $${(totalDeposits / 1000000).toFixed(1)}M\n\n`;
+
+            md += `## Branches by institution\n\n`;
+            md += `| Institution | Branches | Share |\n`;
+            md += `|-------------|----------|-------|\n`;
+            sorted.forEach(([name, count]) => {
+                const share = ((count / totalBranches) * 100).toFixed(1);
+                md += `| ${name} | ${count} | ${share}% |\n`;
+            });
+            md += `\n`;
+
+            // LMI summary
+            const lmiCount = branches.filter(b => b.lmict).length;
+            if (lmiCount > 0) {
+                const lmiPct = ((lmiCount / totalBranches) * 100).toFixed(1);
+                md += `## Branch location demographics\n\n`;
+                md += `- **Branches in LMI census tracts:** ${lmiCount} (${lmiPct}%)\n`;
+                md += `- **Branches in non-LMI tracts:** ${totalBranches - lmiCount} (${(100 - parseFloat(lmiPct)).toFixed(1)}%)\n`;
+                const mmctCount = branches.filter(b => b.mmct).length;
+                if (mmctCount > 0) {
+                    const mmctPct = ((mmctCount / totalBranches) * 100).toFixed(1);
+                    md += `- **Branches in majority-minority tracts:** ${mmctCount} (${mmctPct}%)\n`;
+                }
+                md += `\n`;
+            }
+
+            md += `## Full branch list\n\n`;
+            md += `| Institution | Branch | Address | City | State | Deposits ($) |\n`;
+            md += `|-------------|--------|---------|------|-------|--------------|\n`;
+
+            const display = branches.slice(0, 200);
+            display.forEach(b => {
+                md += `| ${b.bank_name || ''} `;
+                md += `| ${b.branch_name || ''} `;
+                md += `| ${b.address || ''} `;
+                md += `| ${b.city || ''} `;
+                md += `| ${b.state_abbrv || b.state || ''} `;
+                md += `| ${b.total_deposits != null ? Number(b.total_deposits).toLocaleString() : ''} |\n`;
+            });
+
+            if (branches.length > 200) {
+                md += `\n*Showing first 200 of ${branches.length} branches. Full data available in the CSV file.*\n`;
+            }
+
+            return md;
+        }
+
+        // Export ZIP bundle with JPG, PDF, CSV, and Markdown
+        async function exportBranchMapperBundle() {
+            if (!branchMap) { alert('No map loaded.'); return; }
+
+            const exportBtn = document.querySelector('[onclick="exportBranchMapperBundle()"]');
+            const originalHTML = exportBtn ? exportBtn.innerHTML : '';
+
+            try {
+                if (exportBtn) { exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...'; exportBtn.disabled = true; }
+                updateInfoPanel('Loading data for export...');
+
+                const { branches, oscrEvents } = await collectExportData();
+                if (branches.length === 0 && oscrEvents.length === 0) {
+                    alert('No data to export. Please load branch data or OSCR events first.');
+                    return;
+                }
+
+                // 1. Capture map as JPG
+                updateInfoPanel('Capturing map image...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Capturing map...';
+                const mapBlob = await captureMapAsJPG();
+
+                // 2. Generate CSV
+                updateInfoPanel('Building data files...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Building data...';
+                const csvContent = generateBranchCSV(branches);
+
+                // 3. Generate Markdown
+                const mdContent = generateAIMarkdown(branches);
+
+                // 4. Fetch methods PDF from server
+                updateInfoPanel('Generating methods PDF...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+                const geographyName = getGeographyName();
+                const pdfResponse = await fetch(`${APP_BASE_URL}/export/methods-pdf?geography=${encodeURIComponent(geographyName)}`);
+                if (!pdfResponse.ok) throw new Error('Failed to generate methods PDF');
+                const pdfBlob = await pdfResponse.blob();
+
+                // 5. Assemble ZIP
+                updateInfoPanel('Creating download package...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Zipping...';
+                const zip = new JSZip();
+
+                const safeName = geographyName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 80);
+                const now = new Date();
+                const dateStr = now.getFullYear()
+                    + String(now.getMonth() + 1).padStart(2, '0')
+                    + String(now.getDate()).padStart(2, '0')
+                    + '_' + String(now.getHours()).padStart(2, '0')
+                    + String(now.getMinutes()).padStart(2, '0')
+                    + String(now.getSeconds()).padStart(2, '0');
+
+                zip.file(`BranchMapper_${safeName}_${dateStr}.jpg`, mapBlob);
+                zip.file(`BranchMapper_Methods_and_Definitions.pdf`, pdfBlob);
+                zip.file(`BranchMapper_${safeName}_BranchData_${dateStr}.csv`, csvContent);
+                zip.file(`BranchMapper_${safeName}_AI_Analysis_${dateStr}.md`, mdContent);
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+                // 6. Download
+                const link = document.createElement('a');
+                link.download = `BranchMapper_${safeName}_${dateStr}.zip`;
+                link.href = URL.createObjectURL(zipBlob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+
+                console.log(`Export bundle: ${branches.length} branches, map JPG, methods PDF, CSV, AI markdown`);
+                updateInfoPanel(`Export complete! Downloaded ZIP with ${branches.length} branches.`);
+
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting data: ' + error.message);
+                updateInfoPanel('Export failed. Please try again.');
+            } finally {
+                if (exportBtn) { exportBtn.innerHTML = originalHTML; exportBtn.disabled = false; }
+            }
+        }
+
+        // Legacy alias for backward compatibility
+        async function exportMapAndData() { return exportBranchMapperBundle(); }
+        
+        // Helper function to escape CSV values
+        function escapeCSV(value) {
+            if (value === null || value === undefined) return '';
+            const stringValue = String(value);
+            // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return '"' + stringValue.replace(/"/g, '""') + '"';
+            }
+            return stringValue;
+        }
+        
+        // Update info panel
+        function updateInfoPanel(message) {
+            const panel = document.getElementById('infoPanel');
+            panel.innerHTML = `<strong>Status:</strong> ${message}`;
+        }
+        
+        
+        // Setup HTML tooltips for feature cards
+        function setupFeatureCardTooltips() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            featureCards.forEach(card => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                // Create tooltip element
+                const tooltip = document.createElement('div');
+                tooltip.className = 'feature-card-tooltip';
+                tooltip.innerHTML = tooltipText;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    right: calc(100% + 15px);
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: white;
+                    color: black;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    min-width: 250px;
+                    max-width: 350px;
+                    width: fit-content;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    z-index: 100000;
+                    text-align: left;
+                    word-wrap: break-word;
+                    border: 2px solid black;
+                    box-sizing: border-box;
+                `;
+                
+                // Create arrow
+                const arrow = document.createElement('div');
+                arrow.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 6px solid transparent;
+                    border-bottom: 6px solid transparent;
+                    border-left: 6px solid white;
+                    z-index: 1;
+                `;
+                
+                // Create arrow border
+                const arrowBorder = document.createElement('div');
+                arrowBorder.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 7px solid transparent;
+                    border-bottom: 7px solid transparent;
+                    border-left: 7px solid black;
+                    z-index: 0;
+                `;
+                tooltip.appendChild(arrowBorder);
+                tooltip.appendChild(arrow);
+                
+                card.appendChild(tooltip);
+                
+                // Show/hide on hover
+                card.addEventListener('mouseenter', function() {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.visibility = 'visible';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.visibility = 'hidden';
+                });
+            });
+        }
+        
+        // Initialize map on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            setupFeatureCardTooltips();
+            initMap();
+            initializeBankSearch();
+
+            // OSCR date range: show/hide custom date picker
+            const dateRangeSelect = document.getElementById('dateRangeSelect');
+            if (dateRangeSelect) {
+                dateRangeSelect.addEventListener('change', function() {
+                    document.getElementById('customDateRange').style.display =
+                        this.value === 'custom' ? 'block' : 'none';
+                });
+            }
+
+            // OSCR event type filter checkboxes
+            const filterOpenings = document.getElementById('filterOpenings');
+            const filterClosings = document.getElementById('filterClosings');
+            if (filterOpenings) filterOpenings.addEventListener('change', refilterOSCR);
+            if (filterClosings) filterClosings.addEventListener('change', refilterOSCR);
+
+            updateInfoPanel('Search a bank to get started.');
+        });
+    </script>

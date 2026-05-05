@@ -14,6 +14,8 @@ from pathlib import Path
 import json
 import time
 
+logger = logging.getLogger(__name__)
+
 # Import BeautifulSoup at module level to avoid scope issues
 try:
     from bs4 import BeautifulSoup
@@ -21,8 +23,6 @@ try:
 except ImportError:
     BEAUTIFULSOUP_AVAILABLE = False
     logger.warning("beautifulsoup4 not installed. Some features may not work.")
-
-logger = logging.getLogger(__name__)
 
 
 class WebsiteEnricher:

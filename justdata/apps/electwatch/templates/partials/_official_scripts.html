@@ -1,0 +1,633 @@
+    <script>
+        // ============================================================
+        // CONFIGURATION
+        // ============================================================
+        const officialId = '{{ official_id }}';
+
+        // Domain mapping for major financial firms (Google Favicons API)
+        const DOMAIN_MAP = {
+            'CAPITAL ONE': 'capitalone.com',
+            'NEW YORK LIFE': 'newyorklife.com',
+            'ALLY': 'ally.com',
+            'ALLY FINANCIAL': 'ally.com',
+            'USAA': 'usaa.com',
+            'JPMORGAN': 'jpmorganchase.com',
+            'JPMORGAN CHASE': 'jpmorganchase.com',
+            'JP MORGAN': 'jpmorganchase.com',
+            'BANK OF AMERICA': 'bankofamerica.com',
+            'WELLS FARGO': 'wellsfargo.com',
+            'CITIGROUP': 'citi.com',
+            'CITI': 'citi.com',
+            'GOLDMAN SACHS': 'goldmansachs.com',
+            'MORGAN STANLEY': 'morganstanley.com',
+            'BLACKROCK': 'blackrock.com',
+            'VANGUARD': 'vanguard.com',
+            'FIDELITY': 'fidelity.com',
+            'CHARLES SCHWAB': 'schwab.com',
+            'STATE FARM': 'statefarm.com',
+            'ALLSTATE': 'allstate.com',
+            'PRUDENTIAL': 'prudential.com',
+            'METLIFE': 'metlife.com',
+            'VISA': 'visa.com',
+            'MASTERCARD': 'mastercard.com',
+            'AMERICAN EXPRESS': 'americanexpress.com',
+            'PNC': 'pnc.com',
+            'PNC FINANCIAL': 'pnc.com',
+            'TRUIST': 'truist.com',
+            'US BANK': 'usbank.com',
+            'US BANCORP': 'usbank.com',
+            'FIFTH THIRD': '53.com',
+            'REGIONS': 'regions.com',
+            'CITIZENS': 'citizensbank.com',
+            'HUNTINGTON': 'huntington.com',
+            'BLACKSTONE': 'blackstone.com',
+            'KKR': 'kkr.com',
+            'CARLYLE': 'carlyle.com',
+            'APOLLO': 'apollo.com',
+            'STATE STREET': 'statestreet.com',
+            'NORTHERN TRUST': 'northerntrust.com',
+            'T ROWE PRICE': 'troweprice.com',
+            'INVESCO': 'invesco.com',
+            'FRANKLIN TEMPLETON': 'franklintempleton.com',
+            'AFLAC': 'aflac.com',
+            'PROGRESSIVE': 'progressive.com',
+            'TRAVELERS': 'travelers.com',
+            'CIGNA': 'cigna.com',
+            'AETNA': 'aetna.com',
+            'ANTHEM': 'anthem.com',
+            'UNITEDHEALTH': 'uhc.com',
+            'HUMANA': 'humana.com',
+            'PAYPAL': 'paypal.com',
+            'DISCOVER': 'discover.com',
+            'SYNCHRONY': 'synchrony.com',
+            'ROCKET': 'rocketmortgage.com',
+            'COINBASE': 'coinbase.com',
+            'ROBINHOOD': 'robinhood.com',
+            'EDWARD JONES': 'edwardjones.com',
+            'RAYMOND JAMES': 'raymondjames.com',
+            'LPL FINANCIAL': 'lpl.com',
+            'AMERIPRISE': 'ameriprise.com',
+            // Venture Capital / Private Equity
+            'DRAGONEER': 'dragoneer.com',
+            'DRAGONEER INVESTMENT': 'dragoneer.com',
+            'DRAGONEER INVESTMENT GROUP': 'dragoneer.com',
+            'KLEINER PERKINS': 'kleinerperkins.com',
+            'KLEINER': 'kleinerperkins.com',
+            'BESSEMER': 'bvp.com',
+            'BESSEMER VENTURE': 'bvp.com',
+            'BESSEMER VENTURE PARTNERS': 'bvp.com',
+            'SEQUOIA': 'sequoiacap.com',
+            'SEQUOIA CAPITAL': 'sequoiacap.com',
+            'ANDREESSEN': 'a16z.com',
+            'ANDREESSEN HOROWITZ': 'a16z.com',
+            'A16Z': 'a16z.com',
+            'ACCEL': 'accel.com',
+            'BENCHMARK': 'benchmark.com',
+            'GREYLOCK': 'greylock.com',
+            'LIGHTSPEED': 'lsvp.com',
+            'NEA': 'nea.com',
+            'GENERAL CATALYST': 'generalcatalyst.com',
+            'INSIGHT PARTNERS': 'insightpartners.com',
+            'TIGER GLOBAL': 'tigerglobal.com',
+            'COATUE': 'coatue.com',
+            'THRIVE CAPITAL': 'thrivecap.com',
+            'FOUNDERS FUND': 'foundersfund.com',
+            'KHOSLA': 'khoslaventures.com',
+            'KHOSLA VENTURES': 'khoslaventures.com',
+            'SOFTBANK': 'softbank.com',
+            'B CAPITAL': 'bcapgroup.com',
+            'B CAPITAL GROUP': 'bcapgroup.com'
+        };
+
+        // Financial committees to highlight
+        const FINANCIAL_COMMITTEES = [
+            'financial services', 'banking', 'finance', 'budget',
+            'small business', 'ways and means', 'appropriations',
+            'commerce', 'economic'
+        ];
+
+        // ============================================================
+        // DATA STORAGE
+        // ============================================================
+        let currentOfficial = null;
+        let allFirms = [];
+        let allAssociations = [];
+        let allContributors = [];
+
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+        function formatAmount(amount) {
+            if (!amount || amount === 0) return '$0';
+            return '$' + Math.round(amount).toLocaleString();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '--';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
+        function getDomainForCompany(companyName) {
+            if (!companyName) return null;
+            const upper = companyName.toUpperCase().trim();
+            for (const [key, domain] of Object.entries(DOMAIN_MAP)) {
+                if (upper.includes(key) || key.includes(upper)) {
+                    return domain;
+                }
+            }
+            return null;
+        }
+
+        function isFinancialCommittee(name) {
+            const lower = name.toLowerCase();
+            return FINANCIAL_COMMITTEES.some(term => lower.includes(term));
+        }
+
+        /**
+         * Extract normalized company name from PAC name.
+         */
+        function extractCompanyFromPac(pacName) {
+            if (!pacName) return '';
+            let name = pacName.toUpperCase();
+            const suffixes = [
+                'POLITICAL ACTION COMMITTEE', 'FEDERAL POLITICAL ACTION COMMITTEE',
+                'FEDERAL PAC', 'GOOD GOVERNMENT FUND', 'EMPLOYEES PAC', 'EMPLOYEE PAC',
+                'PAC', '& CO.', '& CO', 'INC.', 'INC', 'CORP.', 'CORP', 'LLC', 'NA', 'N.A.'
+            ];
+            for (const suffix of suffixes) {
+                if (name.endsWith(suffix)) {
+                    name = name.slice(0, -suffix.length).trim();
+                }
+            }
+            return name.replace(/[,.\s]+$/, '');
+        }
+
+        /**
+         * Build combined top sponsors (PAC + Individual from same company)
+         */
+        function buildTopSponsors(official) {
+            const sponsorMap = new Map();
+
+            // Add PAC contributions
+            const pacs = official.top_financial_pacs || [];
+            for (const pac of pacs) {
+                const companyName = extractCompanyFromPac(pac.name || pac.committee_name || '');
+                if (!companyName) continue;
+                const existing = sponsorMap.get(companyName) || { pac: 0, individual: 0 };
+                existing.pac += pac.amount || pac.total || 0;
+                sponsorMap.set(companyName, existing);
+            }
+
+            // Add Individual contributions (by employer)
+            const individuals = official.top_individual_financial || official.top_financial_employers || [];
+            for (const ind of individuals) {
+                const employer = (ind.employer || '').toUpperCase().trim();
+                if (!employer) continue;
+
+                // Try to match to existing PAC company
+                let matched = null;
+                for (const [company] of sponsorMap) {
+                    if (employer.includes(company) || company.includes(employer)) {
+                        matched = company;
+                        break;
+                    }
+                }
+                const companyName = matched || employer;
+                const existing = sponsorMap.get(companyName) || { pac: 0, individual: 0 };
+                existing.individual += ind.amount || ind.total || 0;
+                sponsorMap.set(companyName, existing);
+            }
+
+            // Convert to array and sort
+            return Array.from(sponsorMap.entries())
+                .map(([name, data]) => ({
+                    name,
+                    total: data.pac + data.individual,
+                    pac: data.pac,
+                    individual: data.individual
+                }))
+                .sort((a, b) => b.total - a.total);
+        }
+
+        // ============================================================
+        // MODAL FUNCTIONS
+        // ============================================================
+        function openModal(type) {
+            document.getElementById(`modal-${type}`).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(type) {
+            document.getElementById(`modal-${type}`).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                ['firms', 'associations', 'contributors'].forEach(closeModal);
+            }
+        });
+
+        // ============================================================
+        // RENDER FUNCTIONS
+        // ============================================================
+        function renderHeader(official) {
+            // Photo
+            const photoEl = document.getElementById('official-photo');
+            const fallbackEl = document.getElementById('photo-fallback');
+            if (official.photo_url) {
+                photoEl.src = official.photo_url;
+                photoEl.alt = `Photo of ${official.name}`;
+                photoEl.style.display = 'block';
+                fallbackEl.style.display = 'none';
+                photoEl.onerror = () => {
+                    photoEl.style.display = 'none';
+                    fallbackEl.style.display = 'flex';
+                    fallbackEl.textContent = official.name ? official.name.charAt(0).toUpperCase() : '?';
+                };
+            } else {
+                photoEl.style.display = 'none';
+                fallbackEl.style.display = 'flex';
+                fallbackEl.textContent = official.name ? official.name.charAt(0).toUpperCase() : '?';
+            }
+
+            // Party badge
+            const badge = document.getElementById('party-badge');
+            badge.textContent = official.party || '?';
+            badge.className = `party-badge ${official.party || ''}`;
+
+            // Name and title
+            document.getElementById('official-name').textContent = formatDisplayName(official.name);
+            const title = official.chamber === 'house' ? 'Representative' : 'Senator';
+            document.getElementById('official-title').textContent = title;
+
+            // Update page title
+            document.title = `${formatDisplayName(official.name)} | Member Profile | ElectWatch`;
+
+            // Meta info
+            const stateDistrict = official.state + (official.district ? `-${official.district}` : '');
+            document.querySelector('#meta-state span').textContent = stateDistrict;
+            document.querySelector('#meta-chamber span').textContent = official.chamber === 'house' ? 'House' : 'Senate';
+            document.querySelector('#meta-years span').textContent = `${official.years_in_congress || '--'} years in Congress`;
+
+            // Links
+            const linksContainer = document.getElementById('official-links');
+            let linksHtml = '';
+            if (official.bioguide_id) {
+                linksHtml += `<a href="https://bioguide.congress.gov/search/bio/${official.bioguide_id}" target="_blank" class="official-link"><i class="fas fa-landmark"></i> Congress.gov</a>`;
+            }
+            if (official.fec_candidate_id) {
+                linksHtml += `<a href="https://www.fec.gov/data/candidate/${official.fec_candidate_id}/" target="_blank" class="official-link"><i class="fas fa-dollar-sign"></i> FEC Filings</a>`;
+            }
+            if (official.website_url) {
+                linksHtml += `<a href="${official.website_url}" target="_blank" class="official-link"><i class="fas fa-globe"></i> Official Website</a>`;
+            }
+            linksContainer.innerHTML = linksHtml;
+        }
+
+        /**
+         * Create a clean short abbreviation for company names
+         */
+        function getShortName(name) {
+            if (!name) return '?';
+            // Remove common suffixes
+            let clean = name.toUpperCase()
+                .replace(/\s+(LLC|INC|CORP|CO|LP|LLP|GROUP|PARTNERS|CAPITAL|VENTURES|MANAGEMENT|INVESTMENT|INVESTMENTS|FINANCIAL|SERVICES)\.?$/gi, '')
+                .trim();
+            // If it's short enough, use first word
+            const words = clean.split(/\s+/);
+            if (words.length === 1) {
+                return words[0].substring(0, 4);
+            }
+            // Use initials for multi-word names (max 4 chars)
+            const initials = words.slice(0, 4).map(w => w[0]).join('');
+            return initials || clean.substring(0, 4);
+        }
+
+        /**
+         * Handle favicon load errors by replacing with text fallback
+         */
+        function handleFaviconError(img) {
+            const parent = img.parentElement;
+            const shortName = parent.dataset.shortname || '?';
+            const name = parent.dataset.name || '';
+            const total = parent.dataset.total || 0;
+            const pac = parent.dataset.pac || 0;
+            const individual = parent.dataset.individual || 0;
+            
+            // Create fallback element
+            const fallback = document.createElement('div');
+            fallback.className = 'header-sponsor-fallback';
+            fallback.innerHTML = `
+                ${shortName}
+                <div class="sponsor-tooltip">
+                    <strong>${name}</strong><br>
+                    Total: ${formatAmount(Number(total))}<br>
+                    PAC: ${formatAmount(Number(pac))}<br>
+                    Individual: ${formatAmount(Number(individual))}
+                </div>
+            `;
+            parent.replaceWith(fallback);
+        }
+
+        function renderHeaderSponsors(sponsors) {
+            const container = document.getElementById('header-sponsors');
+            const top5 = sponsors.slice(0, 5);
+
+            if (top5.length === 0) {
+                container.innerHTML = '<span style="opacity: 0.7; font-size: 13px;">No sponsor data available</span>';
+                return;
+            }
+
+            container.innerHTML = top5.map(sponsor => {
+                const domain = getDomainForCompany(sponsor.name);
+                const shortName = getShortName(sponsor.name);
+                const tooltipHtml = `
+                    <div class="sponsor-tooltip">
+                        <strong>${sponsor.name}</strong><br>
+                        Total: ${formatAmount(sponsor.total)}<br>
+                        PAC: ${formatAmount(sponsor.pac)}<br>
+                        Individual: ${formatAmount(sponsor.individual)}
+                    </div>
+                `;
+
+                if (domain) {
+                    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                    // Store fallback data for onerror handler
+                    const fallbackId = `fallback-${sponsor.name.replace(/\W+/g, '')}`;
+                    return `
+                        <div class="header-sponsor-logo" data-shortname="${shortName}" data-name="${sponsor.name}" data-total="${sponsor.total}" data-pac="${sponsor.pac}" data-individual="${sponsor.individual}">
+                            <img src="${faviconUrl}" alt="${sponsor.name}" onload="if(this.naturalWidth<2||this.naturalHeight<2){this.onerror();}" onerror="handleFaviconError(this)">
+                            ${tooltipHtml}
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="header-sponsor-fallback">
+                            ${shortName}
+                            ${tooltipHtml}
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function renderStats(official) {
+            // Total contributions
+            const totalPac = official.total_pac_bulk || official.contributions || 0;
+            const totalIndividual = official.total_individual || 0;
+            const totalContributions = totalPac + totalIndividual;
+            document.getElementById('stat-total').textContent = formatAmount(totalContributions);
+
+            // Financial sector total
+            const financialPac = official.financial_pac_bulk || official.financial_sector_pac || 0;
+            const financialIndividual = official.financial_individual || 0;
+            const financialTotal = financialPac + financialIndividual;
+            document.getElementById('stat-financial').textContent = formatAmount(financialTotal);
+            const financialPct = totalContributions > 0 ? Math.round((financialTotal / totalContributions) * 100) : 0;
+            document.getElementById('stat-financial-pct').textContent = `${financialPct}% of total`;
+
+            // Financial PAC
+            document.getElementById('stat-pac').textContent = formatAmount(financialPac);
+            const pacPct = financialTotal > 0 ? Math.round((financialPac / financialTotal) * 100) : 0;
+            document.getElementById('stat-pac-pct').textContent = `${pacPct}% of financial`;
+
+            // Financial Individual
+            document.getElementById('stat-individual').textContent = formatAmount(financialIndividual);
+            const indPct = financialTotal > 0 ? Math.round((financialIndividual / financialTotal) * 100) : 0;
+            document.getElementById('stat-individual-pct').textContent = `${indPct}% of financial`;
+
+            // Years in Congress
+            document.getElementById('stat-years').textContent = official.years_in_congress || '--';
+            document.getElementById('stat-first-elected').textContent = `First elected ${official.first_elected || '--'}`;
+        }
+
+        function renderCommittees(committees, subcommittees) {
+            const container = document.getElementById('committees-container');
+            const all = [...(committees || []), ...(subcommittees || []).map(s => '• ' + s)];
+
+            if (all.length === 0) {
+                container.innerHTML = '<span class="empty-message">No committee assignments listed</span>';
+                return;
+            }
+
+            container.innerHTML = all.map(c => {
+                const isFinancial = isFinancialCommittee(c);
+                return `
+                    <span class="committee-badge ${isFinancial ? 'financial' : ''}">
+                        <i class="fas fa-${isFinancial ? 'landmark' : 'users'}"></i>
+                        ${c}
+                    </span>
+                `;
+            }).join('');
+        }
+
+        function renderFirms(firms) {
+            allFirms = firms || [];
+            const tbody = document.getElementById('firms-table-body');
+            const modalBody = document.getElementById('modal-firms-body');
+
+            if (allFirms.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-message">No firm data available</td></tr>';
+                modalBody.innerHTML = '<tr><td colspan="4" class="empty-message">No firm data available</td></tr>';
+                return;
+            }
+
+            // Top 5 for main table
+            tbody.innerHTML = allFirms.slice(0, 5).map(firm => `
+                <tr>
+                    <td>${firm.name || 'Unknown'}</td>
+                    <td><span class="sector-tag">${firm.sector || firm.type || '--'}</span></td>
+                    <td>${formatAmount(firm.total || firm.amount)}</td>
+                </tr>
+            `).join('');
+
+            // All for modal
+            modalBody.innerHTML = allFirms.map((firm, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${firm.name || 'Unknown'}</td>
+                    <td><span class="sector-tag">${firm.sector || firm.type || '--'}</span></td>
+                    <td>${formatAmount(firm.total || firm.amount)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAssociations(associations) {
+            allAssociations = associations || [];
+            const tbody = document.getElementById('associations-table-body');
+            const modalBody = document.getElementById('modal-associations-body');
+
+            if (allAssociations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-message">No trade association data</td></tr>';
+                modalBody.innerHTML = '<tr><td colspan="3" class="empty-message">No trade association data</td></tr>';
+                return;
+            }
+
+            // Top 5 for main table
+            tbody.innerHTML = allAssociations.slice(0, 5).map(assoc => `
+                <tr>
+                    <td>${assoc.name || 'Unknown'}</td>
+                    <td></td>
+                    <td>${formatAmount(assoc.total || assoc.amount)}</td>
+                </tr>
+            `).join('');
+
+            // All for modal
+            modalBody.innerHTML = allAssociations.map((assoc, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${assoc.name || 'Unknown'}</td>
+                    <td>${formatAmount(assoc.total || assoc.amount)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderContributors(contributors) {
+            allContributors = contributors || [];
+            const tbody = document.getElementById('contributors-table-body');
+            const modalBody = document.getElementById('modal-contributors-body');
+
+            if (allContributors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-message">No individual contributor data</td></tr>';
+                modalBody.innerHTML = '<tr><td colspan="5" class="empty-message">No individual contributor data</td></tr>';
+                return;
+            }
+
+            // Top 5 for main table
+            tbody.innerHTML = allContributors.slice(0, 5).map(c => `
+                <tr>
+                    <td>${c.name || '--'}</td>
+                    <td>${c.employer || '--'}</td>
+                    <td class="hide-mobile">${c.occupation || '--'}</td>
+                    <td>${formatAmount(c.amount)}</td>
+                </tr>
+            `).join('');
+
+            // All for modal
+            modalBody.innerHTML = allContributors.map((c, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${c.name || '--'}</td>
+                    <td>${c.employer || '--'}</td>
+                    <td>${c.occupation || '--'}</td>
+                    <td>${formatAmount(c.amount)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderStockTrades(trades) {
+            const section = document.getElementById('stock-trades-section');
+            const tbody = document.getElementById('trades-table-body');
+
+            // CRITICAL: Hide section completely if no trades
+            if (!trades || trades.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            tbody.innerHTML = trades.map(trade => {
+                const tradeType = (trade.transaction_type || trade.type || '').toLowerCase();
+                const isBuy = tradeType.includes('buy') || tradeType.includes('purchase');
+                const isSell = tradeType.includes('sell') || tradeType.includes('sale');
+                const typeClass = isBuy ? 'buy' : (isSell ? 'sell' : 'exchange');
+                const typeLabel = isBuy ? 'BUY' : (isSell ? 'SELL' : tradeType.toUpperCase());
+
+                // Format amount range
+                let amountDisplay = '--';
+                if (trade.amount) {
+                    if (typeof trade.amount === 'object') {
+                        amountDisplay = trade.amount.display || `${formatAmount(trade.amount.min)} - ${formatAmount(trade.amount.max)}`;
+                    } else {
+                        amountDisplay = formatAmount(trade.amount);
+                    }
+                } else if (trade.amount_range) {
+                    amountDisplay = trade.amount_range;
+                }
+
+                return `
+                    <tr>
+                        <td>${formatDate(trade.date || trade.transaction_date)}</td>
+                        <td>${trade.company || trade.asset || trade.ticker || '--'}</td>
+                        <td><span class="trade-type ${typeClass}">${typeLabel}</span></td>
+                        <td>${amountDisplay}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ============================================================
+        // MAIN RENDER FUNCTION
+        // ============================================================
+        function renderProfile(official) {
+            currentOfficial = official;
+
+            // Hide loading, show content
+            document.getElementById('profile-loading').style.display = 'none';
+            document.getElementById('profile-content').style.display = 'block';
+
+            // Render all sections
+            renderHeader(official);
+            const sponsors = buildTopSponsors(official);
+            renderHeaderSponsors(sponsors);
+            renderStats(official);
+            renderCommittees(official.committees, official.subcommittees);
+            renderFirms(official.firms || official.top_firms);
+            renderAssociations(official.trade_associations || official.top_trade_associations || []);
+
+            // Individual contributors - try multiple data sources
+            const contributors = official.top_individual_financial ||
+                                official.top_financial_contributors ||
+                                official.top_financial_employers || [];
+            renderContributors(contributors);
+
+            // Stock trades (conditional)
+            renderStockTrades(official.trades || official.trades_list || official.financial_trades);
+        }
+
+        // ============================================================
+        // LOAD PROFILE
+        // ============================================================
+        async function loadProfile() {
+            try {
+                const response = await fetch(`/electwatch/api/official/${officialId}`);
+                const data = await response.json();
+
+                if (data.success && data.official) {
+                    renderProfile(data.official);
+                } else {
+                    document.getElementById('profile-loading').innerHTML = `
+                        <div class="empty-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>Official not found: ${officialId}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('profile-loading').innerHTML = `
+                    <div class="empty-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading profile. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load on page ready
+        loadProfile();
+    </script>

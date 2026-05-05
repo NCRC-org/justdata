@@ -1,0 +1,394 @@
+    <div class="report-container">
+        <div class="report-header">
+            <h1>Lender Analysis Report</h1>
+        </div>
+        
+        <div class="report-actions">
+            <button class="action-btn" onclick="exportToExcel()" style="background: #28a745;">
+                <i class="fas fa-file-excel"></i> Export Full Report to Excel
+            </button>
+        </div>
+        
+        <div id="loadingState" class="loading">
+            <p>Loading report data...</p>
+        </div>
+        
+        <div id="main-content" style="display: none;">
+            <!-- Lender Information (not a numbered section) -->
+            <div class="report-section">
+                <h2 class="section-title">Lender Information</h2>
+                <div class="lender-info" id="lenderInfo">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Section 1: Lender Performance Over Time -->
+            <div class="report-section">
+                <h2 class="section-title">Section 1: Lender Performance Over Time</h2>
+                
+                <!-- Table 1: Loans by Loan Purpose Over Time -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4 id="table1Header">Table 1: Loans by Loan Purpose Over Time</h4>
+                    </div>
+                    <div class="table-card-body">
+                        <div style="position: relative; height: 400px; margin-bottom: 1rem;">
+                            <canvas id="loanPurposeChart"></canvas>
+                        </div>
+                        <p class="table-caption">
+                            <strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Table 2: Loan Amounts by Loan Purpose Over Time -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4 id="table2Header">Table 2: Loan Amounts by Loan Purpose Over Time</h4>
+                    </div>
+                    <div class="table-card-body">
+                        <div style="position: relative; height: 400px; margin-bottom: 1rem;">
+                            <canvas id="loanAmountPurposeChart"></canvas>
+                        </div>
+                        <p class="table-caption">
+                            <strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Table 3: Top Metros by Loan Purpose -->
+                <!-- Hide this table when custom geography is selected (handled by JavaScript) -->
+                <div class="table-card" id="topMetrosTableCard">
+                    <div class="table-card-header">
+                        <h4 id="table3Header">Table 3: Top Metros by Loan Purpose</h4>
+                    </div>
+                    <div class="table-card-body">
+                        <div class="table-container">
+                            <table class="data-table sortable" id="topMetrosTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer;" onclick="sortTable('topMetrosTable', 0)">Metro <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 1, 'number')">All Loans <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 2, 'number')">Home Purchase <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 3, 'number')">Refinance <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 4, 'number')">Home Equity <i class="fas fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topMetrosTableBody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption">
+                            <strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Shows top 10 metros (CBSAs) by loan volume. If less than 10 metros, all metros in the selected geography are shown. <span id="topMetrosYears"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 2: Comparison Tables by Loan Purpose -->
+            <div class="report-section">
+                <h2 class="section-title">Section 2: Lender Performance Comparison</h2>
+                
+                <!-- Purpose Tabs -->
+                <div class="purpose-tabs">
+                    <button class="tab-button active" data-purpose="all">All Loans</button>
+                    <button class="tab-button" data-purpose="purchase">Home Purchase</button>
+                    <button class="tab-button" data-purpose="refinance">Refinance</button>
+                    <button class="tab-button" data-purpose="equity">Home Equity</button>
+                </div>
+                
+                <!-- All Loans Tab -->
+                <div class="tab-content active" data-purpose="all">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Purchase Tab -->
+                <div class="tab-content" data-purpose="purchase">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Refinance Tab -->
+                <div class="tab-content" data-purpose="refinance">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Equity Tab -->
+                <div class="tab-content" data-purpose="equity">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

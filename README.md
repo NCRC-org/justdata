@@ -197,15 +197,25 @@ Each app also has its own `README.md` with app-specific documentation.
 
 ### Branch Flow
 
+Two persistent branches:
+
+- `main` -- production, auto-deploys to the `justdata` Cloud Run service
+- `staging` -- pre-production, auto-deploys to the `justdata-test` Cloud Run service
+
 ```
-jad_test / jay_test  -->  test  -->  staging  -->  main
-         (1 approval)   (1 approval)  (2 approvals)
+fix/*, feature/*, refactor/*, chore/*, docs/*  -->  staging  -->  main
+                                              (1 approval)  (2 approvals)
 ```
 
-1. Create a feature branch from `test` (e.g., `jad_test`)
-2. Open a PR to `test` -- requires 1 approval
-3. PR from `test` to `staging` -- requires 1 approval; auto-deploys to test environment
-4. PR from `staging` to `main` -- requires 2 approvals; auto-deploys to production
+1. Cut a feature branch from `staging` using one of the subject prefixes:
+   `fix/`, `feature/`, `refactor/`, `chore/`, `docs/`
+2. PR feature branch to `staging` -- requires 1 approval; merge auto-deploys
+   to `justdata-test`
+3. PR `staging` to `main` -- requires 2 approvals; merge auto-deploys to
+   production
+
+The old `jad_test`, `jay_test`, and `test` branches are retired and are no
+longer used.
 
 ### Code Standards
 

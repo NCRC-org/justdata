@@ -1,0 +1,256 @@
+        <!-- Committees Panel -->
+        <div id="committees" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-gavel"></i> Committee Financial Analysis</h2>
+                    <span style="font-size: 0.85rem; color: var(--ncrc-gray);">Finance-related committees monitored by ElectWatch</span>
+                </div>
+                <div class="card-body">
+                    <div class="committee-columns">
+                        <!-- House Committees - Left Column -->
+                        <div class="committee-column">
+                            <div class="column-header house">
+                                <i class="fas fa-landmark"></i> House Committees
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_financial_services')">
+                                <h4><i class="fas fa-university"></i> Financial Services</h4>
+                                <p class="description">Banking, securities, insurance, housing, crypto regulation</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> J. French Hill (R-AR)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Maxine Waters (D-CA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$4.2M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">71</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">156</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_ways_means')">
+                                <h4><i class="fas fa-coins"></i> Ways and Means</h4>
+                                <p class="description">Tax policy, trade, Social Security, Medicare</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Jason Smith (R-MO)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Richard Neal (D-MA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$3.1M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">43</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">112</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_budget')">
+                                <h4><i class="fas fa-calculator"></i> Budget</h4>
+                                <p class="description">Federal budget, spending oversight, fiscal policy</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Jodey Arrington (R-TX)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Brendan Boyle (D-PA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$1.8M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">36</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">67</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_small_business')">
+                                <h4><i class="fas fa-store"></i> Small Business</h4>
+                                <p class="description">Small business lending, SBA oversight, entrepreneurship</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Roger Williams (R-TX)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Nydia Velazquez (D-NY)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$1.2M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">27</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">34</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_appropriations')">
+                                <h4><i class="fas fa-money-check-alt"></i> Appropriations</h4>
+                                <p class="description">Federal spending, agency budgets, financial regulation funding</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Tom Cole (R-OK)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Rosa DeLauro (D-CT)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.9M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">51</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">98</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Senate Committees - Right Column -->
+                        <div class="committee-column">
+                            <div class="column-header senate">
+                                <i class="fas fa-building-columns"></i> Senate Committees
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_banking')">
+                                <h4><i class="fas fa-university"></i> Banking, Housing, and Urban Affairs</h4>
+                                <p class="description">Banking regulation, housing finance, CFPB oversight</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Tim Scott (R-SC)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Sherrod Brown (D-OH)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.8M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">24</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">89</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_finance')">
+                                <h4><i class="fas fa-file-invoice-dollar"></i> Finance</h4>
+                                <p class="description">Tax policy, trade, health programs, Social Security</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Mike Crapo (R-ID)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Ron Wyden (D-OR)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.4M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">28</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">78</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_budget')">
+                                <h4><i class="fas fa-calculator"></i> Budget</h4>
+                                <p class="description">Federal budget, fiscal policy, debt ceiling</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Lindsey Graham (R-SC)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Sheldon Whitehouse (D-RI)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$1.5M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">22</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">45</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_small_business')">
+                                <h4><i class="fas fa-store"></i> Small Business and Entrepreneurship</h4>
+                                <p class="description">SBA programs, small business lending, access to capital</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Joni Ernst (R-IA)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Jeanne Shaheen (D-NH)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$0.9M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">19</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">28</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_appropriations')">
+                                <h4><i class="fas fa-money-check-alt"></i> Appropriations</h4>
+                                <p class="description">Federal spending, agency budgets, discretionary funding</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Susan Collins (R-ME)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Patty Murray (D-WA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.2M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">30</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">72</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

@@ -1,0 +1,343 @@
+    {% set app_name = "BranchSight" %}{% include "shared_header.html" %}
+
+    <div class="report-container">
+        <!-- Header Actions Row - PDF and Excel export -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ url_for('branchsight.download', format='zip') }}" class="action-btn primary" id="downloadZipBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-download"></i> Export Report
+            </a>
+        </div>
+
+        <!-- Report Header -->
+        <div class="report-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 8px;">
+            <h1 style="margin: 0 0 10px 0;">Bank Branch Analysis</h1>
+            <p id="reportMetadata" style="margin: 10px 0 0 0; opacity: 0.9;">
+                <span id="counties">Loading...</span> | <span id="years">Loading...</span>
+            </p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Loading report data...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div id="errorState" class="error" style="display: none;">
+            <h3><i class="fas fa-exclamation-triangle"></i> Error Loading Report</h3>
+            <p id="errorMessage"></p>
+        </div>
+        
+        <!-- Report Content -->
+        <div id="reportContent" style="display: none;">
+            <!-- Executive Summary and Latest Statistics - Side by Side -->
+            <!-- Population Demographics Section -->
+            {% if metadata and metadata.historical_census_data %}
+                {% set historical_census_data = metadata.historical_census_data %}
+                {% set section_title = "Population Demographics (Adult Population 18+)" %}
+                {% set chart_height = 400 %}
+                {% set canvas_id = "branchsightPopulationDemographicsChart" %}
+                {% include 'shared/web/templates/population_demographics_section.html' %}
+            {% endif %}
+            
+            <div class="report-section print-break" id="executiveSummarySection">
+                <div style="display: flex; gap: 20px; align-items: stretch;">
+                    <!-- Executive Summary Text - 50% width -->
+                    <div style="flex: 0 0 50%; display: flex; flex-direction: column;">
+                        <h2 class="section-title">Executive Summary</h2>
+                        <div class="ai-insight-card" style="flex: 1; display: flex; flex-direction: column;">
+                            <div class="ai-content" id="executiveSummaryContent" style="flex: 1;">
+                                <!-- Executive summary will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Latest Statistics Cards - 50% width -->
+                    <div style="flex: 0 0 50%; display: flex; flex-direction: column;">
+                        <h2 class="section-title" id="latestStatsTitle">Latest Statistics</h2>
+                        <div class="summary-cards" id="summaryCards" style="flex: 1;">
+                            <!-- Summary cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Census Boundaries Callout -->
+            <div class="report-section" id="censusBoundariesCallout" style="display: none; margin-top: 15px; padding: 15px; background-color: #f0f7ff; border-left: 4px solid #1e3a5f; border-radius: 4px;">
+                <p style="margin: 0; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Note:</strong> It is important to note that shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts.
+                </p>
+            </div>
+
+            <!-- Geography Context Section -->
+            <div class="report-section" id="geographyContextSection" style="display: none; margin-top: 20px;">
+                <h2 class="section-title">Geography Context</h2>
+                <p style="margin-bottom: 15px; color: #666; font-size: 0.95em;">
+                    Census tract characteristics for the selected geography based on the most recent American Community Survey (ACS) 5-year estimates.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                    <!-- Total Census Tracts -->
+                    <div class="stat-card" style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #1e3a5f;" id="totalTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Total Census Tracts</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="totalTractsPop">--</span></div>
+                    </div>
+                    <!-- LMI Tracts (Majority White) -->
+                    <div class="stat-card" style="background: #e8f4fd; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #b8d4e8;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #0066cc;" id="lmiTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Low-to-Moderate Income Tracts</div>
+                        <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">(Majority White)</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="lmiTractsPop">--</span> (<span id="lmiTractsPercent">--</span>%)</div>
+                    </div>
+                    <!-- Majority-Minority Tracts (Middle/Upper Income) -->
+                    <div class="stat-card" style="background: #f0e8f8; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #d4c4e8;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #6a3d9a;" id="mmctTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Majority-Minority Tracts</div>
+                        <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">(Middle/Upper Income)</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="mmctTractsPop">--</span> (<span id="mmctTractsPercent">--</span>%)</div>
+                    </div>
+                    <!-- Both LMI and MMCT -->
+                    <div class="stat-card" style="background: #e8f8e8; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #b8e8b8;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #2d8a2d;" id="bothTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Both LMI & Majority-Minority</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="bothTractsPop">--</span> (<span id="bothTractsPercent">--</span>%)</div>
+                    </div>
+                </div>
+                <p id="geographyContextNote" style="margin-top: 15px; font-size: 0.85em; color: #666; font-style: italic;">
+                    Source: U.S. Census Bureau, American Community Survey 5-Year Estimates. LMI tracts are those with median family income at or below 80% of the area median. Majority-minority tracts have a non-white population exceeding 50%.
+                </p>
+            </div>
+
+            <!-- AI Key Findings -->
+            <div class="report-section print-break" id="aiKeyFindingsSection" style="display: none;">
+                <h2 class="section-title">Key Findings</h2>
+                <div class="ai-insight-card">
+                    <div class="ai-content" id="keyFindingsContent">
+                        <!-- AI content will be populated by JavaScript -->
+                    </div>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Section 1: Yearly Breakdown -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 1: Yearly Breakdown</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Yearly Branch Summary</h3>
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <!-- Intro Text - 1/3 width -->
+                    <div style="flex: 0 0 33.333%;">
+                        <div class="ai-insight-card">
+                            <div class="ai-content" id="summaryTableIntroduction">
+                                <!-- Introduction will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table - 2/3 width -->
+                    <div style="flex: 0 0 66.667%;">
+                        <div class="table-container">
+                            <table class="data-table" id="summaryTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left;">Variable</th>
+                                        <!-- Year columns will be added dynamically by JavaScript -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption" id="summaryTableCaption" style="margin-top: 15px;">
+                            <!-- Caption will be populated by JavaScript -->
+                        </p>
+                    </div>
+                </div>
+                <div class="table-narrative" id="summaryTableNarrative">
+                    <!-- Narrative analysis will be populated by JavaScript -->
+                </div>
+                <p id="summaryTableAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Section 2: Top Bank Networks -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 2: Bank Networks</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Top Banks by Branch Count</h3>
+
+                <!-- Intro Text - Full width above table -->
+                <div class="ai-insight-card" style="margin-bottom: 20px;">
+                    <div class="ai-content" id="bankTableIntroduction">
+                        <!-- Introduction will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Table - Full width -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <button class="collapse-btn" onclick="toggleTable('bankTable')">
+                            <i class="fas fa-chevron-down"></i> Show/Hide Table
+                        </button>
+                        <button class="expand-btn" id="expandBankTableBtn" onclick="expandBankTable()" style="display: none;">
+                            <i class="fas fa-chevron-down"></i> Show All Banks
+                        </button>
+                    </div>
+                    <table class="data-table collapsible-table" id="bankTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Bank Name</th>
+                                <th style="text-align: center;">Total Branches</th>
+                                <th style="text-align: center;">Deposits ($ Millions)</th>
+                                <th style="text-align: center;">LMI Only Branches</th>
+                                <th style="text-align: center;">MMCT Only Branches</th>
+                                <th style="text-align: center;">Both LMICT/MMCT Branches</th>
+                                <th style="text-align: center;">Net Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Source Caption - Full width below table -->
+                <p class="table-caption" id="bankTableCaption" style="margin-top: 15px;">
+                    <!-- Caption will be populated by JavaScript -->
+                </p>
+                <div class="table-narrative" id="bankTableNarrative">
+                    <!-- Narrative analysis will be populated by JavaScript -->
+                </div>
+                <p id="bankTableAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Section 3: Market Concentration -->
+            <div class="report-section print-break" id="marketConcentrationSection" style="display: none;">
+                <h2 class="section-title">Section 3: Market Concentration</h2>
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <!-- Intro Text - 1/3 width -->
+                    <div style="flex: 0 0 33.333%;">
+                        <div class="ai-insight-card">
+                            <div class="ai-content" id="marketConcentrationIntro">
+                                <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+                                <p>HHI for bank branch deposits in the selected counties across the selected years:</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart - 2/3 width -->
+                    <div style="flex: 0 0 66.667%;">
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="branchHHIChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Source Caption - Full width below -->
+                <p class="table-caption" style="margin-top: 15px; width: 100%;">
+                    <strong>Source:</strong> FDIC Summary of Deposits (SOD) data, compiled and maintained in NCRC's curated databases. 
+                    <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all bank networks in the market based on total deposit amounts. 
+                    HHI values range from 0 to 10,000. 
+                    <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.
+                </p>
+                <div class="table-narrative" id="marketConcentrationDiscussion" style="display: none;">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+                <p id="marketConcentrationAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Methods Section -->
+            <div class="report-section print-break" id="methodsSection">
+                <h2 class="section-title">Methods</h2>
+                <div class="ai-insight-card">
+                    <div class="ai-content">
+                        <h3>Data Sources</h3>
+                        <p><strong>FDIC Summary of Deposits:</strong> This report uses data from the Federal Deposit Insurance Corporation (FDIC) Summary of Deposits (SOD). Branch-level data is sourced from the FDIC's annual survey of all FDIC-insured institutions, compiled and maintained in NCRC's curated databases.</p>
+
+                        <p><strong>Branch Service Types:</strong> This analysis includes all branch service types reported in the FDIC Summary of Deposits, including Full Service Branches, Limited Service Branches, Drive-Through Branches, and other branch service types. No service type filtering is applied to the data.</p>
+
+                        <p><strong>Census Data:</strong> Census tract characteristics are sourced from the U.S. Census Bureau American Community Survey (ACS) 5-year estimates.</p>
+
+                        <p><strong>Data Quality Assurance:</strong> All data used in this report has been downloaded, cleaned, and validated by NCRC Research staff to ensure accuracy and reliability.</p>
+
+                        <h3>Definitions</h3>
+
+                        <p><strong>Branch:</strong> A unique physical branch location identified using the FDIC unique institution number (uninumbr). Branch counts represent distinct physical locations, not transactions or accounts.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Census Tract Income Categories</h4>
+                        <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+                            <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+                            <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+                            <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+                            <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                        </ul>
+
+                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population, as defined by the U.S. Census Bureau.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Branch Category Classifications (Mutually Exclusive)</h4>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>LMI Only Branches:</strong> Branches located in Low-to-Moderate Income Census Tracts that are not Majority-Minority Census Tracts</li>
+                            <li><strong>MMCT Only Branches:</strong> Branches located in Majority-Minority Census Tracts that are not Low-to-Moderate Income Census Tracts</li>
+                            <li><strong>Both LMICT/MMCT Branches:</strong> Branches located in census tracts that are both Low-to-Moderate Income and Majority-Minority</li>
+                            <li><strong>Other Branches:</strong> Branches that are neither LMICT nor MMCT</li>
+                        </ul>
+                        <p><strong>Note:</strong> Each branch is counted in only one category based on its census tract characteristics.</p>
+
+                        <p><strong>2020 Census Boundary Changes:</strong> The 2020 census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts. When analyzing changes between 2021 and 2022, this census boundary update should be considered as it may create apparent shifts that reflect statistical reclassification rather than actual changes.</p>
+
+                        <p><strong>Deposits:</strong> Total deposits held at each branch location, expressed in millions of dollars, as reported in the FDIC Summary of Deposits.</p>
+
+                        <h3>Calculations</h3>
+
+                        <p><strong>Branch Counts:</strong> Unique branches are identified using the unique institution number (uninumbr). Branch counts represent distinct physical branch locations.</p>
+
+                        <p><strong>Net Change:</strong> Calculated as the difference between branch counts in the first year and the final year of the analysis period.</p>
+
+                        <p><strong>Percentage of Total Branches:</strong> Calculated as (branches in category / total branches) × 100.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
+                        <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all banks in a market:</p>
+                        <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+                        <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many banks. Higher values indicate concentrated markets dominated by few banks.</p>
+                        <p><strong>Concentration Levels:</strong></p>
+                        <ul style="padding-left: 20px;">
+                            <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+                            <li>HHI 1,500-2,500: Moderate concentration</li>
+                            <li>HHI &gt; 2,500: High concentration</li>
+                        </ul>
+                        <p><strong>Note on HHI Calculation:</strong> The HHI calculation uses deposit data from all banks in the study area, not just the banks shown in the report tables.</p>
+
+                        <p><strong>Geographic Identifiers:</strong> Counties are identified using geoid5, a 5-digit code where the first 2 digits represent the state FIPS code and the next 3 digits represent the county FIPS code.</p>
+
+                        <h3>Abbreviations</h3>
+                        <ul>
+                            <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
+                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                            <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
+                            <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                            <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+                            <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
+                            <li><strong>SOD:</strong> Summary of Deposits</li>
+                        </ul>
+
+                        <h3>AI Disclosure</h3>
+                        <p style="font-style: italic; color: #666;">[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]</p>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                        <p style="font-style: italic; color: #666;">[END LOREM IPSUM PLACEHOLDER]</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    

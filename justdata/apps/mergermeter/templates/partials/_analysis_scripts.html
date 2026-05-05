@@ -1,0 +1,1707 @@
+    <!-- jQuery (must be first) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Set base URL for API calls BEFORE loading app.js -->
+    <script>
+        // Set base URL for API calls (with blueprint prefix)
+        window.APP_BASE_URL = '{{ app_base_url|default("/mergermeter") }}';
+    </script>
+    <!-- Your app.js (after dependencies) -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Setup HTML tooltips for feature cards
+        function setupFeatureCardTooltips() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            featureCards.forEach(card => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                // Check if tooltip already exists to prevent duplicates
+                if (card.querySelector('.feature-card-tooltip')) {
+                    return; // Tooltip already exists, skip
+                }
+                
+                // Create tooltip element
+                const tooltip = document.createElement('div');
+                tooltip.className = 'feature-card-tooltip';
+                tooltip.innerHTML = tooltipText;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    right: calc(100% + 15px);
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: white;
+                    color: black;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    min-width: 250px;
+                    max-width: 350px;
+                    width: fit-content;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    z-index: 100000;
+                    text-align: left;
+                    word-wrap: break-word;
+                    border: 2px solid black;
+                    box-sizing: border-box;
+                `;
+                
+                // Create arrow
+                const arrow = document.createElement('div');
+                arrow.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 6px solid transparent;
+                    border-bottom: 6px solid transparent;
+                    border-left: 6px solid white;
+                    z-index: 1;
+                `;
+                
+                // Create arrow border
+                const arrowBorder = document.createElement('div');
+                arrowBorder.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 7px solid transparent;
+                    border-bottom: 7px solid transparent;
+                    border-left: 7px solid black;
+                    z-index: 0;
+                `;
+                tooltip.appendChild(arrowBorder);
+                tooltip.appendChild(arrow);
+                
+                card.appendChild(tooltip);
+                
+                // Show/hide on hover
+                card.addEventListener('mouseenter', function() {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.visibility = 'visible';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.visibility = 'hidden';
+                });
+            });
+        }
+        
+        // Manual Assessment Area Entry
+        let manualAssessmentAreas = {
+            acquirer: [],
+            target: []
+        };
+        
+        // Toggle between upload and manual entry
+        $(document).on('click', '.aa-toggle-btn', function() {
+            const bank = $(this).data('bank');
+            const mode = $(this).data('mode');
+            
+            // Update button styles
+            $(`.aa-toggle-btn[data-bank="${bank}"]`).removeClass('active')
+                .css({'background': '#e0e0e0', 'color': '#333'});
+            $(this).addClass('active')
+                .css({'background': 'var(--ncrc-secondary-blue)', 'color': 'white'});
+            
+            // Show/hide sections
+            if (mode === 'upload') {
+                $(`#${bank}_upload_section`).show();
+                $(`#${bank}_manual_section`).hide();
+            } else {
+                $(`#${bank}_upload_section`).hide();
+                $(`#${bank}_manual_section`).show();
+            }
+        });
+        
+        // Add new assessment area entry
+        $(document).on('click', '.add-aa-btn', function() {
+            const bank = $(this).data('bank');
+            const areaId = `aa_${bank}_${Date.now()}`;
+            
+            const areaHtml = `
+                <div class="manual-aa-entry" data-id="${areaId}" style="margin-bottom: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="font-weight: 600; color: var(--ncrc-dark-blue);">Assessment Area Name:</label>
+                        <button type="button" class="remove-aa-btn" data-id="${areaId}" style="padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    </div>
+                    <input type="text" class="aa-name-input" placeholder="e.g., Denver-Boulder-Greeley CSA or MSA 14500, 19740" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <label style="display: block; font-weight: 600; color: var(--ncrc-dark-blue); margin-bottom: 5px;">Counties (one per line) or MSA codes:</label>
+                    <textarea class="aa-counties-input" placeholder="Enter counties (e.g., Denver County, Colorado) or MSA codes (e.g., MSA 14500, 19740, 24540)" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;"></textarea>
+                </div>
+            `;
+            
+            $(`#${bank}_manual_areas`).append(areaHtml);
+        });
+        
+        // Remove assessment area entry
+        $(document).on('click', '.remove-aa-btn', function() {
+            const areaId = $(this).data('id');
+            $(`.manual-aa-entry[data-id="${areaId}"]`).remove();
+        });
+        
+        // Process manual assessment areas (called before form submission)
+        function processManualAssessmentAreas(bank) {
+            const areas = [];
+            $(`#${bank}_manual_areas .manual-aa-entry`).each(function() {
+                const name = $(this).find('.aa-name-input').val().trim();
+                const countiesText = $(this).find('.aa-counties-input').val().trim();
+                
+                if (name && countiesText) {
+                    // Check if it contains MSA codes
+                    const msaMatch = countiesText.match(/MSA\s+(\d+(?:\s*,\s*\d+)*)/i);
+                    if (msaMatch) {
+                        // MSA codes - will be looked up on backend
+                        areas.push({
+                            cbsa_name: name,
+                            counties: countiesText.split('\n').map(c => c.trim()).filter(c => c),
+                            has_msa_codes: true
+                        });
+                    } else {
+                        // Regular county list
+                        areas.push({
+                            cbsa_name: name,
+                            counties: countiesText.split('\n').map(c => c.trim()).filter(c => c),
+                            has_msa_codes: false
+                        });
+                    }
+                }
+            });
+            
+            return areas;
+        }
+        
+        // Helper function to update stored assessment areas based on checkbox state
+        function updateStoredAssessmentAreas(bankType) {
+            const originalAAs = $('#analysisForm').data(`${bankType}_assessment_areas_original`);
+            if (!originalAAs) return;
+
+            const filteredAAs = [];
+            originalAAs.forEach((aa, aaIndex) => {
+                const filteredCounties = [];
+                const countiesList = aa.counties || [];
+
+                countiesList.forEach((county, cIndex) => {
+                    const checkbox = $(`.county-checkbox[data-bank="${bankType}"][data-aa-index="${aaIndex}"][data-county-index="${cIndex}"]`);
+                    if (checkbox.length && checkbox.is(':checked')) {
+                        filteredCounties.push(county);
+                    }
+                });
+
+                if (filteredCounties.length > 0) {
+                    filteredAAs.push({
+                        ...aa,
+                        counties: filteredCounties
+                    });
+                }
+            });
+
+            $('#analysisForm').data(`${bankType}_assessment_areas`, filteredAAs);
+            console.log(`Updated ${bankType} assessment areas:`, filteredAAs.length, 'areas with counties');
+        }
+
+        // MergerMeter-specific customizations
+        $(document).ready(function() {
+            // Setup feature card tooltips
+            setupFeatureCardTooltips();
+
+            // Handle "Use National Level Data" checkbox
+            $('#useNationalData').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                const assessmentInputs = $('#assessmentAreaInputs');
+
+                if (isChecked) {
+                    assessmentInputs.slideUp(300);
+                    // Clear assessment area requirements when using national data
+                    assessmentInputs.find('.aa-toggle-btn.active').removeClass('active');
+                } else {
+                    assessmentInputs.slideDown(300);
+                }
+            });
+
+            // Handle "Single Bank Analysis" checkbox
+            $('#singleBankMode').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                const bankBSection = $('#bankBSection');
+                const bankBAASection = $('#bankBAASection');
+
+                if (isChecked) {
+                    bankBSection.slideUp(300);
+                    bankBAASection.slideUp(300);
+                    // Clear Bank B fields
+                    $('#target_lei').val('');
+                    $('#target_rssd').val('');
+                    $('#target_sb_id').val('');
+                    $('#target_selected').hide();
+                    $('#target_search_container').show();
+                    $('#target_search').val('');
+                } else {
+                    bankBSection.slideDown(300);
+                    bankBAASection.slideDown(300);
+                }
+
+                // Re-check if assessment areas should be shown (single bank mode only needs Bank A)
+                checkAndShowAssessmentAreas();
+            });
+
+            // Initialize Select2 for multi-select HMDA filters
+            $('#action_taken, #occupancy_type, #total_units, #construction_method, #not_reverse').select2({
+                placeholder: 'Select options...',
+                allowClear: false,
+                width: '100%',
+                closeOnSelect: false
+            });
+            
+            // Bulk Import Toggle
+            $('#toggleBulkImport').on('click', function() {
+                const section = $('#bulkImportSection');
+                const isVisible = section.is(':visible');
+                section.slideToggle();
+                $(this).html(isVisible ? '<i class="fas fa-chevron-down"></i> Show' : '<i class="fas fa-chevron-up"></i> Hide');
+            });
+            
+            // Parse and Import Banks
+            $('#parseBulkImportBtn').on('click', function() {
+                const text = $('#bulkImportText').val().trim();
+                if (!text) {
+                    alert('Please paste bank data first.');
+                    return;
+                }
+                
+                const lines = text.split('\n').filter(line => line.trim());
+                if (lines.length < 1) {
+                    alert('Please paste at least one bank\'s information.');
+                    return;
+                }
+                
+                const banks = [];
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    
+                    // Try different delimiters: tab, pipe (|), comma
+                    let parts;
+                    if (trimmed.includes('\t')) {
+                        parts = trimmed.split('\t').map(p => p.trim().replace(/\s+/g, '')); // Remove all whitespace including newlines
+                    } else if (trimmed.includes('|')) {
+                        parts = trimmed.split('|').map(p => p.trim().replace(/\s+/g, ''));
+                    } else if (trimmed.includes(',')) {
+                        parts = trimmed.split(',').map(p => p.trim().replace(/\s+/g, ''));
+                    } else {
+                        continue; // Skip lines without delimiters
+                    }
+                    
+                    // Clean up parts - remove newlines and extra whitespace, but preserve the data
+                    parts = parts.map(p => p.replace(/\n/g, '').replace(/\r/g, '').trim());
+                    
+                    // Handle two formats:
+                    // Format 1: Bank Name, LEI, RSSD, ResID (4 columns)
+                    // Format 2: LEI, RSSD, ResID (3 columns - no bank name)
+                    if (parts.length >= 3) {
+                        // Check if first column looks like an LEI (should be 20 characters, alphanumeric)
+                        // But also check if it might be split - LEIs can be 18-20 chars in some formats
+                        let firstPart = (parts[0] || '').replace(/\s+/g, ''); // Remove all whitespace
+                        const secondPart = (parts[1] || '').replace(/\s+/g, '');
+                        
+                        // Check if LEI might be split: if first part is 18 chars and second part starts with numbers/letters
+                        // that could be the end of an LEI, try combining them
+                        if (firstPart.length === 18 && secondPart.length >= 2 && /^[A-Z0-9]{2,}/i.test(secondPart)) {
+                            // Might be split LEI - check if combining makes sense
+                            const combined = firstPart + secondPart.substring(0, 2);
+                            if (combined.length === 20 && /^[A-Z0-9]{20}$/i.test(combined)) {
+                                // It's a split LEI! Use combined version and shift other fields
+                                firstPart = combined;
+                                parts = [firstPart, secondPart.substring(2), parts[2], parts[3]].filter(p => p !== undefined);
+                            }
+                        }
+                        
+                        const isLEIFormat = firstPart.length === 20 && /^[A-Z0-9]{20}$/i.test(firstPart);
+                        
+                        let bank;
+                        if (isLEIFormat) {
+                            // Format 2: LEI, RSSD, ResID (no bank name)
+                            bank = {
+                                name: '', // No bank name provided
+                                lei: firstPart, // Use cleaned/split-corrected LEI
+                                rssd: (parts[1] || '').replace(/\s+/g, ''),
+                                resid: (parts[2] || '').replace(/\s+/g, '')
+                            };
+                        } else {
+                            // Format 1: Bank Name, LEI, RSSD, ResID
+                            // Check if second part is LEI
+                            const secondPartClean = (parts[1] || '').replace(/\s+/g, '');
+                            const isSecondPartLEI = secondPartClean.length === 20 && /^[A-Z0-9]{20}$/i.test(secondPartClean);
+                            
+                            if (isSecondPartLEI) {
+                                bank = {
+                                    name: parts[0] || '',
+                                    lei: secondPartClean,
+                                    rssd: (parts[2] || '').replace(/\s+/g, ''),
+                                    resid: (parts[3] || '').replace(/\s+/g, '')
+                                };
+                            } else {
+                                // Try to use what we have
+                                bank = {
+                                    name: parts[0] || '',
+                                    lei: secondPartClean, // Might be incomplete, but use it
+                                    rssd: (parts[2] || '').replace(/\s+/g, ''),
+                                    resid: (parts[3] || '').replace(/\s+/g, '')
+                                };
+                            }
+                        }
+                        banks.push(bank);
+                    } else if (parts.length === 2) {
+                        // Might be just LEI and RSSD
+                        let firstPart = (parts[0] || '').replace(/\s+/g, '');
+                        const secondPart = (parts[1] || '').replace(/\s+/g, '');
+                        
+                        // Check if LEI might be split
+                        if (firstPart.length === 18 && secondPart.length >= 2 && /^[A-Z0-9]{2,}/i.test(secondPart)) {
+                            const combined = firstPart + secondPart.substring(0, 2);
+                            if (combined.length === 20 && /^[A-Z0-9]{20}$/i.test(combined)) {
+                                firstPart = combined;
+                            }
+                        }
+                        
+                        const isLEIFormat = firstPart.length === 20 && /^[A-Z0-9]{20}$/i.test(firstPart);
+                        if (isLEIFormat) {
+                            banks.push({
+                                name: '',
+                                lei: firstPart,
+                                rssd: secondPart,
+                                resid: ''
+                            });
+                        }
+                    }
+                }
+                
+                if (banks.length === 0) {
+                    $('#bulkImportResults').html('<div style="color: red; padding: 10px; background: #ffe6e6; border-radius: 4px;">No valid bank data found. Please check the format.</div>').show();
+                    return;
+                }
+                
+                // Fill in Bank A (first bank)
+                if (banks.length >= 1) {
+                    const bankA = banks[0];
+                    if (bankA.lei) {
+                        // Clean LEI - remove all whitespace and ensure it's exactly 20 characters
+                        const cleanLEI = bankA.lei.replace(/\s+/g, '').substring(0, 20);
+                        $('#acquirer_lei').val(cleanLEI).trigger('input'); // Trigger input event to update validation
+                    }
+                    if (bankA.rssd) {
+                        const cleanRSSD = bankA.rssd.replace(/\s+/g, '');
+                        $('#acquirer_rssd').val(cleanRSSD).trigger('input');
+                    }
+                    if (bankA.resid) {
+                        const cleanResID = bankA.resid.replace(/\s+/g, '');
+                        $('#acquirer_sb_id').val(cleanResID).trigger('input');
+                    }
+                }
+                
+                // Fill in Bank B (second bank, if available)
+                if (banks.length >= 2) {
+                    const bankB = banks[1];
+                    if (bankB.lei) {
+                        // Clean LEI - remove all whitespace and ensure it's exactly 20 characters
+                        const cleanLEI = bankB.lei.replace(/\s+/g, '').substring(0, 20);
+                        $('#target_lei').val(cleanLEI).trigger('input'); // Trigger input event to update validation
+                    }
+                    if (bankB.rssd) {
+                        const cleanRSSD = bankB.rssd.replace(/\s+/g, '');
+                        $('#target_rssd').val(cleanRSSD).trigger('input');
+                    }
+                    if (bankB.resid) {
+                        const cleanResID = bankB.resid.replace(/\s+/g, '');
+                        $('#target_sb_id').val(cleanResID).trigger('input');
+                    }
+                }
+                
+                // Show success message
+                let message = `<div style="color: green; padding: 10px; background: #e6ffe6; border-radius: 4px;">`;
+                message += `<strong>Successfully imported ${banks.length} bank(s):</strong><ul style="margin: 10px 0 0 20px;">`;
+                banks.forEach((bank, idx) => {
+                    message += `<li>Bank ${idx + 1}: ${bank.name || 'Unnamed'} (LEI: ${bank.lei || 'N/A'})</li>`;
+                });
+                message += `</ul>`;
+                if (banks.length === 1) {
+                    message += `<p style="margin-top: 10px; color: #666;">Only one bank was found. Please add the second bank manually or paste another line.</p>`;
+                }
+                message += `<p style="margin-top: 10px; color: #0066cc;"><strong>Next step:</strong> Click "Load Bank Names" button below to verify and fetch bank names.</p>`;
+                message += `</div>`;
+                
+                $('#bulkImportResults').html(message).show();
+                
+                // Auto-collapse after successful import
+                setTimeout(() => {
+                    $('#bulkImportSection').slideUp();
+                    $('#toggleBulkImport').html('<i class="fas fa-chevron-down"></i> Show');
+                }, 3000);
+            });
+            
+            // Load Bank Names Handler
+            $('#loadBanksBtn').on('click', async function() {
+                const btn = $(this);
+                const originalText = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+                
+                // Get bank identifiers - clean them thoroughly
+                const acquirerLEI = $('#acquirer_lei').val().replace(/\s+/g, '').trim();
+                const acquirerRSSD = $('#acquirer_rssd').val().replace(/\s+/g, '').trim();
+                const acquirerResID = $('#acquirer_sb_id').val().replace(/\s+/g, '').trim();
+                
+                const targetLEI = $('#target_lei').val().replace(/\s+/g, '').trim();
+                const targetRSSD = $('#target_rssd').val().replace(/\s+/g, '').trim();
+                const targetResID = $('#target_sb_id').val().replace(/\s+/g, '').trim();
+                
+                const acquirerData = {
+                    lei: acquirerLEI,
+                    rssd: acquirerRSSD,
+                    sb_respondent_id: acquirerResID
+                };
+                
+                const targetData = {
+                    lei: targetLEI,
+                    rssd: targetRSSD,
+                    sb_respondent_id: targetResID
+                };
+                
+                // Check if single bank mode is enabled
+                const isSingleBankMode = $('#singleBankMode').is(':checked');
+
+                // Validate LEI number is provided (required for bank name lookup)
+                // Clean LEI and check it's exactly 20 characters
+                if (!acquirerData.lei || acquirerData.lei.length !== 20) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank A (Acquirer). The system uses the LEI number to look up the bank name.\n\nCurrent value: "' + $('#acquirer_lei').val() + '" (length: ' + acquirerData.lei.length + ')');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+
+                // Only validate Bank B LEI if NOT in single bank mode
+                if (!isSingleBankMode && (!targetData.lei || targetData.lei.length !== 20)) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank B (Target). The system uses the LEI number to look up the bank name.\n\nCurrent value: "' + $('#target_lei').val() + '" (length: ' + targetData.lei.length + ')');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+                
+                try {
+                    // Fetch bank names from backend
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const requestBody = {
+                        acquirer: acquirerData,
+                        single_bank_mode: isSingleBankMode
+                    };
+                    // Only include target data if not in single bank mode
+                    if (!isSingleBankMode) {
+                        requestBody.target = targetData;
+                    }
+                    // Use authFetch to include Firebase token in Authorization header
+                    const response = await window.JustDataAuth.authFetch(`${baseUrl}/api/load-bank-names`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Display confirmed bank names
+                        if (result.acquirer_name) {
+                            $('#acquirer_name_display').text(result.acquirer_name);
+                            $('#acquirer_confirmation').show();
+                            // Store for form submission
+                            $('#analysisForm').data('acquirer_name', result.acquirer_name);
+                        }
+                        
+                        if (result.target_name) {
+                            $('#target_name_display').text(result.target_name);
+                            $('#target_confirmation').show();
+                            // Store for form submission
+                            $('#analysisForm').data('target_name', result.target_name);
+                        }
+                        
+                        // Show success message and assessment area section
+                        // In single bank mode, only require acquirer name
+                        // In merger mode, require both names
+                        if (isSingleBankMode && result.acquirer_name) {
+                            alert(`Bank name confirmed:\n\nBank A: ${result.acquirer_name}\n\n(Single Bank Analysis Mode)`);
+                            // Show assessment area section after bank is loaded
+                            $('#assessmentAreaSection').slideDown(300);
+                            // Ensure Bank B AA section stays hidden
+                            $('#bankBAASection').hide();
+                        } else if (result.acquirer_name && result.target_name) {
+                            alert(`Bank names confirmed:\n\nBank A (Acquirer): ${result.acquirer_name}\nBank B (Target): ${result.target_name}`);
+                            // Show assessment area section after banks are loaded
+                            $('#assessmentAreaSection').slideDown(300);
+                        }
+                    } else {
+                        alert(`Error loading bank names: ${result.error || 'Unknown error'}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Network error. Please check your connection and try again.');
+                } finally {
+                    btn.prop('disabled', false).html(originalText);
+                }
+            });
+            
+            // Handle Assessment Area Toggle Buttons
+            $('.aa-toggle-btn').on('click', function() {
+                const bank = $(this).data('bank');
+                const mode = $(this).data('mode');
+                
+                // Update button styles
+                $(`.aa-toggle-btn[data-bank="${bank}"]`).removeClass('active').css({
+                    'background': '#e0e0e0',
+                    'color': '#333'
+                });
+                $(this).addClass('active').css({
+                    'background': 'var(--ncrc-secondary-blue)',
+                    'color': 'white'
+                });
+                
+                // Hide all sections
+                $(`#${bank}_upload_section`).hide();
+                $(`#${bank}_manual_section`).hide();
+                $(`#${bank}_branches_section`).hide();
+                
+                // Show selected section
+                if (mode === 'upload') {
+                    $(`#${bank}_upload_section`).show();
+                } else if (mode === 'manual') {
+                    $(`#${bank}_manual_section`).show();
+                } else if (mode === 'branches') {
+                    $(`#${bank}_branches_section`).show();
+                }
+            });
+            
+            // Handle Generate from Branches Button
+            $('.generate-from-branches-btn').on('click', async function() {
+                const bank = $(this).data('bank');
+                const bankType = bank === 'acquirer' ? 'acquirer' : 'target';
+                const btn = $(this);
+                const originalText = btn.html();
+                
+                // Get RSSD number
+                const rssdField = bank === 'acquirer' ? $('#acquirer_rssd') : $('#target_rssd');
+                const rssd = rssdField.val().trim();
+                
+                if (!rssd) {
+                    alert(`Please enter the RSSD number for ${bank === 'acquirer' ? 'Bank A (Acquirer)' : 'Bank B (Target)'} to generate assessment areas from branches.`);
+                    return;
+                }
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+                
+                const statusDiv = $(`#${bank}_aa_status`);
+                const statusText = $(`#${bank}_aa_status_text`);
+                const previewDiv = $(`#${bank}_aa_preview`);
+                const listDiv = $(`#${bank}_aa_list`);
+                
+                statusDiv.show();
+                statusText.html('<i class="fas fa-spinner fa-spin"></i> Querying branch locations...');
+                statusDiv.css({
+                    'background': '#d1ecf1',
+                    'border-color': '#bee5eb'
+                });
+                
+                try {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    // Use authFetch to include Firebase token in Authorization header
+                    const response = await window.JustDataAuth.authFetch(`${baseUrl}/api/generate-assessment-areas-from-branches`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            rssd: rssd,
+                            bank_type: bankType,
+                            year: 2025,
+                            group_by_cbsa: true,
+                            min_branches: 1
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        // Try to get error message from JSON response
+                        console.log('[Assessment Areas] Response not OK, status:', response.status);
+                        let errorMessage = null;
+                        try {
+                            const errorData = await response.json();
+                            console.log('[Assessment Areas] Error response data:', errorData);
+                            if (errorData.error) {
+                                errorMessage = errorData.error;
+                            }
+                        } catch (jsonError) {
+                            console.log('[Assessment Areas] Failed to parse error JSON:', jsonError);
+                        }
+
+                        if (errorMessage) {
+                            console.log('[Assessment Areas] Using server error message:', errorMessage);
+                            throw new Error(errorMessage);
+                        } else if (response.status === 404) {
+                            throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
+                        } else {
+                            throw new Error(`Server error (${response.status})`);
+                        }
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        statusText.html(`<i class="fas fa-check-circle"></i> Generated ${result.count || result.assessment_areas?.length || 0} assessment areas from branch locations.`);
+                        statusDiv.css({
+                            'background': '#d4edda',
+                            'border-color': '#c3e6cb'
+                        });
+                        
+                        // Display generated assessment areas with county checkboxes
+                        if (result.assessment_areas && result.assessment_areas.length > 0) {
+                            let html = '<div style="font-size: 0.9rem;">';
+                            result.assessment_areas.forEach((aa, aaIndex) => {
+                                const countiesList = aa.counties || [];
+                                const aaId = `${bankType}_aa_${aaIndex}`;
+
+                                html += `<div class="assessment-area-item" data-aa-index="${aaIndex}" style="padding: 12px; margin-bottom: 12px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue); border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong style="color: var(--ncrc-dark-blue);">
+                                            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+                                            ${aa.cbsa_name || 'Unnamed Area'}
+                                        </strong>
+                                        <span style="font-size: 0.8rem; color: #666;">${countiesList.length} counties</span>
+                                    </div>
+                                    <div class="county-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+
+                                countiesList.forEach((c, cIndex) => {
+                                    const countyId = `${aaId}_county_${cIndex}`;
+                                    let countyName = '';
+                                    let geoid = '';
+
+                                    if (typeof c === 'object') {
+                                        countyName = c.county_name && c.state_name
+                                            ? `${c.county_name}, ${c.state_name}`
+                                            : (c.county_name || `${c.state_code || ''}${c.county_code || ''}`);
+                                        geoid = c.geoid5 || `${c.state_code || ''}${c.county_code || ''}`;
+                                    } else {
+                                        countyName = c;
+                                        geoid = c;
+                                    }
+
+                                    html += `<label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                                                class="county-checkbox-label" data-geoid="${geoid}">
+                                        <input type="checkbox" class="county-checkbox" data-bank="${bankType}" data-aa-index="${aaIndex}" data-county-index="${cIndex}" data-geoid="${geoid}" checked
+                                               style="cursor: pointer; width: 14px; height: 14px;">
+                                        <span>${countyName}</span>
+                                    </label>`;
+                                });
+
+                                html += `</div>
+                                </div>`;
+                            });
+                            html += '</div>';
+                            listDiv.html(html);
+                            previewDiv.show();
+
+                            // Add checkbox toggle styling
+                            listDiv.find('.county-checkbox').on('change', function() {
+                                const label = $(this).closest('label');
+                                if (this.checked) {
+                                    label.css({ 'background': 'white', 'border-color': '#ddd', 'opacity': '1' });
+                                    label.find('span').css('text-decoration', 'none');
+                                } else {
+                                    label.css({ 'background': '#f0f0f0', 'border-color': '#ccc', 'opacity': '0.7' });
+                                    label.find('span').css('text-decoration', 'line-through');
+                                }
+                                // Update stored assessment areas
+                                updateStoredAssessmentAreas(bankType);
+                            });
+
+                            // Store assessment areas for form submission
+                            $('#analysisForm').data(`${bankType}_assessment_areas`, result.assessment_areas);
+                            $('#analysisForm').data(`${bankType}_assessment_areas_original`, JSON.parse(JSON.stringify(result.assessment_areas)));
+                        }
+                    } else {
+                        const errorMsg = result.error || 'Failed to generate assessment areas';
+                        statusText.html(`<i class="fas fa-times-circle"></i> Error: ${errorMsg}`);
+                        statusDiv.css({
+                            'background': '#f8d7da',
+                            'border-color': '#f5c6cb'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error generating assessment areas:', error);
+                    statusText.html(`<i class="fas fa-times-circle"></i> Network error. Please check your connection and try again.`);
+                    statusDiv.css({
+                        'background': '#f8d7da',
+                        'border-color': '#f5c6cb'
+                    });
+                } finally {
+                    btn.prop('disabled', false).html(originalText);
+                }
+            });
+            
+            // Handle Assessment Area File Uploads
+            $('#acquirer_assessment_areas').on('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+                
+                await uploadAssessmentArea(file, 'acquirer');
+            });
+            
+            $('#target_assessment_areas').on('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+                
+                await uploadAssessmentArea(file, 'target');
+            });
+            
+            async function uploadAssessmentArea(file, bankType) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('bank_type', bankType);
+                
+                const statusDiv = $(`#${bankType}_aa_status`);
+                const statusText = $(`#${bankType}_aa_status_text`);
+                const previewDiv = $(`#${bankType}_aa_preview`);
+                const listDiv = $(`#${bankType}_aa_list`);
+                
+                statusDiv.show();
+                statusText.html('<i class="fas fa-spinner fa-spin"></i> Uploading and parsing file...');
+                previewDiv.hide();
+                
+                try {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    // Get Firebase token for Authorization header
+                    const token = await window.JustDataAuth.getToken();
+                    const headers = {};
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    const response = await fetch(`${baseUrl}/api/upload-assessment-areas`, {
+                        method: 'POST',
+                        headers: headers,
+                        credentials: 'include',
+                        body: formData
+                    });
+                    
+                    // Check if response is OK before trying to parse JSON
+                    if (!response.ok) {
+                        // Try to get error message from response
+                        let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMsg = errorData.error || errorMsg;
+                        } catch (e) {
+                            // If we can't parse JSON, use the status text
+                        }
+                        throw new Error(errorMsg);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        statusText.html(`<i class="fas fa-check-circle"></i> File uploaded and parsed successfully. Found ${result.count || result.assessment_areas?.length || 0} assessment areas.`);
+                        statusDiv.css({
+                            'background': '#d4edda',
+                            'border-color': '#c3e6cb'
+                        });
+                        
+                        // Display parsed assessment areas with county checkboxes
+                        if (result.assessment_areas && result.assessment_areas.length > 0) {
+                            let html = '<div style="font-size: 0.9rem;">';
+                            result.assessment_areas.forEach((aa, aaIndex) => {
+                                const countiesList = aa.counties || [];
+                                const aaId = `${bankType}_aa_${aaIndex}`;
+
+                                html += `<div class="assessment-area-item" data-aa-index="${aaIndex}" style="padding: 12px; margin-bottom: 12px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue); border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong style="color: var(--ncrc-dark-blue);">
+                                            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+                                            ${aa.cbsa_name || 'Unnamed Area'}
+                                        </strong>
+                                        <span style="font-size: 0.8rem; color: #666;">${countiesList.length} counties</span>
+                                    </div>
+                                    <div class="county-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+
+                                countiesList.forEach((c, cIndex) => {
+                                    const countyId = `${aaId}_county_${cIndex}`;
+                                    let countyName = '';
+                                    let geoid = '';
+
+                                    if (typeof c === 'object') {
+                                        countyName = c.county_name && c.state_name
+                                            ? `${c.county_name}, ${c.state_name}`
+                                            : (c.county_name || `${c.state_code || ''}${c.county_code || ''}`);
+                                        geoid = c.geoid5 || `${c.state_code || ''}${c.county_code || ''}`;
+                                    } else {
+                                        // String format - could be "County, State" or just FIPS
+                                        countyName = c;
+                                        geoid = c;
+                                    }
+
+                                    html += `<label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                                                class="county-checkbox-label" data-geoid="${geoid}">
+                                        <input type="checkbox" class="county-checkbox" data-bank="${bankType}" data-aa-index="${aaIndex}" data-county-index="${cIndex}" data-geoid="${geoid}" checked
+                                               style="cursor: pointer; width: 14px; height: 14px;">
+                                        <span>${countyName}</span>
+                                    </label>`;
+                                });
+
+                                html += `</div>
+                                </div>`;
+                            });
+                            html += '</div>';
+                            listDiv.html(html);
+                            previewDiv.show();
+
+                            // Add checkbox toggle styling
+                            listDiv.find('.county-checkbox').on('change', function() {
+                                const label = $(this).closest('label');
+                                if (this.checked) {
+                                    label.css({ 'background': 'white', 'border-color': '#ddd', 'opacity': '1' });
+                                    label.find('span').css('text-decoration', 'none');
+                                } else {
+                                    label.css({ 'background': '#f0f0f0', 'border-color': '#ccc', 'opacity': '0.7' });
+                                    label.find('span').css('text-decoration', 'line-through');
+                                }
+                                // Update stored assessment areas
+                                updateStoredAssessmentAreas(bankType);
+                            });
+
+                            // Store assessment areas for form submission
+                            $(`#analysisForm`).data(`${bankType}_assessment_areas`, result.assessment_areas);
+                            $(`#analysisForm`).data(`${bankType}_assessment_areas_original`, JSON.parse(JSON.stringify(result.assessment_areas)));
+                        } else {
+                            statusText.html(`<i class="fas fa-exclamation-triangle"></i> File uploaded but no assessment areas were found. Please check the file format.`);
+                            statusDiv.css({
+                                'background': '#fff3cd',
+                                'border-color': '#ffeaa7'
+                            });
+                        }
+                    } else {
+                        const errorMsg = result.error || 'Failed to parse file';
+                        statusText.html(`<i class="fas fa-times-circle"></i> Error: ${errorMsg}`);
+                        statusDiv.css({
+                            'background': '#f8d7da',
+                            'border-color': '#f5c6cb'
+                        });
+                        console.error('Upload error:', errorMsg);
+                    }
+                } catch (error) {
+                    console.error('Error uploading assessment area:', error);
+                    const errorMsg = error.message || 'Network error. Please check your connection and try again.';
+                    statusText.html(`<i class="fas fa-times-circle"></i> ${errorMsg}`);
+                    statusDiv.css({
+                        'background': '#f8d7da',
+                        'border-color': '#f5c6cb'
+                    });
+                }
+            }
+            
+            // Update loan purpose card styles on selection
+            $('input[name="loan_purpose"]').on('change', function() {
+                $('input[name="loan_purpose"]').each(function() {
+                    const card = $(this).closest('label');
+                    if ($(this).is(':checked')) {
+                        card.css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa'
+                        });
+                    } else {
+                        card.css({
+                            'border-color': '#e0e0e0',
+                            'background': 'white'
+                        });
+                    }
+                });
+            });
+            
+            // Initialize loan purpose card styles
+            $('input[name="loan_purpose"]:checked').each(function() {
+                $(this).closest('label').css({
+                    'border-color': 'var(--ncrc-secondary-blue)',
+                    'background': '#f0f7fa'
+                });
+            });
+            
+            // Initialize tour for MergerMeter
+            if (typeof window.initializeTour === 'function') {
+                const originalInitializeTour = window.initializeTour;
+                window.initializeTour = function() {
+                    const hasSeenTour = localStorage.getItem('mergermeter_tour_completed');
+                    const startTourBtn = document.getElementById('startTourBtn');
+                    
+                    if (!startTourBtn) return;
+                    
+                    startTourBtn.addEventListener('click', function() {
+                        startTour();
+                    });
+                    
+                    if (!hasSeenTour) {
+                        setTimeout(() => {
+                            const shouldStart = confirm('Welcome to MergerMeter! Would you like to take a quick tour to learn how to use the tool?');
+                            if (shouldStart) {
+                                startTour();
+                            } else {
+                                localStorage.setItem('mergermeter_tour_completed', 'true');
+                            }
+                        }, 1000);
+                    }
+                };
+            }
+            
+            // Initialize tour after a short delay
+            setTimeout(function() {
+                if (typeof window.initializeTour === 'function') {
+                    window.initializeTour();
+                }
+            }, 500);
+            
+            // Form submission handler
+            $('#analysisForm').on('submit', async function(e) {
+                e.preventDefault();
+
+                // Check if single bank mode
+                const singleBankMode = $('#singleBankMode').is(':checked');
+
+                // Validate required fields
+                const acquirerLei = $('#acquirer_lei').val().trim();
+                const targetLei = $('#target_lei').val().trim();
+                const acquirerName = $('#analysisForm').data('acquirer_name') || $('#acquirer_name_display').text().trim();
+                const targetName = $('#analysisForm').data('target_name') || $('#target_name_display').text().trim();
+
+                if (!acquirerLei || acquirerLei.length !== 20) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank A (Acquirer) and click "Load Bank Names".');
+                    return;
+                }
+
+                // Only validate Bank B if not in single bank mode
+                if (!singleBankMode) {
+                    if (!targetLei || targetLei.length !== 20) {
+                        alert('Please enter a valid LEI number (20 characters) for Bank B (Target) and click "Load Bank Names".');
+                        return;
+                    }
+
+                    if (!targetName || targetName === '') {
+                        alert('Please click "Load Bank Names" to confirm Bank B name before submitting.');
+                        return;
+                    }
+                }
+
+                if (!acquirerName || acquirerName === '') {
+                    alert('Please click "Load Bank Names" to confirm Bank A name before submitting.');
+                    return;
+                }
+
+                // Check if using national level data
+                const useNationalData = $('#useNationalData').is(':checked');
+
+                // Collect assessment areas (only if not using national data)
+                let acquirerAA = [];
+                let targetAA = [];
+
+                if (!useNationalData) {
+                    acquirerAA = $('#analysisForm').data('acquirer_assessment_areas') || [];
+                    targetAA = $('#analysisForm').data('target_assessment_areas') || [];
+
+                    // Process manual assessment areas
+                    const acquirerManual = processManualAssessmentAreas('acquirer');
+                    const targetManual = processManualAssessmentAreas('target');
+
+                    if (acquirerManual.length > 0) {
+                        acquirerAA = acquirerAA.concat(acquirerManual);
+                    }
+                    if (targetManual.length > 0) {
+                        targetAA = targetAA.concat(targetManual);
+                    }
+
+                    if (acquirerAA.length === 0 && acquirerManual.length === 0) {
+                        alert('Please upload or manually enter assessment areas for Bank A (Acquirer), or select "Use National Level Data".');
+                        return;
+                    }
+
+                    // Only validate Bank B assessment areas if not in single bank mode
+                    if (!singleBankMode && targetAA.length === 0 && targetManual.length === 0) {
+                        alert('Please upload or manually enter assessment areas for Bank B (Target), or select "Use National Level Data".');
+                        return;
+                    }
+                }
+
+                // Get form data
+                const formData = new FormData(this);
+
+                // Add single bank mode flag
+                formData.append('single_bank_mode', singleBankMode ? '1' : '0');
+
+                // Add national data flag
+                formData.append('use_national_data', useNationalData ? '1' : '0');
+
+                // Add bank names (empty for Bank B in single bank mode)
+                formData.append('acquirer_name', acquirerName);
+                formData.append('target_name', singleBankMode ? '' : targetName);
+
+                // Add assessment areas as JSON (empty arrays if using national data or single bank mode for target)
+                formData.append('acquirer_assessment_areas', JSON.stringify(acquirerAA));
+                formData.append('target_assessment_areas', JSON.stringify(singleBankMode ? [] : targetAA));
+                
+                // Get loan purpose from dropdown
+                const loanPurpose = $('#loan_purpose').val() || '';
+                formData.set('loan_purpose', loanPurpose);
+
+                // Get peer group selection
+                const peerGroup = $('#peer_group').val() || 'volume_50_200';
+                formData.set('peer_group', peerGroup);
+
+                // Get HMDA filter values from multi-select dropdowns (join arrays with commas)
+                const actionTaken = $('#action_taken').val() || [];
+                const occupancyType = $('#occupancy_type').val() || [];
+                const totalUnits = $('#total_units').val() || [];
+                const constructionMethod = $('#construction_method').val() || [];
+                const notReverse = $('#not_reverse').val() || [];
+                
+                formData.set('action_taken', Array.isArray(actionTaken) ? actionTaken.join(',') : actionTaken);
+                formData.set('occupancy_type', Array.isArray(occupancyType) ? occupancyType.join(',') : occupancyType);
+                formData.set('total_units', Array.isArray(totalUnits) ? totalUnits.join(',') : totalUnits);
+                formData.set('construction_method', Array.isArray(constructionMethod) ? constructionMethod.join(',') : constructionMethod);
+                formData.set('not_reverse', Array.isArray(notReverse) ? notReverse.join(',') : notReverse);
+                
+                // Get year values from selectors
+                const hmdaStartYear = $('#hmda_start_year').val();
+                const hmdaEndYear = $('#hmda_end_year').val();
+                const sbStartYear = $('#sb_start_year').val();
+                const sbEndYear = $('#sb_end_year').val();
+
+                // Get baseline year values for goal-setting
+                const baselineHmdaStartYear = $('#baseline_hmda_start_year').val();
+                const baselineHmdaEndYear = $('#baseline_hmda_end_year').val();
+                const baselineSbStartYear = $('#baseline_sb_start_year').val();
+                const baselineSbEndYear = $('#baseline_sb_end_year').val();
+
+                // Set analysis years (as comma-separated list for HMDA, individual values for SB)
+                formData.set('hmda_start_year', hmdaStartYear);
+                formData.set('hmda_end_year', hmdaEndYear);
+                formData.set('sb_start_year', sbStartYear);
+                formData.set('sb_end_year', sbEndYear);
+
+                // Set baseline years for goal-setting
+                formData.set('baseline_hmda_start_year', baselineHmdaStartYear);
+                formData.set('baseline_hmda_end_year', baselineHmdaEndYear);
+                formData.set('baseline_sb_start_year', baselineSbStartYear);
+                formData.set('baseline_sb_end_year', baselineSbEndYear);
+                
+                // Check if force refresh is requested
+                const forceRefreshCheckbox = document.getElementById('forceRefreshCheckbox');
+                if (forceRefreshCheckbox && forceRefreshCheckbox.checked) {
+                    formData.append('force_refresh', '1');
+                    console.log('[MergerMeter] Force refresh requested - bypassing cache');
+                }
+
+                // Generate job ID
+                const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                formData.append('job_id', jobId);
+                
+                // Show progress
+                $('#progressSection').show();
+                $('#resultsSection').hide();
+                $('#errorSection').hide();
+                $('#analysisForm').hide();
+                
+                // Disable submit button
+                $('#submitBtn').prop('disabled', true);
+                
+                try {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    // Get Firebase token for Authorization header
+                    const token = await window.JustDataAuth.getToken();
+                    const headers = {};
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    const response = await fetch(`${baseUrl}/analyze`, {
+                        method: 'POST',
+                        headers: headers,
+                        credentials: 'include',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || 'Analysis failed');
+                    }
+                    
+                    // Start listening for progress
+                    const jobIdFromResponse = result.job_id || jobId;
+                    listenForProgress(jobIdFromResponse);
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    $('#errorMessage').text(error.message || 'Network error. Please check your connection and try again.');
+                    $('#errorSection').show();
+                    $('#progressSection').hide();
+                    $('#submitBtn').prop('disabled', false);
+                }
+            });
+            
+            // Progress tracking function
+            function listenForProgress(jobId) {
+                const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                const eventSource = new EventSource(`${baseUrl}/progress/${jobId}`);
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                const progressPercent = document.getElementById('progressPercent');
+                
+                // Progress steps section was removed, so we only track progress bar
+                
+                eventSource.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.done) {
+                        eventSource.close();
+                        
+                        if (data.error) {
+                            $('#errorMessage').text(data.error);
+                            $('#errorSection').show();
+                            $('#progressSection').hide();
+                        } else {
+                            $('#resultsSection').show();
+                            $('#progressSection').hide();
+
+                            // Load and render Excel preview
+                            window.loadExcelPreview(jobId);
+                        }
+                        $('#submitBtn').prop('disabled', false);
+                        return;
+                    }
+                    
+                    const percent = data.percent || 0;
+                    const stepMessage = data.step || 'Processing...';
+                    
+                    // Update progress bar and text
+                    if (progressFill) progressFill.style.width = percent + '%';
+                    if (progressPercent) progressPercent.textContent = percent + '%';
+                    if (progressText) progressText.textContent = stepMessage;
+                };
+                
+                eventSource.onerror = function(error) {
+                    console.error('Progress tracking error:', error);
+                    // Check if connection is closed
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        console.log('EventSource connection closed');
+                        // Try to reconnect after a delay
+                        setTimeout(() => {
+                            console.log('Attempting to reconnect to progress stream...');
+                            eventSource.close();
+                            listenForProgress(jobId);
+                        }, 2000);
+                    } else if (eventSource.readyState === EventSource.CONNECTING) {
+                        console.log('EventSource is connecting...');
+                    } else {
+                        // Connection might be temporarily interrupted
+                        console.log('EventSource connection interrupted, waiting...');
+                    }
+                };
+            }
+            
+            // Initialize hamburger menu
+            const navToggle = document.getElementById('navToggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const bodyOverlay = document.getElementById('bodyOverlay');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    navMenu.classList.toggle('active');
+                    if (bodyOverlay) bodyOverlay.classList.toggle('active');
+                    document.body.classList.toggle('menu-open');
+                    this.classList.toggle('active');
+                });
+                
+                // Close menu when clicking overlay
+                if (bodyOverlay) {
+                    bodyOverlay.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                        navToggle.classList.remove('active');
+                    });
+                }
+                
+                // Handle dropdown toggles in menu
+                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+                dropdownToggles.forEach(toggle => {
+                    toggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const parentItem = this.closest('.nav-item-dropdown');
+                        const isOpen = this.getAttribute('aria-expanded') === 'true';
+                        this.setAttribute('aria-expanded', !isOpen);
+                        if (parentItem) {
+                            parentItem.classList.toggle('active');
+                        }
+                    });
+                });
+                
+                // Close menu when clicking on a nav link (but not dropdown toggle)
+                const navLinks = document.querySelectorAll('.nav-link:not(.dropdown-toggle)');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                        navToggle.classList.remove('active');
+                    });
+                });
+                
+                // Close menu on Escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                        navToggle.classList.remove('active');
+                    }
+                });
+            }
+        });
+
+        // Load and render Excel file as tabbed preview
+        window.loadExcelPreview = function(jobId) {
+            var baseUrl = window.APP_BASE_URL || '/mergermeter';
+            var excelUrl = baseUrl + '/excel-data?job_id=' + jobId;
+            var downloadUrl = baseUrl + '/download?job_id=' + jobId;
+
+            fetch(excelUrl)
+                .then(function(res) {
+                    if (!res.ok) throw new Error('Failed to load Excel file');
+                    return res.arrayBuffer();
+                })
+                .then(function(data) {
+                    document.getElementById('excelLoading').style.display = 'none';
+
+                    var wb = XLSX.read(data, { type: 'array', cellStyles: true, cellDates: true });
+                    renderWorkbook(wb);
+                    setupDownload(data, downloadUrl);
+                })
+                .catch(function(err) {
+                    document.getElementById('excelLoading').innerHTML =
+                        '<div style="color: #c00;">Error loading Excel preview: ' + err.message +
+                        '<br><a href="' + downloadUrl + '" style="color: #034EA0;">Download the file directly</a></div>';
+                });
+        };
+
+        window.renderWorkbook = function(wb) {
+            var tabsEl = document.getElementById('excelTabs');
+            var sheetsEl = document.getElementById('excelSheets');
+            var validationWarnings = [];
+
+            wb.SheetNames.forEach(function(name, idx) {
+                if (name === 'Validation' || name === 'Validation Warnings') {
+                    extractValidationWarnings(wb.Sheets[name], validationWarnings);
+                    return;
+                }
+
+                var tab = document.createElement('div');
+                tab.className = 'excel-tab' + (tabsEl.children.length === 0 ? ' active' : '');
+                tab.textContent = name;
+                tab.onclick = function() { switchTab(name); };
+                tabsEl.appendChild(tab);
+
+                var sheetDiv = document.createElement('div');
+                sheetDiv.className = 'excel-sheet' + (sheetsEl.children.length === 0 ? ' active' : '');
+                sheetDiv.setAttribute('data-name', name);
+                sheetDiv.innerHTML = sheetToHTML(wb.Sheets[name], name);
+                sheetsEl.appendChild(sheetDiv);
+            });
+
+            var banner = document.getElementById('validationBanner');
+            var list = document.getElementById('warningsList');
+            var title = document.getElementById('validationBannerTitle');
+            if (validationWarnings.length > 0) {
+                if (title) title.textContent = 'Data quality warnings found:';
+                validationWarnings.forEach(function(w) {
+                    var li = document.createElement('li');
+                    li.textContent = w;
+                    list.appendChild(li);
+                });
+                banner.classList.toggle('clean', false);
+                banner.style.display = 'block';
+            } else {
+                if (title) title.textContent = '\u2713 No data quality issues found.';
+                banner.classList.toggle('clean', true);
+                banner.style.display = 'block';
+            }
+        };
+
+        window.extractValidationWarnings = function(ws, warnings) {
+            if (!ws || !ws['!ref']) return;
+            var range = XLSX.utils.decode_range(ws['!ref']);
+            for (var r = 4; r <= range.e.r; r++) {
+                var cell = ws[XLSX.utils.encode_cell({ r: r, c: 3 })];
+                if (cell && cell.v) warnings.push(cell.v);
+            }
+        };
+
+        window.sheetToHTML = function(ws, sheetName) {
+            if (!ws || !ws['!ref']) return '<div style="padding:20px;color:#999;">Empty sheet</div>';
+            var range = XLSX.utils.decode_range(ws['!ref']);
+            var merges = ws['!merges'] || [];
+            var html = '<table>';
+
+            for (var r = range.s.r; r <= range.e.r; r++) {
+                html += '<tr>';
+                for (var c = range.s.c; c <= range.e.c; c++) {
+                    var addr = XLSX.utils.encode_cell({ r: r, c: c });
+                    var cell = ws[addr];
+                    var tag = r <= 1 ? 'th' : 'td';
+                    var cls = '';
+                    var val = '';
+
+                    var skip = false, colspan = 1, rowspan = 1;
+                    for (var m = 0; m < merges.length; m++) {
+                        var mg = merges[m];
+                        if (r === mg.s.r && c === mg.s.c) {
+                            colspan = mg.e.c - mg.s.c + 1;
+                            rowspan = mg.e.r - mg.s.r + 1;
+                        } else if (r >= mg.s.r && r <= mg.e.r && c >= mg.s.c && c <= mg.e.c) {
+                            skip = true;
+                        }
+                    }
+                    if (skip) continue;
+
+                    if (cell) {
+                        if (cell.t === 'n') {
+                            cls = 'num';
+                            if (cell.z && cell.z.indexOf(',') >= 0) {
+                                val = Math.round(cell.v).toLocaleString();
+                            } else if (cell.z && cell.z.indexOf('%') >= 0) {
+                                val = (cell.v * 100).toFixed(2) + '%';
+                                cls = 'pct';
+                            } else if (typeof cell.v === 'number' && cell.v < 1 && cell.v > -1 && cell.v !== 0) {
+                                val = (cell.v * 100).toFixed(2) + '%';
+                                cls = 'pct';
+                            } else if (cell.v === Math.floor(cell.v)) {
+                                val = cell.v.toLocaleString();
+                            } else {
+                                val = cell.v.toFixed(2);
+                            }
+                            if (typeof cell.v === 'number' && cell.v < 0) cls += ' neg';
+                        } else if (cell.t === 's') {
+                            val = cell.v;
+                            if (val === '--') cls = 'empty';
+                        } else if (cell.w) {
+                            val = cell.w;
+                        } else if (cell.v != null) {
+                            val = String(cell.v);
+                        }
+                        if (typeof val === 'string' && val.indexOf('=IFERROR') === 0) val = '';
+                    }
+
+                    var spanAttrs = '';
+                    if (colspan > 1) spanAttrs += ' colspan="' + colspan + '"';
+                    if (rowspan > 1) spanAttrs += ' rowspan="' + rowspan + '"';
+                    html += '<' + tag + spanAttrs + ' class="' + cls + '">' + val + '</' + tag + '>';
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            return html;
+        };
+
+        window.switchTab = function(name) {
+            var tabs = document.querySelectorAll('.excel-tab');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.toggle('active', tabs[i].textContent === name);
+            }
+            var sheets = document.querySelectorAll('.excel-sheet');
+            for (var j = 0; j < sheets.length; j++) {
+                sheets[j].classList.toggle('active', sheets[j].getAttribute('data-name') === name);
+            }
+        };
+
+        window.setupDownload = function(arrayBuffer, downloadUrl) {
+            var blob = new Blob([arrayBuffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+            var btn = document.getElementById('downloadBtn');
+            btn.href = URL.createObjectURL(blob);
+            btn.download = 'MergerMeter_Analysis.xlsx';
+
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = downloadUrl;
+            });
+
+            var sizeKB = Math.round(arrayBuffer.byteLength / 1024);
+            document.getElementById('excelFileInfo').textContent =
+                document.querySelectorAll('.excel-tab').length + ' sheets, ' + sizeKB + ' KB';
+        };
+
+        // Bank Search Autocomplete Functionality
+        (function() {
+            let searchTimeout = null;
+            const searchDelay = 300; // ms delay before searching
+
+            // Setup search for both acquirer and target
+            document.querySelectorAll('.bank-search-input').forEach(input => {
+                const bank = input.dataset.bank;
+                const resultsDiv = document.getElementById(`${bank}_search_results`);
+
+                // Handle input changes
+                input.addEventListener('input', function() {
+                    const query = this.value.trim();
+
+                    // Clear previous timeout
+                    if (searchTimeout) clearTimeout(searchTimeout);
+
+                    if (query.length < 2) {
+                        resultsDiv.style.display = 'none';
+                        return;
+                    }
+
+                    // Debounce the search
+                    searchTimeout = setTimeout(() => searchBanks(query, bank, resultsDiv), searchDelay);
+                });
+
+                // Hide results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                        resultsDiv.style.display = 'none';
+                    }
+                });
+
+                // Keyboard navigation
+                input.addEventListener('keydown', function(e) {
+                    if (resultsDiv.style.display === 'none') return;
+
+                    const items = resultsDiv.querySelectorAll('.bank-search-item');
+                    const activeItem = resultsDiv.querySelector('.bank-search-item.active');
+                    let activeIndex = Array.from(items).indexOf(activeItem);
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex + 1) % items.length;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'Enter' && activeItem) {
+                        e.preventDefault();
+                        selectBank(activeItem, bank);
+                    } else if (e.key === 'Escape') {
+                        resultsDiv.style.display = 'none';
+                    }
+                });
+            });
+
+            async function searchBanks(query, bank, resultsDiv) {
+                try {
+                    resultsDiv.innerHTML = '<div style="padding: 15px; color: #666; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Searching banks...</div>';
+                    resultsDiv.style.display = 'block';
+
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    // Use authFetch to include Firebase token in Authorization header
+                    const response = await window.JustDataAuth.authFetch(`${baseUrl}/api/search-banks?q=${encodeURIComponent(query)}&limit=15`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        resultsDiv.innerHTML = `<div style="padding: 15px; color: #dc3545;"><i class="fas fa-exclamation-circle"></i> Error: ${data.error}</div>`;
+                        return;
+                    }
+
+                    if (data.banks.length === 0) {
+                        resultsDiv.innerHTML = '<div style="padding: 15px; color: #666; text-align: center;"><i class="fas fa-search"></i> No banks found matching your search.</div>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = data.banks.map((b, i) => `
+                        <div class="bank-search-item ${i === 0 ? 'active' : ''}"
+                             data-lei="${b.lei || ''}"
+                             data-rssd="${b.rssd || ''}"
+                             data-res-id="${b.res_id || ''}"
+                             data-name="${escapeHtml(b.name)}"
+                             data-location="${escapeHtml(b.location)}"
+                             style="padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.15s;">
+                            <div style="font-weight: 600; color: #1a365d; font-size: 1rem; margin-bottom: 4px;">${escapeHtml(b.name)}</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">
+                                <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #0891b2;"></i>${escapeHtml(b.location) || 'Location not available'}
+                                ${b.assets ? `<span style="margin-left: 12px; color: #059669;"><i class="fas fa-chart-bar" style="margin-right: 4px;"></i>${formatAssets(b.assets)}</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #888; font-family: monospace;">
+                                LEI: ${b.lei || 'N/A'} &nbsp;|&nbsp; RSSD: ${b.rssd || 'N/A'} &nbsp;|&nbsp; Res ID: ${b.res_id || 'N/A'}
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Add click handlers
+                    resultsDiv.querySelectorAll('.bank-search-item').forEach(item => {
+                        item.addEventListener('click', () => selectBank(item, bank));
+                        item.addEventListener('mouseenter', function() {
+                            resultsDiv.querySelectorAll('.bank-search-item').forEach(i => i.classList.remove('active'));
+                            this.classList.add('active');
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Bank search error:', error);
+                    resultsDiv.innerHTML = `<div style="padding: 15px; color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Search failed. Please try again.</div>`;
+                }
+            }
+
+            // Make selectBank globally accessible
+            window.selectBank = function(item, bank) {
+                const lei = item.dataset.lei;
+                const rssd = item.dataset.rssd;
+                const resId = item.dataset.resId || '';
+                const name = item.dataset.name;
+                const location = item.dataset.location;
+
+                // Populate hidden form fields
+                document.getElementById(`${bank}_lei`).value = lei || '';
+                document.getElementById(`${bank}_rssd`).value = rssd || '';
+                document.getElementById(`${bank}_name`).value = name || '';
+
+                // Update display fields
+                document.getElementById(`${bank}_name_display`).textContent = name || '';
+                document.getElementById(`${bank}_location_display`).textContent = location ? `📍 ${location}` : '';
+                document.getElementById(`${bank}_lei_display`).textContent = lei || 'N/A';
+                document.getElementById(`${bank}_rssd_display`).textContent = rssd || 'N/A';
+
+                // Res ID input field - populate from search result if available, otherwise leave for manual entry
+                const resIdInput = document.getElementById(`${bank}_sb_id`);
+                if (resIdInput && resId) {
+                    resIdInput.value = resId;
+                }
+                // Don't clear if empty - user may have already entered a value
+
+                // Hide search container, show selected display
+                document.getElementById(`${bank}_search_container`).style.display = 'none';
+                document.getElementById(`${bank}_selected`).style.display = 'block';
+
+                // Hide results
+                document.getElementById(`${bank}_search_results`).style.display = 'none';
+
+                console.log(`Selected ${bank} bank:`, { name, lei, rssd, resId, location });
+
+                // Check if both banks are selected, then show assessment area section
+                checkAndShowAssessmentAreas();
+            };
+
+            // Check if required banks are selected and show assessment area section
+            // Make globally accessible so jQuery handler can call it
+            window.checkAndShowAssessmentAreas = function() {
+                const acquirerLei = document.getElementById('acquirer_lei').value;
+                const targetLei = document.getElementById('target_lei').value;
+                const isSingleBankMode = document.getElementById('singleBankMode').checked;
+
+                // In single bank mode, only acquirer is required
+                // In merger mode, both banks are required
+                const shouldShow = isSingleBankMode ? acquirerLei : (acquirerLei && targetLei);
+
+                if (shouldShow) {
+                    // Show assessment area section
+                    const assessmentSection = document.getElementById('assessmentAreaSection');
+                    if (assessmentSection) {
+                        assessmentSection.style.display = 'block';
+                        // In single bank mode, hide Bank B assessment areas
+                        if (isSingleBankMode) {
+                            const bankBAASection = document.getElementById('bankBAASection');
+                            if (bankBAASection) {
+                                bankBAASection.style.display = 'none';
+                            }
+                        }
+                        // Smooth scroll to assessment section
+                        setTimeout(() => {
+                            assessmentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                    }
+                    console.log(isSingleBankMode ? 'Single bank selected - showing assessment area section' : 'Both banks selected - showing assessment area section');
+                }
+            }
+
+            // Reset to initial bank selection screen
+            window.resetForm = function() {
+                var baseUrl = window.APP_BASE_URL || '/mergermeter';
+                window.location.href = baseUrl + '/';
+            };
+
+            // Clear bank selection and show search again
+            window.clearBankSelection = function(bank) {
+                // Clear hidden form fields
+                document.getElementById(`${bank}_lei`).value = '';
+                document.getElementById(`${bank}_rssd`).value = '';
+                document.getElementById(`${bank}_sb_id`).value = '';
+                document.getElementById(`${bank}_name`).value = '';
+
+                // Clear search input
+                document.getElementById(`${bank}_search`).value = '';
+
+                // Show search container, hide selected display
+                document.getElementById(`${bank}_search_container`).style.display = 'block';
+                document.getElementById(`${bank}_selected`).style.display = 'none';
+
+                // Focus on search input
+                document.getElementById(`${bank}_search`).focus();
+            };
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function formatAssets(assets) {
+                if (!assets) return '';
+                // Assets are stored in thousands in the database, convert to actual dollars
+                const actualAssets = assets * 1000;
+                if (actualAssets >= 1000000000) {
+                    return `$${(actualAssets / 1000000000).toFixed(1)}B`;
+                } else if (actualAssets >= 1000000) {
+                    return `$${(actualAssets / 1000000).toFixed(0)}M`;
+                } else if (actualAssets >= 1000) {
+                    return `$${(actualAssets / 1000).toFixed(0)}K`;
+                }
+                return `$${actualAssets}`;
+            }
+        })();
+
+        // Add CSS for search result hover effects
+        const searchStyles = document.createElement('style');
+        searchStyles.textContent = `
+            .bank-search-item:hover, .bank-search-item.active {
+                background: #f0f7ff !important;
+            }
+            .bank-search-input:focus {
+                border-color: var(--ncrc-secondary-blue);
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            }
+        `;
+        document.head.appendChild(searchStyles);
+    </script>

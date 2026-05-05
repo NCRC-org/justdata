@@ -339,6 +339,135 @@ def execute_query(client: bigquery.Client, sql: str, timeout: int = 120) -> List
         raise Exception(f"Error executing BigQuery query: {e}")
 
 
+def run_query(
+    client: bigquery.Client,
+    sql: str,
+    params: Optional[List] = None,
+    timeout: int = 120,
+) -> List[Dict[str, Any]]:
+    """Execute a BigQuery query and return results as a list of dicts.
+
+    Like execute_query but accepts BigQuery query parameters (e.g.
+    ScalarQueryParameter / ArrayQueryParameter) for safe interpolation.
+
+    Args:
+        client: BigQuery client instance
+        sql: SQL query string (use @param_name placeholders if params is given)
+        params: Optional list of google.cloud.bigquery.QueryParameter objects
+        timeout: Query timeout in seconds (default: 120)
+
+    Returns:
+        List of dictionaries containing query results
+    """
+    try:
+        from google.cloud.bigquery import QueryJobConfig
+
+        job_config = QueryJobConfig()
+        job_config.use_query_cache = True
+        job_config.use_legacy_sql = False
+        if params:
+            job_config.query_parameters = params
+
+        query_job = client.query(sql, job_config=job_config)
+
+        try:
+            results = query_job.result(timeout=timeout)
+        except concurrent.futures.TimeoutError as timeout_error:
+            try:
+                query_job.cancel()
+                logger.warning("Query cancelled due to timeout")
+            except Exception:
+                pass
+            raise Exception(f"Query timed out after {timeout} seconds: {timeout_error}")
+        except Exception as query_error:
+            raise Exception(f"BigQuery query error: {query_error}")
+
+        data = [dict(row.items()) for row in results]
+        logger.debug(f"Query returned {len(data)} rows")
+        return data
+
+    except Exception as e:
+        logger.error(f"BigQuery query error: {e}")
+        raise Exception(f"Error executing BigQuery query: {e}")
+
+
+def run_query_df(
+    client: bigquery.Client,
+    sql: str,
+    params: Optional[List] = None,
+    timeout: int = 120,
+):
+    """Execute a BigQuery query and return results as a pandas DataFrame.
+
+    Args:
+        client: BigQuery client instance
+        sql: SQL query string (use @param_name placeholders if params is given)
+        params: Optional list of google.cloud.bigquery.QueryParameter objects
+        timeout: Query timeout in seconds (default: 120)
+
+    Returns:
+        pandas.DataFrame of query results (empty DataFrame if no rows).
+    """
+    import pandas as pd
+    rows = run_query(client, sql, params=params, timeout=timeout)
+    return pd.DataFrame(rows)
+
+
+def run_query_with_retry(
+    client: bigquery.Client,
+    sql: str,
+    params: Optional[List] = None,
+    timeout: int = 120,
+    max_attempts: int = 3,
+    initial_delay: float = 1.0,
+) -> List[Dict[str, Any]]:
+    """Execute a BigQuery query with exponential backoff retry on transient errors.
+
+    Retries on common transient BigQuery errors (rate limit, internal error,
+    service unavailable). Does not retry on syntax / schema errors.
+
+    Args:
+        client: BigQuery client instance
+        sql: SQL query string
+        params: Optional list of QueryParameter objects
+        timeout: Per-attempt query timeout in seconds (default: 120)
+        max_attempts: Maximum number of attempts (default: 3)
+        initial_delay: Initial backoff delay in seconds; doubles each retry
+
+    Returns:
+        List of dictionaries containing query results
+    """
+    import time
+    from google.api_core import exceptions as gcp_exceptions
+
+    transient = (
+        gcp_exceptions.TooManyRequests,
+        gcp_exceptions.InternalServerError,
+        gcp_exceptions.ServiceUnavailable,
+        gcp_exceptions.DeadlineExceeded,
+    )
+
+    delay = initial_delay
+    last_error = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return run_query(client, sql, params=params, timeout=timeout)
+        except transient as e:
+            last_error = e
+            if attempt >= max_attempts:
+                break
+            logger.warning(
+                f"BigQuery transient error on attempt {attempt}/{max_attempts}: {e}. "
+                f"Retrying in {delay:.1f}s..."
+            )
+            time.sleep(delay)
+            delay *= 2
+        except Exception:
+            # Non-transient error: do not retry, surface immediately
+            raise
+    raise Exception(f"BigQuery query failed after {max_attempts} attempts: {last_error}")
+
+
 def test_connection(project_id: str = None, app_name: str = None) -> bool:
     """Test BigQuery connection and return True if successful.
     

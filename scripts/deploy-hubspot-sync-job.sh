@@ -21,6 +21,8 @@ REGION="us-east1"
 JOB_NAME="hubspot-daily-sync"
 SCHEDULER_NAME="hubspot-daily-trigger"
 IMAGE_NAME="us-east1-docker.pkg.dev/justdata-ncrc/justdata-repo/hubspot-sync-job:latest"
+# Runtime identity for the job (BigQuery via ADC; must have BQ + Secret Accessor on hubspot-access-token)
+RUNTIME_SA="hubspot-sync@${PROJECT_ID}.iam.gserviceaccount.com"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -38,6 +40,9 @@ fi
 echo -e "${YELLOW}Setting project to ${PROJECT_ID}...${NC}"
 gcloud config set project $PROJECT_ID
 
+# Cloud Run Jobs API uses numeric project id in the resource path (not PROJECT_ID string)
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')
+
 # =============================================================================
 # Step 1: Check required secrets
 # =============================================================================
@@ -46,7 +51,6 @@ echo -e "${YELLOW}Step 1: Checking required secrets...${NC}"
 
 REQUIRED_SECRETS=(
     "hubspot-access-token"
-    "hubspot-bq-credentials"
 )
 
 for secret in "${REQUIRED_SECRETS[@]}"; do
@@ -63,6 +67,37 @@ for secret in "${REQUIRED_SECRETS[@]}"; do
         exit 1
     fi
 done
+
+# =============================================================================
+# Step 1b: Ensure runtime service account and IAM (BigQuery + Secret Manager)
+# =============================================================================
+echo ""
+echo -e "${YELLOW}Step 1b: Service account ${RUNTIME_SA}...${NC}"
+if ! gcloud iam service-accounts describe "$RUNTIME_SA" --project=$PROJECT_ID > /dev/null 2>&1; then
+    echo "Creating service account hubspot-sync..."
+    gcloud iam service-accounts create hubspot-sync \
+        --display-name="HubSpot → BigQuery daily sync" \
+        --project=$PROJECT_ID
+fi
+
+echo "Granting BigQuery job user (project)..."
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:${RUNTIME_SA}" \
+    --role="roles/bigquery.jobUser" \
+    --quiet 2>/dev/null || true
+
+echo "Granting BigQuery data editor (project; same pattern as other app SAs)..."
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:${RUNTIME_SA}" \
+    --role="roles/bigquery.dataEditor" \
+    --quiet 2>/dev/null || true
+
+echo "Granting Secret Manager access to hubspot-access-token..."
+gcloud secrets add-iam-policy-binding hubspot-access-token \
+    --project=$PROJECT_ID \
+    --member="serviceAccount:${RUNTIME_SA}" \
+    --role="roles/secretmanager.secretAccessor" \
+    --quiet 2>/dev/null || true
 
 # =============================================================================
 # Step 2: Build and push Docker image using Cloud Build
@@ -105,13 +140,14 @@ gcloud run jobs $ACTION $JOB_NAME \
     --image=$IMAGE_NAME \
     --region=$REGION \
     --project=$PROJECT_ID \
+    --service-account="${RUNTIME_SA}" \
     --memory=2Gi \
     --cpu=2 \
-    --task-timeout=30m \
+    --task-timeout=120m \
     --max-retries=1 \
     --set-env-vars="PYTHONPATH=/app" \
     --set-env-vars="JUSTDATA_PROJECT_ID=justdata-ncrc" \
-    --set-secrets="HUBSPOT_ACCESS_TOKEN=hubspot-access-token:latest,HUBSPOT_CREDENTIALS_JSON=hubspot-bq-credentials:latest"
+    --set-secrets="HUBSPOT_ACCESS_TOKEN=hubspot-access-token:latest"
 
 echo -e "  ${GREEN}✓${NC} Cloud Run Job '$JOB_NAME' ${ACTION}d"
 
@@ -121,7 +157,7 @@ echo -e "  ${GREEN}✓${NC} Cloud Run Job '$JOB_NAME' ${ACTION}d"
 echo ""
 echo -e "${YELLOW}Step 4: Creating Cloud Scheduler trigger...${NC}"
 
-SERVICE_ACCOUNT="hubspot-sync@justdata-ncrc.iam.gserviceaccount.com"
+SCHEDULER_URI="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_NUMBER}/jobs/${JOB_NAME}:run"
 
 if gcloud scheduler jobs describe $SCHEDULER_NAME --location=$REGION --project=$PROJECT_ID > /dev/null 2>&1; then
     echo "Updating existing scheduler..."
@@ -130,9 +166,9 @@ if gcloud scheduler jobs describe $SCHEDULER_NAME --location=$REGION --project=$
         --project=$PROJECT_ID \
         --schedule="0 4 * * *" \
         --time-zone="America/New_York" \
-        --uri="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${JOB_NAME}:run" \
+        --uri="${SCHEDULER_URI}" \
         --http-method=POST \
-        --oauth-service-account-email=$SERVICE_ACCOUNT
+        --oauth-service-account-email="${RUNTIME_SA}"
 else
     echo "Creating new scheduler..."
     gcloud scheduler jobs create http $SCHEDULER_NAME \
@@ -140,9 +176,9 @@ else
         --project=$PROJECT_ID \
         --schedule="0 4 * * *" \
         --time-zone="America/New_York" \
-        --uri="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${JOB_NAME}:run" \
+        --uri="${SCHEDULER_URI}" \
         --http-method=POST \
-        --oauth-service-account-email=$SERVICE_ACCOUNT
+        --oauth-service-account-email="${RUNTIME_SA}"
 fi
 
 echo -e "  ${GREEN}✓${NC} Cloud Scheduler '$SCHEDULER_NAME' configured"
@@ -157,7 +193,7 @@ echo -e "${YELLOW}Step 5: Granting permissions...${NC}"
 gcloud run jobs add-iam-policy-binding $JOB_NAME \
     --region=$REGION \
     --project=$PROJECT_ID \
-    --member="serviceAccount:$SERVICE_ACCOUNT" \
+    --member="serviceAccount:${RUNTIME_SA}" \
     --role="roles/run.invoker" \
     --quiet 2>/dev/null || true
 

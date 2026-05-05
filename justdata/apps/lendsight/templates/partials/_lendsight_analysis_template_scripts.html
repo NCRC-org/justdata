@@ -1,0 +1,849 @@
+    <script>
+        // LendSight-specific customizations
+        $(document).ready(function() {
+            // Populate loan purpose filters information
+            function populateFiltersInfo() {
+                const filtersList = document.getElementById('filtersList');
+                if (!filtersList) return;
+                
+                const filters = [
+                    'Originations only (action taken = 1)',
+                    'Site-built properties (construction method = 1)',
+                    'Owner-occupied properties (occupancy type = 1)',
+                    'Forward loans (excludes reverse mortgages)',
+                    '1-4 unit properties'
+                ];
+                
+                filtersList.innerHTML = filters.map((filter) => 
+                    `<div style="display: flex; align-items: flex-start;">
+                        <span style="margin-right: 8px; color: var(--ncrc-secondary-blue); font-weight: bold;">•</span>
+                        <span>${filter}</span>
+                    </div>`
+                ).join('');
+            }
+            
+            // Add interactive styles for loan purpose cards
+            $(document).ready(function() {
+                // Toggle filters info visibility with hover effects matching loan purpose cards
+                const filterCard = $('#toggleFiltersInfoBtn');
+                const content = $('#filtersInfoContent');
+                
+                filterCard.on('click', function() {
+                    const chevron = $('#filtersChevron');
+                    const isCurrentlyHidden = content.is(':hidden');
+                    
+                    if (isCurrentlyHidden) {
+                        content.slideDown(200);
+                        chevron.css('transform', 'rotate(180deg)');
+                        filterCard.css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa',
+                            'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'
+                        });
+                    } else {
+                        content.slideUp(200);
+                        chevron.css('transform', 'rotate(0deg)');
+                        filterCard.css({
+                            'border-color': '#e0e0e0',
+                            'background': 'white',
+                            'box-shadow': 'none'
+                        });
+                    }
+                });
+                
+                // Add hover effects for filter info card (only when not expanded)
+                filterCard.on('mouseenter', function() {
+                    if (content.is(':hidden')) {
+                        $(this).css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa',
+                            'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'
+                        });
+                    }
+                }).on('mouseleave', function() {
+                    if (content.is(':hidden')) {
+                        $(this).css({
+                            'border-color': '#e0e0e0',
+                            'background': 'white',
+                            'box-shadow': 'none'
+                        });
+                    }
+                });
+                
+                $('.loan-purpose-card').on('mouseenter', function() {
+                    const checkbox = $(this).find('input[type="checkbox"]');
+                    // Only apply hover effect if checkbox is not disabled
+                    if (!checkbox.is(':disabled')) {
+                        $(this).css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa',
+                            'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'
+                        });
+                    }
+                }).on('mouseleave', function() {
+                    const checkbox = $(this).find('input[type="checkbox"]');
+                    if (checkbox.is(':checked')) {
+                        $(this).css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa',
+                            'box-shadow': 'none'
+                        });
+                    } else if (checkbox.is(':disabled')) {
+                        $(this).css({
+                            'border-color': '#d0d0d0',
+                            'background': '#f5f5f5',
+                            'opacity': '0.6',
+                            'box-shadow': 'none'
+                        });
+                    } else {
+                        $(this).css({
+                            'border-color': '#e0e0e0',
+                            'background': 'white',
+                            'box-shadow': 'none'
+                        });
+                    }
+                });
+                
+                // Make loan purpose checkboxes mutually exclusive (single selection only)
+                function updateLoanPurposeSelection(clickedCheckbox) {
+                    const allCheckboxes = $('.loan-purpose-card input[type="checkbox"]');
+                    const checkedCount = allCheckboxes.filter(':checked').length;
+                    const clickedCard = $(clickedCheckbox).closest('.loan-purpose-card');
+                    const isChecked = $(clickedCheckbox).is(':checked');
+                    
+                    if (isChecked) {
+                        // When one is checked, uncheck and disable all others
+                        allCheckboxes.not(clickedCheckbox).each(function() {
+                            $(this).prop('checked', false).prop('disabled', true);
+                            const card = $(this).closest('.loan-purpose-card');
+                            card.css({
+                                'border-color': '#d0d0d0',
+                                'background': '#f5f5f5',
+                                'opacity': '0.6',
+                                'cursor': 'not-allowed'
+                            });
+                            card.find('div').css('color', '#999');
+                        });
+                        
+                        // Style the selected card
+                        clickedCard.css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa',
+                            'opacity': '1',
+                            'cursor': 'pointer'
+                        });
+                        clickedCard.find('div').css('color', '');
+                    } else {
+                        // When unchecked, enable all others so user can select a different one
+                        // Allow unchecking - validation will catch if none are selected on form submit
+                        
+                        // Enable all others when this one is unchecked
+                        allCheckboxes.not(clickedCheckbox).each(function() {
+                            $(this).prop('disabled', false);
+                            const card = $(this).closest('.loan-purpose-card');
+                            const isOtherChecked = $(this).is(':checked');
+                            if (isOtherChecked) {
+                                card.css({
+                                    'border-color': 'var(--ncrc-secondary-blue)',
+                                    'background': '#f0f7fa',
+                                    'opacity': '1',
+                                    'cursor': 'pointer'
+                                });
+                                card.find('div').css('color', '');
+                            } else {
+                                card.css({
+                                    'border-color': '#e0e0e0',
+                                    'background': 'white',
+                                    'opacity': '1',
+                                    'cursor': 'pointer'
+                                });
+                                card.find('div').css('color', '');
+                            }
+                        });
+                        
+                        // Style the unselected card
+                        clickedCard.css({
+                            'border-color': '#e0e0e0',
+                            'background': 'white',
+                            'opacity': '1',
+                            'cursor': 'pointer'
+                        });
+                        clickedCard.find('div').css('color', '');
+                    }
+                }
+                
+                // Initialize: no default selection, all options enabled
+                // No initialization needed - all checkboxes start unchecked and enabled
+                
+                // Prevent clicking on disabled cards
+                $('.loan-purpose-card').on('click', function(e) {
+                    const checkbox = $(this).find('input[type="checkbox"]');
+                    if (checkbox.is(':disabled')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+                
+                // Update card style when checkbox is toggled
+                $('.loan-purpose-card input[type="checkbox"]').on('change', function() {
+                    updateLoanPurposeSelection(this);
+                    updateSubmitButtonState();
+                });
+                
+                // Function to enable/disable submit button based on loan purpose selection
+                function updateSubmitButtonState() {
+                    const checkedCount = $('.loan-purpose-card input[type="checkbox"]:checked').length;
+                    const submitBtn = document.getElementById('submitBtn');
+                    if (submitBtn) {
+                        if (checkedCount === 0) {
+                            submitBtn.disabled = true;
+                            submitBtn.style.opacity = '0.6';
+                            submitBtn.style.cursor = 'not-allowed';
+                        } else {
+                            submitBtn.disabled = false;
+                            submitBtn.style.opacity = '1';
+                            submitBtn.style.cursor = 'pointer';
+                        }
+                    }
+                }
+                
+                // Initialize submit button state on page load
+                updateSubmitButtonState();
+                
+                // Initialize card styles based on checked state
+                $('.loan-purpose-card input[type="checkbox"]:checked').each(function() {
+                    $(this).closest('.loan-purpose-card').css({
+                        'border-color': 'var(--ncrc-secondary-blue)',
+                        'background': '#f0f7fa'
+                    });
+                });
+            });
+            
+            // Call on page load
+            populateFiltersInfo();
+            
+            // Note: loadStates() is defined in the jQuery ready block below
+            // This prevents duplicate loading and Select2 initialization conflicts
+            
+            // Load counties on page load (if not already loaded by shared app.js)
+            function loadCountiesForLendSight() {
+                const countySelect = document.getElementById('county-select');
+                if (!countySelect) return;
+                
+                // Check if counties are already loaded
+                if ($(countySelect).find('option').length > 0) {
+                    console.log('Counties already loaded');
+                    return;
+                }
+                
+                fetch('/counties')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to load counties');
+                        }
+                        return response.json();
+                    })
+                    .then(counties => {
+                        if (!Array.isArray(counties)) {
+                            throw new Error('Invalid response format');
+                        }
+                        
+                        // Clear and populate
+                        $(countySelect).empty();
+                        counties.forEach(county => {
+                            $(countySelect).append(new Option(county, county));
+                        });
+                        
+                        // No Select2 needed - using plain HTML select like BizSight
+                        
+                        console.log(`Loaded ${counties.length} counties`);
+                    })
+                    .catch(error => {
+                        console.error('Error loading counties:', error);
+                    });
+            }
+            
+            // Load counties after a short delay to ensure DOM is ready
+            setTimeout(loadCountiesForLendSight, 200);
+            
+            // Override validation for LendSight (single county, fixed years)
+            // This must run BEFORE app.js loads to override the shared validation
+            window.validateInput = function(input, type) {
+                // Override county-select validation for single county
+                if (type === 'county-select') {
+                    const countySelect = document.getElementById('county-select');
+                    if (!countySelect) return true;
+                    
+                    const selectedCounty = countySelect.value;
+                    if (!selectedCounty || selectedCounty === '') {
+                        showValidationMessage(countySelect, 'Please select a county to analyze.', 'error');
+                        countySelect.setCustomValidity('Please select a county.');
+                        return false;
+                    } else {
+                        hideValidationMessage(countySelect);
+                        countySelect.setCustomValidity('');
+                        showValidationMessage(countySelect, 'County selected successfully.', 'success');
+                        return true;
+                    }
+                }
+                // For other types, check if original exists and use it
+                if (window.originalValidateInput) {
+                    return window.originalValidateInput.call(this, input, type);
+                }
+                return true;
+            };});
+    </script>
+    
+    <!-- jQuery (must be first) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Override progress steps for LendSight BEFORE app.js loads -->
+    <script>
+        // Override progress steps for LendSight (consolidated to 10 main steps)
+        window.PROGRESS_STEPS = [
+            { id: 'initializing', label: 'Initializing', icon: 'fa-cog' },
+            { id: 'preparing_data', label: 'Preparing Data', icon: 'fa-database' },
+            { id: 'connecting_db', label: 'Connecting to Database', icon: 'fa-plug' },
+            { id: 'fetching_data', label: 'Fetching Data', icon: 'fa-download' },
+            { id: 'building_report', label: 'Building Report', icon: 'fa-file-alt' },
+            { id: 'demographic_overview', label: 'Section 1: Loans by Race & Ethnicity', icon: 'fa-chart-pie' },
+            { id: 'income_neighborhood', label: 'Section 2: Income & Neighborhood', icon: 'fa-map-marked-alt' },
+            { id: 'top_lenders', label: 'Section 3: Top Lenders', icon: 'fa-building' },
+            { id: 'generating_ai', label: 'Generating AI Insights', icon: 'fa-brain' },
+            { id: 'completed', label: 'Complete', icon: 'fa-check' }
+        ];
+        
+        // LendSight-specific state and county loading
+        $(document).ready(function() {
+            // Guard to prevent multiple simultaneous calls to loadStates
+            let isLoadingStates = false;
+            let statesLoaded = false;
+            
+            // Store state name to code mapping for reliable lookup
+            const stateCodeMap = {};
+            
+            // Load states on page load
+            function loadStates() {
+                // Prevent multiple simultaneous calls
+                if (isLoadingStates) {
+                    console.log('[DEBUG] loadStates: Already loading, skipping...');
+                    return;
+                }
+                
+                const stateSelect = $('#state-filter-select');
+                if (!stateSelect.length) {
+                    console.warn('State select element not found');
+                    return;
+                }
+                
+                // Preserve current selection if any
+                const currentValue = stateSelect.val();
+                console.log(`[DEBUG] loadStates: Current value before load: ${currentValue}`);
+                
+                isLoadingStates = true;
+                
+                fetch('/states')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to load states');
+                        }
+                        return response.json();
+                    })
+                    .then(states => {
+                        // Destroy Select2 if it exists to prevent conflicts
+                        if (stateSelect.hasClass('select2-hidden-accessible')) {
+                            stateSelect.select2('destroy');
+                        }
+                        
+                        stateSelect.empty();
+                        stateSelect.append('<option value="">Select a state...</option>');
+                        
+                        states.forEach(state => {
+                            const stateName = state.name || state;
+                            const stateCode = state.code || state;
+                            // Store in mapping object for reliable lookup
+                            stateCodeMap[stateName] = stateCode;
+                            // Store both name and code as data attributes, but use name as value
+                            const option = new Option(stateName, stateName);
+                            // Set data attribute directly on DOM element so it persists with Select2
+                            option.setAttribute('data-code', stateCode);
+                            $(option).data('code', stateCode); // Also set jQuery data for compatibility
+                            stateSelect.append(option);
+                        });
+                        
+                        // Reinitialize Select2 for state dropdown
+                        stateSelect.select2({
+                            placeholder: 'Select a state...',
+                            allowClear: true,
+                            width: '100%'
+                        });
+                        
+                        // DON'T restore previous selection - this was causing automatic Arizona loads
+                        // Users should select their state fresh each time
+                        // if (currentValue && stateSelect.find(`option[value="${currentValue}"]`).length > 0) {
+                        //     console.log(`[DEBUG] loadStates: Restoring previous selection: ${currentValue}`);
+                        //     // Use setTimeout to ensure Select2 is fully initialized before setting value
+                        //     setTimeout(() => {
+                        //         stateSelect.val(currentValue).trigger('change');
+                        //     }, 100);
+                        // }
+                        
+                        statesLoaded = true;
+                        isLoadingStates = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading states:', error);
+                        isLoadingStates = false;
+                    });
+            }
+            
+            // Load counties for selected state
+            function loadCountiesForState(stateCode) {
+                const countySelect = document.getElementById('county-select');
+                if (!countySelect) {
+                    console.warn('[DEBUG] County select element not found');
+                    return;
+                }
+                
+                if (!stateCode) {
+                    countySelect.innerHTML = '<option value="">Select a state first...</option>';
+                    countySelect.disabled = true;
+                    return;
+                }
+                
+                console.log(`[DEBUG] loadCountiesForState called with state code: ${stateCode}`);
+                
+                // Show loading state
+                countySelect.disabled = true;
+                countySelect.innerHTML = '<option value="">Loading counties...</option>';
+                
+                fetch(`/counties-by-state/${encodeURIComponent(stateCode)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to load counties: ${response.status} ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(counties => {
+                        // Clear and enable the select
+                        countySelect.disabled = false;
+                        countySelect.innerHTML = '<option value="">Select a county...</option>';
+                        
+                        // Handle both old format (strings) and new format (objects with FIPS codes)
+                        counties.forEach(county => {
+                            const option = document.createElement('option');
+                            if (typeof county === 'string') {
+                                // Old format: just county name string
+                                option.value = county;
+                                option.textContent = county;
+                            } else if (county && county.name) {
+                                // New format: county object with name, geoid5, state_fips, county_fips
+                                option.value = county.name;
+                                option.textContent = county.name;
+                                option.dataset.county = JSON.stringify(county); // Store full county object
+                            }
+                            countySelect.appendChild(option);
+                        });
+                        
+                        console.log(`[DEBUG] Loaded ${counties.length} counties for state code ${stateCode}`);
+                    })
+                    .catch(error => {
+                        console.error('Error loading counties:', error);
+                        countySelect.innerHTML = '<option value="">Error loading counties. Please try again.</option>';
+                        countySelect.disabled = false;
+                    });
+            }
+            
+            // Handle state selection change - use event delegation to prevent duplicate handlers
+            $(document).off('change', '#state-filter-select').on('change', '#state-filter-select', function(e) {
+                // Prevent automatic triggers during initialization
+                if (e.originalEvent && e.originalEvent.isTrusted === false) {
+                    console.log('[DEBUG] Blocked programmatic state change event');
+                    return;
+                }
+                
+                const stateSelect = $(this);
+                const selectedState = stateSelect.val();
+                
+                // Get the state code - try multiple methods for reliability
+                let stateCode = null;
+                if (selectedState) {
+                    // Method 1: Try to get from the mapping object (most reliable)
+                    if (stateCodeMap[selectedState]) {
+                        stateCode = stateCodeMap[selectedState];
+                        console.log(`[DEBUG] Got state code from mapping: ${stateCode}`);
+                    } else {
+                        // Method 2: Try to get from the option element's data attribute
+                        const actualOption = stateSelect.find('option').filter(function() {
+                            return $(this).val() === selectedState;
+                        });
+                        if (actualOption.length > 0) {
+                            // Try both data attribute and jQuery data - prioritize DOM attribute
+                            stateCode = actualOption.attr('data-code') || actualOption.data('code');
+                            console.log(`[DEBUG] Got state code from option element: ${stateCode}`);
+                        }
+                    }
+                }
+                
+                console.log(`[DEBUG] State filter changed to: ${selectedState}`);
+                console.log(`[DEBUG] State code: ${stateCode}`);
+                
+                if (!stateCode) {
+                    console.error(`[DEBUG] ERROR: No state code found for selected state: ${selectedState}`);
+                    alert('Error: Could not determine state code. Please try selecting the state again.');
+                    return;
+                }
+                
+                // Only load counties if a state is actually selected AND we have a valid state code
+                if (selectedState && selectedState.trim() !== '' && stateCode) {
+                    console.log(`[DEBUG] Loading counties for state: ${selectedState} (code: ${stateCode})`);
+                    loadCountiesForState(stateCode);
+                } else {
+                    // Clear counties if state is cleared
+                    const countySelect = document.getElementById('county-select');
+                    if (countySelect) {
+                        countySelect.disabled = true;
+                        countySelect.innerHTML = '<option value="">Select a state first...</option>';
+                    }
+                }
+            });
+            
+            // Load states on page load - only once
+            if (!statesLoaded) {
+                loadStates();
+            }
+        });
+    </script>
+    <!-- Your app.js (after dependencies and progress steps override) -->
+    <script>
+        // Set flag to tell shared app.js to skip state management for LendSight
+        window.LENDSIGHT_MODE = true;
+        
+        // Override loadCounties BEFORE app.js loads to prevent Select2 initialization
+        // This prevents the shared app.js from initializing Select2 on county select
+        window.loadCounties = function(stateCode = null) {
+            // For LendSight, we use our own loadCountiesForState function
+            // This override prevents the shared app.js from initializing Select2
+            console.log('[LendSight] loadCounties called but overridden - using loadCountiesForState instead');
+            // Do nothing - our custom loadCountiesForState will handle it
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Verify the correct app.js loaded
+        setTimeout(function() {
+            if (window.APP_JS_VERSION) {
+                console.log('[VERIFIED] Correct app.js version loaded:', window.APP_JS_VERSION);
+            } else {
+                console.error('[ERROR] OLD app.js version detected - window.APP_JS_VERSION is undefined!');
+                console.error('[ERROR] This means the cached/old version is being served.');
+            }
+        }, 100);
+    </script>
+    <script>
+        // Override shared app.js functions for LendSight (single county, no Select2)
+        $(document).ready(function() {
+            // CRITICAL: Remove the shared app.js form submission handler and state change handler
+            // The shared app.js attaches handlers that don't work for LendSight's single-county setup
+            $('#analysisForm').off('submit'); // Remove shared app.js form handler
+            $('#state-filter-select').off('change'); // Remove shared app.js state change handler
+            console.log('[LendSight] Removed shared app.js handlers');
+            
+            // Re-attach our LendSight-specific form handler
+            // Use setTimeout to ensure this runs after shared app.js has finished
+            let retryCount = 0;
+            const maxRetries = 50; // Wait up to 5 seconds (50 * 100ms)
+            
+            function attachFormHandler() {
+                // Verify required functions are available
+                if ((typeof showProgress !== 'function' || typeof disableForm !== 'function' || typeof listenForProgress !== 'function') && retryCount < maxRetries) {
+                    retryCount++;
+                    setTimeout(attachFormHandler, 100);
+                    return;
+                }
+                
+                if (retryCount >= maxRetries) {
+                    console.error('[LendSight] Functions not available after waiting, attaching handler anyway');
+                }
+                
+                // Functions are available (or we've given up waiting), attach the handler
+                $('#analysisForm').off('submit').on('submit', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Clear all previous validation messages first
+                document.querySelectorAll('.validation-message').forEach(msg => msg.remove());
+                
+                const formData = new FormData(this);
+                const selectionType = formData.get('selection_type') || 'county';
+                
+                // Collect all checked loan purpose checkboxes using jQuery
+                const loanPurposeCheckboxes = $('input[name="loan_purpose"]:checked').map(function() {
+                    return $(this).val();
+                }).get();
+                
+                // Enhanced validation with helpful messages
+                let hasErrors = false;
+                
+                // Validate loan purpose selection
+                if (!loanPurposeCheckboxes || loanPurposeCheckboxes.length === 0) {
+                    // Find the first loan purpose card to show error
+                    const firstCard = document.querySelector('.loan-purpose-card');
+                    if (firstCard) {
+                        showValidationMessage(firstCard.querySelector('input[type="checkbox"]'), 'Please select one loan purpose.', 'error');
+                    }
+                    hasErrors = true;
+                }
+                
+                // State selection is required
+                const selectedState = $('#state-filter-select').val();
+                const selectedStateOption = $('#state-filter-select').find('option:selected');
+                // Get the state FIPS code from the data-code attribute (e.g., "24" for Maryland)
+                // Try multiple methods for reliability
+                let stateFipsCode = selectedStateOption.attr('data-code');
+                if (!stateFipsCode && window.stateCodeMap && window.stateCodeMap[selectedState]) {
+                    stateFipsCode = window.stateCodeMap[selectedState];
+                }
+
+                // Validate state selection (required)
+                if (!selectedState || selectedState.trim() === '') {
+                    showValidationMessage(document.getElementById('state-filter-select'), 'Please select a state.', 'error');
+                    hasErrors = true;
+                }
+
+                // Validate county selection (required, single county)
+                const countySelect = document.getElementById('county-select');
+                const selectedCounty = countySelect ? countySelect.value : '';
+                if (!selectedCounty || selectedCounty === '') {
+                    showValidationMessage(countySelect, 'Please select a county to analyze.', 'error');
+                    hasErrors = true;
+                }
+
+                if (hasErrors) {
+                    const firstError = document.querySelector('.validation-message.error');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return false;
+                }
+
+                // Build request data
+                const forceRefresh = document.getElementById('forceRefreshCheckbox')?.checked || false;
+                let requestData = {
+                    selection_type: 'county',
+                    state_code: stateFipsCode || selectedState,  // Use FIPS code (e.g., "24") for Census API, fallback to state name
+                    years: '2020,2021,2022,2023,2024',  // Fixed years 2020-2024
+                    loan_purpose: loanPurposeCheckboxes.length > 0 ? loanPurposeCheckboxes : ['purchase'],  // Default to purchase only
+                    force_refresh: forceRefresh
+                };
+
+                console.log(`[LendSight] Form submission - State: ${selectedState}, State FIPS code: ${stateFipsCode}`);
+                
+                // Single county selection
+                requestData.counties = selectedCounty;  // Single county, not array
+                
+                // Also include counties_data with GEOID5 information for BigQuery queries
+                const countiesData = [];
+                const selectedOption = countySelect.options[countySelect.selectedIndex];
+                if (selectedOption && selectedOption.dataset.county) {
+                    try {
+                        const countyData = JSON.parse(selectedOption.dataset.county);
+                        // Include GEOID5, state_fips, and county_fips for BigQuery
+                        countiesData.push({
+                            name: countyData.name || selectedCounty,
+                            geoid5: countyData.geoid5,
+                            state_fips: countyData.state_fips,
+                            county_fips: countyData.county_fips
+                        });
+                    } catch (e) {
+                        // Fallback: if parsing fails, just use the name
+                        countiesData.push({
+                            name: selectedCounty
+                        });
+                    }
+                } else {
+                    // Fallback: if no county data, just use the name
+                    countiesData.push({
+                        name: selectedCounty
+                    });
+                }
+                requestData.counties_data = countiesData;
+                
+                // Show progress and disable form
+                // Use fallback implementations if shared functions aren't available
+                if (typeof showProgress === 'function') {
+                    showProgress();
+                } else {
+                    // Fallback: Show progress manually
+                    const progressSection = document.getElementById('progressSection');
+                    const submitBtn = document.getElementById('submitBtn');
+                    if (progressSection) progressSection.style.display = 'block';
+                    if (submitBtn) submitBtn.disabled = true;
+                    console.log('[LendSight] Using fallback showProgress');
+                }
+                if (typeof disableForm === 'function') {
+                    disableForm();
+                } else {
+                    // Fallback: Disable form manually
+                    const form = document.getElementById('analysisForm');
+                    if (form) {
+                        const inputs = form.querySelectorAll('input, select, button');
+                        inputs.forEach(input => {
+                            if (input.id !== 'submitBtn') input.disabled = true;
+                        });
+                    }
+                    console.log('[LendSight] Using fallback disableForm');
+                }
+                
+                try {
+                    const response = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    const result = await response.json();
+                    if (!result.success) {
+                        throw new Error(result.error || 'Analysis failed');
+                    }
+                    const jobId = result.job_id;
+
+                    // Log analytics event for LendSight report
+                    if (window.JustDataAnalytics && window.JustDataAnalytics.logLendSightReport) {
+                        window.JustDataAnalytics.logLendSightReport({
+                            countyFips: requestData.counties_data && requestData.counties_data[0] ? requestData.counties_data[0].geoid5 : '',
+                            state: selectedState,
+                            year: '2020-2024',
+                            reportType: loanPurposeCheckboxes.join(',') || 'purchase'
+                        });
+                    }
+
+                    if (typeof listenForProgress === 'function') {
+                        listenForProgress(jobId);
+                    } else {
+                        // Fallback: Redirect to report page
+                        console.log('[LendSight] Using fallback - redirecting to report page');
+                        window.location.href = `/?job_id=${jobId}`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    if (typeof showError === 'function') {
+                        showError(error.message || 'Network error. Please check your connection and try again.');
+                    } else {
+                        alert('Error: ' + (error.message || 'Network error. Please check your connection and try again.'));
+                    }
+                    // Fallback: Hide progress and enable form manually
+                    if (typeof hideProgress === 'function') {
+                        hideProgress();
+                    } else {
+                        const progressSection = document.getElementById('progressSection');
+                        if (progressSection) progressSection.style.display = 'none';
+                    }
+                    if (typeof enableForm === 'function') {
+                        enableForm();
+                    } else {
+                        const form = document.getElementById('analysisForm');
+                        if (form) {
+                            const inputs = form.querySelectorAll('input, select, button');
+                            inputs.forEach(input => input.disabled = false);
+                        }
+                    }
+                }
+                
+                return false;
+                });
+                console.log('[LendSight] Attached LendSight-specific form handler');
+            }
+            
+            // Start trying to attach the handler
+            setTimeout(attachFormHandler, 100);
+            
+            // Also attach a click handler to the submit button as a fallback
+            $('#submitBtn').off('click').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[LendSight] Submit button clicked - triggering form submit');
+                $('#analysisForm').trigger('submit');
+                return false;
+            });
+            
+            // Make sure Select2 is NOT initialized on county select
+            // Destroy any existing Select2 instance immediately
+            const countySelectElForLendSight = document.getElementById('county-select');
+            if (countySelectElForLendSight) {
+                const $countySelect = $('#county-select');
+                // Destroy Select2 if it exists
+                if ($countySelect.hasClass('select2-hidden-accessible')) {
+                    console.log('[LendSight] Destroying Select2 on county select');
+                    $countySelect.select2('destroy');
+                }
+                // Remove multiple attribute if it exists
+                countySelectElForLendSight.removeAttribute('multiple');
+                // Ensure it's a plain select
+                if (countySelectElForLendSight.hasAttribute('multiple')) {
+                    countySelectElForLendSight.removeAttribute('multiple');
+                }
+            }
+            
+            // Override the validateInput function to handle single county selection
+            const originalValidateInput = window.validateInput;
+            window.validateInput = function(input, type) {
+                // Override county-select validation for single county (LendSight)
+                if (type === 'county-select') {
+                    const countySelect = document.getElementById('county-select');
+                    if (!countySelect) return true;
+                    
+                    // Get value directly from DOM element (plain select returns string, not array)
+                    const selectedCounty = countySelect.value;
+                    
+                    // Hide any existing validation messages first
+                    if (typeof hideValidationMessage === 'function') {
+                        hideValidationMessage(countySelect);
+                    }
+                    
+                    if (!selectedCounty || selectedCounty === '') {
+                        showValidationMessage(countySelect, 'Please select a county to analyze.', 'error');
+                        countySelect.setCustomValidity('Please select a county.');
+                        return false;
+                    } else {
+                        countySelect.setCustomValidity('');
+                        // Don't show any message for single county - just clear errors
+                        return true;
+                    }
+                }
+                // For other types, use original validation
+                if (originalValidateInput) {
+                    return originalValidateInput.call(this, input, type);
+                }
+                return true;
+            };
+            
+            // Remove any existing change handlers from shared app.js and add our own
+            $('#county-select').off('change').on('change', function() {
+                validateInput(this, 'county-select');
+            });
+            
+            // Monitor for any Select2 initialization attempts and destroy them
+            const observer = new MutationObserver(function(mutations) {
+                const $countySelect = $('#county-select');
+                if ($countySelect.hasClass('select2-hidden-accessible')) {
+                    console.log('[LendSight] Select2 detected on county select - destroying it');
+                    $countySelect.select2('destroy');
+                    const countySelectEl = document.getElementById('county-select');
+                    if (countySelectEl) {
+                        countySelectEl.removeAttribute('multiple');
+                    }
+                }
+            });
+            
+            if (countySelectElForLendSight) {
+                observer.observe(countySelectElForLendSight, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }
+        });
+    </script>

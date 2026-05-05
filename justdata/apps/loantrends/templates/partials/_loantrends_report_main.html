@@ -1,0 +1,134 @@
+    <div class="report-container">
+        <!-- Report Header -->
+        <div class="report-header">
+            <h1>National Mortgage Lending Quarterly Trends Report</h1>
+            <p>Generated from CFPB HMDA Quarterly Data Graph API</p>
+            <p style="font-size: 0.9em; color: #666;">Time Period: <span id="timePeriodDisplay"></span> <span id="timePeriodNote" style="font-size: 0.85em; font-style: italic;">(calculated dynamically based on most recent complete quarter)</span></p>
+            
+            <!-- Global Toggle: Applications vs Originations -->
+            <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px; display: inline-block;">
+                <label style="font-weight: bold; margin-right: 20px; font-size: 1.1em;">View Data As:</label>
+                <label style="margin-right: 15px; cursor: pointer; font-size: 1em;">
+                    <input type="radio" name="globalDataView" value="applications" checked style="margin-right: 5px;">
+                    Applications
+                </label>
+                <label style="cursor: pointer; font-size: 1em;">
+                    <input type="radio" name="globalDataView" value="originations" style="margin-right: 5px;">
+                    Originations (Loans)
+                </label>
+            </div>
+        </div>
+
+        <!-- Overall Trends Introduction -->
+        <div class="report-section" id="overallIntroSection">
+            <h2 class="section-title">Overall Trends</h2>
+            <div class="ai-content" id="overallIntroContent">
+                <!-- AI-generated overall intro will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Key Findings -->
+        <div class="report-section" id="keyFindingsSection" style="display: none;">
+            <h2 class="section-title">Key Findings</h2>
+            <div class="ai-content" id="keyFindingsContent">
+                <!-- AI-generated key findings will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Section 1: Loan & Application Counts -->
+        <div class="report-section" id="section1" style="display: none;">
+            <h2 class="section-title">Section 1: Loan & Application Counts</h2>
+            <div class="ai-content" id="section1Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Table 1: Loan & Application Counts -->
+            <div id="loanCountsTable1" style="display: none;">
+                <h3 style="margin-top: 20px; color: var(--ncrc-dark-blue);">Table 1: Loan & Application Counts</h3>
+                <p style="font-style: italic; color: #666; margin-bottom: 15px;">
+                    <span id="loanCountsTable1ViewLabel">Applications</span> - Use the toggle at the top to switch between Applications and Originations
+                </p>
+                
+                <p class="table-introduction" id="loanCountsTable1Intro">
+                    <!-- Chart intro will be populated by JavaScript -->
+                </p>
+                <div class="chart-container" style="position: relative; height: 500px; margin: 20px 0;">
+                    <canvas id="loanCountsTable1Chart"></canvas>
+                </div>
+                <div class="table-narrative" id="loanCountsTable1Narrative">
+                    <!-- Narrative will be populated by JavaScript -->
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Section 2: Credit Metrics -->
+        <div class="report-section" id="section2" style="display: none;">
+            <h2 class="section-title">Section 2: Credit Metrics</h2>
+            <div class="ai-content" id="section2Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Credit Scores Tables will be populated dynamically -->
+        </div>
+
+        <!-- Section 3: Loan Characteristics -->
+        <div class="report-section" id="section3" style="display: none;">
+            <h2 class="section-title">Section 3: Loan Characteristics</h2>
+            <div class="ai-content" id="section3Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- LTV and DTI Tables will be populated dynamically -->
+        </div>
+
+        <!-- Section 4: Market Dynamics -->
+        <div class="report-section" id="section4" style="display: none;">
+            <h2 class="section-title">Section 4: Market Dynamics</h2>
+            <div class="ai-content" id="section4Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Interest Rates, Denials, TLC Tables will be populated dynamically -->
+        </div>
+
+        <!-- Section 5: Demographic Analysis -->
+        <div class="report-section" id="section5" style="display: none;">
+            <h2 class="section-title">Section 5: Demographic Analysis</h2>
+            <div class="ai-content" id="section5Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Race/Ethnicity Tables will be populated dynamically -->
+        </div>
+
+        <!-- Overall Summary -->
+        <div class="report-section" id="overallSummarySection" style="display: none;">
+            <h2 class="section-title">Overall Summary</h2>
+            <div class="ai-content" id="overallSummaryContent">
+                <!-- AI-generated overall summary will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Data Source Footer -->
+        <div class="report-section" style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+            <p style="font-size: 0.9em; color: #666; line-height: 1.6;">
+                <strong>Data Source:</strong> This report uses data from the CFPB HMDA Quarterly Data Graph API 
+                (<a href="https://ffiec.cfpb.gov/documentation/api/graphs/" target="_blank">https://ffiec.cfpb.gov/documentation/api/graphs/</a>). 
+                The data represents national-level quarterly aggregations of mortgage lending activity.
+            </p>
+            <p style="font-size: 0.9em; color: #666; line-height: 1.6; margin-top: 10px;">
+                <strong>AI-Generated Content:</strong> This report was generated using AI assistance (primarily Claude Sonnet 4). 
+                AI-generated content includes narrative analysis, introductory paragraphs, key findings, and table discussions. 
+                All data points, statistics, and figures are pulled directly from the CFPB Quarterly Data Graph API—AI is used only 
+                to interpret patterns and generate written summaries.
+            </p>
+            <p style="font-size: 0.85em; color: #999; margin-top: 15px;">
+                Generated on <span id="generatedDate"></span> | Version {{ version }}
+            </p>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Report rendering script -->

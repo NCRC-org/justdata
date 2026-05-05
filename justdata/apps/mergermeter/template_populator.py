@@ -8,7 +8,7 @@ and formulas copied down as data is added.
 
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, range_boundaries
-from openpyxl.styles import Alignment, PatternFill
+from openpyxl.styles import Alignment, Font, PatternFill
 from pathlib import Path
 import pandas as pd
 from typing import Dict, Optional, List, Tuple

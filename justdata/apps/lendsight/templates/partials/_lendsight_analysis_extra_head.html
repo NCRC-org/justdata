@@ -1,0 +1,65 @@
+    <meta name="description" content="AI-powered mortgage lending data analyzer with BigQuery integration. Generate comprehensive mortgage market analysis reports from HMDA data.">
+    <meta name="keywords" content="LendSight, mortgage, lending analysis, HMDA, AI, BigQuery, market intelligence">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://justdata.app/lendsight/">
+    <meta property="og:title" content="LendSight - AI-Powered Mortgage Insights">
+    <meta property="og:description" content="Generate comprehensive mortgage market analysis reports with AI-powered insights from HMDA data.">
+    <meta property="og:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://justdata.app/lendsight/">
+    <meta property="twitter:title" content="LendSight - AI-Powered Mortgage Insights">
+    <meta property="twitter:description" content="Generate comprehensive mortgage market analysis reports with AI-powered insights from HMDA data.">
+    <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Header logo replacement */
+        .app-branding .app-name {
+            visibility: hidden;
+            position: relative;
+            width: 140px;
+            height: 30px;
+        }
+        .app-branding .app-name::before {
+            visibility: visible;
+            content: '';
+            display: inline-block;
+            width: 140px;
+            height: 30px;
+            background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
+        }
+
+        /* Constrain the analysis card width with side buffers */
+        .analysis-card {
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Make Select2 dropdowns match BizSight native dropdown styling */
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container .select2-selection--single {
+            height: auto;
+            min-height: 46px;
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            padding: 0;
+            line-height: 1.5;
+        }
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+            top: 0;
+            right: 8px;
+        }
+    </style>

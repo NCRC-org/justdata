@@ -110,7 +110,7 @@ This document outlines what has been fixed and what needs to be verified before 
 
 ## 🔗 Related Files
 
-- `apps/dataexplorer/app.py` - Flask routes and endpoints
+- `apps/dataexplorer/blueprint.py` - Flask routes and endpoints
 - `apps/dataexplorer/core.py` - Main analysis logic and parameter parsing
 - `apps/dataexplorer/data_utils.py` - SQL query execution with filters
 - `apps/dataexplorer/area_report_builder.py` - Report table generation

@@ -1,0 +1,100 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MergerMeter - Two-Bank Merger Impact Analyzer</title>
+    <meta name="description" content="AI-powered bank merger analysis tool with BigQuery integration. Generate comprehensive community benefits merger analysis reports.">
+    <meta name="keywords" content="MergerMeter, merger analysis, bank merger, community benefits, CRA, AI, BigQuery, market intelligence">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://justdata.app/mergermeter/">
+    <meta property="og:title" content="MergerMeter - Two-Bank Merger Impact Analyzer">
+    <meta property="og:description" content="Generate comprehensive bank merger analysis reports with AI-powered insights for community benefits assessment.">
+    <meta property="og:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://justdata.app/mergermeter/">
+    <meta property="twitter:title" content="MergerMeter - Two-Bank Merger Impact Analyzer">
+    <meta property="twitter:description" content="Generate comprehensive bank merger analysis reports with AI-powered insights for community benefits assessment.">
+    <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <style>
+        /* Ensure feature cards have relative positioning for tooltips */
+        .sidebar .feature-card {
+            position: relative;
+        }
+
+        /* Excel preview styles */
+        .excel-viewer { margin: 20px 0; }
+
+        .excel-download-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: #f0f4f8; border-radius: 6px; margin-bottom: 16px;
+        }
+        .excel-download-btn {
+            background: #034EA0; color: white; border: none; padding: 10px 24px;
+            border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .excel-download-btn:hover { background: #023d80; }
+
+        .validation-banner {
+            background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
+            padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #856404;
+        }
+        .validation-banner.clean {
+            background: #d4edda; border-color: #28a745; color: #155724;
+        }
+        .validation-banner ul { margin: 8px 0 0; padding-left: 20px; }
+
+        .excel-tabs {
+            display: flex; flex-wrap: nowrap; gap: 0; border-bottom: 2px solid #034EA0;
+            margin-bottom: 0; padding: 0 4px; background: #f8f9fa; overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .excel-tabs::-webkit-scrollbar { display: none; }
+        .excel-tab {
+            padding: 6px 10px; cursor: pointer; border: 1px solid #ddd; border-bottom: none;
+            border-radius: 6px 6px 0 0; background: #e9ecef; color: #555; font-size: 11px;
+            font-family: Arial, sans-serif; font-weight: 500; margin-bottom: -2px;
+            white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+        }
+        .excel-tab:hover { background: #dee2e6; }
+        .excel-tab.active {
+            background: #fff; color: #034EA0; border-color: #034EA0;
+            border-bottom-color: #fff; font-weight: 600;
+        }
+
+        .excel-sheet {
+            display: none; padding: 0; border: 1px solid #ddd; border-top: none;
+            background: #fff; overflow-x: auto; max-height: 600px; overflow-y: auto;
+        }
+        .excel-sheet.active { display: block; }
+
+        .excel-sheet table {
+            border-collapse: collapse; width: 100%; font: 12px Arial, sans-serif;
+        }
+        .excel-sheet th {
+            background: #034EA0; color: #fff; font-weight: 600; padding: 6px 10px;
+            text-align: left; position: sticky; top: 0; z-index: 1;
+            border: 1px solid #0256b3;
+        }
+        .excel-sheet td {
+            border: 1px solid #d0d0d0; padding: 5px 8px; text-align: left;
+            vertical-align: top; white-space: nowrap;
+        }
+        .excel-sheet tr:nth-child(even) { background: #f8f9fa; }
+        .excel-sheet tr:hover { background: #e8f0fe; }
+        .excel-sheet td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .excel-sheet td.pct { text-align: right; color: #034EA0; }
+        .excel-sheet td.empty { color: #ccc; font-style: italic; }
+        .excel-sheet td.neg { color: #c00; }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

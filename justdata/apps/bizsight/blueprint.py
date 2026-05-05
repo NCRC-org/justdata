@@ -446,6 +446,25 @@ def get_states():
         return jsonify({'error': str(e)}), 500
 
 
+@bizsight_bp.route('/api/planning-regions', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
+def get_planning_regions():
+    """Get Connecticut planning regions for 2024 data."""
+    planning_regions = [
+        {'code': '09110', 'name': 'Capitol Planning Region', 'geoid5': '09110'},
+        {'code': '09120', 'name': 'Greater Bridgeport Planning Region', 'geoid5': '09120'},
+        {'code': '09130', 'name': 'Lower Connecticut River Valley Planning Region', 'geoid5': '09130'},
+        {'code': '09140', 'name': 'Naugatuck Valley Planning Region', 'geoid5': '09140'},
+        {'code': '09150', 'name': 'Northeastern Connecticut Planning Region', 'geoid5': '09150'},
+        {'code': '09160', 'name': 'Northwest Hills Planning Region', 'geoid5': '09160'},
+        {'code': '09170', 'name': 'South Central Connecticut Planning Region', 'geoid5': '09170'},
+        {'code': '09180', 'name': 'Southeastern Connecticut Planning Region', 'geoid5': '09180'},
+        {'code': '09190', 'name': 'Western Connecticut Planning Region', 'geoid5': '09190'},
+    ]
+    return jsonify(planning_regions)
+
+
 @bizsight_bp.route('/api/counties-by-state/<state_code>', methods=['GET'])
 @login_required
 @require_access('bizsight', 'partial')

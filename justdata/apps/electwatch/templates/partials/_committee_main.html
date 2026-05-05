@@ -1,0 +1,145 @@
+    <main class="main-content">
+        <div id="loading" class="loading">Loading committee data...</div>
+
+        <div id="content" style="display: none;">
+            <!-- Committee Header -->
+            <div class="committee-header">
+                <span id="chamber-badge" class="committee-badge house">House</span>
+                <h1 id="committee-name" class="committee-name">Committee Name</h1>
+                <p id="committee-jurisdiction" class="committee-jurisdiction">Jurisdiction details</p>
+
+                <div class="leadership-row">
+                    <div id="chair-card" class="leader-card">
+                        <!-- Chair info populated by JS -->
+                    </div>
+                    <div id="ranking-card" class="leader-card">
+                        <!-- Ranking member info populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div id="stat-members" class="stat-value">--</div>
+                    <div class="stat-label">Members</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-total" class="stat-value">--</div>
+                    <div class="stat-label">Total $ Involved</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-contributions" class="stat-value">--</div>
+                    <div class="stat-label">Contributions</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-trades" class="stat-value">--</div>
+                    <div class="stat-label">Stock Trades</div>
+                </div>
+            </div>
+
+            <!-- Party Composition -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-balance-scale"></i> Party Composition</h2>
+                </div>
+                <div class="card-body">
+                    <div class="party-split">
+                        <span style="font-weight: 600; color: var(--party-r);">R</span>
+                        <div class="party-bar">
+                            <div id="party-r-fill" class="party-fill-r" style="width: 50%"></div>
+                            <div id="party-d-fill" class="party-fill-d" style="width: 50%"></div>
+                        </div>
+                        <span style="font-weight: 600; color: var(--party-d);">D</span>
+                    </div>
+                    <div class="party-labels">
+                        <span id="party-r-count">-- Republicans</span>
+                        <span id="party-d-count">-- Democrats</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> Committee Members</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <table class="members-table">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Role</th>
+                                <th>Fin PAC $</th>
+                                <th>Stock Trades</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-body">
+                            <tr><td colspan="4" class="loading">Loading members...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Two Column: Votes and Legislation -->
+            <div class="two-columns">
+                <!-- Committee Votes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-vote-yea"></i> Recent Committee Votes</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <table class="votes-table">
+                            <thead>
+                                <tr>
+                                    <th>Bill</th>
+                                    <th>Result</th>
+                                    <th>Vote</th>
+                                </tr>
+                            </thead>
+                            <tbody id="votes-body">
+                                <tr><td colspan="3" class="loading">Loading votes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Legislation -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-scroll"></i> Legislation from Committee</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="legislation-list">
+                            <div class="loading">Loading legislation...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-newspaper"></i> Committee News</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="news-list">
+                        <div class="loading">Loading news...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subcommittees -->
+            <div id="subcommittees-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="fas fa-sitemap"></i> Subcommittees</h2>
+                </div>
+                <div class="card-body">
+                    <div id="subcommittees-list" class="subcommittee-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+

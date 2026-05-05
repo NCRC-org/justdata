@@ -1,0 +1,189 @@
+    <main class="main-content">
+        <div id="loading" class="loading">Loading firm data...</div>
+
+        <div id="content" style="display: none;">
+            <!-- Firm Header -->
+            <div class="firm-header">
+                <div class="firm-logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="firm-info">
+                    <h1 class="firm-name">{{ firm_name }}<span id="firm-ticker" class="firm-ticker" style="display: none;"></span></h1>
+                    <div class="firm-meta">
+                        <span id="firm-pac" class="meta-item">
+                            <i class="fas fa-hand-holding-dollar"></i>
+                            <span>-- PAC Contributions</span>
+                        </span>
+                        <span id="firm-trades" class="meta-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>-- Stock Trades</span>
+                        </span>
+                    </div>
+                    <div id="industry-tags" class="industry-tags">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div id="stat-officials" class="stat-value">--</div>
+                    <div class="stat-label">Officials Connected</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-total" class="stat-value">--</div>
+                    <div class="stat-label">Total $ Involved</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-contributions" class="stat-value">--</div>
+                    <div class="stat-label">PAC Contributions</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-stock" class="stat-value">--</div>
+                    <div class="stat-label">Stock Trades</div>
+                </div>
+            </div>
+
+            <!-- Party Split -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-balance-scale"></i> Contribution Split by Party</h2>
+                </div>
+                <div class="card-body">
+                    <div class="party-bar-container">
+                        <span style="font-weight: 700; color: var(--party-r);">R</span>
+                        <div class="party-bar">
+                            <div id="party-r-fill" class="party-fill-r" style="width: 50%;"></div>
+                            <div id="party-d-fill" class="party-fill-d" style="width: 50%;"></div>
+                        </div>
+                        <span style="font-weight: 700; color: var(--party-d);">D</span>
+                    </div>
+                    <div class="party-legend">
+                        <span class="r-label" id="r-amount">$0 (50%)</span>
+                        <span class="d-label" id="d-amount">$0 (50%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Officials (Stock Trades) -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> Connected Officials (Stock Trades)</h2>
+                </div>
+                <div class="card-body">
+                    <table class="officials-table">
+                        <thead>
+                            <tr>
+                                <th>Official</th>
+                                <th>Type</th>
+                                <th>Committee</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="officials-body">
+                            <tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAC Contributions -->
+            <div id="pac-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="fas fa-hand-holding-dollar"></i> PAC Contributions</h2>
+                    <span id="pac-name" class="meta-item" style="margin-left: auto; font-size: 0.85rem; color: var(--ncrc-gray);"></span>
+                </div>
+                <div class="card-body">
+                    <div id="pac-summary" style="margin-bottom: 16px; padding: 12px; background: var(--ncrc-gray-light); border-radius: 8px;">
+                        <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--ncrc-gray);">Total PAC Contributions</span>
+                                <div id="pac-total" style="font-size: 1.25rem; font-weight: 700; color: var(--ncrc-justdata-blue);">$0</div>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--ncrc-gray);">Recipients</span>
+                                <div id="pac-recipients" style="font-size: 1.25rem; font-weight: 700; color: var(--ncrc-gray-dark);">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="officials-table">
+                        <thead>
+                            <tr>
+                                <th>Recipient</th>
+                                <th>PAC</th>
+                                <th>Date</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pac-contributions-body">
+                            <tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No PAC contributions found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-clock"></i> Recent Activity</h2>
+                </div>
+                <div class="card-body">
+                    <div id="timeline" class="timeline">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEC Filings, Regulatory, Litigation Row -->
+            <div class="three-columns">
+                <!-- SEC Filings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-alt"></i> SEC Filings</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="sec-filings">
+                            <div class="loading">Loading filings...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regulatory Matters -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-gavel"></i> Regulatory Matters</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="regulatory-list">
+                            <div class="loading">Loading regulatory data...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Litigation -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-balance-scale-right"></i> Litigation</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="litigation-list">
+                            <div class="loading">Loading litigation data...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-newspaper"></i> Recent News</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="news-list">
+                        <div class="loading">Loading news...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>

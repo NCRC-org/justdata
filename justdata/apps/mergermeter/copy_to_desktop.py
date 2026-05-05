@@ -34,7 +34,7 @@ def create_deployment_package():
         'apps/mergermeter/app.py': 'apps/mergermeter/',
         'apps/mergermeter/config.py': 'apps/mergermeter/',
         'apps/mergermeter/query_builders.py': 'apps/mergermeter/',
-        'apps/mergermeter/excel_generator.py': 'apps/mergermeter/',
+        'apps/mergermeter/excel/': 'apps/mergermeter/excel/',
         'apps/mergermeter/hhi_calculator.py': 'apps/mergermeter/',
         'apps/mergermeter/branch_assessment_area_generator.py': 'apps/mergermeter/',
         'apps/mergermeter/county_mapper.py': 'apps/mergermeter/',

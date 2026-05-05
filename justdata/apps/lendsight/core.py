@@ -16,7 +16,7 @@ from justdata.apps.lendsight.data_utils import (
     USE_SUMMARY_TABLES,
     SUMMARY_PROJECT_ID
 )
-from justdata.apps.lendsight.mortgage_report_builder import build_mortgage_report, save_mortgage_excel_report
+from justdata.apps.lendsight.report_builder import build_mortgage_report, save_mortgage_excel_report
 from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 from justdata.apps.lendsight.version import __version__
 

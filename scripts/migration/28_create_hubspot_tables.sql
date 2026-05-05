@@ -22,11 +22,16 @@ CREATE TABLE IF NOT EXISTS `justdata-ncrc.hubspot.companies` (
     domain STRING,
     membership_status STRING,
     current_membership_status STRING,
+    street_address STRING,
+    street_address_2 STRING,
     city STRING,
     state STRING,
+    postal_code STRING,
     country STRING,
     industry STRING,
     phone STRING,
+    latitude FLOAT64,
+    longitude FLOAT64,
     synced_at TIMESTAMP NOT NULL
 );
 

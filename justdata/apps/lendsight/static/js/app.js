@@ -1265,7 +1265,7 @@ function mapStepToId(stepName) {
 // Real-time progress bar using SSE
 function listenForProgress(jobId) {
     console.log(`[DEBUG] Starting progress listener for job: ${jobId}`);
-    const evtSource = new EventSource(`/progress/${jobId}`);
+    const evtSource = new EventSource(`/lendsight/progress/${jobId}`);
     let currentStepId = null;
     let isCompleted = false; // Track if we've received a completion message
     
@@ -1457,7 +1457,7 @@ function listenForProgress(jobId) {
         // Check if analysis completed despite connection drop
         // This can happen if the service restarts but the analysis finished
         console.log('[DEBUG] Checking if analysis completed despite connection drop...');
-        fetch(`/progress?job_id=${jobId}`)
+        fetch(`/lendsight/progress?job_id=${jobId}`)
             .then(response => {
                 // Check if response is OK before trying to parse JSON
                 if (!response.ok) {

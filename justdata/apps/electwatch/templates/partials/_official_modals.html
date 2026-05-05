@@ -1,0 +1,75 @@
+    <!-- MODALS -->
+    <!-- Firms Modal -->
+    <div id="modal-firms" class="modal-overlay" onclick="if(event.target===this)closeModal('firms')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>All Financial Sector Firms</h3>
+                <button class="modal-close" onclick="closeModal('firms')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Firm</th>
+                            <th>Sector</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-firms-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Associations Modal -->
+    <div id="modal-associations" class="modal-overlay" onclick="if(event.target===this)closeModal('associations')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>All Trade Associations</h3>
+                <button class="modal-close" onclick="closeModal('associations')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Association</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-associations-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contributors Modal -->
+    <div id="modal-contributors" class="modal-overlay" onclick="if(event.target===this)closeModal('contributors')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>All Individual Contributors</h3>
+                <button class="modal-close" onclick="closeModal('contributors')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Employer</th>
+                            <th>Occupation</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-contributors-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
