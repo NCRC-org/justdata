@@ -1,0 +1,321 @@
+// dotlender_map.js
+// Mapbox GL JS map initialization and layer management for DotLender.
+// Mirrors BranchMapper's stack: mapbox-gl v3, jedlebi.census-tracts vector tileset.
+
+import { getFilterState, initRenderButton } from './dotlender_filters.js';
+
+// NCRC race/ethnicity color palette — keyed on the derived_race string returned
+// by /api/map-data (built server-side from is_* flags in queries.DERIVED_RACE_SQL).
+export const RACE_COLORS = {
+  'Hispanic or Latino': '#e41a1c',
+  'Black or African American': '#377eb8',
+  'Asian': '#4daf4a',
+  'American Indian or Alaska Native': '#984ea3',
+  'Two or More Races': '#ff7f00',
+  'White': '#a65628',
+  'Unknown or Not Provided': '#999999',
+};
+
+// Income band fill colors (used for the spec's choropleth legend on the canvas;
+// the live map uses the tileset's own pre-baked income_category coloring).
+export const INCOME_BAND_COLORS = {
+  low: '#d73027',
+  moderate: '#fc8d59',
+  middle: '#fee090',
+  upper: '#e0f3f8',
+  unknown: '#cccccc',
+};
+
+const MAPBOX_STYLE = 'mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3';
+const CENSUS_TILESET_ID = 'jedlebi.census-tracts';
+const CENSUS_SOURCE_LAYER = 'census_tracts';
+
+const STATE_FIPS_TO_BOUNDS = {
+  // minimal lookup for state-level fitBounds fallback (lng/lat); add more as needed
+  // [west, south, east, north]
+  '11': [-77.12, 38.79, -76.91, 39.00],   // DC
+  '06': [-124.5, 32.5, -114.1, 42.1],     // CA
+  '36': [-79.8, 40.5, -71.8, 45.0],       // NY
+  '48': [-106.7, 25.8, -93.5, 36.5],      // TX
+};
+
+let map = null;
+let mapLoaded = false;
+let currentMapData = null;
+let currentOverlayMode = 'both';
+let currentTooltipPopup = null;
+
+// --- Color expressions (mirror BranchMapper) ------------------------------
+
+function incomeFillColor() {
+  // Tileset property "income_category" values: 'Low','Moderate','Middle','Upper'
+  return [
+    'match',
+    ['get', 'income_category'],
+    'Low', INCOME_BAND_COLORS.low,
+    'Moderate', INCOME_BAND_COLORS.moderate,
+    'Middle', INCOME_BAND_COLORS.middle,
+    'Upper', INCOME_BAND_COLORS.upper,
+    INCOME_BAND_COLORS.unknown,
+  ];
+}
+
+function minorityFillColor() {
+  // Tileset property "minority_category" values: 'Q1 (Lowest 25%)' … 'Q4 (Highest 25%)'
+  return [
+    'match',
+    ['get', 'minority_category'],
+    'Q1 (Lowest 25%)', '#deebf7',
+    'Q2 (25-50%)', '#9ecae1',
+    'Q3 (50-75%)', '#3182bd',
+    'Q4 (Highest 25%)', '#08519c',
+    '#cccccc',
+  ];
+}
+
+function raceCircleColor() {
+  // Match on Feature property "derived_race"
+  return [
+    'match',
+    ['get', 'derived_race'],
+    'Hispanic or Latino', RACE_COLORS['Hispanic or Latino'],
+    'Black or African American', RACE_COLORS['Black or African American'],
+    'Asian', RACE_COLORS['Asian'],
+    'American Indian or Alaska Native', RACE_COLORS['American Indian or Alaska Native'],
+    'Two or More Races', RACE_COLORS['Two or More Races'],
+    'White', RACE_COLORS['White'],
+    RACE_COLORS['Unknown or Not Provided'],
+  ];
+}
+
+// --- Map init -------------------------------------------------------------
+
+function initMap() {
+  const token = window.DOTLENDER_MAPBOX_TOKEN;
+  if (!token) {
+    const errEl = document.getElementById('dl-map-error');
+    errEl.textContent = 'MAPBOX_ACCESS_TOKEN is not configured — the map cannot render.';
+    errEl.style.display = 'block';
+    return;
+  }
+  // eslint-disable-next-line no-undef
+  mapboxgl.accessToken = token;
+  // eslint-disable-next-line no-undef
+  map = new mapboxgl.Map({
+    container: 'dotlender-map',
+    style: MAPBOX_STYLE,
+    center: [-96, 38.5],
+    zoom: 3.5,
+  });
+  // eslint-disable-next-line no-undef
+  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+  map.on('load', () => {
+    addCensusLayers();
+    addDotsLayer();
+    mapLoaded = true;
+  });
+}
+
+function addCensusLayers() {
+  // Vector tileset — same source BranchMapper uses
+  map.addSource('census-tileset', {
+    type: 'vector',
+    url: `mapbox://${CENSUS_TILESET_ID}`,
+    minzoom: 5,
+    maxzoom: 12,
+  });
+
+  // Income fill + outline
+  map.addLayer({
+    id: 'dl-income-fill',
+    type: 'fill',
+    source: 'census-tileset',
+    'source-layer': CENSUS_SOURCE_LAYER,
+    paint: { 'fill-color': incomeFillColor(), 'fill-opacity': 0.45 },
+    layout: { visibility: 'none' },
+  });
+  map.addLayer({
+    id: 'dl-income-outline',
+    type: 'line',
+    source: 'census-tileset',
+    'source-layer': CENSUS_SOURCE_LAYER,
+    paint: { 'line-color': '#666', 'line-width': 0.3, 'line-opacity': 0.4 },
+    layout: { visibility: 'none' },
+  });
+
+  // Minority fill + outline
+  map.addLayer({
+    id: 'dl-minority-fill',
+    type: 'fill',
+    source: 'census-tileset',
+    'source-layer': CENSUS_SOURCE_LAYER,
+    paint: { 'fill-color': minorityFillColor(), 'fill-opacity': 0.45 },
+    layout: { visibility: 'none' },
+  });
+  map.addLayer({
+    id: 'dl-minority-outline',
+    type: 'line',
+    source: 'census-tileset',
+    'source-layer': CENSUS_SOURCE_LAYER,
+    paint: { 'line-color': '#666', 'line-width': 0.3, 'line-opacity': 0.4 },
+    layout: { visibility: 'none' },
+  });
+}
+
+function addDotsLayer() {
+  map.addSource('dl-dots', { type: 'geojson', data: emptyFC() });
+  map.addLayer({
+    id: 'dl-dots-circles',
+    type: 'circle',
+    source: 'dl-dots',
+    paint: {
+      'circle-radius': 3,
+      'circle-color': raceCircleColor(),
+      'circle-opacity': 0.8,
+      'circle-stroke-width': 0,
+    },
+  });
+}
+
+function emptyFC() {
+  return { type: 'FeatureCollection', features: [] };
+}
+
+// --- Render ---------------------------------------------------------------
+
+function setOverlayVisibility(mode) {
+  currentOverlayMode = mode;
+  const showIncome = mode === 'income' || mode === 'both';
+  const showMinority = mode === 'minority' || mode === 'both';
+  ['dl-income-fill', 'dl-income-outline'].forEach((id) => {
+    map.setLayoutProperty(id, 'visibility', showIncome ? 'visible' : 'none');
+  });
+  ['dl-minority-fill', 'dl-minority-outline'].forEach((id) => {
+    map.setLayoutProperty(id, 'visibility', showMinority ? 'visible' : 'none');
+  });
+}
+
+function buildDotFeatures(dotData) {
+  // Each tract+race row becomes dot_count Point features jittered around the centroid.
+  // Server returns county-centroid lat/lng per row (no tract-centroid table yet — v1 limit).
+  const features = [];
+  dotData.forEach((row) => {
+    if (row.centroid_lat == null || row.centroid_lng == null) return;
+    for (let i = 0; i < row.dot_count; i += 1) {
+      const lat = row.centroid_lat + (Math.random() - 0.5) * 0.04;
+      const lng = row.centroid_lng + (Math.random() - 0.5) * 0.04;
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [lng, lat] },
+        properties: {
+          derived_race: row.derived_race,
+          census_tract: row.census_tract,
+        },
+      });
+    }
+  });
+  return { type: 'FeatureCollection', features };
+}
+
+function fitToGeography(state) {
+  const v = (state.geography_value || '').trim();
+  if (!v) return;
+  if (state.geography_type === 'county' && v.length === 5) {
+    // Fall back to county centroid we already have via dots if present; otherwise
+    // let the map remain wherever the user left it.
+    return;
+  }
+  if (state.geography_type === 'state' && STATE_FIPS_TO_BOUNDS[v]) {
+    const b = STATE_FIPS_TO_BOUNDS[v];
+    map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 30, duration: 600 });
+  }
+}
+
+function fitToDots(dotsFC) {
+  if (!dotsFC.features.length) return;
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  dotsFC.features.forEach((f) => {
+    const [lng, lat] = f.geometry.coordinates;
+    if (lng < minLng) minLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lng > maxLng) maxLng = lng;
+    if (lat > maxLat) maxLat = lat;
+  });
+  // Pad slightly
+  const pad = 0.05;
+  map.fitBounds(
+    [[minLng - pad, minLat - pad], [maxLng + pad, maxLat + pad]],
+    { padding: 30, duration: 600 },
+  );
+}
+
+function renderMap(mapData, state) {
+  if (!mapLoaded) {
+    map.once('load', () => renderMap(mapData, state));
+    return;
+  }
+  setOverlayVisibility(state.overlay_mode);
+  const dotsFC = buildDotFeatures(mapData.dots || []);
+  map.getSource('dl-dots').setData(dotsFC);
+
+  if (state.geography_type === 'state') {
+    fitToGeography(state);
+  } else {
+    fitToDots(dotsFC);
+  }
+
+  // Choropleth tooltip — show per-tract loan count from server, joined by census_tract
+  const tractLoans = {};
+  (mapData.choropleth || []).forEach((t) => { tractLoans[t.census_tract] = t; });
+  attachChoroplethTooltip(tractLoans);
+}
+
+function attachChoroplethTooltip(tractLoans) {
+  if (currentTooltipPopup) {
+    currentTooltipPopup.remove();
+    currentTooltipPopup = null;
+  }
+  ['dl-income-fill', 'dl-minority-fill'].forEach((layerId) => {
+    map.off('mousemove', layerId);
+    map.off('mouseleave', layerId);
+  });
+  // eslint-disable-next-line no-undef
+  const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
+  const onMove = (e) => {
+    if (!e.features?.length) return;
+    const props = e.features[0].properties || {};
+    const tractId = props.GEOID || props.geoid || props.geoid11 || '';
+    const lendingRow = tractLoans[tractId];
+    const html = `
+      <strong>Tract ${tractId}</strong><br/>
+      Income: ${props.income_category ?? '—'}<br/>
+      Minority quartile: ${props.minority_category ?? '—'}<br/>
+      Loans this filter: ${lendingRow ? lendingRow.loan_count.toLocaleString() : '0'}
+    `;
+    popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+    map.getCanvas().style.cursor = 'pointer';
+  };
+  const onLeave = () => {
+    popup.remove();
+    map.getCanvas().style.cursor = '';
+  };
+  ['dl-income-fill', 'dl-minority-fill'].forEach((layerId) => {
+    map.on('mousemove', layerId, onMove);
+    map.on('mouseleave', layerId, onLeave);
+  });
+  currentTooltipPopup = popup;
+}
+
+export function getCurrentMapData() { return currentMapData; }
+export function getMapElement() { return document.getElementById('dotlender-map'); }
+export function getMapboxInstance() { return map; }
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  initRenderButton((mapData, state) => {
+    currentMapData = mapData;
+    renderMap(mapData, state);
+    document.getElementById('dl-build-report-row').style.display = 'block';
+  });
+});

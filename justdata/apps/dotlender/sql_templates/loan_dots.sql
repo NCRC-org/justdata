@@ -9,16 +9,24 @@
 --
 -- Optional {lei_predicate} is either "AND lei = @lei" or empty string.
 -- Housing-unit denominator is unavailable in de_hmda — housing_units is NULL.
+--
+-- centroid_lat/lng come from shared.county_centroids joined on geoid5
+-- (no tract-centroid table exists yet; v1 jitters all tract dots around the
+-- enclosing county centroid).
 SELECT
-  census_tract,
+  h.census_tract,
   {derived_race_expr} AS derived_race,
   COUNT(*) AS loan_count,
-  CAST(NULL AS INT64) AS housing_units
-FROM `{table}`
+  CAST(NULL AS INT64) AS housing_units,
+  ANY_VALUE(cc.latitude) AS centroid_lat,
+  ANY_VALUE(cc.longitude) AS centroid_lng
+FROM `{table}` AS h
+LEFT JOIN `justdata-ncrc.shared.county_centroids` AS cc
+  ON LPAD(CAST(cc.county_fips AS STRING), 5, '0') = h.geoid5
 WHERE
-  activity_year BETWEEN @year_start AND @year_end
+  h.activity_year BETWEEN @year_start AND @year_end
   AND {geography_predicate}
   AND {loan_scope_predicates}
   {lei_predicate}
-GROUP BY census_tract, derived_race
-ORDER BY census_tract, derived_race
+GROUP BY h.census_tract, derived_race
+ORDER BY h.census_tract, derived_race

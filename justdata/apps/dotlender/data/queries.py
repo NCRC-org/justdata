@@ -204,6 +204,12 @@ def get_loan_dots(
             "dot_count": _dot_count(
                 int(r.get("loan_count") or 0), r.get("housing_units")
             ),
+            "centroid_lat": (
+                float(r["centroid_lat"]) if r.get("centroid_lat") is not None else None
+            ),
+            "centroid_lng": (
+                float(r["centroid_lng"]) if r.get("centroid_lng") is not None else None
+            ),
         }
         for r in rows
     ]
