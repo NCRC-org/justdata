@@ -106,7 +106,13 @@ function initMap() {
     style: MAPBOX_STYLE,
     center: [-96, 38.5],
     zoom: 3.5,
+    // Required so getCanvas().toDataURL() returns a populated image instead
+    // of a blank buffer (WebGL clears its drawing buffer between frames by
+    // default). Used by the canvas builder to capture the map for PDF.
+    preserveDrawingBuffer: true,
   });
+  // Expose for the canvas module to capture the map natively.
+  window.dotlenderMap = map;
   // eslint-disable-next-line no-undef
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
@@ -308,7 +314,6 @@ function attachChoroplethTooltip(tractLoans) {
 }
 
 export function getCurrentMapData() { return currentMapData; }
-export function getMapElement() { return document.getElementById('dotlender-map'); }
 export function getMapboxInstance() { return map; }
 
 document.addEventListener('DOMContentLoaded', () => {
