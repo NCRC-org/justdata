@@ -149,11 +149,14 @@ def get_choropleth_data(
 def _dot_count(loan_count: int, housing_units) -> int:
     """Compute dot count for one (tract, race) cell.
 
+    No per-tract minimum floor: voids in lending should be visible as empty
+    areas on the map. The client-side density stride may further reduce
+    counts (a 2-dot tract at stride=5 emits 0 dots client-side).
+
     With no housing-units denominator available (de_hmda lacks
-    tract_one_to_four_family_homes), this is the v1 fallback:
-    dots = min(loan_count, MAX_DOTS_PER_TRACT_RACE). When loan_count > 0
-    the minimum is 1. Once a housing units source is wired in, replace
-    this with the SCALE_FACTOR-based formula from the spec.
+    tract_one_to_four_family_homes), the fallback caps at
+    MAX_DOTS_PER_TRACT_RACE. Once a housing-units source is wired in, the
+    proportional path will activate.
     """
     if loan_count <= 0:
         return 0
@@ -162,8 +165,8 @@ def _dot_count(loan_count: int, housing_units) -> int:
     # Future path (currently unreachable because the query returns NULL
     # for housing_units): proportional scaling capped at the per-cell max.
     SCALE_FACTOR = 20
-    raw = round(loan_count / float(housing_units) * SCALE_FACTOR)
-    return max(1, min(int(raw), MAX_DOTS_PER_TRACT_RACE))
+    raw = int(round(loan_count / float(housing_units) * SCALE_FACTOR))
+    return min(raw, MAX_DOTS_PER_TRACT_RACE) if raw > 0 else 0
 
 
 def get_loan_dots(

@@ -229,27 +229,40 @@ function setOverlayVisibility(mode) {
   });
 }
 
+// Pre-compute per-dot jitter once per API response so density changes are
+// purely additive (same dots, fewer of them) instead of re-randomizing.
+function stableJitter(dotData) {
+  return dotData.map((tract) => ({
+    ...tract,
+    _jitter: Array.from({ length: tract.dot_count || 0 }, () => ({
+      dlat: (Math.random() - 0.5) * JITTER_DEGREES,
+      dlng: (Math.random() - 0.5) * JITTER_DEGREES,
+    })),
+  }));
+}
+
 function buildDotFeatures(dotData, densityRatio = 1) {
-  // Each tract+race row becomes (dot_count / densityRatio) Point features
-  // jittered around the tract centroid. derived_race is stored as a Feature
-  // property so the Mapbox circle layer can filter and color from it.
+  // True subsample: each tract emits floor(n / stride) dots at indices
+  // [0, stride, 2*stride, ...]. A tract with 2 raw dots at stride=5
+  // emits 0 dots — no per-tract minimum, so voids in lending stay visible.
   const features = [];
+  let rawTotal = 0;
+  const stride = Math.max(1, parseInt(densityRatio, 10) || 1);
   dotData.forEach((row) => {
     if (row.centroid_lat == null || row.centroid_lng == null) return;
-    const count = Math.max(1, Math.round((row.dot_count || 0) / densityRatio));
-    for (let i = 0; i < count; i += 1) {
-      const lat = row.centroid_lat + (Math.random() - 0.5) * JITTER_DEGREES;
-      const lng = row.centroid_lng + (Math.random() - 0.5) * JITTER_DEGREES;
+    const n = row._jitter?.length || 0;
+    rawTotal += n;
+    for (let k = 0, count = Math.floor(n / stride); k < count; k += 1) {
+      const j = row._jitter[k * stride];
       features.push({
         type: 'Feature',
-        geometry: { type: 'Point', coordinates: [lng, lat] },
-        properties: {
-          derived_race: row.derived_race,
-          census_tract: row.census_tract,
-        },
+        geometry: { type: 'Point', coordinates: [row.centroid_lng + j.dlng, row.centroid_lat + j.dlat] },
+        properties: { derived_race: row.derived_race, census_tract: row.census_tract },
       });
     }
   });
+  // eslint-disable-next-line no-console
+  console.log(`[dotlender] density stride=${stride}  raw dots=${rawTotal}  rendered=${features.length}`);
   return { type: 'FeatureCollection', features };
 }
 
@@ -333,24 +346,15 @@ function setDensityLabel() {
 
 function initDensityInput() {
   const input = document.getElementById('dl-density-value');
-  const up = document.getElementById('dl-density-up');
-  const down = document.getElementById('dl-density-down');
   if (!input) return;
+  const step = (delta) => {
+    input.value = clampDensity((parseInt(input.value, 10) || 1) + delta);
+    setDensityLabel();
+    rebuildDotsFromCache();
+  };
   setDensityLabel();
-  if (up) {
-    up.addEventListener('click', () => {
-      input.value = clampDensity((parseInt(input.value, 10) || 1) + 1);
-      setDensityLabel();
-      rebuildDotsFromCache();
-    });
-  }
-  if (down) {
-    down.addEventListener('click', () => {
-      input.value = clampDensity((parseInt(input.value, 10) || 1) - 1);
-      setDensityLabel();
-      rebuildDotsFromCache();
-    });
-  }
+  document.getElementById('dl-density-up')?.addEventListener('click', () => step(1));
+  document.getElementById('dl-density-down')?.addEventListener('click', () => step(-1));
   input.addEventListener('change', () => {
     input.value = clampDensity(input.value);
     setDensityLabel();
@@ -377,12 +381,9 @@ function fitToDots(dotsFC) {
   let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
   dotsFC.features.forEach((f) => {
     const [lng, lat] = f.geometry.coordinates;
-    if (lng < minLng) minLng = lng;
-    if (lat < minLat) minLat = lat;
-    if (lng > maxLng) maxLng = lng;
-    if (lat > maxLat) maxLat = lat;
+    if (lng < minLng) minLng = lng; if (lat < minLat) minLat = lat;
+    if (lng > maxLng) maxLng = lng; if (lat > maxLat) maxLat = lat;
   });
-  // Pad slightly
   const pad = 0.05;
   map.fitBounds(
     [[minLng - pad, minLat - pad], [maxLng + pad, maxLat + pad]],
@@ -397,9 +398,10 @@ function renderMap(mapData, state) {
   }
   setOverlayVisibility(state.overlay_mode);
 
-  // Cache raw dot rows so the density slider and race filters can re-render
-  // without a new API call.
-  window.dotlenderDotData = mapData.dots || [];
+  // Cache raw dot rows augmented with stable per-dot jitter offsets so that
+  // density changes (and race-filter changes) re-render against the same
+  // dot positions instead of re-randomizing on every redraw.
+  window.dotlenderDotData = stableJitter(mapData.dots || []);
 
   const dotsFC = buildDotFeatures(window.dotlenderDotData, getDensityRatio());
   map.getSource('dl-dots').setData(dotsFC);
