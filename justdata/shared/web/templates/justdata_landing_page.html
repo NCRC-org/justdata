@@ -1464,6 +1464,7 @@
                 <a href="/bizsight" class="nav-item" data-app="bizsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
                 <a href="/branchsight" class="nav-item" data-app="branchsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
                 <a href="/branchmapper" class="nav-item" data-app="branchmapper" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-map-marked-alt" style="margin-right: 10px; color: #0891b2;"></i>BranchMapper</a>
+                <a href="/dotlender/" class="nav-item" data-app="dotlender" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-circle-dot" style="margin-right: 10px; color: #f97316;"></i>DotLender</a>
                 <a href="/mergermeter" class="nav-item" data-app="mergermeter" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
                 <a href="/dataexplorer" class="nav-item" data-app="dataexplorer" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
                 <a href="/lenderprofile" class="nav-item" data-app="lenderprofile" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
@@ -1710,6 +1711,19 @@
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/branchmapper" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- DotLender Card -->
+                        <div class="app-card" data-app="dotlender" onclick="handleInfoClick('DotLender')">
+                            <h3 class="app-card-title">DotLender</h3>
+                            <p class="app-card-description">
+                                HMDA dot-density lending map by race/ethnicity and tract demographics. Export curated PDF reports.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/dotlender/" class="app-card-launch-btn" onclick="event.stopPropagation()">
                                     Launch <i class="fas fa-arrow-right"></i>
                                 </a>
                             </div>
@@ -2282,6 +2296,16 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
+            'dotlender': {  // Min tier 6 (staff)
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                member: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
+                staff: 'full',
+                senior_executive: 'full',
+                admin: 'full'
+            },
             // INTERNAL TOOLS SECTION
             'mergermeter': {  // Min tier 6 (staff)
                 public_anonymous: 'hidden',
@@ -2354,6 +2378,7 @@
             'branchmapper': '/branchmapper',
             'branchsight': '/branchsight',
             'dataexplorer': '/dataexplorer',
+            'dotlender': '/dotlender/',
             'mergermeter': '/mergermeter',
             'lenderprofile': '/lenderprofile',
             'redlining': '/redlining'
@@ -2792,6 +2817,9 @@
             },
             'BranchMapper': {
                 description: 'Interactive map visualization of bank branch locations with demographic overlays. See branch networks in context of neighborhood income, race, and population density. Useful for identifying underserved areas and planning community outreach.'
+            },
+            'DotLender': {
+                description: 'HMDA dot-density lending map by race/ethnicity and tract demographics. Visualize originated loans as dots over census tracts with demographic overlays, then export curated PDF reports.'
             },
             'MergerMeter': {
                 description: 'Analyze bank merger impacts on community lending and branch access. Calculates CBA goal recommendations based on combined institution lending patterns and peer comparisons. The go-to tool for preparing merger comment letters and CBA negotiations.'

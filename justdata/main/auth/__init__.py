@@ -223,6 +223,16 @@ ACCESS_MATRIX = {
         'senior_executive': 'full',
         'admin': 'full'
     },
+    'dotlender': {
+        'public_anonymous': 'hidden',
+        'public_registered': 'hidden',
+        'member': 'hidden',
+        'member_premium': 'hidden',
+        'non_member_org': 'hidden',
+        'staff': 'full',
+        'senior_executive': 'full',
+        'admin': 'full'
+    },
 
     # ========================================
     # Administrative
