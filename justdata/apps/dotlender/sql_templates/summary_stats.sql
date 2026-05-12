@@ -13,5 +13,8 @@ FROM `{table}`
 WHERE
   activity_year BETWEEN @year_start AND @year_end
   AND {geography_predicate}
+  -- Same CT-contamination filter as loan_dots / tract_choropleth so the
+  -- top-line numbers count the same universe of loans the map shows.
+  AND LEFT(census_tract, 5) = geoid5
   AND {loan_scope_predicates}
   {lei_predicate}

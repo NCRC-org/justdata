@@ -1,17 +1,31 @@
 // dotlender_canvas.js
 // Fabric.js canvas builder for DotLender PDF report.
-// Uses html2canvas to capture the live Mapbox map into the report.
+// Canvas is rendered at 2x scale for legible export DPI; CSS sizes it back to
+// screen pixels via the rule in dotlender_head.html. The live Mapbox map is
+// NOT baked into the canvas at build time — a placeholder rect marks where
+// the map will go, and dotlender_export.js composes the final PDF by laying
+// the captured Mapbox image over the placeholder at export time.
 
 import { RACE_COLORS, INCOME_BAND_COLORS, getCurrentMapData } from './dotlender_map.js';
 import { getFilterState, getLastSummaryStats } from './dotlender_filters.js';
 
 let fabricCanvas = null;
 
-// Letter landscape at 96 dpi screen resolution. jsPDF re-renders at print DPI.
-const CANVAS_W = 1056; // 11" * 96
-const CANVAS_H = 816;  //  8.5" * 96
+// 2x scale for canvas/print resolution. CSS in dotlender_head.html constrains
+// the on-screen display back to 1056x816 so the canvas remains usable.
+export const CANVAS_SCALE = 2;
+export const CANVAS_W = 1056 * CANVAS_SCALE; // 2112
+export const CANVAS_H = 816 * CANVAS_SCALE;  // 1632
+
+// Scaling helper: write all literal pixel measurements in 1x ("design") units
+// and apply s() to keep proportions correct after the 2x scale-up.
+const s = (n) => n * CANVAS_SCALE;
 
 const NCRC_LOGO = '/static/img/ncrc-logo-color.png';
+
+// Stroke color used to identify the map placeholder so dotlender_export.js
+// can hide it before composing the final PDF.
+const MAP_PLACEHOLDER_STROKE = '#4a90d9';
 
 function initFabricCanvas() {
   const el = document.getElementById('dotlender-canvas');
@@ -37,6 +51,8 @@ function initFabricCanvas() {
   });
 }
 
+export function getFabricCanvas() { return fabricCanvas; }
+
 export async function buildCanvas(mapData, state) {
   if (!fabricCanvas) initFabricCanvas();
   fabricCanvas.clear();
@@ -46,7 +62,7 @@ export async function buildCanvas(mapData, state) {
   container.style.display = 'block';
   container.scrollIntoView({ behavior: 'smooth' });
 
-  await placeMapImage();
+  placeMapPlaceholder();
   placeTitle(state);
   await placeLogo();
   placeDotLegend();
@@ -59,54 +75,44 @@ export async function buildCanvas(mapData, state) {
   fabricCanvas.renderAll();
 }
 
-async function placeMapImage() {
-  // Capture the Mapbox map via its own canvas. html2canvas can't read WebGL
-  // buffers reliably, so we go through map.getCanvas().toDataURL() directly.
-  // Requires preserveDrawingBuffer: true on the Mapbox map init.
-  const mapInstance = window.dotlenderMap;
-  if (!mapInstance) {
-    placeMapPlaceholder();
-    return;
-  }
-  await new Promise((resolve) => {
-    const capture = () => {
-      try {
-        const dataUrl = mapInstance.getCanvas().toDataURL('image/png');
-        // eslint-disable-next-line no-undef
-        fabric.Image.fromURL(dataUrl, (img) => {
-          if (!img || !img.width) { placeMapPlaceholder(); resolve(); return; }
-          const targetW = CANVAS_W - 300;
-          const targetH = CANVAS_H - 200;
-          const scale = Math.min(targetW / img.width, targetH / img.height);
-          img.set({ left: 20, top: 60, scaleX: scale, scaleY: scale });
-          fabricCanvas.add(img);
-          fabricCanvas.renderAll();
-          resolve();
-        });
-      } catch (err) {
-        console.warn('[dotlender] map capture failed', err);
-        placeMapPlaceholder();
-        resolve();
-      }
-    };
-    // Wait for the map to finish any in-flight rendering before capturing.
-    mapInstance.once('idle', capture);
-    mapInstance.triggerRepaint();
-  });
-}
-
 function placeMapPlaceholder() {
+  // Reserve space for the map; the actual Mapbox image is composited in at
+  // PDF export time using window.dotlenderMapPlaceholder for positioning.
+  const left = s(20);
+  const top = s(60);
+  const width = CANVAS_W - s(340);
+  const height = CANVAS_H - s(220);
+
   // eslint-disable-next-line no-undef
   const rect = new fabric.Rect({
-    left: 20, top: 60,
-    width: CANVAS_W - 300, height: CANVAS_H - 200,
-    fill: '#f0f0f0', stroke: '#cccccc', strokeWidth: 1,
+    left, top, width, height,
+    fill: '#e8f0fe',
+    stroke: MAP_PLACEHOLDER_STROKE,
+    strokeWidth: s(2),
+    selectable: true,
   });
   // eslint-disable-next-line no-undef
-  const label = new fabric.Text('Map capture unavailable', {
-    left: 200, top: 300, fontSize: 14, fill: '#888',
-  });
+  const label = new fabric.Textbox(
+    'Map will be captured from the live map above on Export PDF.\n' +
+    'Pan and zoom the map to frame your view first.',
+    {
+      left: left + s(30),
+      top: top + height / 2 - s(30),
+      width: width - s(60),
+      fontSize: s(20),
+      fill: MAP_PLACEHOLDER_STROKE,
+      fontStyle: 'italic',
+      textAlign: 'center',
+    },
+  );
   fabricCanvas.add(rect, label);
+
+  // Coords are in canvas-internal pixels (already at CANVAS_W resolution).
+  // export.js scales these to PDF mm using the same CANVAS_W/H constants.
+  window.dotlenderMapPlaceholder = {
+    left, top, width, height,
+    strokeColor: MAP_PLACEHOLDER_STROKE,
+  };
 }
 
 function placeTitle(state) {
@@ -118,7 +124,16 @@ function placeTitle(state) {
   // eslint-disable-next-line no-undef
   const title = new fabric.Textbox(
     `HMDA Lending — ${geoLabel}\n${lenderLabel} | ${yearLabel}`,
-    { left: 20, top: 10, width: 700, fontSize: 16, fontFamily: 'Arial', fontWeight: 'bold', fill: '#1a1a2e' },
+    {
+      left: s(20),
+      top: s(10),
+      width: s(700),
+      fontSize: s(16),
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      fill: '#1a1a2e',
+      lineHeight: 1.2,
+    },
   );
   fabricCanvas.add(title);
 }
@@ -128,8 +143,14 @@ async function placeLogo() {
     // eslint-disable-next-line no-undef
     fabric.Image.fromURL(NCRC_LOGO, (img) => {
       if (!img || !img.width) { resolve(); return; }
-      const scale = 50 / img.height;
-      img.set({ left: CANVAS_W - 180, top: 10, scaleX: scale, scaleY: scale });
+      const targetHeight = s(50);
+      const scale = targetHeight / img.height;
+      img.set({
+        left: CANVAS_W - s(180),
+        top: s(10),
+        scaleX: scale,
+        scaleY: scale,
+      });
       fabricCanvas.add(img);
       resolve();
     }, { crossOrigin: 'anonymous' });
@@ -137,31 +158,35 @@ async function placeLogo() {
 }
 
 function placeDotLegend() {
-  let y = 80;
-  const x = CANVAS_W - 200;
+  let y = s(80);
+  const x = CANVAS_W - s(200);
   // eslint-disable-next-line no-undef
   fabricCanvas.add(new fabric.Text('Lending by Race/Ethnicity', {
-    left: x, top: y, fontSize: 10, fontWeight: 'bold', fill: '#333',
+    left: x, top: y, fontSize: s(10), fontWeight: 'bold', fill: '#333',
   }));
-  y += 18;
+  y += s(18);
   Object.entries(RACE_COLORS).forEach(([label, color]) => {
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Circle({ left: x, top: y + 2, radius: 5, fill: color, stroke: color }));
+    fabricCanvas.add(new fabric.Circle({
+      left: x, top: y + s(2), radius: s(5), fill: color, stroke: color,
+    }));
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Text(label, { left: x + 14, top: y, fontSize: 9, fill: '#333' }));
-    y += 16;
+    fabricCanvas.add(new fabric.Text(label, {
+      left: x + s(14), top: y, fontSize: s(9), fill: '#333',
+    }));
+    y += s(16);
   });
 }
 
 function placeChoroplethLegend(overlayMode) {
   if (overlayMode === 'none') return;
-  let y = CANVAS_H - 180;
-  const x = 20;
+  let y = CANVAS_H - s(180);
+  const x = s(20);
   // eslint-disable-next-line no-undef
   fabricCanvas.add(new fabric.Text('Tract Classification', {
-    left: x, top: y, fontSize: 10, fontWeight: 'bold', fill: '#333',
+    left: x, top: y, fontSize: s(10), fontWeight: 'bold', fill: '#333',
   }));
-  y += 16;
+  y += s(16);
   let items;
   if (overlayMode === 'minority') {
     items = [
@@ -180,21 +205,28 @@ function placeChoroplethLegend(overlayMode) {
   }
   items.forEach(([label, color]) => {
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Rect({ left: x, top: y, width: 12, height: 12, fill: color, stroke: '#999', strokeWidth: 0.5 }));
+    fabricCanvas.add(new fabric.Rect({
+      left: x, top: y, width: s(12), height: s(12),
+      fill: color, stroke: '#999', strokeWidth: s(0.5),
+    }));
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Text(label, { left: x + 16, top: y + 1, fontSize: 9, fill: '#333' }));
-    y += 16;
+    fabricCanvas.add(new fabric.Text(label, {
+      left: x + s(16), top: y + s(1), fontSize: s(9), fill: '#333',
+    }));
+    y += s(16);
   });
 }
 
 function placeStatsTable() {
   const summary = getLastSummaryStats();
   if (!summary) return;
-  const x = CANVAS_W - 200;
-  let y = CANVAS_H - 180;
+  const x = CANVAS_W - s(200);
+  let y = CANVAS_H - s(180);
   // eslint-disable-next-line no-undef
-  fabricCanvas.add(new fabric.Text('Summary', { left: x, top: y, fontSize: 10, fontWeight: 'bold', fill: '#333' }));
-  y += 16;
+  fabricCanvas.add(new fabric.Text('Summary', {
+    left: x, top: y, fontSize: s(10), fontWeight: 'bold', fill: '#333',
+  }));
+  y += s(16);
   const rows = [
     ['Total loans', summary.total_loans?.toLocaleString()],
     ['Tracts with lending', summary.tracts_with_lending?.toLocaleString()],
@@ -204,8 +236,10 @@ function placeStatsTable() {
   ];
   rows.forEach(([label, val]) => {
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Text(`${label}: ${val ?? '—'}`, { left: x, top: y, fontSize: 9, fill: '#333' }));
-    y += 14;
+    fabricCanvas.add(new fabric.Text(`${label}: ${val ?? '—'}`, {
+      left: x, top: y, fontSize: s(9), fill: '#333',
+    }));
+    y += s(14);
   });
 }
 
@@ -221,7 +255,12 @@ function placeFilterSummary(state) {
     : `Filters: purpose=${f.loan_purpose}, action=${f.action_taken}, lien=${f.lien_status}, occupancy=${f.occupancy_type}, construction=${f.construction_method}, units=${f.total_units}, reverse_mortgage=${f.reverse_mortgage}`;
   // eslint-disable-next-line no-undef
   fabricCanvas.add(new fabric.Textbox(filterText, {
-    left: 20, top: CANVAS_H - 60, width: CANVAS_W - 220, fontSize: 8, fill: '#555', fontStyle: 'italic',
+    left: s(20),
+    top: CANVAS_H - s(60),
+    width: CANVAS_W - s(220),
+    fontSize: s(8),
+    fill: '#555',
+    fontStyle: 'italic',
   }));
 }
 
@@ -230,7 +269,13 @@ function placeMethodologyNote() {
   fabricCanvas.add(new fabric.Textbox(
     'This map displays lending activity reported under HMDA and does not constitute a finding of discriminatory lending. ' +
     'Race/ethnicity classification follows NCRC methodology. Dot density is currently scaled by loan count only (housing-unit denominator pending).',
-    { left: 20, top: CANVAS_H - 45, width: CANVAS_W - 40, fontSize: 7, fill: '#777' },
+    {
+      left: s(20),
+      top: CANVAS_H - s(45),
+      width: CANVAS_W - s(40),
+      fontSize: s(7),
+      fill: '#777',
+    },
   ));
 }
 
@@ -238,7 +283,7 @@ function placeDateStamp() {
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   // eslint-disable-next-line no-undef
   fabricCanvas.add(new fabric.Text(`Generated ${today}`, {
-    left: CANVAS_W - 200, top: CANVAS_H - 20, fontSize: 8, fill: '#999',
+    left: CANVAS_W - s(200), top: CANVAS_H - s(20), fontSize: s(8), fill: '#999',
   }));
 }
 

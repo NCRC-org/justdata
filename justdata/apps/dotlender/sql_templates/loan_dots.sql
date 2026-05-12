@@ -29,6 +29,13 @@ LEFT JOIN `justdata-ncrc.shared.county_centroids` AS cc
 WHERE
   h.activity_year BETWEEN @year_start AND @year_end
   AND {geography_predicate}
+  -- Drop the ~10M rows where census_tract doesn't match geoid5 (8.5M of
+  -- those are Connecticut planning-region tracts that ended up under
+  -- non-CT geoid5 values via the de_hmda build SQL, plus ~1.1M NULL and
+  -- ~225K literal 'NA' tracts). These rows can't be visualized; the
+  -- filter also keeps dots and tooltips from being placed in the wrong
+  -- geography.
+  AND LEFT(h.census_tract, 5) = h.geoid5
   AND {loan_scope_predicates}
   {lei_predicate}
 GROUP BY h.census_tract, derived_race

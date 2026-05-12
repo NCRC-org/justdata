@@ -22,5 +22,7 @@ FROM `{table}`
 WHERE
   activity_year BETWEEN @year_start AND @year_end
   AND {geography_predicate}
+  -- See loan_dots.sql for the de_hmda CT-contamination explanation.
+  AND LEFT(census_tract, 5) = geoid5
   AND {loan_scope_predicates}
 GROUP BY census_tract
