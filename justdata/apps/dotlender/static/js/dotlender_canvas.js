@@ -2,7 +2,7 @@
 // Fabric.js canvas builder for DotLender PDF report.
 // Uses html2canvas to capture the live Mapbox map into the report.
 
-import { RACE_COLORS, INCOME_BAND_COLORS, getCurrentMapData, getMapElement } from './dotlender_map.js';
+import { RACE_COLORS, INCOME_BAND_COLORS, getCurrentMapData } from './dotlender_map.js';
 import { getFilterState, getLastSummaryStats } from './dotlender_filters.js';
 
 let fabricCanvas = null;
@@ -60,31 +60,39 @@ export async function buildCanvas(mapData, state) {
 }
 
 async function placeMapImage() {
-  const mapEl = getMapElement();
-  // eslint-disable-next-line no-undef
-  if (typeof html2canvas === 'undefined' || !mapEl) {
+  // Capture the Mapbox map via its own canvas. html2canvas can't read WebGL
+  // buffers reliably, so we go through map.getCanvas().toDataURL() directly.
+  // Requires preserveDrawingBuffer: true on the Mapbox map init.
+  const mapInstance = window.dotlenderMap;
+  if (!mapInstance) {
     placeMapPlaceholder();
     return;
   }
-  try {
-    // eslint-disable-next-line no-undef
-    const snapshot = await html2canvas(mapEl, { useCORS: true, allowTaint: false, logging: false });
-    const dataUrl = snapshot.toDataURL('image/png');
-    await new Promise((resolve) => {
-      // eslint-disable-next-line no-undef
-      fabric.Image.fromURL(dataUrl, (img) => {
-        const targetW = CANVAS_W - 300;
-        const targetH = CANVAS_H - 200;
-        const scale = Math.min(targetW / img.width, targetH / img.height);
-        img.set({ left: 20, top: 60, scaleX: scale, scaleY: scale });
-        fabricCanvas.add(img);
+  await new Promise((resolve) => {
+    const capture = () => {
+      try {
+        const dataUrl = mapInstance.getCanvas().toDataURL('image/png');
+        // eslint-disable-next-line no-undef
+        fabric.Image.fromURL(dataUrl, (img) => {
+          if (!img || !img.width) { placeMapPlaceholder(); resolve(); return; }
+          const targetW = CANVAS_W - 300;
+          const targetH = CANVAS_H - 200;
+          const scale = Math.min(targetW / img.width, targetH / img.height);
+          img.set({ left: 20, top: 60, scaleX: scale, scaleY: scale });
+          fabricCanvas.add(img);
+          fabricCanvas.renderAll();
+          resolve();
+        });
+      } catch (err) {
+        console.warn('[dotlender] map capture failed', err);
+        placeMapPlaceholder();
         resolve();
-      });
-    });
-  } catch (err) {
-    console.warn('[dotlender] html2canvas map capture failed', err);
-    placeMapPlaceholder();
-  }
+      }
+    };
+    // Wait for the map to finish any in-flight rendering before capturing.
+    mapInstance.once('idle', capture);
+    mapInstance.triggerRepaint();
+  });
 }
 
 function placeMapPlaceholder() {

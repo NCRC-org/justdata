@@ -10,17 +10,20 @@
 -- Optional {lei_predicate} is either "AND lei = @lei" or empty string.
 -- Housing-unit denominator is unavailable in de_hmda — housing_units is NULL.
 --
--- centroid_lat/lng come from shared.county_centroids joined on geoid5
--- (no tract-centroid table exists yet; v1 jitters all tract dots around the
--- enclosing county centroid).
+-- Centroids: prefer real tract centroid from shared.tract_centroids (Census
+-- 2020 Gazetteer, 85,395 rows). Fall back to the enclosing county centroid
+-- via shared.county_centroids when the tract GEOID isn't matched (rare —
+-- mostly Connecticut planning-region edge cases).
 SELECT
   h.census_tract,
   {derived_race_expr} AS derived_race,
   COUNT(*) AS loan_count,
   CAST(NULL AS INT64) AS housing_units,
-  ANY_VALUE(cc.latitude) AS centroid_lat,
-  ANY_VALUE(cc.longitude) AS centroid_lng
+  COALESCE(ANY_VALUE(tc.intptlat), ANY_VALUE(cc.latitude))  AS centroid_lat,
+  COALESCE(ANY_VALUE(tc.intptlon), ANY_VALUE(cc.longitude)) AS centroid_lng
 FROM `{table}` AS h
+LEFT JOIN `justdata-ncrc.shared.tract_centroids` AS tc
+  ON tc.geoid = h.census_tract
 LEFT JOIN `justdata-ncrc.shared.county_centroids` AS cc
   ON LPAD(CAST(cc.county_fips AS STRING), 5, '0') = h.geoid5
 WHERE
