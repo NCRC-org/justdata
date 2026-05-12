@@ -1,203 +1,244 @@
-<div class="container-fluid mt-3" id="dotlender-filters">
-  <div class="row">
-    <div class="col-md-3">
-      <div class="dotlender-filter-panel">
-        <h5 class="mb-0">DotLender</h5>
-        <p class="text-muted small mb-3">HMDA dot-density lending map</p>
+<div id="dotlender-filters" class="dl-container" style="display:flex; flex-direction:column; max-width:1400px; margin:0 auto; padding:15px; gap:15px;">
 
-        <div class="mb-3">
-          <label class="form-label fw-bold">Geography Type</label>
-          <select id="dl-geo-type" class="form-select form-select-sm">
-            <option value="county">County</option>
-            <option value="state">State</option>
-          </select>
-        </div>
-        <div class="mb-3 position-relative">
-          <label class="form-label fw-bold">Geography</label>
-          <input type="text" id="dl-geo-value" class="form-control form-control-sm"
-                 placeholder="5-digit county FIPS (e.g. 11001) or 2-digit state" />
-          <div id="dl-geo-suggestions" class="list-group position-absolute" style="z-index:1000;display:none;"></div>
-        </div>
+  <!-- Sidebar -->
+  <aside class="dl-controls-sidebar">
+    <div class="dl-mapper-controls">
 
-        <div class="mb-3 position-relative">
-          <label class="form-label fw-bold">Lender</label>
-          <input type="text" id="dl-lender-search" class="form-control form-control-sm"
-                 placeholder="All lenders (type to filter)" autocomplete="off" />
-          <input type="hidden" id="dl-lender-lei" value="" />
-          <div id="dl-lender-suggestions" class="list-group position-absolute" style="z-index:1000;display:none;"></div>
-        </div>
+      <!-- App header -->
+      <div style="text-align:center; margin-bottom:12px; padding-bottom:10px; border-bottom:2px solid var(--ncrc-navy);">
+        <h2 style="color:var(--ncrc-navy); font-size:1.1rem; margin:0; font-weight:700;">
+          <i class="fas fa-map-marked-alt" style="color:var(--ncrc-secondary-blue);"></i>
+          DotLender
+        </h2>
+        <p style="font-size:0.75rem; color:#666; margin:4px 0 0;">HMDA dot-density lending map</p>
+      </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-bold">Year Range</label>
-          <div class="d-flex gap-2">
-            <select id="dl-year-start" class="form-select form-select-sm"></select>
-            <span class="align-self-center">to</span>
-            <select id="dl-year-end" class="form-select form-select-sm"></select>
-          </div>
-        </div>
+      <!-- Geography type -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label><i class="fas fa-map-pin" style="color:var(--ncrc-secondary-blue);"></i> Geography Type</label>
+        <select id="dl-geo-type">
+          <option value="county">County</option>
+          <option value="state">State</option>
+        </select>
+      </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-bold">Overlay</label>
-          <select id="dl-overlay-mode" class="form-select form-select-sm">
-            <option value="both" selected>Minority + Income</option>
-            <option value="minority">Minority population only</option>
-            <option value="income">Income band only</option>
-            <option value="none">No overlay</option>
-          </select>
-        </div>
+      <!-- Geography value -->
+      <div class="control-group" style="margin-bottom:10px; position:relative;">
+        <label><i class="fas fa-search-location" style="color:var(--ncrc-secondary-blue);"></i> Geography</label>
+        <input type="text" id="dl-geo-value" placeholder="Enter 5-digit FIPS code" autocomplete="off" />
+        <div id="dl-geo-suggestions" style="display:none; position:absolute; z-index:1000; width:100%; top:100%;
+             background:white; border:1px solid #ddd; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-height:200px; overflow-y:auto;"></div>
+      </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-bold">Show Dots By Race/Ethnicity</label>
-          <div id="dl-race-filters" class="small">
-            <div class="form-check">
-              <input class="form-check-input dl-race-cb" type="checkbox" value="all" id="dl-race-all" checked>
-              <label class="form-check-label" for="dl-race-all">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#222;margin-right:4px;"></span>
-                All races (combined)
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input dl-race-cb" type="checkbox" value="Hispanic or Latino" id="dl-race-hispanic">
-              <label class="form-check-label" for="dl-race-hispanic">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e41a1c;margin-right:4px;"></span>
-                Hispanic or Latino
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input dl-race-cb" type="checkbox" value="Black or African American" id="dl-race-black">
-              <label class="form-check-label" for="dl-race-black">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#377eb8;margin-right:4px;"></span>
-                Black or African American
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input dl-race-cb" type="checkbox" value="Asian" id="dl-race-asian">
-              <label class="form-check-label" for="dl-race-asian">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4daf4a;margin-right:4px;"></span>
-                Asian
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input dl-race-cb" type="checkbox" value="White" id="dl-race-white">
-              <label class="form-check-label" for="dl-race-white">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#a65628;margin-right:4px;"></span>
-                White
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input dl-race-cb" type="checkbox" value="other" id="dl-race-other">
-              <label class="form-check-label" for="dl-race-other">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#999;margin-right:4px;"></span>
-                Other / Unknown
-              </label>
-            </div>
-          </div>
-        </div>
+      <!-- Lender -->
+      <div class="control-group" style="margin-bottom:10px; position:relative;">
+        <label><i class="fas fa-university" style="color:var(--ncrc-secondary-blue);"></i> Lender</label>
+        <input type="text" id="dl-lender-search" placeholder="All lenders (type to filter)" autocomplete="off" />
+        <input type="hidden" id="dl-lender-lei" value="" />
+        <div id="dl-lender-suggestions" style="display:none; position:absolute; z-index:1000; width:100%; top:100%;
+             background:white; border:1px solid #ddd; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-height:200px; overflow-y:auto;"></div>
+      </div>
 
-        <div class="mb-3">
-          <label class="form-label fw-bold">
-            Dot Density
-            <span class="text-muted fw-normal small" id="dl-density-label">(1 dot per loan)</span>
+      <!-- Year range -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label><i class="fas fa-calendar-alt" style="color:var(--ncrc-secondary-blue);"></i> Year Range</label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select id="dl-year-start" style="flex:1;"></select>
+          <span style="color:#666; font-size:0.8rem;">to</span>
+          <select id="dl-year-end" style="flex:1;"></select>
+        </div>
+      </div>
+
+      <!-- Overlay mode -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label><i class="fas fa-layer-group" style="color:var(--ncrc-secondary-blue);"></i> Choropleth Overlay</label>
+        <select id="dl-overlay-mode">
+          <option value="both" selected>Minority + Income</option>
+          <option value="minority">Minority population</option>
+          <option value="income">Income band</option>
+          <option value="none">No overlay</option>
+        </select>
+      </div>
+
+      <!-- Dot density -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label>
+          <i class="fas fa-circle" style="color:var(--ncrc-secondary-blue);"></i>
+          Dot Density
+          <span style="font-weight:normal; color:#888; font-size:0.78rem;" id="dl-density-label"> — 1 dot per loan</span>
+        </label>
+        <div class="dl-density-input-group">
+          <button type="button" class="dl-density-btn" id="dl-density-down" title="Fewer dots">−</button>
+          <input type="number" id="dl-density-value" value="1" min="1" max="999" />
+          <button type="button" class="dl-density-btn" id="dl-density-up" title="More dots">+</button>
+          <span style="font-size:0.78rem; color:#888; margin-left:4px;">loans/dot</span>
+        </div>
+        <p style="font-size:0.72rem; color:#aaa; margin:3px 0 0;">
+          Housing-unit normalization pending ACS load.
+        </p>
+      </div>
+
+      <!-- Race / ethnicity filter -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label><i class="fas fa-users" style="color:var(--ncrc-secondary-blue);"></i> Dot Color by Race</label>
+        <div id="dl-race-filters">
+          <label class="dl-race-item">
+            <input type="checkbox" class="dl-race-cb" id="dl-race-all" value="all" checked style="margin:0;">
+            <span class="dl-race-dot" style="background:#222;"></span> All races (black)
           </label>
-          <input type="range" class="form-range" id="dl-density-slider"
-                 min="1" max="10" step="1" value="1">
-          <div class="d-flex justify-content-between small text-muted">
-            <span>More dots</span>
-            <span>Fewer dots</span>
-          </div>
-          <p class="small text-muted mt-1 mb-0">
-            Housing-unit normalization pending ACS data load.
-          </p>
+          <label class="dl-race-item">
+            <input type="checkbox" class="dl-race-cb" id="dl-race-hispanic" value="Hispanic or Latino" style="margin:0;">
+            <span class="dl-race-dot" style="background:#e41a1c;"></span> Hispanic or Latino
+          </label>
+          <label class="dl-race-item">
+            <input type="checkbox" class="dl-race-cb" id="dl-race-black" value="Black or African American" style="margin:0;">
+            <span class="dl-race-dot" style="background:#377eb8;"></span> Black or African American
+          </label>
+          <label class="dl-race-item">
+            <input type="checkbox" class="dl-race-cb" id="dl-race-asian" value="Asian" style="margin:0;">
+            <span class="dl-race-dot" style="background:#4daf4a;"></span> Asian
+          </label>
+          <label class="dl-race-item">
+            <input type="checkbox" class="dl-race-cb" id="dl-race-white" value="White" style="margin:0;">
+            <span class="dl-race-dot" style="background:#a65628;"></span> White
+          </label>
+          <label class="dl-race-item">
+            <input type="checkbox" class="dl-race-cb" id="dl-race-other" value="other" style="margin:0;">
+            <span class="dl-race-dot" style="background:#999;"></span> Other / Unknown
+          </label>
         </div>
+      </div>
 
-        <div class="mb-2">
-          <span class="dotlender-advanced-toggle" id="dl-advanced-toggle">
-            ▶ Advanced filters (defaults: purchase, originated, first lien)
-          </span>
-        </div>
-        <div id="dotlender-advanced-filters" class="mb-3">
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Loan Purpose</label>
-            <select id="dl-loan-purpose" class="form-select form-select-sm">
+      <!-- Map overlay toggles -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label><i class="fas fa-eye" style="color:var(--ncrc-secondary-blue);"></i> Map Overlays</label>
+        <label class="dl-race-item">
+          <input type="checkbox" id="dl-show-county-boundary" checked style="margin:0;">
+          County boundary
+        </label>
+        <label class="dl-race-item">
+          <input type="checkbox" id="dl-show-city-boundary" style="margin:0;">
+          City boundaries
+        </label>
+      </div>
+
+      <!-- Advanced filters -->
+      <div class="control-group" style="margin-bottom:10px;">
+        <label style="cursor:pointer;" id="dl-advanced-toggle">
+          <i class="fas fa-sliders-h" style="color:var(--ncrc-secondary-blue);"></i>
+          Advanced Filters
+          <i class="fas fa-chevron-right" id="dl-advanced-chevron" style="float:right; font-size:0.75rem; margin-top:3px;"></i>
+        </label>
+        <div id="dotlender-advanced-filters" style="display:none; margin-top:6px;">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Loan Purpose</label>
+            <select id="dl-loan-purpose" style="width:100%;">
               <option value="1" selected>Home purchase</option>
-              <option value="2">Home improvement</option>
               <option value="31">Refinancing</option>
               <option value="32">Cash-out refinancing</option>
+              <option value="2">Home improvement</option>
               <option value="all">All purposes</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Action Taken</label>
-            <select id="dl-action-taken" class="form-select form-select-sm">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Action Taken</label>
+            <select id="dl-action-taken" style="width:100%;">
               <option value="1" selected>Originated</option>
               <option value="3">Denied</option>
               <option value="all">All actions</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Lien Status</label>
-            <select id="dl-lien-status" class="form-select form-select-sm">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Lien Status</label>
+            <select id="dl-lien-status" style="width:100%;">
               <option value="1" selected>First lien</option>
               <option value="2">Subordinate lien</option>
               <option value="all">All</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Occupancy Type</label>
-            <select id="dl-occupancy-type" class="form-select form-select-sm">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Occupancy Type</label>
+            <select id="dl-occupancy-type" style="width:100%;">
               <option value="1" selected>Principal residence</option>
               <option value="2">Second residence</option>
               <option value="3">Investment property</option>
               <option value="all">All</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Construction Method</label>
-            <select id="dl-construction-method" class="form-select form-select-sm">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Construction Method</label>
+            <select id="dl-construction-method" style="width:100%;">
               <option value="1" selected>Site-built</option>
               <option value="2">Manufactured home</option>
               <option value="all">All</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Total Units</label>
-            <select id="dl-total-units" class="form-select form-select-sm">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Total Units</label>
+            <select id="dl-total-units" style="width:100%;">
               <option value="1234" selected>1–4 units</option>
               <option value="all">All</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label small fw-bold">Reverse Mortgage</label>
-            <select id="dl-reverse-mortgage" class="form-select form-select-sm">
+          <div style="margin-bottom:6px;">
+            <label style="font-size:0.78rem; color:#555;">Reverse Mortgage</label>
+            <select id="dl-reverse-mortgage" style="width:100%;">
               <option value="exclude" selected>Exclude</option>
               <option value="include">Include</option>
             </select>
           </div>
         </div>
-
-        <button id="dl-render-btn" class="btn btn-primary btn-sm w-100">
-          <span class="dotlender-spinner spinner-border spinner-border-sm me-1" id="dl-spinner"></span>
-          Render Map
-        </button>
-
-        <div id="dl-summary-stats" class="mt-3 small" style="display:none;">
-          <hr/>
-          <div id="dl-stats-content"></div>
-        </div>
       </div>
-    </div>
 
-    <div class="col-md-9">
-      <div id="dotlender-map"></div>
-      <div id="dl-map-error" class="alert alert-danger mt-2" style="display:none;"></div>
-    </div>
-  </div>
-
-  <div class="row mt-3" id="dl-build-report-row" style="display:none;">
-    <div class="col">
-      <button id="dl-build-report-btn" class="btn btn-secondary">
-        Build PDF Report
+      <!-- Render button -->
+      <button id="dl-render-btn" type="button"
+              style="width:100%; padding:10px; background:var(--ncrc-navy); color:white; border:none;
+                     border-radius:6px; font-size:0.9rem; font-weight:600; cursor:pointer; margin-bottom:10px;">
+        <span id="dl-spinner" style="display:none; margin-right:6px;">⏳</span>
+        <i class="fas fa-map"></i> Render Map
       </button>
+
+      <!-- Build PDF -->
+      <button id="dl-build-report-btn" type="button"
+              style="width:100%; padding:8px; background:white; color:var(--ncrc-navy);
+                     border:2px solid var(--ncrc-navy); border-radius:6px; font-size:0.85rem;
+                     font-weight:600; cursor:pointer; display:none;">
+        <i class="fas fa-file-pdf"></i> Build PDF Report
+      </button>
+
+      <!-- Summary stats -->
+      <div id="dl-summary-stats" style="display:none; margin-top:12px; padding-top:10px;
+           border-top:1px solid #eee; font-size:0.82rem; color:#444;">
+        <div id="dl-stats-content"></div>
+      </div>
+
+    </div><!-- /.dl-mapper-controls -->
+  </aside><!-- /.dl-controls-sidebar -->
+
+  <!-- Map content -->
+  <div class="dl-content-wrapper">
+    <div class="dl-mapper-container">
+      <div class="dl-map-container" style="position:relative;">
+        <div id="dotlender-map"></div>
+        <div id="dl-overlay-title"></div>
+        <div id="dl-overlay-logo">
+          <img src="/static/img/ncrc-logo-color.png" style="height:32px; opacity:0.85;" alt="NCRC" />
+        </div>
+        <div id="dl-overlay-legend"></div>
+        <div class="dl-north-arrow">N ↑</div>
+      </div>
+      <div id="dl-map-error" style="display:none; color:#c00; padding:8px; font-size:0.85rem;"></div>
     </div>
   </div>
-</div>
+
+</div><!-- /.dl-container -->
+
+<!-- Desktop side-by-side layout — applied here so it doesn't leak past dotlender -->
+<style>
+  @media (min-width: 992px) {
+    .dl-container {
+      flex-direction: row !important;
+      align-items: flex-start !important;
+    }
+  }
+</style>

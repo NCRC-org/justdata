@@ -14,12 +14,231 @@
 </script>
 
 <style>
-  #dotlender-map { height: 600px; width: 100%; border: 1px solid #ddd; }
-  #dotlender-canvas-container { display: none; margin-top: 1rem; }
-  /* Canvas is rendered at 2x internal resolution (2112×1632) for PDF clarity,
-     but we constrain the on-screen size back to 1056×816 so the report
-     builder fits on a normal display. The Fabric.js .upper-canvas sits over
-     the .lower-canvas via wrapper-container — clamp both. */
+  /* ---- BranchMapper-style layout (dl- prefixed to avoid app collision) ---- */
+  .dl-controls-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    order: 1;
+  }
+  .dl-content-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    overflow: hidden;
+    order: 2;
+  }
+  .dl-mapper-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  .dl-map-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .dl-mapper-controls {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  /* control-group used directly without dl- prefix since it's local-only */
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .control-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ncrc-navy);
+  }
+  .control-group select,
+  .control-group input[type="text"],
+  .control-group input[type="number"] {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: white;
+  }
+
+  /* Map dimensions — mirror BranchMapper breakpoints */
+  #dotlender-map {
+    width: 100%;
+    height: 500px;
+    box-sizing: border-box;
+    border-radius: 8px;
+  }
+  @media (min-width: 992px) {
+    .dl-controls-sidebar {
+      width: 300px !important;
+      min-width: 300px !important;
+      max-width: 300px !important;
+      position: sticky !important;
+      top: 20px !important;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+    .dl-content-wrapper { flex: 1 !important; }
+    #dotlender-map { height: 600px; }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    #dotlender-map { height: 450px; }
+  }
+  @media (max-width: 767px) {
+    #dotlender-map { height: 350px; }
+  }
+
+  /* ---- DotLender-specific elements ---- */
+
+  /* Dot density input group */
+  .dl-density-input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .dl-density-input-group input[type=number] {
+    width: 70px;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  .dl-density-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dl-density-btn:hover { background: #f0f0f0; }
+
+  /* Race filter checkboxes */
+  .dl-race-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+  .dl-race-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Map overlays — absolute inside dl-map-container */
+  #dl-overlay-title {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+    background: rgba(255,255,255,0.9);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ncrc-navy);
+    display: none;
+  }
+  #dl-overlay-logo {
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    z-index: 1;
+  }
+  #dl-overlay-legend {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1;
+    background: white;
+    padding: 10px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    display: none;
+    font-size: 0.8rem;
+    min-width: 160px;
+  }
+
+  /* North arrow */
+  .dl-north-arrow {
+    position: absolute;
+    bottom: 80px;
+    left: 10px;
+    z-index: 1;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #333;
+    pointer-events: none;
+  }
+
+  /* PDF modal */
+  #dl-pdf-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 20px 0;
+  }
+  #dl-pdf-modal.active { display: flex; }
+  #dl-pdf-modal-inner {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 1100px;
+    width: 95%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    margin: auto;
+  }
+  #dl-pdf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  #dl-pdf-modal-header h5 {
+    margin: 0;
+    color: var(--ncrc-navy);
+  }
+  .dl-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+  }
+  .dl-modal-close:hover { color: #333; }
+
+  /* Canvas inside modal — keep 2x internal resolution from Session 4,
+     constrain on-screen size so it fits the modal */
   #dotlender-canvas,
   .canvas-container,
   .canvas-container > canvas {
@@ -27,14 +246,19 @@
     width: 1056px !important;
     height: 816px !important;
   }
-  .dotlender-filter-panel { background: #f8f9fa; padding: 1rem; border-radius: 4px; }
-  .dotlender-advanced-toggle { cursor: pointer; color: #0066cc; font-size: 0.9rem; user-select: none; }
-  #dotlender-advanced-filters { display: none; }
-  .dotlender-spinner { display: none; }
-  .dotlender-spinner.active { display: inline-block; }
-  #dl-geo-suggestions, #dl-lender-suggestions {
-    background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto;
-    width: calc(100% - 1rem); margin-top: -1px;
+
+  /* Suggestion dropdowns (geography, lender typeahead) */
+  #dl-geo-suggestions a,
+  #dl-lender-suggestions a {
+    display: block;
+    padding: 6px 10px;
+    border-bottom: 1px solid #eee;
+    color: var(--ncrc-navy);
+    text-decoration: none;
+    font-size: 0.82rem;
   }
-  .mapboxgl-popup-content { font-size: 12px; }
+  #dl-geo-suggestions a:hover,
+  #dl-lender-suggestions a:hover { background: #f5f5f5; }
+  #dl-geo-suggestions a:last-child,
+  #dl-lender-suggestions a:last-child { border-bottom: none; }
 </style>

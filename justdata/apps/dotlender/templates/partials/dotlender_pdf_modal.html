@@ -1,0 +1,24 @@
+<div id="dl-pdf-modal">
+  <div id="dl-pdf-modal-inner">
+    <div id="dl-pdf-modal-header">
+      <h5><i class="fas fa-file-pdf"></i> PDF Report Builder</h5>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="dl-page-size" style="padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:0.85rem;">
+          <option value="letter">Letter (8.5×11)</option>
+          <option value="tabloid">Tabloid (11×17)</option>
+        </select>
+        <button id="dl-export-pdf-btn" type="button"
+                style="padding:7px 14px; background:var(--ncrc-navy); color:white; border:none;
+                       border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">
+          <i class="fas fa-download"></i> Export PDF
+        </button>
+        <button class="dl-modal-close" id="dl-modal-close-btn" type="button" title="Close">×</button>
+      </div>
+    </div>
+    <p style="font-size:0.82rem; color:#666; margin:0 0 10px;">
+      Pan and zoom the map to frame your view before exporting. Drag canvas elements to reposition.
+      Click an element and press Delete to remove it.
+    </p>
+    <canvas id="dotlender-canvas"></canvas>
+  </div>
+</div>
