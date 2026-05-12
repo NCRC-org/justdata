@@ -1,4 +1,139 @@
-<div id="dotlender-filters" class="container mt-4">
-  <h2>DotLender</h2>
-  <p class="text-muted">HMDA dot-density lending map — coming soon.</p>
+<div class="container-fluid mt-3" id="dotlender-filters">
+  <div class="row">
+    <div class="col-md-3">
+      <div class="dotlender-filter-panel">
+        <h5 class="mb-0">DotLender</h5>
+        <p class="text-muted small mb-3">HMDA dot-density lending map</p>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Geography Type</label>
+          <select id="dl-geo-type" class="form-select form-select-sm">
+            <option value="county">County</option>
+            <option value="state">State</option>
+          </select>
+        </div>
+        <div class="mb-3 position-relative">
+          <label class="form-label fw-bold">Geography</label>
+          <input type="text" id="dl-geo-value" class="form-control form-control-sm"
+                 placeholder="5-digit county FIPS (e.g. 11001) or 2-digit state" />
+          <div id="dl-geo-suggestions" class="list-group position-absolute" style="z-index:1000;display:none;"></div>
+        </div>
+
+        <div class="mb-3 position-relative">
+          <label class="form-label fw-bold">Lender</label>
+          <input type="text" id="dl-lender-search" class="form-control form-control-sm"
+                 placeholder="All lenders (type to filter)" autocomplete="off" />
+          <input type="hidden" id="dl-lender-lei" value="" />
+          <div id="dl-lender-suggestions" class="list-group position-absolute" style="z-index:1000;display:none;"></div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Year Range</label>
+          <div class="d-flex gap-2">
+            <select id="dl-year-start" class="form-select form-select-sm"></select>
+            <span class="align-self-center">to</span>
+            <select id="dl-year-end" class="form-select form-select-sm"></select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Overlay</label>
+          <select id="dl-overlay-mode" class="form-select form-select-sm">
+            <option value="both" selected>Minority + Income</option>
+            <option value="minority">Minority population only</option>
+            <option value="income">Income band only</option>
+            <option value="none">No overlay</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <span class="dotlender-advanced-toggle" id="dl-advanced-toggle">
+            ▶ Advanced filters (defaults: purchase, originated, first lien)
+          </span>
+        </div>
+        <div id="dotlender-advanced-filters" class="mb-3">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Loan Purpose</label>
+            <select id="dl-loan-purpose" class="form-select form-select-sm">
+              <option value="1" selected>Home purchase</option>
+              <option value="2">Home improvement</option>
+              <option value="31">Refinancing</option>
+              <option value="32">Cash-out refinancing</option>
+              <option value="all">All purposes</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Action Taken</label>
+            <select id="dl-action-taken" class="form-select form-select-sm">
+              <option value="1" selected>Originated</option>
+              <option value="3">Denied</option>
+              <option value="all">All actions</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Lien Status</label>
+            <select id="dl-lien-status" class="form-select form-select-sm">
+              <option value="1" selected>First lien</option>
+              <option value="2">Subordinate lien</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Occupancy Type</label>
+            <select id="dl-occupancy-type" class="form-select form-select-sm">
+              <option value="1" selected>Principal residence</option>
+              <option value="2">Second residence</option>
+              <option value="3">Investment property</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Construction Method</label>
+            <select id="dl-construction-method" class="form-select form-select-sm">
+              <option value="1" selected>Site-built</option>
+              <option value="2">Manufactured home</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Total Units</label>
+            <select id="dl-total-units" class="form-select form-select-sm">
+              <option value="1234" selected>1–4 units</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Reverse Mortgage</label>
+            <select id="dl-reverse-mortgage" class="form-select form-select-sm">
+              <option value="exclude" selected>Exclude</option>
+              <option value="include">Include</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="dl-render-btn" class="btn btn-primary btn-sm w-100">
+          <span class="dotlender-spinner spinner-border spinner-border-sm me-1" id="dl-spinner"></span>
+          Render Map
+        </button>
+
+        <div id="dl-summary-stats" class="mt-3 small" style="display:none;">
+          <hr/>
+          <div id="dl-stats-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-9">
+      <div id="dotlender-map"></div>
+      <div id="dl-map-error" class="alert alert-danger mt-2" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="row mt-3" id="dl-build-report-row" style="display:none;">
+    <div class="col">
+      <button id="dl-build-report-btn" class="btn btn-secondary">
+        Build PDF Report
+      </button>
+    </div>
+  </div>
 </div>

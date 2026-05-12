@@ -1,0 +1,33 @@
+<!-- Mapbox GL JS (matches BranchMapper version) -->
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+
+<!-- Fabric.js for the report canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+<!-- jsPDF for the PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- html2canvas for capturing the rendered map into the report -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- Mapbox token exposed to map.js -->
+<script>
+  window.DOTLENDER_MAPBOX_TOKEN = '{{ mapbox_token|default("", true) }}';
+</script>
+
+<style>
+  #dotlender-map { height: 600px; width: 100%; border: 1px solid #ddd; }
+  #dotlender-canvas-container { display: none; margin-top: 1rem; }
+  #dotlender-canvas { border: 1px solid #ccc; max-width: 100%; }
+  .dotlender-filter-panel { background: #f8f9fa; padding: 1rem; border-radius: 4px; }
+  .dotlender-advanced-toggle { cursor: pointer; color: #0066cc; font-size: 0.9rem; user-select: none; }
+  #dotlender-advanced-filters { display: none; }
+  .dotlender-spinner { display: none; }
+  .dotlender-spinner.active { display: inline-block; }
+  #dl-geo-suggestions, #dl-lender-suggestions {
+    background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto;
+    width: calc(100% - 1rem); margin-top: -1px;
+  }
+  .mapboxgl-popup-content { font-size: 12px; }
+</style>

@@ -1,0 +1,22 @@
+<div class="container-fluid mt-3" id="dotlender-canvas-container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Report Builder</h5>
+        <div class="d-flex gap-2">
+          <select id="dl-page-size" class="form-select form-select-sm" style="width:auto;">
+            <option value="letter">Letter (8.5×11)</option>
+            <option value="tabloid">Tabloid (11×17)</option>
+          </select>
+          <button id="dl-export-pdf-btn" class="btn btn-primary btn-sm">Export PDF</button>
+          <button id="dl-canvas-close-btn" class="btn btn-outline-secondary btn-sm">Close</button>
+        </div>
+      </div>
+      <p class="text-muted small mb-2">
+        Drag elements to reposition. Click an element and press Delete to remove it.
+        Active filters appear at the bottom.
+      </p>
+      <canvas id="dotlender-canvas"></canvas>
+    </div>
+  </div>
+</div>

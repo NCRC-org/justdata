@@ -1,5 +1,15 @@
 {% extends "base_app.html" %}
-{% block title %}DotLender{% endblock %}
+{% block title %}DotLender — HMDA Lending Map{% endblock %}
+
+{% block extra_head %}
+{% include "partials/dotlender_head.html" %}
+{% endblock %}
+
 {% block content %}
 {% include "partials/dotlender_filters.html" %}
+{% include "partials/dotlender_canvas.html" %}
+{% endblock %}
+
+{% block extra_js %}
+{% include "partials/dotlender_scripts.html" %}
 {% endblock %}

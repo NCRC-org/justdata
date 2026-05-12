@@ -1,4 +1,6 @@
 """DotLender blueprint — HMDA dot-density lending map with PDF canvas export."""
+import os
+
 from flask import Blueprint, jsonify, render_template, request
 from google.cloud.bigquery import ScalarQueryParameter
 
@@ -32,10 +34,12 @@ dotlender_bp = Blueprint(
 @staff_required
 def index():
     """Filter page — DotLender main view."""
+    mapbox_token = os.environ.get("MAPBOX_ACCESS_TOKEN", "")
     return render_template(
         "dotlender_main.html",
         app_name="DotLender",
         app_description="HMDA dot-density lending map by race/ethnicity and tract demographics.",
+        mapbox_token=mapbox_token,
     )
 
 
