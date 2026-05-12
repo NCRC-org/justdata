@@ -31,10 +31,12 @@ async function initYearDropdowns() {
 function initAdvancedToggle() {
   const toggle = document.getElementById('dl-advanced-toggle');
   const panel = document.getElementById('dotlender-advanced-filters');
+  const chevron = document.getElementById('dl-advanced-chevron');
+  if (!toggle || !panel) return;
   toggle.addEventListener('click', () => {
-    const open = panel.style.display !== 'none';
-    panel.style.display = open ? 'none' : 'block';
-    toggle.textContent = (open ? '▶' : '▼') + toggle.textContent.slice(1);
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
   });
 }
 
@@ -91,7 +93,7 @@ function initLenderTypeahead() {
 }
 
 export function getFilterState() {
-  const densityEl = document.getElementById('dl-density-slider');
+  const densityEl = document.getElementById('dl-density-value');
   return {
     geography_type: document.getElementById('dl-geo-type').value,
     geography_value: document.getElementById('dl-geo-value').value.trim(),
@@ -101,8 +103,8 @@ export function getFilterState() {
     lender_name: document.getElementById('dl-lender-search').value.trim() || 'All lenders',
     overlay_mode: document.getElementById('dl-overlay-mode').value,
     // Client-side only: how many loans per displayed dot. dotlender_map.js
-    // reads from the slider directly, but include it in state for canvas
-    // labels and traceability.
+    // reads from the input directly; included in state for canvas labels
+    // and traceability.
     dot_density: densityEl ? parseInt(densityEl.value, 10) : 1,
     filters: {
       loan_purpose: document.getElementById('dl-loan-purpose').value,
@@ -138,7 +140,7 @@ export function initRenderButton(onRender) {
 
     const spinner = document.getElementById('dl-spinner');
     const btn = document.getElementById('dl-render-btn');
-    spinner.classList.add('active');
+    if (spinner) spinner.style.display = 'inline-block';
     btn.disabled = true;
 
     try {
@@ -167,7 +169,7 @@ export function initRenderButton(onRender) {
       errEl.textContent = err.message;
       errEl.style.display = 'block';
     } finally {
-      spinner.classList.remove('active');
+      if (spinner) spinner.style.display = 'none';
       btn.disabled = false;
     }
   });

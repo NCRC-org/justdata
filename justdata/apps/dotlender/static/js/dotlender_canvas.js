@@ -58,9 +58,11 @@ export async function buildCanvas(mapData, state) {
   fabricCanvas.clear();
   fabricCanvas.setBackgroundColor('#ffffff', fabricCanvas.renderAll.bind(fabricCanvas));
 
-  const container = document.getElementById('dotlender-canvas-container');
-  container.style.display = 'block';
-  container.scrollIntoView({ behavior: 'smooth' });
+  const modal = document.getElementById('dl-pdf-modal');
+  if (modal) {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
 
   placeMapPlaceholder();
   placeTitle(state);
@@ -293,7 +295,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = getFilterState();
     if (mapData && state) buildCanvas(mapData, state);
   });
-  document.getElementById('dl-canvas-close-btn')?.addEventListener('click', () => {
-    document.getElementById('dotlender-canvas-container').style.display = 'none';
+  document.getElementById('dl-modal-close-btn')?.addEventListener('click', () => {
+    const modal = document.getElementById('dl-pdf-modal');
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
+  });
+  // Click on backdrop also dismisses
+  document.getElementById('dl-pdf-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'dl-pdf-modal') {
+      e.target.classList.remove('active');
+      document.body.style.overflow = '';
+    }
   });
 });

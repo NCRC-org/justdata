@@ -3,6 +3,11 @@
 // Mirrors BranchMapper's stack: mapbox-gl v3, jedlebi.census-tracts vector tileset.
 
 import { getFilterState, initRenderButton } from './dotlender_filters.js';
+import {
+  addCountyMask, removeCountyMask, clearCachedCounty,
+  addCityBoundaries, removeCityBoundaries,
+  updateTitleOverlay, updateLegend,
+} from './dotlender_overlays.js';
 
 // NCRC race/ethnicity color palette — keyed on the derived_race string returned
 // by /api/map-data (built server-side from is_* flags in queries.DERIVED_RACE_SQL).
@@ -58,6 +63,8 @@ let mapLoaded = false;
 let currentMapData = null;
 let currentOverlayMode = 'both';
 let currentTooltipPopup = null;
+// FIPS of the most recently rendered county, used by the county mask toggle.
+let currentFips = null;
 
 // --- Color expressions (mirror BranchMapper) ------------------------------
 
@@ -129,6 +136,12 @@ function initMap() {
   window.dotlenderMap = map;
   // eslint-disable-next-line no-undef
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  // Scale bar — bottom-left, imperial. Mirrors BranchMapper's control style.
+  // eslint-disable-next-line no-undef
+  map.addControl(
+    new mapboxgl.ScaleControl({ maxWidth: 100, unit: 'imperial' }),
+    'bottom-left',
+  );
 
   map.on('load', () => {
     addCensusLayers();
@@ -200,9 +213,7 @@ function addDotsLayer() {
   });
 }
 
-function emptyFC() {
-  return { type: 'FeatureCollection', features: [] };
-}
+function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
 
 // --- Render ---------------------------------------------------------------
 
@@ -270,10 +281,12 @@ function applyDotsStyle() {
     map.setFilter('dl-dots-circles', ['in', ['get', 'derived_race'], ['literal', active]]);
     map.setPaintProperty('dl-dots-circles', 'circle-color', raceCircleColor());
   }
+  // Refresh the legend overlay so it mirrors the current race filter state.
+  updateLegend(currentOverlayMode, active);
 }
 
 function getDensityRatio() {
-  const el = document.getElementById('dl-density-slider');
+  const el = document.getElementById('dl-density-value');
   if (!el) return 1;
   const v = parseInt(el.value, 10);
   return Number.isFinite(v) && v > 0 ? v : 1;
@@ -303,18 +316,46 @@ function initRaceFilters() {
   });
 }
 
-function initDensitySlider() {
-  const slider = document.getElementById('dl-density-slider');
+function clampDensity(n) {
+  const v = parseInt(n, 10);
+  if (!Number.isFinite(v) || v < 1) return 1;
+  if (v > 999) return 999;
+  return v;
+}
+
+function setDensityLabel() {
   const label = document.getElementById('dl-density-label');
-  if (!slider) return;
-  slider.addEventListener('input', () => {
-    if (label) {
-      const v = parseInt(slider.value, 10);
-      label.textContent = v <= 1 ? '(1 dot per loan)' : `(1 dot per ${v} loans)`;
-    }
+  const input = document.getElementById('dl-density-value');
+  if (!label || !input) return;
+  const v = clampDensity(input.value);
+  label.textContent = v === 1 ? ' — 1 dot per loan' : ` — 1 dot per ${v} loans`;
+}
+
+function initDensityInput() {
+  const input = document.getElementById('dl-density-value');
+  const up = document.getElementById('dl-density-up');
+  const down = document.getElementById('dl-density-down');
+  if (!input) return;
+  setDensityLabel();
+  if (up) {
+    up.addEventListener('click', () => {
+      input.value = clampDensity((parseInt(input.value, 10) || 1) + 1);
+      setDensityLabel();
+      rebuildDotsFromCache();
+    });
+  }
+  if (down) {
+    down.addEventListener('click', () => {
+      input.value = clampDensity((parseInt(input.value, 10) || 1) - 1);
+      setDensityLabel();
+      rebuildDotsFromCache();
+    });
+  }
+  input.addEventListener('change', () => {
+    input.value = clampDensity(input.value);
+    setDensityLabel();
+    rebuildDotsFromCache();
   });
-  // 'change' fires when the user releases — re-render on commit only
-  slider.addEventListener('change', rebuildDotsFromCache);
 }
 
 function fitToGeography(state) {
@@ -364,11 +405,29 @@ function renderMap(mapData, state) {
   map.getSource('dl-dots').setData(dotsFC);
   applyDotsStyle();
 
-  if (state.geography_type === 'state') {
-    fitToGeography(state);
+  // County mask: apply for county-type geography when the toggle is on.
+  // addCountyMask handles fitBounds; for state geography we fall back to the
+  // existing state-FIPS lookup or the dot extent.
+  if (state.geography_type === 'county') {
+    currentFips = (state.geography_value || '').trim();
+    clearCachedCounty();
+    removeCountyMask();
+    const cbCb = document.getElementById('dl-show-county-boundary');
+    if (currentFips && (!cbCb || cbCb.checked)) {
+      addCountyMask(currentFips);
+    } else {
+      fitToDots(dotsFC);
+    }
   } else {
-    fitToDots(dotsFC);
+    currentFips = null;
+    clearCachedCounty();
+    removeCountyMask();
+    fitToGeography(state);
   }
+
+  // Title + legend overlays
+  updateTitleOverlay(state);
+  updateLegend(state.overlay_mode, getActiveRaceFilters());
 
   // Choropleth tooltip — show per-tract loan count from server, joined by census_tract
   const tractLoans = {};
@@ -415,13 +474,25 @@ function attachChoroplethTooltip(tractLoans) {
 export function getCurrentMapData() { return currentMapData; }
 export function getMapboxInstance() { return map; }
 
+function initOverlayToggles() {
+  document.getElementById('dl-show-county-boundary')?.addEventListener('change', (e) => {
+    if (!currentFips) return;
+    if (e.target.checked) addCountyMask(currentFips); else removeCountyMask();
+  });
+  document.getElementById('dl-show-city-boundary')?.addEventListener('change', (e) => {
+    if (e.target.checked) addCityBoundaries(); else removeCityBoundaries();
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
   initRaceFilters();
-  initDensitySlider();
+  initDensityInput();
+  initOverlayToggles();
   initRenderButton((mapData, state) => {
     currentMapData = mapData;
     renderMap(mapData, state);
-    document.getElementById('dl-build-report-row').style.display = 'block';
+    const btn = document.getElementById('dl-build-report-btn');
+    if (btn) btn.style.display = 'block';
   });
 });
