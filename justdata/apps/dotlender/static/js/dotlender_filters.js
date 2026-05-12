@@ -91,6 +91,7 @@ function initLenderTypeahead() {
 }
 
 export function getFilterState() {
+  const densityEl = document.getElementById('dl-density-slider');
   return {
     geography_type: document.getElementById('dl-geo-type').value,
     geography_value: document.getElementById('dl-geo-value').value.trim(),
@@ -99,6 +100,10 @@ export function getFilterState() {
     lei: document.getElementById('dl-lender-lei').value || null,
     lender_name: document.getElementById('dl-lender-search').value.trim() || 'All lenders',
     overlay_mode: document.getElementById('dl-overlay-mode').value,
+    // Client-side only: how many loans per displayed dot. dotlender_map.js
+    // reads from the slider directly, but include it in state for canvas
+    // labels and traceability.
+    dot_density: densityEl ? parseInt(densityEl.value, 10) : 1,
     filters: {
       loan_purpose: document.getElementById('dl-loan-purpose').value,
       action_taken: document.getElementById('dl-action-taken').value,

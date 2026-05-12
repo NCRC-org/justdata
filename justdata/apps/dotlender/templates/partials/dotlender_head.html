@@ -16,7 +16,17 @@
 <style>
   #dotlender-map { height: 600px; width: 100%; border: 1px solid #ddd; }
   #dotlender-canvas-container { display: none; margin-top: 1rem; }
-  #dotlender-canvas { border: 1px solid #ccc; max-width: 100%; }
+  /* Canvas is rendered at 2x internal resolution (2112×1632) for PDF clarity,
+     but we constrain the on-screen size back to 1056×816 so the report
+     builder fits on a normal display. The Fabric.js .upper-canvas sits over
+     the .lower-canvas via wrapper-container — clamp both. */
+  #dotlender-canvas,
+  .canvas-container,
+  .canvas-container > canvas {
+    max-width: 1056px !important;
+    width: 1056px !important;
+    height: 816px !important;
+  }
   .dotlender-filter-panel { background: #f8f9fa; padding: 1rem; border-radius: 4px; }
   .dotlender-advanced-toggle { cursor: pointer; color: #0066cc; font-size: 0.9rem; user-select: none; }
   #dotlender-advanced-filters { display: none; }

@@ -16,6 +16,20 @@ export const RACE_COLORS = {
   'Unknown or Not Provided': '#999999',
 };
 
+// Default dot color when no race filter is active (all races combined).
+export const RACE_ALL_COLOR = '#222222';
+
+// "Other / Unknown" checkbox value expands to these race buckets.
+const OTHER_RACE_BUCKETS = [
+  'Unknown or Not Provided',
+  'American Indian or Alaska Native',
+  'Two or More Races',
+];
+
+// Jitter halfwidth in degrees applied around tract centroids (~890m N–S).
+// Tight enough to keep dots inside most tract polygons.
+const JITTER_DEGREES = 0.016;
+
 // Income band fill colors (used for the spec's choropleth legend on the canvas;
 // the live map uses the tileset's own pre-baked income_category coloring).
 export const INCOME_BAND_COLORS = {
@@ -177,7 +191,9 @@ function addDotsLayer() {
     source: 'dl-dots',
     paint: {
       'circle-radius': 3,
-      'circle-color': raceCircleColor(),
+      // Default: single dark color for combined view. applyDotsStyle() flips
+      // this to the race-color match expression when a race filter is active.
+      'circle-color': RACE_ALL_COLOR,
       'circle-opacity': 0.8,
       'circle-stroke-width': 0,
     },
@@ -202,15 +218,17 @@ function setOverlayVisibility(mode) {
   });
 }
 
-function buildDotFeatures(dotData) {
-  // Each tract+race row becomes dot_count Point features jittered around the centroid.
-  // Server returns county-centroid lat/lng per row (no tract-centroid table yet — v1 limit).
+function buildDotFeatures(dotData, densityRatio = 1) {
+  // Each tract+race row becomes (dot_count / densityRatio) Point features
+  // jittered around the tract centroid. derived_race is stored as a Feature
+  // property so the Mapbox circle layer can filter and color from it.
   const features = [];
   dotData.forEach((row) => {
     if (row.centroid_lat == null || row.centroid_lng == null) return;
-    for (let i = 0; i < row.dot_count; i += 1) {
-      const lat = row.centroid_lat + (Math.random() - 0.5) * 0.04;
-      const lng = row.centroid_lng + (Math.random() - 0.5) * 0.04;
+    const count = Math.max(1, Math.round((row.dot_count || 0) / densityRatio));
+    for (let i = 0; i < count; i += 1) {
+      const lat = row.centroid_lat + (Math.random() - 0.5) * JITTER_DEGREES;
+      const lng = row.centroid_lng + (Math.random() - 0.5) * JITTER_DEGREES;
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [lng, lat] },
@@ -222,6 +240,81 @@ function buildDotFeatures(dotData) {
     }
   });
   return { type: 'FeatureCollection', features };
+}
+
+// --- Race filter wiring ---------------------------------------------------
+
+function getActiveRaceFilters() {
+  const allCb = document.getElementById('dl-race-all');
+  if (!allCb || allCb.checked) return 'all';
+  const checked = [];
+  document.querySelectorAll('.dl-race-cb:not(#dl-race-all):checked').forEach((cb) => {
+    if (cb.value === 'other') {
+      checked.push(...OTHER_RACE_BUCKETS);
+    } else {
+      checked.push(cb.value);
+    }
+  });
+  // If user unchecks every specific box, fall back to 'all' so the layer
+  // doesn't go blank.
+  return checked.length ? checked : 'all';
+}
+
+function applyDotsStyle() {
+  if (!map || !map.getLayer('dl-dots-circles')) return;
+  const active = getActiveRaceFilters();
+  if (active === 'all') {
+    map.setFilter('dl-dots-circles', null);
+    map.setPaintProperty('dl-dots-circles', 'circle-color', RACE_ALL_COLOR);
+  } else {
+    map.setFilter('dl-dots-circles', ['in', ['get', 'derived_race'], ['literal', active]]);
+    map.setPaintProperty('dl-dots-circles', 'circle-color', raceCircleColor());
+  }
+}
+
+function getDensityRatio() {
+  const el = document.getElementById('dl-density-slider');
+  if (!el) return 1;
+  const v = parseInt(el.value, 10);
+  return Number.isFinite(v) && v > 0 ? v : 1;
+}
+
+function rebuildDotsFromCache() {
+  if (!map || !map.getSource('dl-dots') || !window.dotlenderDotData) return;
+  const fc = buildDotFeatures(window.dotlenderDotData, getDensityRatio());
+  map.getSource('dl-dots').setData(fc);
+  applyDotsStyle();
+}
+
+function initRaceFilters() {
+  document.querySelectorAll('.dl-race-cb').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      // 'all' was clicked on → uncheck specifics
+      if (cb.id === 'dl-race-all' && cb.checked) {
+        document.querySelectorAll('.dl-race-cb:not(#dl-race-all)').forEach((c) => { c.checked = false; });
+      }
+      // A specific race was clicked on → uncheck 'all'
+      if (cb.id !== 'dl-race-all' && cb.checked) {
+        const allCb = document.getElementById('dl-race-all');
+        if (allCb) allCb.checked = false;
+      }
+      applyDotsStyle();
+    });
+  });
+}
+
+function initDensitySlider() {
+  const slider = document.getElementById('dl-density-slider');
+  const label = document.getElementById('dl-density-label');
+  if (!slider) return;
+  slider.addEventListener('input', () => {
+    if (label) {
+      const v = parseInt(slider.value, 10);
+      label.textContent = v <= 1 ? '(1 dot per loan)' : `(1 dot per ${v} loans)`;
+    }
+  });
+  // 'change' fires when the user releases — re-render on commit only
+  slider.addEventListener('change', rebuildDotsFromCache);
 }
 
 function fitToGeography(state) {
@@ -262,8 +355,14 @@ function renderMap(mapData, state) {
     return;
   }
   setOverlayVisibility(state.overlay_mode);
-  const dotsFC = buildDotFeatures(mapData.dots || []);
+
+  // Cache raw dot rows so the density slider and race filters can re-render
+  // without a new API call.
+  window.dotlenderDotData = mapData.dots || [];
+
+  const dotsFC = buildDotFeatures(window.dotlenderDotData, getDensityRatio());
   map.getSource('dl-dots').setData(dotsFC);
+  applyDotsStyle();
 
   if (state.geography_type === 'state') {
     fitToGeography(state);
@@ -318,6 +417,8 @@ export function getMapboxInstance() { return map; }
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
+  initRaceFilters();
+  initDensitySlider();
   initRenderButton((mapData, state) => {
     currentMapData = mapData;
     renderMap(mapData, state);

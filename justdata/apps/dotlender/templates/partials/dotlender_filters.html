@@ -46,6 +46,70 @@
           </select>
         </div>
 
+        <div class="mb-3">
+          <label class="form-label fw-bold">Show Dots By Race/Ethnicity</label>
+          <div id="dl-race-filters" class="small">
+            <div class="form-check">
+              <input class="form-check-input dl-race-cb" type="checkbox" value="all" id="dl-race-all" checked>
+              <label class="form-check-label" for="dl-race-all">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#222;margin-right:4px;"></span>
+                All races (combined)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input dl-race-cb" type="checkbox" value="Hispanic or Latino" id="dl-race-hispanic">
+              <label class="form-check-label" for="dl-race-hispanic">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e41a1c;margin-right:4px;"></span>
+                Hispanic or Latino
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input dl-race-cb" type="checkbox" value="Black or African American" id="dl-race-black">
+              <label class="form-check-label" for="dl-race-black">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#377eb8;margin-right:4px;"></span>
+                Black or African American
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input dl-race-cb" type="checkbox" value="Asian" id="dl-race-asian">
+              <label class="form-check-label" for="dl-race-asian">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4daf4a;margin-right:4px;"></span>
+                Asian
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input dl-race-cb" type="checkbox" value="White" id="dl-race-white">
+              <label class="form-check-label" for="dl-race-white">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#a65628;margin-right:4px;"></span>
+                White
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input dl-race-cb" type="checkbox" value="other" id="dl-race-other">
+              <label class="form-check-label" for="dl-race-other">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#999;margin-right:4px;"></span>
+                Other / Unknown
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">
+            Dot Density
+            <span class="text-muted fw-normal small" id="dl-density-label">(1 dot per loan)</span>
+          </label>
+          <input type="range" class="form-range" id="dl-density-slider"
+                 min="1" max="10" step="1" value="1">
+          <div class="d-flex justify-content-between small text-muted">
+            <span>More dots</span>
+            <span>Fewer dots</span>
+          </div>
+          <p class="small text-muted mt-1 mb-0">
+            Housing-unit normalization pending ACS data load.
+          </p>
+        </div>
+
         <div class="mb-2">
           <span class="dotlender-advanced-toggle" id="dl-advanced-toggle">
             ▶ Advanced filters (defaults: purchase, originated, first lien)
