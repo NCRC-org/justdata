@@ -487,7 +487,13 @@ def register_blueprints(app: Flask):
         app.register_blueprint(branchmapper_bp, url_prefix='/branchmapper')
     except ImportError:
         print("[WARN] BranchMapper blueprint not yet created")
-    
+
+    try:
+        from justdata.apps.dotlender.blueprint import dotlender_bp
+        app.register_blueprint(dotlender_bp, url_prefix='/dotlender')
+    except ImportError:
+        print("[WARN] DotLender blueprint not yet created")
+
     try:
         from justdata.apps.dataexplorer.blueprint import dataexplorer_bp
         app.register_blueprint(dataexplorer_bp, url_prefix='/dataexplorer')
