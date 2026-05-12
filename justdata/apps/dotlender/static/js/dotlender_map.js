@@ -242,8 +242,9 @@ function stableJitter(dotData) {
 }
 
 function buildDotFeatures(dotData, densityRatio = 1) {
-  // Stride through each row's stored _jitter; a dot at index i is visible
-  // when i % stride === 0, so ratio=1 shows all, ratio=2 every other, etc.
+  // True subsample: each tract emits floor(n / stride) dots at indices
+  // [0, stride, 2*stride, ...]. A tract with 2 raw dots at stride=5
+  // emits 0 dots — no per-tract minimum, so voids in lending stay visible.
   const features = [];
   let rawTotal = 0;
   const stride = Math.max(1, parseInt(densityRatio, 10) || 1);
@@ -251,8 +252,8 @@ function buildDotFeatures(dotData, densityRatio = 1) {
     if (row.centroid_lat == null || row.centroid_lng == null) return;
     const n = row._jitter?.length || 0;
     rawTotal += n;
-    for (let i = 0; i < n; i += stride) {
-      const j = row._jitter[i];
+    for (let k = 0, count = Math.floor(n / stride); k < count; k += 1) {
+      const j = row._jitter[k * stride];
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [row.centroid_lng + j.dlng, row.centroid_lat + j.dlat] },
