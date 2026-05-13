@@ -6,7 +6,7 @@
 // the map will go, and dotlender_export.js composes the final PDF by laying
 // the captured Mapbox image over the placeholder at export time.
 
-import { RACE_COLORS, INCOME_BAND_COLORS, getCurrentMapData } from './dotlender_map.js';
+import { RACE_COLORS, INCOME_BAND_COLORS, getCurrentMapData, getActiveRaceFilters } from './dotlender_map.js';
 import { getFilterState, getLastSummaryStats } from './dotlender_filters.js';
 
 let fabricCanvas = null;
@@ -67,8 +67,9 @@ export async function buildCanvas(mapData, state) {
   placeMapPlaceholder();
   placeTitle(state);
   await placeLogo();
-  placeDotLegend();
-  placeChoroplethLegend(state.overlay_mode);
+  placeMapLegend(state, getActiveRaceFilters());
+  placeNorthArrow();
+  placeScaleBar();
   placeStatsTable();
   placeFilterSummary(state);
   placeMethodologyNote();
@@ -123,21 +124,17 @@ function placeTitle(state) {
   const yearLabel = state.year_start === state.year_end
     ? `${state.year_start}`
     : `${state.year_start}–${state.year_end}`;
+  // Title and subtitle as separate textboxes so each gets its own size.
   // eslint-disable-next-line no-undef
-  const title = new fabric.Textbox(
-    `HMDA Lending — ${geoLabel}\n${lenderLabel} | ${yearLabel}`,
-    {
-      left: s(20),
-      top: s(10),
-      width: s(700),
-      fontSize: s(16),
-      fontFamily: 'Arial',
-      fontWeight: 'bold',
-      fill: '#1a1a2e',
-      lineHeight: 1.2,
-    },
-  );
-  fabricCanvas.add(title);
+  fabricCanvas.add(new fabric.Textbox(`HMDA Lending — ${geoLabel}`, {
+    left: s(20), top: s(10), width: s(800),
+    fontSize: s(18), fontFamily: 'Arial', fontWeight: 'bold', fill: '#1a1a2e',
+  }));
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Textbox(`${lenderLabel} | ${yearLabel}`, {
+    left: s(20), top: s(40), width: s(800),
+    fontSize: s(14), fontFamily: 'Arial', fill: '#444',
+  }));
 }
 
 async function placeLogo() {
@@ -159,64 +156,167 @@ async function placeLogo() {
   });
 }
 
-function placeDotLegend() {
-  let y = s(80);
-  const x = CANVAS_W - s(200);
+// Unified legend block (bottom-left) — replaces the prior dot + choropleth
+// legends. Layout follows the PNC-style reference: title, year range, dot
+// ratio, dot key, choropleth key, optional city-boundary key.
+function placeMapLegend(state, activeRaces) {
+  const x = 20;
+  let y = CANVAS_H - 420;
+  const lineH = 28;
+  const dotR = 7;
+
   // eslint-disable-next-line no-undef
-  fabricCanvas.add(new fabric.Text('Lending by Race/Ethnicity', {
-    left: x, top: y, fontSize: s(10), fontWeight: 'bold', fill: '#333',
+  fabricCanvas.add(new fabric.Text('Home Mortgage Originations', {
+    left: x, top: y, fontSize: 22, fontWeight: 'bold', fill: '#222',
   }));
-  y += s(18);
-  Object.entries(RACE_COLORS).forEach(([label, color]) => {
+  y += 30;
+
+  const yearLabel = state.year_start === state.year_end
+    ? `(${state.year_start})`
+    : `(${state.year_start} – ${state.year_end})`;
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Text(yearLabel, {
+    left: x, top: y, fontSize: 20, fill: '#444',
+  }));
+  y += 28;
+
+  const density = parseInt(document.getElementById('dl-density-value')?.value, 10) || 1;
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Text(`1 Dot = ${density} Loan${density > 1 ? 's' : ''}`, {
+    left: x, top: y, fontSize: 20, fontWeight: 'bold', fill: '#222',
+  }));
+  y += 32;
+
+  const lenderLabel = state.lei ? state.lender_name : 'All Lenders';
+  if (activeRaces === 'all') {
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Circle({
-      left: x, top: y + s(2), radius: s(5), fill: color, stroke: color,
+    fabricCanvas.add(new fabric.Circle({ left: x, top: y, radius: dotR, fill: '#222' }));
+    // eslint-disable-next-line no-undef
+    fabricCanvas.add(new fabric.Text(`${lenderLabel} Originations`, {
+      left: x + 20, top: y - 2, fontSize: 18, fill: '#222',
+    }));
+    y += lineH;
+  } else {
+    const LEGEND_COLORS = {
+      'Hispanic or Latino': '#e41a1c',
+      'Black or African American': '#377eb8',
+      'Asian': '#4daf4a',
+      'White': '#a65628',
+      'American Indian or Alaska Native': '#999',
+      'Two or More Races': '#999',
+      'Unknown or Not Provided': '#999',
+      'other': '#999',
+    };
+    const seen = new Set();
+    activeRaces.forEach((race) => {
+      const label = (['American Indian or Alaska Native', 'Two or More Races', 'Unknown or Not Provided', 'other'].includes(race))
+        ? 'Other / Unknown' : race;
+      if (seen.has(label)) return;
+      seen.add(label);
+      const color = LEGEND_COLORS[race] || '#999';
+      // eslint-disable-next-line no-undef
+      fabricCanvas.add(new fabric.Circle({ left: x, top: y, radius: dotR, fill: color }));
+      // eslint-disable-next-line no-undef
+      fabricCanvas.add(new fabric.Text(label, { left: x + 20, top: y - 2, fontSize: 18, fill: '#222' }));
+      y += lineH;
+    });
+  }
+
+  y += 8;
+  const overlayMode = state.overlay_mode;
+  if (overlayMode && overlayMode !== 'none') {
+    const choroTitle = overlayMode === 'income' ? 'Tract Income Band' : 'Minority Population';
+    // eslint-disable-next-line no-undef
+    fabricCanvas.add(new fabric.Text(choroTitle, {
+      left: x, top: y, fontSize: 20, fontWeight: 'bold', fill: '#222',
+    }));
+    y += 26;
+    const items = overlayMode === 'income'
+      ? [['Low (<50% AMI)', INCOME_BAND_COLORS.low],
+         ['Moderate (50–80%)', INCOME_BAND_COLORS.moderate],
+         ['Middle (80–120%)', INCOME_BAND_COLORS.middle],
+         ['Upper (>120%)', INCOME_BAND_COLORS.upper]]
+      : [['<25% minority', '#deebf7'], ['25–50%', '#9ecae1'],
+         ['50–75%', '#3182bd'], ['>75%', '#08519c']];
+    items.forEach(([label, color]) => {
+      // eslint-disable-next-line no-undef
+      fabricCanvas.add(new fabric.Rect({
+        left: x, top: y, width: 16, height: 16,
+        fill: color, stroke: '#999', strokeWidth: 1,
+      }));
+      // eslint-disable-next-line no-undef
+      fabricCanvas.add(new fabric.Text(label, { left: x + 24, top: y, fontSize: 18, fill: '#222' }));
+      y += lineH;
+    });
+  }
+
+  if (document.getElementById('dl-show-city-boundary')?.checked) {
+    // eslint-disable-next-line no-undef
+    fabricCanvas.add(new fabric.Line([x, y + 8, x + 20, y + 8], {
+      stroke: '#c0392b', strokeWidth: 2,
     }));
     // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Text(label, {
-      left: x + s(14), top: y, fontSize: s(9), fill: '#333',
+    fabricCanvas.add(new fabric.Text('City Boundary', {
+      left: x + 28, top: y, fontSize: 18, fill: '#222',
     }));
-    y += s(16);
-  });
+  }
 }
 
-function placeChoroplethLegend(overlayMode) {
-  if (overlayMode === 'none') return;
-  let y = CANVAS_H - s(180);
-  const x = s(20);
+function placeNorthArrow() {
+  // Above the legend; arrow points up, "N" label below.
+  const arrowX = 40;
+  const arrowY = CANVAS_H - 280;
   // eslint-disable-next-line no-undef
-  fabricCanvas.add(new fabric.Text('Tract Classification', {
-    left: x, top: y, fontSize: s(10), fontWeight: 'bold', fill: '#333',
+  fabricCanvas.add(new fabric.Line([arrowX, arrowY + 40, arrowX, arrowY], {
+    stroke: '#222', strokeWidth: 3,
   }));
-  y += s(16);
-  let items;
-  if (overlayMode === 'minority') {
-    items = [
-      ['Q4 — Highest 25% minority', '#08519c'],
-      ['Q3 — 50–75%', '#3182bd'],
-      ['Q2 — 25–50%', '#9ecae1'],
-      ['Q1 — Lowest 25%', '#deebf7'],
-    ];
-  } else {
-    items = [
-      ['Low income (<50% AMI)', INCOME_BAND_COLORS.low],
-      ['Moderate (50–80%)', INCOME_BAND_COLORS.moderate],
-      ['Middle (80–120%)', INCOME_BAND_COLORS.middle],
-      ['Upper (>120%)', INCOME_BAND_COLORS.upper],
-    ];
-  }
-  items.forEach(([label, color]) => {
-    // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Rect({
-      left: x, top: y, width: s(12), height: s(12),
-      fill: color, stroke: '#999', strokeWidth: s(0.5),
-    }));
-    // eslint-disable-next-line no-undef
-    fabricCanvas.add(new fabric.Text(label, {
-      left: x + s(16), top: y + s(1), fontSize: s(9), fill: '#333',
-    }));
-    y += s(16);
-  });
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Triangle({
+    left: arrowX - 8, top: arrowY - 2, width: 16, height: 16, fill: '#222', angle: 0,
+  }));
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Text('N', {
+    left: arrowX - 6, top: arrowY + 44, fontSize: 24, fontWeight: 'bold', fill: '#222',
+  }));
+}
+
+function getScaleBarInfo(mapInstance) {
+  // Web-Mercator meters per pixel at the current zoom and center latitude.
+  const zoom = mapInstance.getZoom();
+  const lat = mapInstance.getCenter().lat;
+  const metersPerPixel = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
+  const barPixels = 100;
+  const barMeters = metersPerPixel * barPixels;
+  const units = barMeters >= 1609 ? 'mi' : 'ft';
+  const barDist = units === 'mi'
+    ? Math.round((barMeters / 1609) * 10) / 10
+    : Math.round((barMeters * 3.28084) / 100) * 100;
+  return { barPixels, barDist, units };
+}
+
+function placeScaleBar() {
+  const mapInstance = window.dotlenderMap;
+  if (!mapInstance) return;
+  const scaleX = 20;
+  const scaleY = CANVAS_H - 220;
+  const { barPixels, barDist, units } = getScaleBarInfo(mapInstance);
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Line([scaleX, scaleY, scaleX + barPixels, scaleY], {
+    stroke: '#222', strokeWidth: 3,
+  }));
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Line([scaleX, scaleY - 6, scaleX, scaleY + 6], {
+    stroke: '#222', strokeWidth: 2,
+  }));
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Line(
+    [scaleX + barPixels, scaleY - 6, scaleX + barPixels, scaleY + 6],
+    { stroke: '#222', strokeWidth: 2 },
+  ));
+  // eslint-disable-next-line no-undef
+  fabricCanvas.add(new fabric.Text(`${barDist} ${units}`, {
+    left: scaleX + barPixels / 2 - 20, top: scaleY + 8, fontSize: 20, fill: '#222',
+  }));
 }
 
 function placeStatsTable() {
@@ -260,7 +360,7 @@ function placeFilterSummary(state) {
     left: s(20),
     top: CANVAS_H - s(60),
     width: CANVAS_W - s(220),
-    fontSize: s(8),
+    fontSize: s(9),
     fill: '#555',
     fontStyle: 'italic',
   }));
@@ -275,7 +375,7 @@ function placeMethodologyNote() {
       left: s(20),
       top: CANVAS_H - s(45),
       width: CANVAS_W - s(40),
-      fontSize: s(7),
+      fontSize: s(8),
       fill: '#777',
     },
   ));

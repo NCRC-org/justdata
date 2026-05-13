@@ -18,10 +18,10 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client, run_query
 TABLE = "justdata-ncrc.dataexplorer.de_hmda"
 APP_NAME = "dotlender"
 
-# Per-tract-per-race dot cap when no housing-units denominator is available.
-# de_hmda lacks tract_one_to_four_family_homes; until an ACS housing table
-# is wired in, dot count = min(loan_count, MAX_DOTS_PER_TRACT_RACE).
-MAX_DOTS_PER_TRACT_RACE = 50
+# No per-tract dot cap: the client-side density stride is the user-facing
+# thinning control. The previous 50-cap silently clipped high-volume cells
+# (e.g. tracts with 100+ White originations in DC) to the same visual count
+# as 50-loan cells, flattening the upper tail of the distribution.
 
 # NCRC standard race/ethnicity hierarchy. Hispanic ethnicity takes precedence
 # over any race selection; multi-racial falls between AI/AN and White.
@@ -149,24 +149,21 @@ def get_choropleth_data(
 def _dot_count(loan_count: int, housing_units) -> int:
     """Compute dot count for one (tract, race) cell.
 
-    No per-tract minimum floor: voids in lending should be visible as empty
-    areas on the map. The client-side density stride may further reduce
-    counts (a 2-dot tract at stride=5 emits 0 dots client-side).
+    No per-tract minimum floor and no per-tract cap. The client-side density
+    stride is the thinning control; voids in lending should be visible as
+    empty areas on the map.
 
-    With no housing-units denominator available (de_hmda lacks
-    tract_one_to_four_family_homes), the fallback caps at
-    MAX_DOTS_PER_TRACT_RACE. Once a housing-units source is wired in, the
-    proportional path will activate.
+    When a housing-units source eventually lands, the proportional path
+    activates — until then, dot_count is the raw loan count.
     """
     if loan_count <= 0:
         return 0
     if housing_units in (None, 0):
-        return min(loan_count, MAX_DOTS_PER_TRACT_RACE)
-    # Future path (currently unreachable because the query returns NULL
-    # for housing_units): proportional scaling capped at the per-cell max.
+        return int(loan_count)
+    # Future path: proportional scaling once housing units are available.
     SCALE_FACTOR = 20
     raw = int(round(loan_count / float(housing_units) * SCALE_FACTOR))
-    return min(raw, MAX_DOTS_PER_TRACT_RACE) if raw > 0 else 0
+    return raw if raw > 0 else 0
 
 
 def get_loan_dots(

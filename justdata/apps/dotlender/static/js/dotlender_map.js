@@ -136,12 +136,8 @@ function initMap() {
   window.dotlenderMap = map;
   // eslint-disable-next-line no-undef
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-  // Scale bar — bottom-left, imperial. Mirrors BranchMapper's control style.
-  // eslint-disable-next-line no-undef
-  map.addControl(
-    new mapboxgl.ScaleControl({ maxWidth: 100, unit: 'imperial' }),
-    'bottom-left',
-  );
+  // Note: scale bar + north arrow moved to the PDF canvas builder.
+  // The live map relies on Mapbox's default zoom/rotate controls only.
 
   map.on('load', () => {
     addCensusLayers();
@@ -268,7 +264,7 @@ function buildDotFeatures(dotData, densityRatio = 1) {
 
 // --- Race filter wiring ---------------------------------------------------
 
-function getActiveRaceFilters() {
+export function getActiveRaceFilters() {
   const allCb = document.getElementById('dl-race-all');
   if (!allCb || allCb.checked) return 'all';
   const checked = [];
