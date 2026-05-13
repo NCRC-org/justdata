@@ -2,12 +2,11 @@
 // PDF export composer for the DotLender canvas builder.
 //
 // Two-layer compose:
-//   1. Canvas elements (title, legends, summary, filters, methodology, logo)
-//      — rendered from Fabric.js with the map placeholder hidden so the
-//      blue rect and instruction text don't bleed through.
-//   2. Live Mapbox map — captured at click time via map.getCanvas().toDataURL()
-//      and placed over the canvas at the placeholder's position so panning /
-//      zooming the live map before export is reflected in the PDF.
+//   1. Live Mapbox map captured at click time, placed at PDF z-index 0
+//      with aspect-correct contain-fit (centered, no stretch).
+//   2. Fabric.js canvas captured with a transparent background so the
+//      legend, north arrow, scale bar, and logo overlay the map.
+//      The blue map placeholder rect/label are hidden during capture.
 
 import { CANVAS_W, CANVAS_H, getFabricCanvas } from './dotlender_canvas.js';
 
@@ -17,7 +16,12 @@ async function captureMap() {
   return new Promise((resolve) => {
     const grab = () => {
       try {
-        resolve(mapInstance.getCanvas().toDataURL('image/png', 1.0));
+        const canvas = mapInstance.getCanvas();
+        resolve({
+          dataUrl: canvas.toDataURL('image/png', 1.0),
+          width: canvas.width,
+          height: canvas.height,
+        });
       } catch (err) {
         console.warn('[dotlender] live-map capture failed', err);
         resolve(null);
@@ -35,20 +39,39 @@ function isPlaceholderObject(obj, strokeColor) {
   return false;
 }
 
-function captureCanvasWithoutPlaceholder() {
+function captureCanvasTransparentWithoutPlaceholder() {
   const fc = getFabricCanvas();
   if (!fc) return null;
   const ph = window.dotlenderMapPlaceholder;
   const strokeColor = ph?.strokeColor || '#4a90d9';
-  // Temporarily hide the placeholder rect + label
   const placeholderObjects = fc.getObjects().filter((o) => isPlaceholderObject(o, strokeColor));
   placeholderObjects.forEach((o) => o.set('visible', false));
-  fc.renderAll();
-  // Multiplier 1 because the canvas is already at 2x internal resolution.
+  // Transparent background during capture so the map shows through
+  // wherever the legend group doesn't paint pixels.
+  const origBg = fc.backgroundColor;
+  fc.setBackgroundColor(null, fc.renderAll.bind(fc));
   const dataUrl = fc.toDataURL({ format: 'png', multiplier: 1 });
+  // Restore for the on-screen builder.
+  fc.setBackgroundColor(origBg || '#ffffff', fc.renderAll.bind(fc));
   placeholderObjects.forEach((o) => o.set('visible', true));
   fc.renderAll();
   return dataUrl;
+}
+
+function fitImageContain(imgW, imgH, pageW, pageH) {
+  // Aspect-correct contain fit: scale the image to fit inside the page,
+  // letterbox the unused dimension, center the result. Prevents the
+  // vertical stretch when the source canvas aspect ratio differs from
+  // the PDF page aspect ratio.
+  const pageAR = pageW / pageH;
+  const imgAR = imgW / imgH;
+  let w; let h; let x; let y;
+  if (imgAR > pageAR) {
+    w = pageW; h = pageW / imgAR; x = 0; y = (pageH - h) / 2;
+  } else {
+    h = pageH; w = pageH * imgAR; x = (pageW - w) / 2; y = 0;
+  }
+  return { x, y, w, h };
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -57,8 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // eslint-disable-next-line no-undef
     const { jsPDF } = window.jspdf;
     const isLetter = pageSize === 'letter';
-    // Landscape mm — letter: 279.4 × 215.9, tabloid: 431.8 × 279.4
-    const pdfW = isLetter ? 279.4 : 431.8;
+    const pdfW = isLetter ? 279.4 : 431.8; // landscape mm
     const pdfH = isLetter ? 215.9 : 279.4;
 
     const pdf = new jsPDF({
@@ -67,30 +89,26 @@ document.addEventListener('DOMContentLoaded', () => {
       format: isLetter ? 'letter' : [pdfW, pdfH],
     });
 
-    const mapDataUrl = await captureMap();
-    const canvasDataUrl = captureCanvasWithoutPlaceholder();
+    const mapCapture = await captureMap();
+    const canvasDataUrl = captureCanvasTransparentWithoutPlaceholder();
 
-    // Layer 1: canvas frame (text + legends, no map). Cover the full page.
+    // Layer 1: map (z-index 0), aspect-correct contain fit.
+    if (mapCapture && mapCapture.dataUrl) {
+      const { x, y, w, h } = fitImageContain(mapCapture.width, mapCapture.height, pdfW, pdfH);
+      pdf.addImage(mapCapture.dataUrl, 'PNG', x, y, w, h);
+    }
+
+    // Layer 2: canvas with transparent background — legends, north arrow,
+    // scale bar, logo overlay the map. Canvas-internal coordinates already
+    // span the full CANVAS_W × CANVAS_H so scaling to the full PDF page
+    // preserves the legend positions.
     if (canvasDataUrl) {
       pdf.addImage(canvasDataUrl, 'PNG', 0, 0, pdfW, pdfH);
     }
 
-    // Layer 2: live map image positioned at placeholder bounds, converted
-    // from canvas-internal pixels to PDF millimeters using the same
-    // CANVAS_W/H constants the canvas was rendered at.
-    if (mapDataUrl && window.dotlenderMapPlaceholder) {
-      const ph = window.dotlenderMapPlaceholder;
-      const scaleX = pdfW / CANVAS_W;
-      const scaleY = pdfH / CANVAS_H;
-      pdf.addImage(
-        mapDataUrl,
-        'PNG',
-        ph.left * scaleX,
-        ph.top * scaleY,
-        ph.width * scaleX,
-        ph.height * scaleY,
-      );
-    }
+    // Silence "imported but unused" lint by referencing the constants
+    // (they're documented as the canvas resolution used to size positions).
+    void CANVAS_W; void CANVAS_H;
 
     const filename = `dotlender_report_${new Date().toISOString().slice(0, 10)}.pdf`;
     pdf.save(filename);

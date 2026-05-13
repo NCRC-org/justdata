@@ -32,6 +32,24 @@ let cachedCountyFips = null;
 
 function getMap() { return window.dotlenderMap || null; }
 
+// --- Base-style label cleanup --------------------------------------------
+
+// Keep only the two route-shield symbol layers; everything else
+// (city/town/POI labels) disappears so the dot field reads cleanly.
+const KEEP_SYMBOL_LAYERS = new Set(['road-number-shield', 'road-exit-shield']);
+
+export function hideNonShieldLabels() {
+  const map = getMap();
+  if (!map) return;
+  try {
+    (map.getStyle().layers || []).forEach((layer) => {
+      if (layer.type === 'symbol' && !KEEP_SYMBOL_LAYERS.has(layer.id)) {
+        try { map.setLayoutProperty(layer.id, 'visibility', 'hidden'); } catch (e) { /* ignore */ }
+      }
+    });
+  } catch (e) { /* getStyle can throw mid-load */ }
+}
+
 // --- County clip mask -----------------------------------------------------
 
 function buildMaskGeojson(countyGeojson) {
@@ -124,15 +142,32 @@ export function clearCachedCounty() { cachedCountyGeojson = null; cachedCountyFi
 
 export function addCityBoundaries() {
   const map = getMap();
-  if (!map || map.getSource('dl-city-bounds')) return;
-  map.addSource('dl-city-bounds', { type: 'vector', url: `mapbox://${CITY_BOUNDS_TILESET}` });
-  map.addLayer({
-    id: 'dl-city-bounds-line',
-    type: 'line',
-    source: 'dl-city-bounds',
-    'source-layer': CITY_BOUNDS_SOURCE_LAYER,
-    paint: { 'line-color': '#c0392b', 'line-width': 1.5, 'line-opacity': 0.85 },
-  });
+  if (!map) return;
+  if (!map.getSource('dl-city-bounds')) {
+    map.addSource('dl-city-bounds', { type: 'vector', url: `mapbox://${CITY_BOUNDS_TILESET}` });
+    map.addLayer({
+      id: 'dl-city-bounds-line',
+      type: 'line',
+      source: 'dl-city-bounds',
+      'source-layer': CITY_BOUNDS_SOURCE_LAYER,
+      paint: { 'line-color': '#c0392b', 'line-width': 1.5, 'line-opacity': 0.85 },
+    });
+  }
+  // Apply a NAME + STATEFP filter when the page has cached a principal city
+  // (set by dotlender_filters.js after a CBSA is selected). Otherwise show
+  // all city boundaries in view.
+  if (!map.getLayer('dl-city-bounds-line')) return;
+  const cityName = window.currentCityName;
+  const stateFp = window.currentCityStateFp;
+  if (cityName && stateFp) {
+    map.setFilter('dl-city-bounds-line', [
+      'all',
+      ['==', ['get', 'NAME'], cityName],
+      ['==', ['get', 'STATEFP'], stateFp],
+    ]);
+  } else {
+    map.setFilter('dl-city-bounds-line', null);
+  }
 }
 
 export function removeCityBoundaries() {
@@ -147,7 +182,12 @@ export function removeCityBoundaries() {
 export function updateTitleOverlay(state) {
   const el = document.getElementById('dl-overlay-title');
   if (!el || !state) return;
-  const geoLabel = `${state.geography_type.charAt(0).toUpperCase() + state.geography_type.slice(1)} ${state.geography_value}`;
+  const counties = state.selected_counties || [];
+  let geoLabel;
+  if (counties.length === 1) geoLabel = counties[0].label;
+  else if (counties.length > 1) geoLabel = `${counties.length} counties`;
+  else if (state.state_fips) geoLabel = `State FIPS ${state.state_fips}`;
+  else geoLabel = '—';
   const lenderLabel = state.lei ? state.lender_name : 'All Lenders';
   const yearLabel = state.year_start === state.year_end
     ? `${state.year_start}`
@@ -197,7 +237,7 @@ export function updateLegend(overlayMode, activeRaces) {
   }
 
   if (overlayMode && overlayMode !== 'none') {
-    if (overlayMode === 'income' || overlayMode === 'both') {
+    if (overlayMode === 'income') {
       html += '<div style="font-weight:600; margin:8px 0 4px; font-size:0.82rem;">Tract Income Band</div>';
       [
         ['Low (<50% AMI)', INCOME_BAND_COLORS.low],
@@ -206,7 +246,7 @@ export function updateLegend(overlayMode, activeRaces) {
         ['Upper (>120%)', INCOME_BAND_COLORS.upper],
       ].forEach(([label, color]) => { html += legendSwatchRow(label, color); });
     }
-    if (overlayMode === 'minority' || overlayMode === 'both') {
+    if (overlayMode === 'minority') {
       html += '<div style="font-weight:600; margin:8px 0 4px; font-size:0.82rem;">Minority Population</div>';
       [
         ['<25%', '#deebf7'], ['25–50%', '#9ecae1'],

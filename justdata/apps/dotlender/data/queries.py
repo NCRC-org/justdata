@@ -84,6 +84,95 @@ def lender_search(search_term: str, year_start: int, year_end: int) -> List[dict
     ]
 
 
+# --- Geography lookup helpers --------------------------------------------
+
+def cbsa_search(search_term: str) -> List[dict]:
+    """Typeahead for metropolitan CBSAs (omb_metro_micro = '1').
+
+    Returns [{cbsa_code, cbsa_name, principal_city, states, county_count}]
+    ranked by county_count DESC so major metros surface first.
+    """
+    term = (search_term or "").strip()
+    if len(term) < 2:
+        return []
+    sql = """
+    SELECT
+      c.cbsa_code,
+      ANY_VALUE(cc.cbsa_name)        AS cbsa_name,
+      ANY_VALUE(cc.principal_city)   AS principal_city,
+      ANY_VALUE(cc.states)            AS states,
+      COUNT(DISTINCT c.geoid5)        AS county_count
+    FROM `justdata-ncrc.shared.cbsa_to_county` AS c
+    LEFT JOIN `justdata-ncrc.shared.cbsa_centroids` AS cc
+      ON cc.cbsa_code = c.cbsa_code
+    WHERE c.omb_metro_micro = '1'
+      AND c.antiquated = 0
+      AND (LOWER(cc.cbsa_name) LIKE LOWER(@term) OR LOWER(c.cbsa) LIKE LOWER(@term))
+    GROUP BY c.cbsa_code
+    ORDER BY county_count DESC, cbsa_name
+    LIMIT 20
+    """
+    params = [ScalarQueryParameter("term", "STRING", f"%{term}%")]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "cbsa_code": r.get("cbsa_code"),
+            "cbsa_name": r.get("cbsa_name") or r.get("cbsa_code"),
+            "principal_city": r.get("principal_city"),
+            "states": r.get("states"),
+            "county_count": int(r.get("county_count") or 0),
+        }
+        for r in rows
+    ]
+
+
+def get_cbsa_counties(cbsa_code: str) -> List[dict]:
+    """All counties in a CBSA.
+
+    Returns [{geoid5, county_state, omb_central_outlying}] ordered with
+    central counties first (omb_central_outlying ASC), then alphabetic.
+    """
+    sql = """
+    SELECT geoid5, county_state, omb_central_outlying
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+    WHERE cbsa_code = @cbsa_code
+      AND antiquated = 0
+    ORDER BY omb_central_outlying ASC, county_state
+    """
+    params = [ScalarQueryParameter("cbsa_code", "STRING", cbsa_code)]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "geoid5": r.get("geoid5"),
+            "county_state": r.get("county_state"),
+            "omb_central_outlying": r.get("omb_central_outlying"),
+        }
+        for r in rows
+    ]
+
+
+def get_state_counties(state_fips: str) -> List[dict]:
+    """All counties in a state (2-digit FIPS).
+
+    DISTINCT on geoid5 because cbsa_to_county can have multiple rows per
+    county when a county participates in more than one CBSA classification.
+    """
+    sql = """
+    SELECT geoid5, ANY_VALUE(county_state) AS county_state
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+    WHERE state_code = @state_fips
+      AND antiquated = 0
+    GROUP BY geoid5
+    ORDER BY county_state
+    """
+    params = [ScalarQueryParameter("state_fips", "STRING", state_fips)]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {"geoid5": r.get("geoid5"), "county_state": r.get("county_state")}
+        for r in rows
+    ]
+
+
 def _income_band(tract_income_pct) -> str:
     if tract_income_pct is None:
         return "unknown"
