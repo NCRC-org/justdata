@@ -160,6 +160,9 @@ function addCensusLayers() {
   // Insert choropleth under the road network: roads paint on top.
   const beforeChoropleth = map.getLayer('road-minor-case') ? 'road-minor-case' : undefined;
 
+  // Tract outlines removed — the choropleth reads as a clean color field
+  // without per-tract borders. fill-outline-color is also omitted from the
+  // paint spec (its absence is what removes the outline).
   map.addLayer({
     id: 'dl-income-fill', type: 'fill',
     source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
@@ -167,21 +170,9 @@ function addCensusLayers() {
     layout: { visibility: 'none' },
   }, beforeChoropleth);
   map.addLayer({
-    id: 'dl-income-outline', type: 'line',
-    source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
-    paint: { 'line-color': '#666', 'line-width': 0.3, 'line-opacity': 0.4 },
-    layout: { visibility: 'none' },
-  }, beforeChoropleth);
-  map.addLayer({
     id: 'dl-minority-fill', type: 'fill',
     source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
     paint: { 'fill-color': minorityFillColor(), 'fill-opacity': 0.45 },
-    layout: { visibility: 'none' },
-  }, beforeChoropleth);
-  map.addLayer({
-    id: 'dl-minority-outline', type: 'line',
-    source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
-    paint: { 'line-color': '#666', 'line-width': 0.3, 'line-opacity': 0.4 },
     layout: { visibility: 'none' },
   }, beforeChoropleth);
 }
@@ -212,10 +203,10 @@ function setOverlayVisibility(mode) {
   currentOverlayMode = mode;
   const showIncome = mode === 'income';
   const showMinority = mode === 'minority';
-  ['dl-income-fill', 'dl-income-outline'].forEach((id) => {
+  ['dl-income-fill'].forEach((id) => {
     map.setLayoutProperty(id, 'visibility', showIncome ? 'visible' : 'none');
   });
-  ['dl-minority-fill', 'dl-minority-outline'].forEach((id) => {
+  ['dl-minority-fill'].forEach((id) => {
     map.setLayoutProperty(id, 'visibility', showMinority ? 'visible' : 'none');
   });
 }
