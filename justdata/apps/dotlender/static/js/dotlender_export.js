@@ -10,26 +10,19 @@
 
 import { CANVAS_W, CANVAS_H, getFabricCanvas } from './dotlender_canvas.js';
 
-async function captureMap() {
+function captureMapFromCache() {
+  // The map was captured at Build Report time and stored on window.
+  // We just read it here so the PDF reflects the viewport that was
+  // current when the user built the report, not when they exported.
+  const dataUrl = window.dotlenderMapCaptureDataUrl || null;
+  if (!dataUrl) return null;
   const mapInstance = window.dotlenderMap;
-  if (!mapInstance) return null;
-  return new Promise((resolve) => {
-    const grab = () => {
-      try {
-        const canvas = mapInstance.getCanvas();
-        resolve({
-          dataUrl: canvas.toDataURL('image/png', 1.0),
-          width: canvas.width,
-          height: canvas.height,
-        });
-      } catch (err) {
-        console.warn('[dotlender] live-map capture failed', err);
-        resolve(null);
-      }
-    };
-    mapInstance.once('idle', grab);
-    mapInstance.triggerRepaint();
-  });
+  const canvas = mapInstance?.getCanvas();
+  return {
+    dataUrl,
+    width: canvas ? canvas.width : 1200,
+    height: canvas ? canvas.height : 800,
+  };
 }
 
 function isPlaceholderObject(obj, strokeColor) {
@@ -89,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
       format: isLetter ? 'letter' : [pdfW, pdfH],
     });
 
-    const mapCapture = await captureMap();
+    const mapCapture = captureMapFromCache();
     const canvasDataUrl = captureCanvasTransparentWithoutPlaceholder();
 
     // Layer 1: map (z-index 0), aspect-correct contain fit.

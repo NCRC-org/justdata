@@ -29,22 +29,41 @@ const CITY_BOUNDS_SOURCE_LAYER = 'CITY_BOUNDS-7kbk2e';
 // the mask on toggle without a second ArcGIS round-trip.
 let cachedCountyGeojson = null;
 let cachedCountyFips = null;
+// Map container size in CSS pixels at the moment the mask was built.
+// Canvas.js uses this to scale map.project() screen coordinates from the
+// live map container into the 2x canvas-internal space.
+let cachedMapContainerSize = null;
+
+export function getCachedCountyGeojson() { return cachedCountyGeojson; }
+export function getCachedMapContainerSize() { return cachedMapContainerSize; }
 
 function getMap() { return window.dotlenderMap || null; }
 
-// --- Base-style label cleanup --------------------------------------------
+// --- Base-style label + road cleanup -------------------------------------
 
-// Keep only the two route-shield symbol layers; everything else
-// (city/town/POI labels) disappears so the dot field reads cleanly.
+// Symbol layers kept: route shields (interstate / motorway exit numbers).
 const KEEP_SYMBOL_LAYERS = new Set(['road-number-shield', 'road-exit-shield']);
+// Road LINE/FILL layers kept: the motorway-trunk tier (interstates + US
+// highways in this style). Plus the two shield symbol layers above
+// participate via KEEP_SYMBOL_LAYERS. Everything else under `road-` is hidden.
+const KEEP_ROAD_LAYERS = new Set([
+  'road-motorway-trunk',
+  'road-motorway-trunk-case',
+  'road-number-shield',
+  'road-exit-shield',
+]);
 
 export function hideNonShieldLabels() {
   const map = getMap();
   if (!map) return;
   try {
     (map.getStyle().layers || []).forEach((layer) => {
-      if (layer.type === 'symbol' && !KEEP_SYMBOL_LAYERS.has(layer.id)) {
-        try { map.setLayoutProperty(layer.id, 'visibility', 'hidden'); } catch (e) { /* ignore */ }
+      const isRoad = layer.id.startsWith('road-');
+      const isSymbol = layer.type === 'symbol';
+      if (isRoad && !KEEP_ROAD_LAYERS.has(layer.id)) {
+        try { map.setLayoutProperty(layer.id, 'visibility', 'none'); } catch (e) { /* ignore */ }
+      } else if (isSymbol && !KEEP_SYMBOL_LAYERS.has(layer.id)) {
+        try { map.setLayoutProperty(layer.id, 'visibility', 'none'); } catch (e) { /* ignore */ }
       }
     });
   } catch (e) { /* getStyle can throw mid-load */ }
@@ -120,6 +139,12 @@ export async function addCountyMask(fips) {
       paint: { 'line-color': '#1e3a5f', 'line-width': 2, 'line-opacity': 0.8 },
     });
     fitToCountyBounds(cachedCountyGeojson);
+    // Capture the live map container's CSS dimensions so the canvas
+    // builder can scale map.project() screen coords to canvas space.
+    const mapEl = document.getElementById('dotlender-map');
+    if (mapEl) {
+      cachedMapContainerSize = { width: mapEl.offsetWidth, height: mapEl.offsetHeight };
+    }
   } catch (err) {
     console.warn('[dotlender] county mask failed:', err);
   }
@@ -165,8 +190,11 @@ export function addCityBoundaries() {
       ['==', ['get', 'NAME'], cityName],
       ['==', ['get', 'STATEFP'], stateFp],
     ]);
+    // Cache the resolved city name so the canvas legend can label it.
+    window.dotlenderActiveCityName = cityName;
   } else {
     map.setFilter('dl-city-bounds-line', null);
+    window.dotlenderActiveCityName = null;
   }
 }
 
@@ -175,6 +203,7 @@ export function removeCityBoundaries() {
   if (!map) return;
   if (map.getLayer('dl-city-bounds-line')) map.removeLayer('dl-city-bounds-line');
   if (map.getSource('dl-city-bounds')) map.removeSource('dl-city-bounds');
+  window.dotlenderActiveCityName = null;
 }
 
 // --- Title + legend overlays ----------------------------------------------
