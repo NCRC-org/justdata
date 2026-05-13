@@ -2,16 +2,20 @@
 import os
 
 from flask import Blueprint, jsonify, render_template, request
-from google.cloud.bigquery import ScalarQueryParameter
+from google.cloud.bigquery import ArrayQueryParameter, ScalarQueryParameter
 
 from justdata.apps.dotlender.data.filters import (
     build_loan_scope_predicates,
     validate_filters,
+    validate_geography,
 )
 from justdata.apps.dotlender.data.queries import (
+    cbsa_search,
+    get_cbsa_counties,
     get_choropleth_data,
     get_loan_dots,
     get_max_year,
+    get_state_counties,
     get_summary_stats,
     lender_search,
 )
@@ -51,41 +55,32 @@ def health():
 
 # --- API helpers -----------------------------------------------------------
 
-_VALID_GEOGRAPHY_TYPES = {"county", "state"}  # MSA pending — see TODO below
 
+def _build_geography_from_dict(geo: dict):
+    """Build (predicate_sql, [QueryParameter, ...]) from a validated geo dict.
 
-def _build_geography(geography_type: str, geography_value: str):
-    """Return (predicate_sql, [ScalarQueryParameter, ...]) for a geography.
+    geo is the output of filters.validate_geography(). The predicate uses
+    unqualified `geoid5` because two of the three SQL templates don't alias
+    the de_hmda table. BigQuery resolves the ref to the only table in scope
+    that has the column.
 
-    Validates that geography_value is a digit-only string of the expected
-    length, then emits a parameterized predicate against geoid5. MSA is
-    not supported in v1 (de_hmda has no msa_md column).
-
-    TODO(msa): Once an MSA join is wired in (shared.census.msamd on
-    census_tract), add a 'msa' branch here.
+    Multi-county uses an ArrayQueryParameter with UNNEST.
     """
-    if geography_type not in _VALID_GEOGRAPHY_TYPES:
-        raise ValueError(
-            f"unsupported geography_type: {geography_type!r} "
-            f"(allowed: {sorted(_VALID_GEOGRAPHY_TYPES)})"
-        )
-    value = str(geography_value or "").strip()
-    if not value.isdigit():
-        raise ValueError("geography_value must be a digit string")
-
-    if geography_type == "county":
-        if len(value) != 5:
-            raise ValueError("county geography_value must be 5-digit FIPS")
+    geoid5_list = geo.get("geoid5_list") or []
+    # State-type with no explicit list: fall back to state_fips prefix match.
+    if not geoid5_list and geo.get("state_fips"):
         return (
-            "geoid5 = @county_fips",
-            [ScalarQueryParameter("county_fips", "STRING", value)],
+            "LEFT(geoid5, 2) = @state_fips",
+            [ScalarQueryParameter("state_fips", "STRING", geo["state_fips"])],
         )
-    # state
-    if len(value) != 2:
-        raise ValueError("state geography_value must be 2-digit FIPS")
+    if len(geoid5_list) == 1:
+        return (
+            "geoid5 = @geoid5_0",
+            [ScalarQueryParameter("geoid5_0", "STRING", geoid5_list[0])],
+        )
     return (
-        "LEFT(geoid5, 2) = @state_fips",
-        [ScalarQueryParameter("state_fips", "STRING", value)],
+        "geoid5 IN UNNEST(@geoid5_list)",
+        [ArrayQueryParameter("geoid5_list", "STRING", geoid5_list)],
     )
 
 
@@ -122,43 +117,84 @@ def api_lender_search():
     return jsonify(results)
 
 
+@dotlender_bp.route("/api/cbsa-search")
+@staff_required
+def api_cbsa_search():
+    """Typeahead for metropolitan CBSAs. GET ?q=<term>"""
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return jsonify([])
+    return jsonify(cbsa_search(q))
+
+
+@dotlender_bp.route("/api/cbsa-counties/<cbsa_code>")
+@staff_required
+def api_cbsa_counties(cbsa_code):
+    """List of counties (geoid5 + label) for a 5-digit CBSA code."""
+    if not cbsa_code.isdigit() or len(cbsa_code) != 5:
+        return jsonify({"error": "invalid cbsa_code"}), 400
+    return jsonify(get_cbsa_counties(cbsa_code))
+
+
+@dotlender_bp.route("/api/state-counties/<state_fips>")
+@staff_required
+def api_state_counties(state_fips):
+    """List of counties (geoid5 + label) for a 2-digit state FIPS."""
+    if not state_fips.isdigit() or len(state_fips) != 2:
+        return jsonify({"error": "invalid state_fips"}), 400
+    return jsonify(get_state_counties(state_fips))
+
+
+def _prep_request(body):
+    """Common geography/filter/year/lei prep for the two POST endpoints.
+
+    Returns (geo_predicate, geo_params, filters, year_start, year_end, lei,
+    geo_dict) on success. Returns (None, error_response) on validation
+    failure.
+    """
+    try:
+        geo = validate_geography(body)
+    except ValueError as e:
+        return None, (jsonify({"error": "invalid geography", "detail": str(e)}), 400)
+    try:
+        filters = validate_filters(body.get("filters") or {})
+    except ValueError as e:
+        return None, (jsonify({"error": "invalid filters", "detail": str(e)}), 400)
+    max_year = get_max_year()
+    try:
+        year_start, year_end = _resolve_year_range(body, max_year)
+    except (ValueError, TypeError) as e:
+        return None, (jsonify({"error": "invalid year range", "detail": str(e)}), 400)
+    lei = body.get("lei") or None
+    if lei is not None:
+        lei = str(lei).strip() or None
+    geo_predicate, geo_params = _build_geography_from_dict(geo)
+    return (geo_predicate, geo_params, filters, year_start, year_end, lei, geo), None
+
+
 @dotlender_bp.route("/api/map-data", methods=["POST"])
 @staff_required
 def api_map_data():
     """Choropleth + dot-density payload for a geography/filter combination.
 
-    POST JSON body:
+    POST JSON body (new contract):
       {
-        "geography_type": "county" | "state",
-        "geography_value": "<digit FIPS>",
+        "geo_type": "metro" | "state",
+        "geoid5_list": ["11001", ...],
+        "cbsa_code": "47900" (optional),
+        "state_fips": "11" (optional, used when geoid5_list is empty),
         "year_start": int (optional),
         "year_end": int (optional),
         "lei": "<lei string>" (optional),
         "filters": { <loan scope filter fields> }
       }
+    Legacy {geography_type, geography_value} shape is still accepted.
     """
     body = request.get_json(silent=True) or {}
-    try:
-        geo_predicate, geo_params = _build_geography(
-            body.get("geography_type"), body.get("geography_value")
-        )
-    except ValueError as e:
-        return jsonify({"error": "invalid geography", "detail": str(e)}), 400
-
-    try:
-        filters = validate_filters(body.get("filters") or {})
-    except ValueError as e:
-        return jsonify({"error": "invalid filters", "detail": str(e)}), 400
-
-    max_year = get_max_year()
-    try:
-        year_start, year_end = _resolve_year_range(body, max_year)
-    except (ValueError, TypeError) as e:
-        return jsonify({"error": "invalid year range", "detail": str(e)}), 400
-
-    lei = body.get("lei") or None
-    if lei is not None:
-        lei = str(lei).strip() or None
+    prep, err = _prep_request(body)
+    if err:
+        return err
+    geo_predicate, geo_params, filters, year_start, year_end, lei, geo = prep
 
     loan_scope = build_loan_scope_predicates(filters)
     choropleth = get_choropleth_data(
@@ -169,8 +205,10 @@ def api_map_data():
     )
     return jsonify(
         {
-            "geography_type": body.get("geography_type"),
-            "geography_value": body.get("geography_value"),
+            "geo_type": geo["geo_type"],
+            "geoid5_list": geo["geoid5_list"],
+            "cbsa_code": geo["cbsa_code"],
+            "state_fips": geo["state_fips"],
             "year_start": year_start,
             "year_end": year_end,
             "lei": lei,
@@ -186,27 +224,10 @@ def api_map_data():
 def api_summary_stats():
     """Same POST body as /api/map-data. Returns summary statistics dict."""
     body = request.get_json(silent=True) or {}
-    try:
-        geo_predicate, geo_params = _build_geography(
-            body.get("geography_type"), body.get("geography_value")
-        )
-    except ValueError as e:
-        return jsonify({"error": "invalid geography", "detail": str(e)}), 400
-
-    try:
-        filters = validate_filters(body.get("filters") or {})
-    except ValueError as e:
-        return jsonify({"error": "invalid filters", "detail": str(e)}), 400
-
-    max_year = get_max_year()
-    try:
-        year_start, year_end = _resolve_year_range(body, max_year)
-    except (ValueError, TypeError) as e:
-        return jsonify({"error": "invalid year range", "detail": str(e)}), 400
-
-    lei = body.get("lei") or None
-    if lei is not None:
-        lei = str(lei).strip() or None
+    prep, err = _prep_request(body)
+    if err:
+        return err
+    geo_predicate, geo_params, filters, year_start, year_end, lei, _geo = prep
 
     loan_scope = build_loan_scope_predicates(filters)
     stats = get_summary_stats(

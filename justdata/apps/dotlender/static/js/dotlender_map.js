@@ -7,6 +7,7 @@ import {
   addCountyMask, removeCountyMask, clearCachedCounty,
   addCityBoundaries, removeCityBoundaries,
   updateTitleOverlay, updateLegend,
+  hideNonShieldLabels,
 } from './dotlender_overlays.js';
 
 // NCRC race/ethnicity color palette — keyed on the derived_race string returned
@@ -61,7 +62,7 @@ const STATE_FIPS_TO_BOUNDS = {
 let map = null;
 let mapLoaded = false;
 let currentMapData = null;
-let currentOverlayMode = 'both';
+let currentOverlayMode = 'minority';
 let currentTooltipPopup = null;
 // FIPS of the most recently rendered county, used by the county mask toggle.
 let currentFips = null;
@@ -142,8 +143,10 @@ function initMap() {
   map.on('load', () => {
     addCensusLayers();
     addDotsLayer();
+    hideNonShieldLabels();
     mapLoaded = true;
   });
+  map.on('style.load', () => hideNonShieldLabels());
 }
 
 function addCensusLayers() {
@@ -154,59 +157,51 @@ function addCensusLayers() {
     minzoom: 5,
     maxzoom: 12,
   });
+  // Insert choropleth under the road network: roads paint on top.
+  const beforeChoropleth = map.getLayer('road-minor-case') ? 'road-minor-case' : undefined;
 
-  // Income fill + outline
   map.addLayer({
-    id: 'dl-income-fill',
-    type: 'fill',
-    source: 'census-tileset',
-    'source-layer': CENSUS_SOURCE_LAYER,
+    id: 'dl-income-fill', type: 'fill',
+    source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
     paint: { 'fill-color': incomeFillColor(), 'fill-opacity': 0.45 },
     layout: { visibility: 'none' },
-  });
+  }, beforeChoropleth);
   map.addLayer({
-    id: 'dl-income-outline',
-    type: 'line',
-    source: 'census-tileset',
-    'source-layer': CENSUS_SOURCE_LAYER,
+    id: 'dl-income-outline', type: 'line',
+    source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
     paint: { 'line-color': '#666', 'line-width': 0.3, 'line-opacity': 0.4 },
     layout: { visibility: 'none' },
-  });
-
-  // Minority fill + outline
+  }, beforeChoropleth);
   map.addLayer({
-    id: 'dl-minority-fill',
-    type: 'fill',
-    source: 'census-tileset',
-    'source-layer': CENSUS_SOURCE_LAYER,
+    id: 'dl-minority-fill', type: 'fill',
+    source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
     paint: { 'fill-color': minorityFillColor(), 'fill-opacity': 0.45 },
     layout: { visibility: 'none' },
-  });
+  }, beforeChoropleth);
   map.addLayer({
-    id: 'dl-minority-outline',
-    type: 'line',
-    source: 'census-tileset',
-    'source-layer': CENSUS_SOURCE_LAYER,
+    id: 'dl-minority-outline', type: 'line',
+    source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
     paint: { 'line-color': '#666', 'line-width': 0.3, 'line-opacity': 0.4 },
     layout: { visibility: 'none' },
-  });
+  }, beforeChoropleth);
 }
 
 function addDotsLayer() {
   map.addSource('dl-dots', { type: 'geojson', data: emptyFC() });
+  // Dots above roads but below the shield labels so route shields stay
+  // readable on top of the dot field.
+  const beforeDots = map.getLayer('road-number-shield') ? 'road-number-shield' : undefined;
   map.addLayer({
     id: 'dl-dots-circles',
     type: 'circle',
     source: 'dl-dots',
     paint: {
       'circle-radius': 3,
-      // Default: single dark color for combined view. applyDotsStyle() flips
-      // this to the race-color match expression when a race filter is active.
       'circle-color': RACE_ALL_COLOR,
       'circle-opacity': 0.8,
       'circle-stroke-width': 0,
     },
-  });
+  }, beforeDots);
 }
 
 function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
@@ -215,8 +210,8 @@ function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
 
 function setOverlayVisibility(mode) {
   currentOverlayMode = mode;
-  const showIncome = mode === 'income' || mode === 'both';
-  const showMinority = mode === 'minority' || mode === 'both';
+  const showIncome = mode === 'income';
+  const showMinority = mode === 'minority';
   ['dl-income-fill', 'dl-income-outline'].forEach((id) => {
     map.setLayoutProperty(id, 'visibility', showIncome ? 'visible' : 'none');
   });
@@ -358,18 +353,10 @@ function initDensityInput() {
   });
 }
 
-function fitToGeography(state) {
-  const v = (state.geography_value || '').trim();
-  if (!v) return;
-  if (state.geography_type === 'county' && v.length === 5) {
-    // Fall back to county centroid we already have via dots if present; otherwise
-    // let the map remain wherever the user left it.
-    return;
-  }
-  if (state.geography_type === 'state' && STATE_FIPS_TO_BOUNDS[v]) {
-    const b = STATE_FIPS_TO_BOUNDS[v];
-    map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 30, duration: 600 });
-  }
+function fitToGeographyByFips(stateFips) {
+  if (!stateFips) return;
+  const b = STATE_FIPS_TO_BOUNDS[stateFips];
+  if (b) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 30, duration: 600 });
 }
 
 function fitToDots(dotsFC) {
@@ -403,24 +390,27 @@ function renderMap(mapData, state) {
   map.getSource('dl-dots').setData(dotsFC);
   applyDotsStyle();
 
-  // County mask: apply for county-type geography when the toggle is on.
-  // addCountyMask handles fitBounds; for state geography we fall back to the
-  // existing state-FIPS lookup or the dot extent.
-  if (state.geography_type === 'county') {
-    currentFips = (state.geography_value || '').trim();
+  // County mask only applies when exactly one county is selected. For
+  // multi-county metros and state-level selections we skip the mask and
+  // fit to the rendered dots instead (a true multi-county mask would
+  // require unioning multiple ArcGIS polygons — out of scope for now).
+  const geoidList = state.geoid5_list || [];
+  if (geoidList.length === 1) {
+    currentFips = geoidList[0];
     clearCachedCounty();
     removeCountyMask();
     const cbCb = document.getElementById('dl-show-county-boundary');
-    if (currentFips && (!cbCb || cbCb.checked)) {
-      addCountyMask(currentFips);
-    } else {
-      fitToDots(dotsFC);
-    }
+    if (!cbCb || cbCb.checked) addCountyMask(currentFips);
+    else fitToDots(dotsFC);
   } else {
     currentFips = null;
     clearCachedCounty();
     removeCountyMask();
-    fitToGeography(state);
+    if (state.geo_type === 'state' && state.state_fips) {
+      fitToGeographyByFips(state.state_fips);
+    } else {
+      fitToDots(dotsFC);
+    }
   }
 
   // Title + legend overlays
@@ -446,6 +436,17 @@ function attachChoroplethTooltip(tractLoans) {
   const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
   const onMove = (e) => {
     if (!e.features?.length) return;
+    // If a county mask is active, the mask fill covers everything OUTSIDE
+    // the selected county. When the cursor is over the mask, we're outside
+    // — suppress the popup.
+    if (map.getLayer('dl-county-mask-fill')) {
+      const outside = map.queryRenderedFeatures(e.point, { layers: ['dl-county-mask-fill'] });
+      if (outside.length) {
+        popup.remove();
+        map.getCanvas().style.cursor = '';
+        return;
+      }
+    }
     const props = e.features[0].properties || {};
     const tractId = props.GEOID || props.geoid || props.geoid11 || '';
     const lendingRow = tractLoans[tractId];

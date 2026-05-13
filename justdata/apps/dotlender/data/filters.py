@@ -14,6 +14,101 @@ lien_status so the API contract is stable, but the predicate builder emits
 no clause for it. Remove the TODO once de_hmda is rebuilt with lien_status.
 """
 
+VALID_GEO_TYPES = {"metro", "state"}
+
+
+def validate_geography(params: dict) -> dict:
+    """Validate the new multi-county geography contract.
+
+    Accepts either of two body shapes:
+
+      {"geo_type": "metro" | "state",
+       "geoid5_list": ["11001", "24031", ...],
+       "cbsa_code": "47900" | null,
+       "state_fips": "11" | null}
+
+    Or the legacy shape (for backward compatibility with callers that
+    haven't been updated yet):
+
+      {"geography_type": "county" | "state",
+       "geography_value": "11001"}
+
+    Returns a dict with normalized fields:
+      {"geo_type": "metro" | "state",
+       "geoid5_list": [str, ...],
+       "cbsa_code": str | None,
+       "state_fips": str | None}
+    """
+    if not isinstance(params, dict):
+        raise ValueError("geography must be a JSON object")
+
+    # Legacy shape passthrough
+    legacy_type = params.get("geography_type")
+    legacy_value = params.get("geography_value")
+    if legacy_type and not params.get("geoid5_list"):
+        value = str(legacy_value or "").strip()
+        if not value.isdigit():
+            raise ValueError("geography_value must be a digit string")
+        if legacy_type == "county":
+            if len(value) != 5:
+                raise ValueError("county geography_value must be 5-digit FIPS")
+            return {
+                "geo_type": "metro",  # treat single county as a one-element list
+                "geoid5_list": [value],
+                "cbsa_code": None,
+                "state_fips": value[:2],
+            }
+        if legacy_type == "state":
+            if len(value) != 2:
+                raise ValueError("state geography_value must be 2-digit FIPS")
+            return {
+                "geo_type": "state",
+                "geoid5_list": [],
+                "cbsa_code": None,
+                "state_fips": value,
+            }
+        raise ValueError(
+            f"unsupported geography_type: {legacy_type!r} (allowed: ['county', 'state'])"
+        )
+
+    # New shape
+    geo_type = params.get("geo_type")
+    if geo_type not in VALID_GEO_TYPES:
+        raise ValueError(
+            f"geo_type must be one of {sorted(VALID_GEO_TYPES)}, got {geo_type!r}"
+        )
+    raw_list = params.get("geoid5_list") or []
+    if not isinstance(raw_list, list):
+        raise ValueError("geoid5_list must be a JSON array")
+    geoid5_list = []
+    for v in raw_list:
+        s = str(v or "").strip()
+        if not s.isdigit() or len(s) != 5:
+            raise ValueError(f"each geoid5 must be a 5-digit numeric string, got {v!r}")
+        geoid5_list.append(s)
+    if not geoid5_list:
+        raise ValueError("geoid5_list must contain at least one county")
+
+    cbsa_code = params.get("cbsa_code")
+    if cbsa_code is not None:
+        cbsa_code = str(cbsa_code).strip()
+        if not cbsa_code.isdigit() or len(cbsa_code) != 5:
+            raise ValueError("cbsa_code must be 5-digit numeric")
+
+    state_fips = params.get("state_fips")
+    if state_fips is not None:
+        state_fips = str(state_fips).strip()
+        if not state_fips.isdigit() or len(state_fips) != 2:
+            raise ValueError("state_fips must be 2-digit numeric")
+
+    return {
+        "geo_type": geo_type,
+        "geoid5_list": geoid5_list,
+        "cbsa_code": cbsa_code,
+        "state_fips": state_fips,
+    }
+
+
 VALID_LOAN_PURPOSE = {"1", "2", "3", "4", "5", "31", "32", "all"}
 VALID_LIEN_STATUS = {"1", "2", "all"}
 VALID_OCCUPANCY_TYPE = {"1", "2", "3", "all"}
