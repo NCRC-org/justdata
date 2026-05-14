@@ -395,6 +395,30 @@ export function updateLegend(overlayMode, activeRaces) {
     });
   }
 
+  const RACE_TITLES = {
+    race_black: '% Black Population',
+    race_hispanic: '% Hispanic Population',
+    race_black_hispanic: '% Black & Hispanic Population',
+    race_asian: '% Asian Population',
+    race_ai_an: '% American Indian & Alaska Native Population',
+    race_nh_opi: '% Native Hawaiian & Pacific Islander Population',
+    race_white: '% White Population',
+  };
+  const DEFAULT_RACE_RAMP = ['#f7fbff', '#c6dbef', '#6baed6', '#2171b5', '#084594'];
+
+  function appendBreakpointBins(title, breakpoints, ramp) {
+    html += `<div style="font-weight:600; margin:8px 0 4px; font-size:0.82rem;">${title}</div>`;
+    const bps = (breakpoints && breakpoints.length) ? breakpoints : [25, 50, 75];
+    for (let i = 0; i <= bps.length; i += 1) {
+      const color = ramp[Math.min(i, ramp.length - 1)];
+      let label;
+      if (i === 0) label = `<${bps[0]}%`;
+      else if (i === bps.length) label = `>${bps[i - 1]}%`;
+      else label = `${bps[i - 1]}–${bps[i]}%`;
+      html += legendSwatchRow(label, color);
+    }
+  }
+
   if (overlayMode && overlayMode !== 'none') {
     if (overlayMode === 'income') {
       html += '<div style="font-weight:600; margin:8px 0 4px; font-size:0.82rem;">Tract Income Band</div>';
@@ -404,13 +428,17 @@ export function updateLegend(overlayMode, activeRaces) {
         ['Middle (80–120%)', INCOME_BAND_COLORS.middle],
         ['Upper (>120%)', INCOME_BAND_COLORS.upper],
       ].forEach(([label, color]) => { html += legendSwatchRow(label, color); });
-    }
-    if (overlayMode === 'minority') {
-      html += '<div style="font-weight:600; margin:8px 0 4px; font-size:0.82rem;">Minority Population</div>';
-      [
-        ['<25%', '#deebf7'], ['25–50%', '#9ecae1'],
-        ['50–75%', '#3182bd'], ['>75%', '#08519c'],
-      ].forEach(([label, color]) => { html += legendSwatchRow(label, color); });
+    } else if (overlayMode === 'minority') {
+      // User-tunable breakpoints: legend mirrors whatever the current
+      // dl-minority-fill paint expression is using.
+      const bps = window.dotlenderCurrentBreakpoints || [25, 50, 75];
+      const ramp = window.dotlenderMinorityRamp
+        || ['#deebf7', '#c6dbef', '#9ecae1', '#3182bd', '#08519c'];
+      appendBreakpointBins('Minority Population', bps, ramp);
+    } else if (overlayMode.startsWith('race_')) {
+      const bps = window.dotlenderCurrentBreakpoints || [25, 50, 75];
+      const ramp = window.dotlenderRaceRamps?.[overlayMode] || DEFAULT_RACE_RAMP;
+      appendBreakpointBins(RACE_TITLES[overlayMode] || 'Race', bps, ramp);
     }
   }
 

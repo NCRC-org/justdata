@@ -40,6 +40,43 @@ export const RACE_RAMPS = {
   race_white:          RACE_RAMP_WHITE,
 };
 
+// Mirror onto window so the on-screen legend (overlays.js) can pick the
+// right ramp without importing this module.
+window.dotlenderRaceRamps = RACE_RAMPS;
+
+// Sequential blues for the minority overlay's user-tunable bins. Lives
+// here (alongside the race ramps) because both overlays now share the
+// breakpoint UI and the same step-expression pattern.
+export const MINORITY_RAMP = ['#deebf7', '#c6dbef', '#9ecae1', '#3182bd', '#08519c'];
+window.dotlenderMinorityRamp = MINORITY_RAMP;
+
+export function buildMinorityColorExpression(breakpoints) {
+  // Step expression on the tileset's minority_percentage FLOAT (0-100).
+  // Tracts with null fall to the transparent sentinel so missing-data
+  // polygons don't paint a gray patch.
+  const bps = (breakpoints && breakpoints.length) ? breakpoints : [25, 50, 75];
+  const expr = [
+    'step',
+    ['coalesce', ['to-number', ['get', 'minority_percentage']], -1],
+    'rgba(0,0,0,0)',
+    0, MINORITY_RAMP[0],
+  ];
+  bps.forEach((bp, i) => {
+    expr.push(bp);
+    expr.push(MINORITY_RAMP[Math.min(i + 1, MINORITY_RAMP.length - 1)]);
+  });
+  return expr;
+}
+
+window.dotlenderApplyMinorityBreakpoints = function (breakpoints) {
+  const map = getMap();
+  if (!map || !map.getLayer('dl-minority-fill')) return;
+  map.setPaintProperty(
+    'dl-minority-fill', 'fill-color',
+    buildMinorityColorExpression(breakpoints),
+  );
+};
+
 // Module state — reflected onto window so legend.js (no import path) can read.
 let currentRaceField = null;        // e.g. 'race_black'
 let currentBreakpoints = [25, 50, 75];
@@ -178,6 +215,12 @@ export async function loadRaceOverlay(overlayMode, geographyBody) {
 
   applyRaceFeatureState(tracts);
   updateRaceFillColor();
+
+  // Let the on-screen legend (and anyone else listening) refresh now that
+  // breakpoints and the overlay mode are settled.
+  document.dispatchEvent(new CustomEvent('dotlender:breakpoints-updated', {
+    detail: { overlayMode, breakpoints: currentBreakpoints.slice() },
+  }));
 }
 
 export function applyCustomBreakpoints(breakpoints) {

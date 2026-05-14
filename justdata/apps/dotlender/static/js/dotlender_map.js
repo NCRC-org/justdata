@@ -16,7 +16,9 @@ import {
 } from './dotlender_dots.js';
 import {
   addRaceLayer, setRaceLayerVisible, loadRaceOverlay,
+  buildMinorityColorExpression,
 } from './dotlender_race_overlay.js';
+import { attachChoroplethTooltip } from './dotlender_tooltip.js';
 
 // Re-export the palette so other modules (canvas legend, future overlays)
 // keep a stable import path even though the constants live in dots.js now.
@@ -49,7 +51,6 @@ let map = null;
 let mapLoaded = false;
 let currentMapData = null;
 let currentOverlayMode = 'minority';
-let currentTooltipPopup = null;
 // FIPS list of the most recently rendered counties, used by the county
 // mask toggle. May be a single county or a multi-county metro selection.
 let currentGeoidList = [];
@@ -69,18 +70,6 @@ function incomeFillColor() {
   ];
 }
 
-function minorityFillColor() {
-  // Tileset property "minority_category" values: 'Q1 (Lowest 25%)' … 'Q4 (Highest 25%)'
-  return [
-    'match',
-    ['get', 'minority_category'],
-    'Q1 (Lowest 25%)', '#deebf7',
-    'Q2 (25-50%)', '#9ecae1',
-    'Q3 (50-75%)', '#3182bd',
-    'Q4 (Highest 25%)', '#08519c',
-    'rgba(0,0,0,0)',
-  ];
-}
 
 // --- Map init -------------------------------------------------------------
 
@@ -160,7 +149,7 @@ function addCensusLayers() {
     id: 'dl-minority-fill', type: 'fill',
     source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
     paint: {
-      'fill-color': minorityFillColor(),
+      'fill-color': buildMinorityColorExpression([25, 50, 75]),
       'fill-opacity': 0.45,
       'fill-outline-color': 'rgba(0,0,0,0)',
       'fill-antialias': false,
@@ -195,6 +184,17 @@ function addDotsLayer() {
 function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
 
 // --- Render ---------------------------------------------------------------
+
+function signalMinorityBreakpointDefaults() {
+  // Minority uses fixed quartile breakpoints out of the gate; user can
+  // edit them via the panel. Pushing defaults reveals the panel and
+  // refreshes the legend.
+  const defaults = [25, 50, 75];
+  window.dotlenderCurrentBreakpoints = defaults.slice();
+  if (typeof window.dotlenderSetBreakpoints === 'function') {
+    window.dotlenderSetBreakpoints(defaults, 'minority');
+  }
+}
 
 function setOverlayVisibility(mode) {
   currentOverlayMode = mode;
@@ -373,6 +373,8 @@ async function renderMap(mapData, state) {
     loadRaceOverlay(state.overlay_mode, state).catch(
       (e) => console.warn('[dotlender] loadRaceOverlay error:', e),
     );
+  } else if (state.overlay_mode === 'minority') {
+    signalMinorityBreakpointDefaults();
   }
 
   // Defer dot placement until the choropleth tiles have actually rendered
@@ -415,53 +417,6 @@ async function renderMap(mapData, state) {
   attachChoroplethTooltip(tractLoans);
 }
 
-function attachChoroplethTooltip(tractLoans) {
-  if (currentTooltipPopup) {
-    currentTooltipPopup.remove();
-    currentTooltipPopup = null;
-  }
-  ['dl-income-fill', 'dl-minority-fill'].forEach((layerId) => {
-    map.off('mousemove', layerId);
-    map.off('mouseleave', layerId);
-  });
-  // eslint-disable-next-line no-undef
-  const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
-  const onMove = (e) => {
-    if (!e.features?.length) return;
-    // If a county mask is active, the mask fill covers everything OUTSIDE
-    // the selected county. When the cursor is over the mask, we're outside
-    // — suppress the popup.
-    if (map.getLayer('dl-county-mask-fill')) {
-      const outside = map.queryRenderedFeatures(e.point, { layers: ['dl-county-mask-fill'] });
-      if (outside.length) {
-        popup.remove();
-        map.getCanvas().style.cursor = '';
-        return;
-      }
-    }
-    const props = e.features[0].properties || {};
-    const tractId = props.GEOID || props.geoid || props.geoid11 || '';
-    const lendingRow = tractLoans[tractId];
-    const html = `
-      <strong>Tract ${tractId}</strong><br/>
-      Income: ${props.income_category ?? '—'}<br/>
-      Minority quartile: ${props.minority_category ?? '—'}<br/>
-      Loans this filter: ${lendingRow ? lendingRow.loan_count.toLocaleString() : '0'}
-    `;
-    popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
-    map.getCanvas().style.cursor = 'pointer';
-  };
-  const onLeave = () => {
-    popup.remove();
-    map.getCanvas().style.cursor = '';
-  };
-  ['dl-income-fill', 'dl-minority-fill'].forEach((layerId) => {
-    map.on('mousemove', layerId, onMove);
-    map.on('mouseleave', layerId, onLeave);
-  });
-  currentTooltipPopup = popup;
-}
-
 export function getCurrentMapData() { return currentMapData; }
 export function getMapboxInstance() { return map; }
 
@@ -471,8 +426,8 @@ function initOverlayToggles() {
     if (e.target.checked) addCountyMask(currentGeoidList); else removeCountyMask();
   });
   // When the user changes the overlay mode between renders, flip layer
-  // visibility immediately and (if switching to a race overlay) re-fetch
-  // shares against the last rendered geography.
+  // visibility immediately, re-fetch race shares (if needed), refresh the
+  // on-screen legend, and reveal the breakpoints panel for minority/race.
   document.getElementById('dl-overlay-mode')?.addEventListener('change', (e) => {
     const mode = e.target.value;
     setOverlayVisibility(mode);
@@ -481,9 +436,19 @@ function initOverlayToggles() {
       loadRaceOverlay(mode, window.dotlenderLastGeography).catch(
         (err) => console.warn('[dotlender] loadRaceOverlay error:', err),
       );
+    } else if (mode === 'minority') {
+      signalMinorityBreakpointDefaults();
     }
+    updateLegend(mode, getActiveRaceFilters());
   });
 }
+
+// Refresh the on-screen legend whenever breakpoints settle — either after
+// the race API responds or after the user clicks Apply in the panel.
+document.addEventListener('dotlender:breakpoints-updated', (e) => {
+  const mode = e.detail?.overlayMode || document.getElementById('dl-overlay-mode')?.value;
+  updateLegend(mode, getActiveRaceFilters());
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
