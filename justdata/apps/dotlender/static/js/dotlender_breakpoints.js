@@ -8,6 +8,7 @@
 // the user picks a non-race overlay.
 
 const RACE_OVERLAY_LABELS = {
+  minority: '% Minority',
   race_black: '% Black',
   race_hispanic: '% Hispanic',
   race_black_hispanic: '% Black & Hispanic',
@@ -71,13 +72,29 @@ export function initBreakpointPanel() {
     });
     if (!newBreaks.length) return;
     bpValues = [...new Set(newBreaks.map((v) => Math.round(v)))].sort((a, b) => a - b);
-    if (typeof window.dotlenderApplyCustomBreakpoints === 'function') {
+    window.dotlenderCurrentBreakpoints = bpValues.slice();
+    // Route to the right paint-property updater based on which overlay
+    // is active. Race overlays use feature-state; minority uses the
+    // tileset's minority_percentage property directly.
+    const mode = document.getElementById('dl-overlay-mode')?.value || '';
+    if (mode.startsWith('race_')
+        && typeof window.dotlenderApplyCustomBreakpoints === 'function') {
       window.dotlenderApplyCustomBreakpoints(bpValues);
+    } else if (mode === 'minority'
+        && typeof window.dotlenderApplyMinorityBreakpoints === 'function') {
+      window.dotlenderApplyMinorityBreakpoints(bpValues);
     }
+    document.dispatchEvent(new CustomEvent('dotlender:breakpoints-updated', {
+      detail: { overlayMode: mode, breakpoints: bpValues.slice() },
+    }));
   });
-  // Hide the panel when the user switches away from a race overlay.
+  // Hide the panel when the user switches to income/none. Race and
+  // minority both drive the breakpoints panel; map.js triggers
+  // window.dotlenderSetBreakpoints for those modes so the panel reveals
+  // itself with appropriate defaults.
   document.getElementById('dl-overlay-mode')?.addEventListener('change', (e) => {
-    if (!String(e.target.value || '').startsWith('race_')) {
+    const mode = String(e.target.value || '');
+    if (!mode.startsWith('race_') && mode !== 'minority') {
       const panel = document.getElementById('dl-race-breakpoints-panel');
       if (panel) panel.style.display = 'none';
     }
