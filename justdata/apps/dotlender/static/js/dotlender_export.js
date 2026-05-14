@@ -95,10 +95,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const mapCapture = captureMapFromCache();
     const canvasDataUrl = captureCanvasTransparentWithoutPlaceholder();
 
-    // Layer 1: map (z-index 0), aspect-correct contain fit.
+    // Layer 1: map (z-index 0). The user positions a draggable county outline
+    // on the canvas which acts as the map frame; the placeholder bounds set
+    // by placeCountyOutline tell us exactly where the map image should land.
+    // Fall back to aspect-correct contain fit if no placeholder is set.
+    const placeholder = window.dotlenderMapPlaceholder;
     if (mapCapture && mapCapture.dataUrl) {
-      const { x, y, w, h } = fitImageContain(mapCapture.width, mapCapture.height, pdfW, pdfH);
-      pdf.addImage(mapCapture.dataUrl, 'PNG', x, y, w, h);
+      if (placeholder) {
+        const scaleX = pdfW / CANVAS_W;
+        const scaleY = pdfH / CANVAS_H;
+        pdf.addImage(
+          mapCapture.dataUrl, 'PNG',
+          placeholder.left * scaleX,
+          placeholder.top * scaleY,
+          placeholder.width * scaleX,
+          placeholder.height * scaleY,
+        );
+      } else {
+        const { x, y, w, h } = fitImageContain(mapCapture.width, mapCapture.height, pdfW, pdfH);
+        pdf.addImage(mapCapture.dataUrl, 'PNG', x, y, w, h);
+      }
     }
 
     // Layer 2: canvas with transparent background — legends, north arrow,

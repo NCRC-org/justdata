@@ -30,11 +30,11 @@
              background:white; border:1px solid #ddd; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-height:200px; overflow-y:auto;"></div>
       </div>
 
-      <!-- Selected counties: horizontal-scroll chip strip + count + select/deselect all -->
+      <!-- Selected counties: scrollable checkbox list + N of M counter + select/deselect all -->
       <div style="margin-bottom:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <span style="font-size:0.78rem; color:#555;">
-            <span id="dl-county-count">0</span> counties selected
+            <span id="dl-county-count">0</span> of <span id="dl-county-total">0</span> selected
           </span>
           <div style="display:flex; gap:6px;">
             <button type="button" id="dl-select-all-btn"
@@ -48,10 +48,10 @@
             </button>
           </div>
         </div>
-        <div id="dl-county-stack"
-             style="display:flex; flex-wrap:nowrap; gap:4px; overflow-x:auto; overflow-y:hidden;
-                    padding-bottom:4px; min-height:32px; max-width:100%;
-                    scrollbar-width:thin; scrollbar-color:#4a90d9 #f0f0f0;">
+        <div id="dl-county-list"
+             style="max-height:140px; overflow-y:auto; border:1px solid #ddd;
+                    border-radius:6px; padding:6px 8px; background:white;
+                    font-size:0.82rem;">
         </div>
       </div>
       <div id="dl-geo-error" style="display:none; color:#c00; font-size:0.78rem; margin-bottom:6px;"></div>

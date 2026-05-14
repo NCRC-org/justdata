@@ -204,40 +204,45 @@ export function addCityBoundaries() {
       paint: { 'line-color': '#c0392b', 'line-width': 1.5, 'line-opacity': 0.85 },
     });
   }
-  // Apply a NAME + STATEFP filter when the page has cached a principal city
-  // (set by dotlender_filters.js after a CBSA is selected). Otherwise show
-  // all city boundaries in view.
-  const cityName = window.currentCityName;
-  const stateFp = window.currentCityStateFp;
-  if (cityName && stateFp) {
-    map.setFilter('dl-city-bounds-line', [
-      'all',
-      ['==', ['get', 'NAME'], cityName],
-      ['==', ['get', 'STATEFP'], stateFp],
-    ]);
-    // Tentative — the canonical label is taken from the tileset itself
-    // once the layer has actually rendered, below.
-    window.dotlenderActiveCityName = cityName;
-  } else {
-    map.setFilter('dl-city-bounds-line', null);
-    window.dotlenderActiveCityName = null;
-  }
+  // Clear any old NAME/STATEFP filter — we now keep all visible city
+  // boundaries on the map and let the rendered NAMEs drive the sidebar
+  // and canvas legend instead.
+  map.setFilter('dl-city-bounds-line', null);
 
-  // After the filter takes effect, query the rendered features to pull
-  // the actual NAME value from the tileset (it may differ from the OMB
-  // principal_city — e.g. "Saint Louis" vs "St. Louis"). The sidebar
-  // label and canvas legend both follow whatever the tileset says.
+  // After the layer renders, collect the visible cities, dedupe by
+  // STATEFP+NAME, and filter to the states that contain the user's
+  // selected counties.
   map.once('idle', () => {
     if (!map.getLayer('dl-city-bounds-line')) return;
     const features = map.queryRenderedFeatures(undefined, {
       layers: ['dl-city-bounds-line'],
     });
-    if (!features.length) return;
-    const tilesetName = features[0].properties?.NAME;
-    if (!tilesetName) return;
+    const selectedStateFips = new Set(
+      (window.currentGeoidList || []).map((g) => String(g).substring(0, 2)),
+    );
+    const cityMap = {};
+    features.forEach((f) => {
+      const stateFp = f.properties?.STATEFP;
+      const name = f.properties?.NAME;
+      if (!name || !stateFp) return;
+      if (selectedStateFips.size > 0 && !selectedStateFips.has(stateFp)) return;
+      const key = `${stateFp}:${name}`;
+      if (!cityMap[key]) cityMap[key] = { name, stateFp };
+    });
+    const cities = Object.values(cityMap).sort((a, b) => a.name.localeCompare(b.name));
+    window.dotlenderActiveCities = cities;
+
     const span = document.getElementById('dl-city-boundary-label');
-    if (span) span.textContent = `${tilesetName} Boundary`;
-    window.dotlenderActiveCityName = tilesetName;
+    if (!span) return;
+    if (cities.length === 0) {
+      span.textContent = 'City Boundaries (none in area)';
+    } else if (cities.length === 1) {
+      span.textContent = `${cities[0].name} Boundary`;
+    } else if (cities.length <= 3) {
+      span.textContent = `${cities.map((c) => c.name).join(', ')} Boundaries`;
+    } else {
+      span.textContent = `${cities.length} City Boundaries`;
+    }
   });
 }
 
@@ -246,7 +251,7 @@ export function removeCityBoundaries() {
   if (!map) return;
   if (map.getLayer('dl-city-bounds-line')) map.removeLayer('dl-city-bounds-line');
   if (map.getSource('dl-city-bounds')) map.removeSource('dl-city-bounds');
-  window.dotlenderActiveCityName = null;
+  window.dotlenderActiveCities = [];
 }
 
 // --- Title + legend overlays ----------------------------------------------
