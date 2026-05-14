@@ -51,58 +51,65 @@ export async function buildCanvas(mapData, state) {
   fabricCanvas.clear();
   fabricCanvas.setBackgroundColor('#ffffff', fabricCanvas.renderAll.bind(fabricCanvas));
 
-  const modal = document.getElementById('dl-pdf-modal');
-  if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
+  const pdfSpinner = document.getElementById('dl-pdf-spinner');
+  if (pdfSpinner) pdfSpinner.style.display = 'inline-block';
 
-  // Map image capture. Temporarily raise Mapbox's pixel ratio to 3 so the
-  // captured PNG has 3x the display resolution — that's what kills the
-  // white tile-seam smidges when the image is upscaled into the canvas.
-  // We restore the original pixel ratio after capture.
-  const mapInstance = window.dotlenderMap;
-  if (mapInstance) {
-    await new Promise((resolve) => {
-      const originalPixelRatio = (typeof mapInstance.getPixelRatio === 'function'
-        ? mapInstance.getPixelRatio()
-        : (window.devicePixelRatio || 1));
-      const canBumpRatio = typeof mapInstance.setPixelRatio === 'function';
-      if (canBumpRatio) mapInstance.setPixelRatio(3);
-      mapInstance.once('idle', () => {
-        try {
-          window.dotlenderMapCaptureDataUrl = mapInstance.getCanvas().toDataURL('image/png', 1.0);
-        } catch (err) {
-          console.warn('[dotlender] map capture failed', err);
-          window.dotlenderMapCaptureDataUrl = null;
-        }
-        if (canBumpRatio) mapInstance.setPixelRatio(originalPixelRatio);
-        resolve();
+  try {
+    const modal = document.getElementById('dl-pdf-modal');
+    if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
+
+    // Map image capture. Temporarily raise Mapbox's pixel ratio to 3 so
+    // the captured PNG has 3x the display resolution — kills the white
+    // tile-seam smidges when the image is upscaled into the canvas. We
+    // restore the original pixel ratio after capture.
+    const mapInstance = window.dotlenderMap;
+    if (mapInstance) {
+      await new Promise((resolve) => {
+        const originalPixelRatio = (typeof mapInstance.getPixelRatio === 'function'
+          ? mapInstance.getPixelRatio()
+          : (window.devicePixelRatio || 1));
+        const canBumpRatio = typeof mapInstance.setPixelRatio === 'function';
+        if (canBumpRatio) mapInstance.setPixelRatio(3);
+        mapInstance.once('idle', () => {
+          try {
+            window.dotlenderMapCaptureDataUrl = mapInstance.getCanvas().toDataURL('image/png', 1.0);
+          } catch (err) {
+            console.warn('[dotlender] map capture failed', err);
+            window.dotlenderMapCaptureDataUrl = null;
+          }
+          if (canBumpRatio) mapInstance.setPixelRatio(originalPixelRatio);
+          resolve();
+        });
+        mapInstance.triggerRepaint();
       });
-      mapInstance.triggerRepaint();
-    });
+    }
+
+    // Dashed red rectangle showing the selected printable page area, sent
+    // to back so it sits behind all other canvas objects.
+    placePageCutoffMarker();
+
+    // Aspect-locked draggable map frame — this is what the user positions
+    // to choose where the captured map screenshot lands on the PDF. The
+    // dashed county outline (added LAST) rides inside the frame purely as
+    // a visual guide; the screenshot itself already has the county shape
+    // carved out by the dl-county-mask-fill white layer.
+    placeMapFrame();
+
+    await placeLogo();
+    placeMapLegend(fabricCanvas, state, getActiveRaceFilters());
+    placeScaleBar(mapInstance);
+    await placeNorthArrow();
+
+    // County outline + name labels render on top of the map frame; city
+    // labels render last so they sit above county names.
+    placeCountyOutline();
+    placeCountyLabels();
+    placeCityLabels();
+
+    fabricCanvas.renderAll();
+  } finally {
+    if (pdfSpinner) pdfSpinner.style.display = 'none';
   }
-
-  // Dashed red rectangle showing the selected printable page area, sent
-  // to back so it sits behind all other canvas objects.
-  placePageCutoffMarker();
-
-  // Aspect-locked draggable map frame — this is what the user positions
-  // to choose where the captured map screenshot lands on the PDF. The
-  // dashed county outline (added LAST) rides inside the frame purely as
-  // a visual guide; the screenshot itself already has the county shape
-  // carved out by the dl-county-mask-fill white layer.
-  placeMapFrame();
-
-  await placeLogo();
-  placeMapLegend(fabricCanvas, state, getActiveRaceFilters());
-  placeScaleBar(mapInstance);
-  await placeNorthArrow();
-
-  // County outline + name labels render on top of the map frame; city
-  // labels render last so they sit above county names.
-  placeCountyOutline();
-  placeCountyLabels();
-  placeCityLabels();
-
-  fabricCanvas.renderAll();
 }
 
 // --- County outline -------------------------------------------------------

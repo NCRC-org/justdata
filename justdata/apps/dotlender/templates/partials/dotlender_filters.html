@@ -77,7 +77,11 @@
 
       <!-- Overlay mode -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label class="control-group-label">Choropleth Overlay</label>
+        <label class="control-group-label">
+          Choropleth Overlay
+          <span id="dl-choropleth-spinner" class="dl-spinner"
+                style="visibility:hidden; margin-left:6px;"></span>
+        </label>
         <select id="dl-overlay-mode">
           <option value="minority" selected>Minority Population</option>
           <option value="income">Income Band</option>
@@ -290,7 +294,8 @@
       <button id="dl-render-btn" type="button"
               style="width:100%; padding:10px; background:var(--ncrc-navy); color:white; border:none;
                      border-radius:6px; font-size:0.9rem; font-weight:600; cursor:pointer; margin-bottom:10px;">
-        <span id="dl-spinner" style="display:none; margin-right:6px;">⏳</span>
+        <span id="dl-render-spinner" class="dl-spinner"
+              style="display:none; margin-right:6px;"></span>
         <i class="fas fa-map"></i> Render Map
       </button>
 
@@ -299,6 +304,8 @@
               style="width:100%; padding:8px; background:white; color:var(--ncrc-navy);
                      border:2px solid var(--ncrc-navy); border-radius:6px; font-size:0.85rem;
                      font-weight:600; cursor:pointer; display:none;">
+        <span id="dl-pdf-spinner" class="dl-spinner"
+              style="display:none; margin-right:6px;"></span>
         <i class="fas fa-file-pdf"></i> Build PDF Report
       </button>
 
@@ -321,18 +328,6 @@
           <img src="/static/img/ncrc-logo-color.png" style="height:32px; opacity:0.85;" alt="NCRC" />
         </div>
         <div id="dl-overlay-legend"></div>
-        <div id="dl-render-overlay"
-             style="display:none; position:absolute; top:0; left:0; right:0; bottom:0;
-                    background:rgba(255,255,255,0.85); z-index:1000;
-                    align-items:center; justify-content:center; border-radius:8px;">
-          <div style="text-align:center;">
-            <div style="font-size:1.5rem; margin-bottom:12px;">⏳</div>
-            <div style="font-size:1rem; font-weight:600; color:#1a3a6e;">Rendering map…</div>
-            <div style="font-size:0.85rem; color:#666; margin-top:4px;">
-              Querying data and placing dots
-            </div>
-          </div>
-        </div>
       </div>
       <div id="dl-map-error" style="display:none; color:#c00; padding:8px; font-size:0.85rem;"></div>
     </div>

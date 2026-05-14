@@ -183,44 +183,50 @@ export async function loadRaceOverlay(overlayMode, geographyBody) {
   if (!overlayMode || !overlayMode.startsWith('race_')) return;
   const map = getMap();
   if (!map) return;
-  const raceField = raceFieldFromMode(overlayMode);
-  let resp;
+  const spinner = document.getElementById('dl-choropleth-spinner');
+  if (spinner) spinner.style.visibility = 'visible';
   try {
-    resp = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...(geographyBody || {}), race_field: raceField }),
-    });
-  } catch (e) {
-    console.warn('[dotlender] race overlay fetch failed:', e);
-    return;
+    const raceField = raceFieldFromMode(overlayMode);
+    let resp;
+    try {
+      resp = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(geographyBody || {}), race_field: raceField }),
+      });
+    } catch (e) {
+      console.warn('[dotlender] race overlay fetch failed:', e);
+      return;
+    }
+    if (!resp.ok) {
+      console.warn('[dotlender] race-choropleth API error:', resp.status);
+      return;
+    }
+    const data = await resp.json();
+    const tracts = data.tracts || [];
+
+    currentRaceField = overlayMode;
+    currentBreakpoints = computeQuartileBreakpoints(tracts);
+    window.dotlenderCurrentBreakpoints = currentBreakpoints.slice();
+    window.dotlenderCurrentRaceOverlay = currentRaceField;
+
+    // Notify the sidebar so the breakpoint panel pre-fills with quartiles
+    // and exposes itself.
+    if (typeof window.dotlenderSetBreakpoints === 'function') {
+      window.dotlenderSetBreakpoints(currentBreakpoints, overlayMode);
+    }
+
+    applyRaceFeatureState(tracts);
+    updateRaceFillColor();
+
+    // Let the on-screen legend (and anyone else listening) refresh now
+    // that breakpoints and the overlay mode are settled.
+    document.dispatchEvent(new CustomEvent('dotlender:breakpoints-updated', {
+      detail: { overlayMode, breakpoints: currentBreakpoints.slice() },
+    }));
+  } finally {
+    if (spinner) spinner.style.visibility = 'hidden';
   }
-  if (!resp.ok) {
-    console.warn('[dotlender] race-choropleth API error:', resp.status);
-    return;
-  }
-  const data = await resp.json();
-  const tracts = data.tracts || [];
-
-  currentRaceField = overlayMode;
-  currentBreakpoints = computeQuartileBreakpoints(tracts);
-  window.dotlenderCurrentBreakpoints = currentBreakpoints.slice();
-  window.dotlenderCurrentRaceOverlay = currentRaceField;
-
-  // Notify the sidebar so the breakpoint panel pre-fills with quartiles
-  // and exposes itself.
-  if (typeof window.dotlenderSetBreakpoints === 'function') {
-    window.dotlenderSetBreakpoints(currentBreakpoints, overlayMode);
-  }
-
-  applyRaceFeatureState(tracts);
-  updateRaceFillColor();
-
-  // Let the on-screen legend (and anyone else listening) refresh now that
-  // breakpoints and the overlay mode are settled.
-  document.dispatchEvent(new CustomEvent('dotlender:breakpoints-updated', {
-    detail: { overlayMode, breakpoints: currentBreakpoints.slice() },
-  }));
 }
 
 export function applyCustomBreakpoints(breakpoints) {
