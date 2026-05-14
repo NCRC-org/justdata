@@ -15,7 +15,7 @@
 
       <!-- Geography type -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label><i class="fas fa-globe-americas" style="color:var(--ncrc-secondary-blue);"></i> Geography Type</label>
+        <label class="control-group-label">Geography Type</label>
         <select id="dl-geo-type">
           <option value="metro" selected>Metro Area (MSA)</option>
           <option value="state">State</option>
@@ -24,7 +24,7 @@
 
       <!-- Geography search -->
       <div class="control-group" style="margin-bottom:6px; position:relative;">
-        <label><i class="fas fa-search-location" style="color:var(--ncrc-secondary-blue);"></i> Search Geography</label>
+        <label class="control-group-label">Search Geography</label>
         <input type="text" id="dl-geo-search" placeholder="Type to search..." autocomplete="off" />
         <div id="dl-geo-suggestions" style="display:none; position:absolute; z-index:1000; width:100%; top:100%;
              background:white; border:1px solid #ddd; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-height:200px; overflow-y:auto;"></div>
@@ -58,7 +58,7 @@
 
       <!-- Lender -->
       <div class="control-group" style="margin-bottom:10px; position:relative;">
-        <label><i class="fas fa-university" style="color:var(--ncrc-secondary-blue);"></i> Lender</label>
+        <label class="control-group-label">Lender</label>
         <input type="text" id="dl-lender-search" placeholder="All lenders (type to filter)" autocomplete="off" />
         <input type="hidden" id="dl-lender-lei" value="" />
         <div id="dl-lender-suggestions" style="display:none; position:absolute; z-index:1000; width:100%; top:100%;
@@ -67,7 +67,7 @@
 
       <!-- Year range -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label><i class="fas fa-calendar-alt" style="color:var(--ncrc-secondary-blue);"></i> Year Range</label>
+        <label class="control-group-label">Year Range</label>
         <div style="display:flex; gap:6px; align-items:center;">
           <select id="dl-year-start" style="flex:1;"></select>
           <span style="color:#666; font-size:0.8rem;">to</span>
@@ -77,7 +77,7 @@
 
       <!-- Overlay mode -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label><i class="fas fa-layer-group" style="color:var(--ncrc-secondary-blue);"></i> Choropleth Overlay</label>
+        <label class="control-group-label">Choropleth Overlay</label>
         <select id="dl-overlay-mode">
           <option value="minority" selected>Minority population</option>
           <option value="income">Income band</option>
@@ -87,10 +87,9 @@
 
       <!-- Dot density -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label>
-          <i class="fas fa-circle" style="color:var(--ncrc-secondary-blue);"></i>
+        <label class="control-group-label">
           Dot Density
-          <span style="font-weight:normal; color:#888; font-size:0.78rem;" id="dl-density-label"> — 1 dot per loan</span>
+          <span style="font-weight:normal; color:#888; font-size:0.7rem; text-transform:none; letter-spacing:normal;" id="dl-density-label"> — 1 dot per loan</span>
         </label>
         <div class="dl-density-input-group">
           <button type="button" class="dl-density-btn" id="dl-density-down" title="Fewer dots">−</button>
@@ -105,10 +104,9 @@
 
       <!-- Race / ethnicity filter (collapsible) -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label style="cursor:pointer;" id="dl-race-toggle">
-          <i class="fas fa-users" style="color:var(--ncrc-secondary-blue);"></i>
+        <label class="control-group-label" style="cursor:pointer;" id="dl-race-toggle">
           Dot Color by Race
-          <i class="fas fa-chevron-right" id="dl-race-chevron" style="float:right; font-size:0.75rem; margin-top:3px;"></i>
+          <i class="fas fa-chevron-right" id="dl-race-chevron" style="float:right; font-size:0.7rem; margin-top:3px;"></i>
         </label>
         <div id="dl-race-filters" style="display:none; margin-top:6px;">
           <label class="dl-race-item">
@@ -140,7 +138,7 @@
 
       <!-- Map overlay toggles -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label><i class="fas fa-eye" style="color:var(--ncrc-secondary-blue);"></i> Map Overlays</label>
+        <label class="control-group-label">Map Overlays</label>
         <label class="dl-race-item">
           <input type="checkbox" id="dl-show-county-boundary" checked style="margin:0;">
           <span>Clip Area</span>
@@ -150,9 +148,9 @@
       <!-- City boundaries: per-city checkbox list, populated after each render -->
       <div id="dl-city-boundary-section" style="margin-top:8px; margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <span style="font-size:0.85rem; font-weight:500; color:#333;">
+          <label class="control-group-label" style="margin:0; padding:0; border:none;">
             City Boundaries
-          </span>
+          </label>
           <div style="display:flex; gap:6px;">
             <button type="button" id="dl-city-select-all-btn"
                     style="font-size:0.72rem; color:#4a90d9; background:none; border:none; cursor:pointer; padding:0;">
@@ -177,10 +175,9 @@
 
       <!-- Advanced filters -->
       <div class="control-group" style="margin-bottom:10px;">
-        <label style="cursor:pointer;" id="dl-advanced-toggle">
-          <i class="fas fa-sliders-h" style="color:var(--ncrc-secondary-blue);"></i>
+        <label class="control-group-label" style="cursor:pointer;" id="dl-advanced-toggle">
           Advanced Filters
-          <i class="fas fa-chevron-right" id="dl-advanced-chevron" style="float:right; font-size:0.75rem; margin-top:3px;"></i>
+          <i class="fas fa-chevron-right" id="dl-advanced-chevron" style="float:right; font-size:0.7rem; margin-top:3px;"></i>
         </label>
         <div id="dotlender-advanced-filters" style="display:none; margin-top:6px;">
           <div style="margin-bottom:6px;">
@@ -278,6 +275,18 @@
           <img src="/static/img/ncrc-logo-color.png" style="height:32px; opacity:0.85;" alt="NCRC" />
         </div>
         <div id="dl-overlay-legend"></div>
+        <div id="dl-render-overlay"
+             style="display:none; position:absolute; top:0; left:0; right:0; bottom:0;
+                    background:rgba(255,255,255,0.85); z-index:1000;
+                    align-items:center; justify-content:center; border-radius:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:1.5rem; margin-bottom:12px;">⏳</div>
+            <div style="font-size:1rem; font-weight:600; color:#1a3a6e;">Rendering map…</div>
+            <div style="font-size:0.85rem; color:#666; margin-top:4px;">
+              Querying data and placing dots
+            </div>
+          </div>
+        </div>
       </div>
       <div id="dl-map-error" style="display:none; color:#c00; padding:8px; font-size:0.85rem;"></div>
     </div>

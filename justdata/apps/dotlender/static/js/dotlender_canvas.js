@@ -10,6 +10,7 @@ import { getCurrentMapData, getActiveRaceFilters } from './dotlender_map.js';
 import { getFilterState } from './dotlender_filters.js';
 import { getCachedCountyGeojson, getCachedMapContainerSize } from './dotlender_overlays.js';
 import { placeMapLegend } from './dotlender_legend.js';
+import { placeScaleBar, placePageCutoffMarker } from './dotlender_scalebar.js';
 
 let fabricCanvas = null;
 
@@ -53,12 +54,18 @@ export async function buildCanvas(mapData, state) {
   const modal = document.getElementById('dl-pdf-modal');
   if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
 
-  // Map image capture must happen on the current viewport (projection +
-  // capture share the same map.once('idle') snapshot). Capture first so
-  // it's done before any selectable overlays are added.
+  // Map image capture. Temporarily raise Mapbox's pixel ratio to 3 so the
+  // captured PNG has 3x the display resolution — that's what kills the
+  // white tile-seam smidges when the image is upscaled into the canvas.
+  // We restore the original pixel ratio after capture.
   const mapInstance = window.dotlenderMap;
   if (mapInstance) {
     await new Promise((resolve) => {
+      const originalPixelRatio = (typeof mapInstance.getPixelRatio === 'function'
+        ? mapInstance.getPixelRatio()
+        : (window.devicePixelRatio || 1));
+      const canBumpRatio = typeof mapInstance.setPixelRatio === 'function';
+      if (canBumpRatio) mapInstance.setPixelRatio(3);
       mapInstance.once('idle', () => {
         try {
           window.dotlenderMapCaptureDataUrl = mapInstance.getCanvas().toDataURL('image/png', 1.0);
@@ -66,6 +73,7 @@ export async function buildCanvas(mapData, state) {
           console.warn('[dotlender] map capture failed', err);
           window.dotlenderMapCaptureDataUrl = null;
         }
+        if (canBumpRatio) mapInstance.setPixelRatio(originalPixelRatio);
         resolve();
       });
       mapInstance.triggerRepaint();
@@ -88,8 +96,11 @@ export async function buildCanvas(mapData, state) {
   placeScaleBar(mapInstance);
   await placeNorthArrow();
 
-  // County outline LAST so it renders on top, fit inside the map frame.
+  // County outline + name labels render on top of the map frame; city
+  // labels render last so they sit above county names.
   placeCountyOutline();
+  placeCountyLabels();
+  placeCityLabels();
 
   fabricCanvas.renderAll();
 }
@@ -124,48 +135,6 @@ function geojsonToPath(geometry, mapInstance, w, h) {
   });
   return pathStr.trim();
 }
-
-// --- Page cutoff marker --------------------------------------------------
-
-function placePageCutoffMarker() {
-  // Read the page size the user selected in the PDF modal dropdown.
-  // Page dimensions match dotlender_export.js (landscape orientation only).
-  const pageSize = document.getElementById('dl-page-size')?.value || 'letter';
-  const pageW = pageSize === 'tabloid' ? 431.8 : 279.4;
-  const pageH = pageSize === 'tabloid' ? 279.4 : 215.9;
-  // Fit at canvas-width scale; height letterboxes inside CANVAS_H.
-  const scale = CANVAS_W / pageW;
-  const markerW = pageW * scale;
-  const markerH = pageH * scale;
-  const left = 0;
-  const top = (CANVAS_H - markerH) / 2;
-  // eslint-disable-next-line no-undef
-  const marker = new fabric.Rect({
-    left, top, width: markerW, height: markerH,
-    fill: 'transparent',
-    stroke: '#c0392b',
-    strokeWidth: 4,
-    strokeDashArray: [16, 8],
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
-  });
-  fabricCanvas.add(marker);
-  fabricCanvas.sendToBack(marker);
-  window.dotlenderPageMarker = marker;
-}
-
-function refreshPageCutoffMarker() {
-  if (!fabricCanvas) return;
-  if (window.dotlenderPageMarker) {
-    fabricCanvas.remove(window.dotlenderPageMarker);
-    window.dotlenderPageMarker = null;
-  }
-  placePageCutoffMarker();
-  fabricCanvas.renderAll();
-}
-
-window.dotlenderRefreshPageMarker = refreshPageCutoffMarker;
 
 // --- Map frame (aspect-locked, draggable) --------------------------------
 
@@ -249,6 +218,10 @@ function fitPathToFrame(countyPath, frame) {
     top: frame.top + offsetY - (pathBbox.top * scale),
   });
   countyPath.setCoords();
+  // Save the pre-fit bbox origin so label-positioning code can map
+  // canvas-fit projected coords through the same transform.
+  countyPath._origBboxLeft = pathBbox.left;
+  countyPath._origBboxTop = pathBbox.top;
 }
 
 function updateCountyOutlineToFrame() {
@@ -288,6 +261,91 @@ function placeCountyOutline() {
   window.dotlenderCountyOutline = countyPath;
 }
 
+// --- County + city name labels (moveable text on canvas) -----------------
+
+function projectLngLatToCanvas(mapInstance, lng, lat, containerSize) {
+  // Replicate projectCoords' uniform-fit math for a single point so that
+  // labels live in the same canvas-fit space as the unscaled county path.
+  const pt = mapInstance.project([lng, lat]);
+  const scale = Math.min(CANVAS_W / containerSize.width, CANVAS_H / containerSize.height);
+  const offsetX = (CANVAS_W - containerSize.width * scale) / 2;
+  const offsetY = (CANVAS_H - containerSize.height * scale) / 2;
+  return { x: pt.x * scale + offsetX, y: pt.y * scale + offsetY };
+}
+
+function applyOutlineTransform(canvasFitPt, outline) {
+  // Map a canvas-fit projected point through the fitPathToFrame transform
+  // that the outline received. Uses _origBboxLeft/Top saved at fit time.
+  const bboxLeft = outline._origBboxLeft || 0;
+  const bboxTop = outline._origBboxTop || 0;
+  const sx = outline.scaleX || 1;
+  const sy = outline.scaleY || 1;
+  return {
+    x: (canvasFitPt.x - bboxLeft) * sx + outline.left,
+    y: (canvasFitPt.y - bboxTop) * sy + outline.top,
+  };
+}
+
+function placeCountyLabels() {
+  const mapInstance = window.dotlenderMap;
+  const containerSize = getCachedMapContainerSize();
+  const outline = window.dotlenderCountyOutline;
+  const counties = window.dotlenderCountyGeojsonList || [];
+  if (!mapInstance || !containerSize || !outline || !counties.length) return;
+  counties.forEach(({ feature }) => {
+    let nameRaw = feature.properties?.NAME || feature.properties?.name || '';
+    nameRaw = String(nameRaw).replace(/\s+County$/i, '');
+    const countyName = nameRaw ? `${nameRaw} County` : 'County';
+    let centroid;
+    try {
+      // eslint-disable-next-line no-undef
+      centroid = turf.centroid(feature);
+    } catch (e) { return; }
+    const [lng, lat] = centroid.geometry.coordinates;
+    const canvasFit = projectLngLatToCanvas(mapInstance, lng, lat, containerSize);
+    const finalPt = applyOutlineTransform(canvasFit, outline);
+    // eslint-disable-next-line no-undef
+    const label = new fabric.Text(countyName, {
+      left: finalPt.x, top: finalPt.y,
+      fontSize: 26, fontFamily: LEGEND_FONT, fontWeight: 'bold',
+      fill: '#222', stroke: '#fff', strokeWidth: 3, paintFirst: 'stroke',
+      originX: 'center', originY: 'center',
+      selectable: true, hasControls: true,
+    });
+    fabricCanvas.add(label);
+  });
+}
+
+function placeCityLabels() {
+  const mapInstance = window.dotlenderMap;
+  const containerSize = getCachedMapContainerSize();
+  const outline = window.dotlenderCountyOutline;
+  const cities = window.dotlenderCityCentroids || [];
+  const selected = window.dotlenderSelectedCities || cities;
+  if (!mapInstance || !containerSize || !outline) return;
+  // Only show per-city labels when the user has 2+ cities selected; with
+  // a single city the legend itself names the city.
+  if (selected.length < 2) return;
+  const selectedKeys = new Set(selected.map((c) => `${c.stateFp}:${c.name}`));
+  cities
+    .filter((c) => selectedKeys.has(`${c.stateFp}:${c.name}`))
+    .forEach((city) => {
+      const canvasFit = projectLngLatToCanvas(
+        mapInstance, city.lng, city.lat, containerSize,
+      );
+      const finalPt = applyOutlineTransform(canvasFit, outline);
+      // eslint-disable-next-line no-undef
+      const label = new fabric.Text(city.name, {
+        left: finalPt.x, top: finalPt.y,
+        fontSize: 22, fontFamily: LEGEND_FONT, fontStyle: 'italic',
+        fill: '#c0392b', stroke: '#fff', strokeWidth: 2, paintFirst: 'stroke',
+        originX: 'center', originY: 'center',
+        selectable: true, hasControls: true,
+      });
+      fabricCanvas.add(label);
+    });
+}
+
 async function placeLogo() {
   await new Promise((resolve) => {
     // eslint-disable-next-line no-undef
@@ -302,81 +360,6 @@ async function placeLogo() {
 }
 
 // --- Scale bar (independent draggable group) -----------------------------
-
-function placeScaleBar(mapInstance) {
-  if (!mapInstance) return;
-  const bounds = mapInstance.getBounds();
-  const centerLat = mapInstance.getCenter().lat;
-  const lngDiff = bounds.getEast() - bounds.getWest();
-  const metersPerDegLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
-  const mapWidthMeters = lngDiff * metersPerDegLng;
-  // Width of the map image on the canvas. Now that the interactive map
-  // is locked to letter landscape and the placeholder is aspect-locked
-  // to match, placeholder.width is the on-canvas map width.
-  const placeholder = window.dotlenderMapPlaceholder;
-  const mapCanvasWidth = placeholder?.width || (CANVAS_W * 0.6);
-  const metersPerCanvasPx = mapWidthMeters / mapCanvasWidth;
-  const mileInMeters = 1609.34;
-
-  // Target ~30% of the map width as the total scale bar span, then pick
-  // a "nice" unit value so we land on 4-6 ticks.
-  const targetTotalPx = mapCanvasWidth * 0.30;
-  const targetTotalMiles = (targetTotalPx * metersPerCanvasPx) / mileInMeters;
-  const niceSteps = [0.1, 0.25, 0.5, 1, 2, 2.5, 5, 10, 25, 50, 100];
-  let baseMiles = 1;
-  let numTicks = 4;
-  for (let i = 0; i < niceSteps.length; i += 1) {
-    const step = niceSteps[i];
-    if (step * 4 <= targetTotalMiles && step * 6 >= targetTotalMiles) {
-      baseMiles = step;
-      numTicks = Math.min(6, Math.max(4, Math.floor(targetTotalMiles / step)));
-      break;
-    }
-    if (step * 4 > targetTotalMiles) { baseMiles = step; numTicks = 4; break; }
-  }
-
-  const unitPx = Math.round(baseMiles * mileInMeters / metersPerCanvasPx);
-  const totalPx = unitPx * numTicks;
-  const lineThickness = 4;
-  const tickH = 22;
-  const labelFontSize = 26;
-  const headerFontSize = 28;
-  const objs = [];
-
-  // eslint-disable-next-line no-undef
-  objs.push(new fabric.Line([0, 0, totalPx, 0], {
-    stroke: '#222', strokeWidth: lineThickness,
-  }));
-  for (let i = 0; i <= numTicks; i += 1) {
-    const x = i * unitPx;
-    // eslint-disable-next-line no-undef
-    objs.push(new fabric.Line([x, -tickH / 2, x, tickH / 2], {
-      stroke: '#222', strokeWidth: 3,
-    }));
-    const val = i * baseMiles;
-    const label = val === 0
-      ? '0'
-      : `${Number.isInteger(val) ? val : val.toFixed(2)}`;
-    const offset = val === 0 ? 5 : label.length * 7;
-    // eslint-disable-next-line no-undef
-    objs.push(new fabric.Text(label, {
-      left: x - offset, top: tickH / 2 + 6,
-      fontSize: labelFontSize, fontFamily: LEGEND_FONT, fill: '#222',
-    }));
-  }
-  // eslint-disable-next-line no-undef
-  objs.push(new fabric.Text('Miles', {
-    left: 0, top: -tickH / 2 - headerFontSize - 8,
-    fontSize: headerFontSize, fontFamily: LEGEND_FONT, fontWeight: 'bold', fill: '#222',
-  }));
-
-  // eslint-disable-next-line no-undef
-  const group = new fabric.Group(objs, {
-    left: CANVAS_W - totalPx - 80, top: CANVAS_H - 140,
-    selectable: true, hasControls: true,
-  });
-  fabricCanvas.add(group);
-}
 
 // --- North arrow (independent draggable group) ---------------------------
 

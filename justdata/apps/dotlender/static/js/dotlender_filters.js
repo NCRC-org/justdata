@@ -80,6 +80,22 @@ function initCollapsibleToggle(toggleId, panelId, chevronId) {
   });
 }
 
+let autoZoomTimer = null;
+
+function scheduleAutoZoom() {
+  // Debounce rapid checkbox clicks so we issue at most one ArcGIS fetch
+  // per ~400ms burst.
+  if (autoZoomTimer) clearTimeout(autoZoomTimer);
+  autoZoomTimer = setTimeout(() => {
+    autoZoomTimer = null;
+    const list = window.currentGeoidList || [];
+    if (!list.length) return;
+    if (typeof window.dotlenderZoomToCounties === 'function') {
+      window.dotlenderZoomToCounties(list);
+    }
+  }, 400);
+}
+
 function updateCountyState() {
   // Mirror the current selection into a global the overlays + map modules
   // read from (city-boundary state filter, county-mask toggle).
@@ -88,6 +104,7 @@ function updateCountyState() {
   const totalEl = document.getElementById('dl-county-total');
   if (countEl) countEl.textContent = String(selectedCounties.length);
   if (totalEl) totalEl.textContent = String(availableCounties.length);
+  scheduleAutoZoom();
 }
 
 function renderCountyList() {
@@ -403,7 +420,9 @@ export function initRenderButton(onRender) {
     errEl.style.display = 'none';
     const spinner = document.getElementById('dl-spinner');
     const btn = document.getElementById('dl-render-btn');
+    const overlay = document.getElementById('dl-render-overlay');
     if (spinner) spinner.style.display = 'inline-block';
+    if (overlay) overlay.style.display = 'flex';
     btn.disabled = true;
     try {
       const [mapRes, statsRes] = await Promise.all([
@@ -432,6 +451,7 @@ export function initRenderButton(onRender) {
       errEl.style.display = 'block';
     } finally {
       if (spinner) spinner.style.display = 'none';
+      if (overlay) overlay.style.display = 'none';
       btn.disabled = false;
     }
   });

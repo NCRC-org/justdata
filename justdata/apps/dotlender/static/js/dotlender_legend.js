@@ -92,23 +92,23 @@ export function placeMapLegend(fabricCanvas, state, activeRaces) {
     });
   }
 
-  if (document.getElementById('dl-show-city-boundary')?.checked) {
-    const cities = window.dotlenderActiveCities || [];
-    let cityLabel;
-    if (cities.length === 1) {
-      cityLabel = `${cities[0].name} Boundary`;
-    } else if (cities.length > 1 && cities.length <= 3) {
-      cityLabel = cities.map((c) => c.name).join(', ');
-    } else if (cities.length > 3) {
-      cityLabel = `${cities.length} City Boundaries`;
-    } else {
-      cityLabel = 'City Boundary';
-    }
+  // City legend: 1 selected -> named "[City] City Boundary"; 2+ -> generic
+  // "City Boundary" (per-city names appear as moveable labels on the map
+  // canvas in placeCityLabels). 0 selected -> no legend entry at all.
+  const selectedCities = window.dotlenderSelectedCities
+    || window.dotlenderActiveCities || [];
+  if (selectedCities.length > 0) {
+    const cityLabel = selectedCities.length === 1
+      ? `${selectedCities[0].name} City Boundary`
+      : 'City Boundary';
     // eslint-disable-next-line no-undef
-    objects.push(new fabric.Line([x, y + 10, x + 24, y + 10], {
-      stroke: '#c0392b', strokeWidth: 2,
+    objects.push(new fabric.Line([x, y + 8, x + 28, y + 8], {
+      stroke: '#c0392b', strokeWidth: 3, selectable: false,
     }));
-    addText(objects, cityLabel, { left: x + 32, top: y, fontSize: 20, fontWeight: 'normal' });
+    addText(objects, cityLabel, {
+      left: x + 36, top: y - 2, fontSize: 22, fontWeight: 'normal',
+    });
+    y += 32;
   }
 
   // eslint-disable-next-line no-undef
