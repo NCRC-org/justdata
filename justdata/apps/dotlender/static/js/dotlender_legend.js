@@ -6,6 +6,17 @@
 
 import { CANVAS_H } from './dotlender_canvas.js';
 import { INCOME_BAND_COLORS } from './dotlender_map.js';
+import { RACE_RAMPS, RACE_RAMP_DEFAULT } from './dotlender_race_overlay.js';
+
+const RACE_OVERLAY_TITLES = {
+  race_black: '% Black Population',
+  race_hispanic: '% Hispanic Population',
+  race_black_hispanic: '% Black & Hispanic Population',
+  race_asian: '% Asian Population',
+  race_ai_an: '% American Indian & Alaska Native Population',
+  race_nh_opi: '% Native Hawaiian & Pacific Islander Population',
+  race_white: '% White Population',
+};
 
 const LEGEND_FONT = 'Arial';
 
@@ -71,7 +82,8 @@ export function placeMapLegend(fabricCanvas, state, activeRaces) {
 
   y += 10;
   const overlayMode = state.overlay_mode;
-  if (overlayMode && overlayMode !== 'none') {
+  const isRace = typeof overlayMode === 'string' && overlayMode.startsWith('race_');
+  if (overlayMode && overlayMode !== 'none' && !isRace) {
     const choroTitle = overlayMode === 'income' ? 'Tract Income Band' : 'Minority Population';
     addText(objects, choroTitle, { left: x, top: y, fontSize: 24, fontWeight: 'bold' });
     y += 30;
@@ -90,6 +102,30 @@ export function placeMapLegend(fabricCanvas, state, activeRaces) {
       addText(objects, label, { left: x + 28, top: y - 2, fontSize: 20, fontWeight: 'normal' });
       y += lineH;
     });
+  }
+
+  // Race overlay legend: section title + N+1 color bins driven by the
+  // current breakpoints and the per-race ramp. Reads window.dotlender* set
+  // by dotlender_race_overlay.js when the data loads.
+  if (isRace) {
+    const breakpoints = window.dotlenderCurrentBreakpoints || [25, 50, 75];
+    const ramp = RACE_RAMPS[overlayMode] || RACE_RAMP_DEFAULT;
+    const title = RACE_OVERLAY_TITLES[overlayMode] || 'Race Share';
+    addText(objects, title, { left: x, top: y, fontSize: 24, fontWeight: 'bold' });
+    y += 30;
+    for (let i = 0; i <= breakpoints.length; i += 1) {
+      const color = ramp[Math.min(i, ramp.length - 1)];
+      let label;
+      if (i === 0) label = `< ${breakpoints[0]}%`;
+      else if (i === breakpoints.length) label = `> ${breakpoints[i - 1]}%`;
+      else label = `${breakpoints[i - 1]}–${breakpoints[i]}%`;
+      // eslint-disable-next-line no-undef
+      objects.push(new fabric.Rect({
+        left: x, top: y, width: 20, height: 20, fill: color, stroke: '#999', strokeWidth: 1,
+      }));
+      addText(objects, label, { left: x + 28, top: y - 2, fontSize: 20, fontWeight: 'normal' });
+      y += lineH;
+    }
   }
 
   // City legend: 1 selected -> named "[City] City Boundary"; 2+ -> generic

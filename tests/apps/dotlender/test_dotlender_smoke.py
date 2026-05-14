@@ -71,3 +71,20 @@ def test_dotlender_index_member(unified_client):
     assert resp.status_code in (200, 302, 401, 403)
     if resp.status_code == 200:
         assert DOTLENDER_PAGE_MARKER not in resp.data
+
+
+def test_race_choropleth_route_exists(unified_client):
+    """POST /dotlender/api/race-choropleth is registered (not 404/405).
+
+    Empty body should produce a 400 validation error from _prep_request
+    (invalid geography) — the test cares only that the route exists.
+    """
+    _authed_session(unified_client, "admin")
+    resp = unified_client.post(
+        "/dotlender/api/race-choropleth",
+        json={},
+        content_type="application/json",
+    )
+    assert resp.status_code not in (404, 405)
+    # Most likely 400 from validate_geography on empty body.
+    assert resp.status_code in (200, 400)

@@ -79,9 +79,18 @@
       <div class="control-group" style="margin-bottom:10px;">
         <label class="control-group-label">Choropleth Overlay</label>
         <select id="dl-overlay-mode">
-          <option value="minority" selected>Minority population</option>
-          <option value="income">Income band</option>
-          <option value="none">No overlay</option>
+          <option value="minority" selected>Minority Population</option>
+          <option value="income">Income Band</option>
+          <option value="none">No Overlay</option>
+          <optgroup label="Race / Ethnicity">
+            <option value="race_black">% Black</option>
+            <option value="race_hispanic">% Hispanic</option>
+            <option value="race_black_hispanic">% Black &amp; Hispanic Combined</option>
+            <option value="race_asian">% Asian</option>
+            <option value="race_ai_an">% American Indian &amp; Alaska Native</option>
+            <option value="race_nh_opi">% Native Hawaiian &amp; Pacific Islander</option>
+            <option value="race_white">% White</option>
+          </optgroup>
         </select>
       </div>
 
@@ -236,6 +245,40 @@
               <option value="exclude" selected>Exclude</option>
               <option value="include">Include</option>
             </select>
+          </div>
+
+          <!-- Race-overlay breakpoint panel. Hidden by default; revealed
+               by window.dotlenderSetBreakpoints when a race overlay loads. -->
+          <div id="dl-race-breakpoints-panel"
+               style="display:none; margin-top:12px; padding:10px;
+                      background:#f8f9fa; border-radius:6px; border:1px solid #e0e6ed;">
+            <div style="font-size:0.78rem; font-weight:700; color:#1a3a6e;
+                        text-transform:uppercase; letter-spacing:0.4px; margin-bottom:8px;">
+              Breakpoints
+              <span id="dl-bp-overlay-label" style="font-weight:400; text-transform:none;
+                    font-size:0.75rem; color:#666;"></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+              <label style="font-size:0.8rem; color:#444;">Number of breaks:</label>
+              <select id="dl-bp-count"
+                      style="font-size:0.8rem; padding:3px 6px; border-radius:4px; border:1px solid #ccc;">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+            <div id="dl-bp-inputs" style="display:flex; flex-direction:column; gap:6px;"></div>
+            <button id="dl-bp-apply" type="button"
+                    style="margin-top:10px; padding:5px 14px; font-size:0.82rem;
+                           background:#1a3a6e; color:#fff; border:none; border-radius:4px;
+                           cursor:pointer; width:100%;">
+              Apply Breakpoints
+            </button>
+            <div style="margin-top:6px; font-size:0.72rem; color:#888;">
+              Default: quartiles for the selected geography. Range: 0–100%.
+            </div>
           </div>
         </div>
       </div>

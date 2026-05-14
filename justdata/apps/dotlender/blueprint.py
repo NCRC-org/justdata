@@ -10,11 +10,13 @@ from justdata.apps.dotlender.data.filters import (
     validate_geography,
 )
 from justdata.apps.dotlender.data.queries import (
+    VALID_RACE_FIELDS,
     cbsa_search,
     get_cbsa_counties,
     get_choropleth_data,
     get_loan_dots,
     get_max_year,
+    get_race_shares,
     get_state_counties,
     get_summary_stats,
     lender_search,
@@ -217,6 +219,34 @@ def api_map_data():
             "dots": dots,
         }
     )
+
+
+@dotlender_bp.route("/api/race-choropleth", methods=["POST"])
+@staff_required
+def api_race_choropleth():
+    """Per-tract race share percentages for the selected geography.
+
+    POST JSON body — same geography contract as /api/map-data, plus:
+      {"race_field": "black" | "hispanic" | "black_hispanic" |
+                     "asian" | "ai_an" | "nh_opi" | "white"}
+
+    Returns: {"tracts": [{"geoid": "11001980000", "pct": 64.77}, ...]}
+    """
+    body = request.get_json(silent=True) or {}
+    prep, err = _prep_request(body)
+    if err:
+        return err
+    geo_predicate, geo_params, *_ = prep
+
+    race_field = str(body.get("race_field") or "").strip()
+    if race_field not in VALID_RACE_FIELDS:
+        return jsonify({
+            "error": "invalid race_field",
+            "detail": f"must be one of {sorted(VALID_RACE_FIELDS)}",
+        }), 400
+
+    tracts = get_race_shares(geo_predicate, geo_params, race_field)
+    return jsonify({"tracts": tracts})
 
 
 @dotlender_bp.route("/api/summary-stats", methods=["POST"])
