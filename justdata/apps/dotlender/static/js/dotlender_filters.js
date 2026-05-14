@@ -47,6 +47,8 @@ let _lastSummaryStats = null;
 
 // County chip state — array of {geoid5, label} objects
 let selectedCounties = [];
+// Full county list for the current metro / state — used by Select All.
+let availableCounties = [];
 
 async function initYearDropdowns() {
   const res = await fetch(API.maxYear);
@@ -79,23 +81,27 @@ function initCollapsibleToggle(toggleId, panelId, chevronId) {
 
 function renderCountyChips() {
   const stack = document.getElementById('dl-county-stack');
+  const countEl = document.getElementById('dl-county-count');
   if (!stack) return;
   stack.innerHTML = '';
   selectedCounties.forEach(({ geoid5, label }) => {
     const chip = document.createElement('div');
-    chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 8px;'
-      + 'background:#e8f0fe;border:1px solid #4a90d9;border-radius:12px;font-size:0.78rem;color:#1a3a6e;';
+    chip.style.cssText = 'display:inline-flex; align-items:center; gap:4px; padding:3px 8px;'
+      + 'background:#e8f0fe; border:1px solid #4a90d9; border-radius:12px;'
+      + 'font-size:0.78rem; color:#1a3a6e; flex-shrink:0; white-space:nowrap;';
     const text = document.createElement('span');
     text.textContent = label;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = '×';
-    btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:0;font-size:0.85rem;color:#666;line-height:1;';
+    btn.style.cssText = 'background:none; border:none; cursor:pointer; padding:0;'
+      + 'font-size:0.9rem; color:#666; line-height:1; flex-shrink:0;';
     btn.addEventListener('click', () => removeCountyChip(geoid5));
     chip.appendChild(text);
     chip.appendChild(btn);
     stack.appendChild(chip);
   });
+  if (countEl) countEl.textContent = String(selectedCounties.length);
 }
 
 function addCountyChip(geoid5, label) {
@@ -133,24 +139,30 @@ async function loadCountiesForSelection(item) {
     window.currentStateFp = item.state_fips;
   }
   clearCountyChips();
+  availableCounties = counties.map((c) => ({
+    geoid5: c.geoid5,
+    label: c.county_state || c.geoid5,
+  }));
   counties.forEach((c) => addCountyChip(c.geoid5, c.county_state || c.geoid5));
   updateCityBoundaryLabel();
 }
 
-function updateCityBoundaryLabel() {
-  // Update the "City boundaries" checkbox label to reflect the principal
-  // city of the selected metro, if any. The label text lives inside the
-  // <label> that wraps the checkbox.
-  const cb = document.getElementById('dl-show-city-boundary');
-  if (!cb || !cb.parentElement) return;
-  const labelEl = cb.parentElement;
-  const cityName = window.currentPrincipalCity;
-  // Find the text node after the checkbox and replace it.
-  Array.from(labelEl.childNodes).forEach((n) => {
-    if (n.nodeType === Node.TEXT_NODE) {
-      n.textContent = cityName ? ` ${cityName} boundary` : ' City boundaries';
-    }
+function initSelectAllButtons() {
+  document.getElementById('dl-select-all-btn')?.addEventListener('click', () => {
+    availableCounties.forEach((c) => addCountyChip(c.geoid5, c.label));
   });
+  document.getElementById('dl-deselect-all-btn')?.addEventListener('click', () => {
+    clearCountyChips();
+  });
+}
+
+function updateCityBoundaryLabel() {
+  // The visible label lives inside a dedicated <span> so we don't have
+  // to walk childNodes — that approach was rewriting every text node
+  // (including whitespace), producing duplicate "<City> boundary" text.
+  const cityName = window.currentPrincipalCity;
+  const span = document.getElementById('dl-city-boundary-label');
+  if (span) span.textContent = cityName ? `${cityName} Boundary` : 'City Boundary';
   // Cache for overlays.js
   window.currentCityName = cityName;
   window.currentCityStateFp = window.currentStateFp;
@@ -221,6 +233,7 @@ function initGeoSearch() {
   geoType.addEventListener('change', () => {
     input.value = '';
     clearCountyChips();
+    availableCounties = [];
     suggestions.style.display = 'none';
     window.currentCbsaCode = null;
     window.currentPrincipalCity = null;
@@ -376,4 +389,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initCollapsibleToggle('dl-race-toggle', 'dl-race-filters', 'dl-race-chevron');
   initGeoSearch();
   initLenderTypeahead();
+  initSelectAllButtons();
 });

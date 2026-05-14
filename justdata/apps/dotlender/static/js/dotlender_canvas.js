@@ -83,13 +83,16 @@ export async function buildCanvas(mapData, state) {
 // --- County outline -------------------------------------------------------
 
 function projectCoords(coords, mapInstance, containerW, containerH) {
-  // map.project([lng, lat]) → {x, y} in live-map CSS pixels. Scale to
-  // canvas-internal pixels using container → canvas width/height ratios.
-  const scaleX = CANVAS_W / containerW;
-  const scaleY = CANVAS_H / containerH;
+  // map.project([lng, lat]) → {x, y} in live-map CSS pixels. Use a UNIFORM
+  // scale (contain-fit) so the projected polygon keeps its aspect ratio
+  // instead of stretching when the canvas aspect differs from the live
+  // map container aspect. Center the projection on the canvas.
+  const scale = Math.min(CANVAS_W / containerW, CANVAS_H / containerH);
+  const offsetX = (CANVAS_W - containerW * scale) / 2;
+  const offsetY = (CANVAS_H - containerH * scale) / 2;
   return coords.map(([lng, lat]) => {
     const pt = mapInstance.project([lng, lat]);
-    return { x: pt.x * scaleX, y: pt.y * scaleY };
+    return { x: pt.x * scale + offsetX, y: pt.y * scale + offsetY };
   });
 }
 
@@ -116,6 +119,7 @@ function placeFallbackPlaceholder() {
     left, top, width, height, fill: 'transparent',
     stroke: PLACEHOLDER_STROKE, strokeWidth: 3, strokeDashArray: [12, 6],
     selectable: true,
+    excludeFromExport: true,
   });
   fabricCanvas.add(rect);
   window.dotlenderMapPlaceholder = { left, top, width, height };
@@ -142,6 +146,9 @@ function placeCountyOutline() {
     strokeDashArray: [12, 6],
     selectable: true,
     evented: true,
+    // Editor-only affordance: hide from PDF export so the dashed outline
+    // doesn't bleed into the final report on top of the captured map.
+    excludeFromExport: true,
   });
   fabricCanvas.add(countyPath);
   const bbox = countyPath.getBoundingRect();

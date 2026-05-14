@@ -8,6 +8,9 @@
 <!-- jsPDF for the PDF export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<!-- turf.js for in-polygon random point sampling (dot density) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
 <!-- Mapbox token exposed to map.js -->
 <script>
   window.DOTLENDER_MAPBOX_TOKEN = '{{ mapbox_token|default("", true) }}';

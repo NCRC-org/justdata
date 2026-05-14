@@ -30,8 +30,30 @@
              background:white; border:1px solid #ddd; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-height:200px; overflow-y:auto;"></div>
       </div>
 
-      <!-- Selected counties stack -->
-      <div id="dl-county-stack" style="margin-bottom:10px; display:flex; flex-wrap:wrap; gap:4px; min-height:24px;"></div>
+      <!-- Selected counties: horizontal-scroll chip strip + count + select/deselect all -->
+      <div style="margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="font-size:0.78rem; color:#555;">
+            <span id="dl-county-count">0</span> counties selected
+          </span>
+          <div style="display:flex; gap:6px;">
+            <button type="button" id="dl-select-all-btn"
+                    style="font-size:0.72rem; color:#4a90d9; background:none; border:none; cursor:pointer; padding:0;">
+              Select All
+            </button>
+            <span style="color:#ddd;">|</span>
+            <button type="button" id="dl-deselect-all-btn"
+                    style="font-size:0.72rem; color:#4a90d9; background:none; border:none; cursor:pointer; padding:0;">
+              Deselect All
+            </button>
+          </div>
+        </div>
+        <div id="dl-county-stack"
+             style="display:flex; flex-wrap:nowrap; gap:4px; overflow-x:auto; overflow-y:hidden;
+                    padding-bottom:4px; min-height:32px; max-width:100%;
+                    scrollbar-width:thin; scrollbar-color:#4a90d9 #f0f0f0;">
+        </div>
+      </div>
       <div id="dl-geo-error" style="display:none; color:#c00; font-size:0.78rem; margin-bottom:6px;"></div>
 
       <!-- Lender -->
@@ -121,11 +143,11 @@
         <label><i class="fas fa-eye" style="color:var(--ncrc-secondary-blue);"></i> Map Overlays</label>
         <label class="dl-race-item">
           <input type="checkbox" id="dl-show-county-boundary" checked style="margin:0;">
-          County boundary
+          <span>County Boundary</span>
         </label>
         <label class="dl-race-item">
           <input type="checkbox" id="dl-show-city-boundary" style="margin:0;">
-          City boundaries
+          <span id="dl-city-boundary-label">City Boundary</span>
         </label>
       </div>
 
