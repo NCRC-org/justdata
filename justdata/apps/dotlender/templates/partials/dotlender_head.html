@@ -73,6 +73,34 @@
     padding-bottom: 4px;
     border-bottom: 1px solid #e0e6ed;
   }
+  /* Single canonical loading spinner used for all DotLender loading
+     states: choropleth overlay fetch, Render Map, Build PDF Report. */
+  @keyframes dl-spin {
+    to { transform: rotate(360deg); }
+  }
+  .dl-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(26, 58, 110, 0.25);
+    border-top-color: #1a3a6e;
+    border-radius: 50%;
+    animation: dl-spin 0.7s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .dl-spinner--lg {
+    width: 28px;
+    height: 28px;
+    border-width: 3px;
+  }
+
+  /* Reserve room at the bottom so the fixed #dl-action-bar (Render Map
+     + Build PDF buttons) doesn't cover sidebar scroll content or the
+     map's lower edge. */
+  .dl-controls-sidebar { padding-bottom: 80px; }
+  .dl-map-container { margin-bottom: 70px; }
+
   /* Parameter sub-label inside a section. */
   .dl-param-label {
     display: block;

@@ -420,11 +420,9 @@ export function initRenderButton(onRender) {
       return;
     }
     errEl.style.display = 'none';
-    const spinner = document.getElementById('dl-spinner');
+    const spinner = document.getElementById('dl-render-spinner');
     const btn = document.getElementById('dl-render-btn');
-    const overlay = document.getElementById('dl-render-overlay');
     if (spinner) spinner.style.display = 'inline-block';
-    if (overlay) overlay.style.display = 'flex';
     btn.disabled = true;
     try {
       const [mapRes, statsRes] = await Promise.all([
@@ -453,7 +451,6 @@ export function initRenderButton(onRender) {
       errEl.style.display = 'block';
     } finally {
       if (spinner) spinner.style.display = 'none';
-      if (overlay) overlay.style.display = 'none';
       btn.disabled = false;
     }
   });
