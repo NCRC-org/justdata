@@ -62,7 +62,7 @@ function incomeFillColor() {
     'Moderate', INCOME_BAND_COLORS.moderate,
     'Middle', INCOME_BAND_COLORS.middle,
     'Upper', INCOME_BAND_COLORS.upper,
-    INCOME_BAND_COLORS.unknown,
+    'rgba(0,0,0,0)',
   ];
 }
 
@@ -75,7 +75,7 @@ function minorityFillColor() {
     'Q2 (25-50%)', '#9ecae1',
     'Q3 (50-75%)', '#3182bd',
     'Q4 (Highest 25%)', '#08519c',
-    '#cccccc',
+    'rgba(0,0,0,0)',
   ];
 }
 
@@ -147,6 +147,9 @@ function addCensusLayers() {
       'fill-opacity': 0.45,
       // Suppress Mapbox's default 1px tract outline.
       'fill-outline-color': 'rgba(0,0,0,0)',
+      // Disable antialiasing so adjacent tract polygons meet flush
+      // instead of revealing a sub-pixel white seam at every edge.
+      'fill-antialias': false,
     },
     layout: { visibility: 'none' },
   }, beforeChoropleth);
@@ -157,6 +160,7 @@ function addCensusLayers() {
       'fill-color': minorityFillColor(),
       'fill-opacity': 0.45,
       'fill-outline-color': 'rgba(0,0,0,0)',
+      'fill-antialias': false,
     },
     layout: { visibility: 'none' },
   }, beforeChoropleth);
