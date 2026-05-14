@@ -71,14 +71,16 @@ async function initYearDropdowns() {
 }
 
 function initCollapsibleToggle(toggleId, panelId, chevronId) {
+  // Panels start collapsed (no .dl-open class). Toggling the class
+  // drives the max-height/opacity transition defined in dotlender_head.html.
   const toggle = document.getElementById(toggleId);
   const panel = document.getElementById(panelId);
   const chevron = chevronId ? document.getElementById(chevronId) : null;
   if (!toggle || !panel) return;
   toggle.addEventListener('click', () => {
-    const isOpen = panel.style.display !== 'none';
-    panel.style.display = isOpen ? 'none' : 'block';
-    if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    const willOpen = !panel.classList.contains('dl-open');
+    panel.classList.toggle('dl-open', willOpen);
+    if (chevron) chevron.style.transform = willOpen ? 'rotate(90deg)' : 'rotate(0deg)';
   });
 }
 
