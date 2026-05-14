@@ -113,14 +113,38 @@ async function fetchCountyGeojson(fips) {
   return resp.json();
 }
 
-export async function addCountyMask(fips) {
+export async function addCountyMask(fipsList) {
   const map = getMap();
-  if (!map || !fips) return;
+  if (!map) return;
+  // Accept either a single FIPS string or an array.
+  const list = Array.isArray(fipsList) ? fipsList : (fipsList ? [fipsList] : []);
+  if (!list.length) return;
   removeCountyMask();
   try {
-    if (cachedCountyFips !== fips || !cachedCountyGeojson) {
-      cachedCountyGeojson = await fetchCountyGeojson(fips);
-      cachedCountyFips = fips;
+    const cacheKey = list.join(',');
+    if (cachedCountyFips !== cacheKey || !cachedCountyGeojson) {
+      const geojsons = await Promise.all(list.map((f) => fetchCountyGeojson(f)));
+      const valid = geojsons.filter((g) => g?.features?.length);
+      if (!valid.length) return;
+      if (valid.length === 1) {
+        cachedCountyGeojson = valid[0];
+      } else {
+        // Union all county polygons into one combined boundary so the mask
+        // and outline cover the full multi-county selection as a single
+        // shape (no internal county dividers).
+        let combined = valid[0].features[0];
+        for (let i = 1; i < valid.length; i += 1) {
+          try {
+            // eslint-disable-next-line no-undef
+            const u = turf.union(combined, valid[i].features[0]);
+            if (u) combined = u;
+          } catch (e) {
+            console.warn('[dotlender] county union failed for index', i, e);
+          }
+        }
+        cachedCountyGeojson = { type: 'FeatureCollection', features: [combined] };
+      }
+      cachedCountyFips = cacheKey;
     }
     const maskGeojson = buildMaskGeojson(cachedCountyGeojson);
     if (!maskGeojson) return;
@@ -170,6 +194,8 @@ export function addCityBoundaries() {
   if (!map) return;
   if (!map.getSource('dl-city-bounds')) {
     map.addSource('dl-city-bounds', { type: 'vector', url: `mapbox://${CITY_BOUNDS_TILESET}` });
+  }
+  if (!map.getLayer('dl-city-bounds-line')) {
     map.addLayer({
       id: 'dl-city-bounds-line',
       type: 'line',
@@ -181,7 +207,6 @@ export function addCityBoundaries() {
   // Apply a NAME + STATEFP filter when the page has cached a principal city
   // (set by dotlender_filters.js after a CBSA is selected). Otherwise show
   // all city boundaries in view.
-  if (!map.getLayer('dl-city-bounds-line')) return;
   const cityName = window.currentCityName;
   const stateFp = window.currentCityStateFp;
   if (cityName && stateFp) {
@@ -190,12 +215,30 @@ export function addCityBoundaries() {
       ['==', ['get', 'NAME'], cityName],
       ['==', ['get', 'STATEFP'], stateFp],
     ]);
-    // Cache the resolved city name so the canvas legend can label it.
+    // Tentative — the canonical label is taken from the tileset itself
+    // once the layer has actually rendered, below.
     window.dotlenderActiveCityName = cityName;
   } else {
     map.setFilter('dl-city-bounds-line', null);
     window.dotlenderActiveCityName = null;
   }
+
+  // After the filter takes effect, query the rendered features to pull
+  // the actual NAME value from the tileset (it may differ from the OMB
+  // principal_city — e.g. "Saint Louis" vs "St. Louis"). The sidebar
+  // label and canvas legend both follow whatever the tileset says.
+  map.once('idle', () => {
+    if (!map.getLayer('dl-city-bounds-line')) return;
+    const features = map.queryRenderedFeatures(undefined, {
+      layers: ['dl-city-bounds-line'],
+    });
+    if (!features.length) return;
+    const tilesetName = features[0].properties?.NAME;
+    if (!tilesetName) return;
+    const span = document.getElementById('dl-city-boundary-label');
+    if (span) span.textContent = `${tilesetName} Boundary`;
+    window.dotlenderActiveCityName = tilesetName;
+  });
 }
 
 export function removeCityBoundaries() {

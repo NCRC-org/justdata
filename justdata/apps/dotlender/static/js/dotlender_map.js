@@ -47,8 +47,9 @@ let mapLoaded = false;
 let currentMapData = null;
 let currentOverlayMode = 'minority';
 let currentTooltipPopup = null;
-// FIPS of the most recently rendered county, used by the county mask toggle.
-let currentFips = null;
+// FIPS list of the most recently rendered counties, used by the county
+// mask toggle. May be a single county or a multi-county metro selection.
+let currentGeoidList = [];
 
 // --- Color expressions (mirror BranchMapper) ------------------------------
 
@@ -372,27 +373,21 @@ async function renderMap(mapData, state) {
   window.dotlenderRawDots = mapData.dots || [];
   scheduleDotPlacement();
 
-  // County mask only applies when exactly one county is selected. For
-  // multi-county metros and state-level selections we skip the mask and
-  // fit to the rendered dots instead (a true multi-county mask would
-  // require unioning multiple ArcGIS polygons — out of scope for now).
+  // County mask: single county or unioned multi-county selection. State-
+  // level selections are too broad to mask (too many counties to fetch
+  // and union), so we fit to raw centroids instead.
   const geoidList = state.geoid5_list || [];
-  if (geoidList.length === 1) {
-    currentFips = geoidList[0];
-    clearCachedCounty();
-    removeCountyMask();
+  currentGeoidList = geoidList.slice();
+  clearCachedCounty();
+  removeCountyMask();
+  if (geoidList.length && state.geo_type !== 'state') {
     const cbCb = document.getElementById('dl-show-county-boundary');
-    if (!cbCb || cbCb.checked) addCountyMask(currentFips);
+    if (!cbCb || cbCb.checked) addCountyMask(currentGeoidList);
     else fitToRawCentroids(window.dotlenderRawDots);
+  } else if (state.geo_type === 'state' && state.state_fips) {
+    fitToGeographyByFips(state.state_fips);
   } else {
-    currentFips = null;
-    clearCachedCounty();
-    removeCountyMask();
-    if (state.geo_type === 'state' && state.state_fips) {
-      fitToGeographyByFips(state.state_fips);
-    } else {
-      fitToRawCentroids(window.dotlenderRawDots);
-    }
+    fitToRawCentroids(window.dotlenderRawDots);
   }
 
   // Title + legend overlays
@@ -457,8 +452,8 @@ export function getMapboxInstance() { return map; }
 
 function initOverlayToggles() {
   document.getElementById('dl-show-county-boundary')?.addEventListener('change', (e) => {
-    if (!currentFips) return;
-    if (e.target.checked) addCountyMask(currentFips); else removeCountyMask();
+    if (!currentGeoidList.length) return;
+    if (e.target.checked) addCountyMask(currentGeoidList); else removeCountyMask();
   });
   document.getElementById('dl-show-city-boundary')?.addEventListener('change', (e) => {
     if (e.target.checked) addCityBoundaries(); else removeCityBoundaries();
