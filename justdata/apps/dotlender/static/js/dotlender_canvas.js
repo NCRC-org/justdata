@@ -29,6 +29,7 @@ function initFabricCanvas() {
   fabricCanvas = new fabric.Canvas('dotlender-canvas', {
     width: CANVAS_W, height: CANVAS_H, backgroundColor: '#ffffff', selection: true,
   });
+  window.dotlenderFabricCanvas = fabricCanvas;
   document.addEventListener('keydown', (e) => {
     if ((e.key === 'Delete' || e.key === 'Backspace') && fabricCanvas.getActiveObject()) {
       const t = document.activeElement?.tagName;
@@ -51,18 +52,13 @@ export async function buildCanvas(mapData, state) {
   const modal = document.getElementById('dl-pdf-modal');
   if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
 
-  await placeLogo();
-  placeMapLegend(state, getActiveRaceFilters());
-  await placeScaleAndNorthArrow();
-
-  // County outline + map image — both depend on the current map viewport,
-  // so both happen inside one idle callback so projection and capture
-  // agree on zoom/pan.
+  // Map image capture must happen on the current viewport (projection +
+  // capture share the same map.once('idle') snapshot). Capture first so
+  // it's done before any selectable overlays are added.
   const mapInstance = window.dotlenderMap;
   if (mapInstance) {
     await new Promise((resolve) => {
       mapInstance.once('idle', () => {
-        placeCountyOutline();
         try {
           window.dotlenderMapCaptureDataUrl = mapInstance.getCanvas().toDataURL('image/png', 1.0);
         } catch (err) {
@@ -73,9 +69,17 @@ export async function buildCanvas(mapData, state) {
       });
       mapInstance.triggerRepaint();
     });
-  } else {
-    placeCountyOutline();
   }
+
+  await placeLogo();
+  placeMapLegend(state, getActiveRaceFilters());
+  placeScaleBar(mapInstance);
+  await placeNorthArrow();
+
+  // County outline LAST so it renders on top of the other canvas elements.
+  // The outline path uses the same map.project() that the capture above
+  // used, so it stays aligned with the captured viewport.
+  placeCountyOutline();
 
   fabricCanvas.renderAll();
 }
@@ -270,79 +274,88 @@ function placeMapLegend(state, activeRaces) {
   fabricCanvas.add(group);
 }
 
-// --- Scale bar + north arrow group ---------------------------------------
+// --- Scale bar (independent draggable group) -----------------------------
 
-function buildScaleBarObjects(mapInstance, originY) {
+function placeScaleBar(mapInstance) {
+  if (!mapInstance) return;
   const zoom = mapInstance.getZoom();
   const lat = mapInstance.getCenter().lat;
   const metersPerMapPx = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
   const containerW = getCachedMapContainerSize()?.width || 900;
-  // Canvas pixels per meter when the map fills the canvas width
   const canvasPxPerMeter = (1 / metersPerMapPx) * (CANVAS_W / containerW);
   const mileInMeters = 1609.34;
   // Pick a base mile value where one segment is 40-120 canvas pixels.
   let baseMiles = 1;
   while (baseMiles * mileInMeters * canvasPxPerMeter > 120) baseMiles /= 2;
   while (baseMiles * mileInMeters * canvasPxPerMeter < 40) baseMiles *= 2;
-  if (baseMiles > 1) baseMiles = Math.round(baseMiles);
+  if (baseMiles >= 2) baseMiles = Math.round(baseMiles);
 
   const unitPx = Math.round(baseMiles * mileInMeters * canvasPxPerMeter);
   const totalPx = unitPx * 4;
   const tickH = 16;
   const objs = [];
 
-  // Main horizontal line
   // eslint-disable-next-line no-undef
-  objs.push(new fabric.Line([0, originY, totalPx, originY], { stroke: '#222', strokeWidth: 3 }));
-  // Tick marks + labels at 0, 1x, 2x, 4x
+  objs.push(new fabric.Line([0, 0, totalPx, 0], { stroke: '#222', strokeWidth: 3 }));
   [0, 1, 2, 4].forEach((mult) => {
     const x = mult * unitPx;
     // eslint-disable-next-line no-undef
-    objs.push(new fabric.Line([x, originY - tickH / 2, x, originY + tickH / 2], {
+    objs.push(new fabric.Line([x, -tickH / 2, x, tickH / 2], {
       stroke: '#222', strokeWidth: 2,
     }));
     const milesVal = mult * baseMiles;
-    const label = milesVal === 0 ? '0' : `${milesVal} mi`;
-    const offset = milesVal === 0 ? 4 : milesVal < 10 ? 14 : 20;
+    const label = milesVal === 0 ? '0' : `${Number.isInteger(milesVal) ? milesVal : milesVal.toFixed(1)} mi`;
+    const offset = milesVal === 0 ? 4 : (label.length * 5);
     // eslint-disable-next-line no-undef
     objs.push(new fabric.Text(label, {
-      left: x - offset, top: originY + tickH / 2 + 4,
+      left: x - offset, top: tickH / 2 + 4,
       fontSize: 18, fontFamily: LEGEND_FONT, fill: '#222',
     }));
   });
-  // "Miles" caption above
   // eslint-disable-next-line no-undef
   objs.push(new fabric.Text('Miles', {
-    left: 0, top: originY - tickH / 2 - 26,
+    left: 0, top: -tickH / 2 - 26,
     fontSize: 20, fontFamily: LEGEND_FONT, fontWeight: 'bold', fill: '#222',
   }));
-  return objs;
+
+  // eslint-disable-next-line no-undef
+  const group = new fabric.Group(objs, {
+    left: CANVAS_W - 420, top: CANVAS_H - 120,
+    selectable: true, hasControls: true,
+  });
+  fabricCanvas.add(group);
 }
 
-function buildSimpleNorthArrow(originX, baseTop) {
-  // Fabric.js primitive fallback when the SVG can't be parsed.
-  const objs = [];
+// --- North arrow (independent draggable group) ---------------------------
+
+function buildSimpleNorthArrow() {
+  // Fabric primitive fallback used when the SVG can't be parsed.
+  const objs = [
+    // eslint-disable-next-line no-undef
+    new fabric.Line([0, 60, 0, 5], {
+      stroke: '#222', strokeWidth: 4, originX: 'center',
+    }),
+    // eslint-disable-next-line no-undef
+    new fabric.Triangle({
+      width: 20, height: 20, fill: '#222',
+      originX: 'center', originY: 'bottom', top: 5, left: 0,
+    }),
+    // eslint-disable-next-line no-undef
+    new fabric.Text('N', {
+      fontSize: 26, fontFamily: LEGEND_FONT, fontWeight: 'bold', fill: '#222',
+      originX: 'center', top: 64, left: 0,
+    }),
+  ];
   // eslint-disable-next-line no-undef
-  objs.push(new fabric.Line([originX, baseTop + 60, originX, baseTop], {
-    stroke: '#222', strokeWidth: 4,
-  }));
-  // eslint-disable-next-line no-undef
-  objs.push(new fabric.Triangle({
-    width: 22, height: 26, fill: '#222',
-    left: originX - 11, top: baseTop - 12,
-  }));
-  // eslint-disable-next-line no-undef
-  objs.push(new fabric.Text('N', {
-    left: originX - 10, top: baseTop + 66,
-    fontSize: 28, fontFamily: LEGEND_FONT, fontWeight: 'bold', fill: '#222',
-  }));
-  return objs;
+  const group = new fabric.Group(objs, {
+    left: CANVAS_W - 260, top: CANVAS_H - 260,
+    selectable: true, hasControls: true,
+  });
+  fabricCanvas.add(group);
+  return group;
 }
 
-async function loadNorthArrowSvg(left, top) {
-  // Inkscape-generated SVGs sometimes trip Fabric's loadSVGFromURL parser.
-  // Fetch the string first, then loadSVGFromString — and fall back to a
-  // primitive arrow if Fabric returns nothing.
+async function placeNorthArrow() {
   return new Promise((resolve) => {
     fetch(NORTH_ARROW_SVG)
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
@@ -350,33 +363,26 @@ async function loadNorthArrowSvg(left, top) {
         // eslint-disable-next-line no-undef
         fabric.loadSVGFromString(svgString, (objects, options) => {
           if (!objects || !objects.length) {
-            resolve(buildSimpleNorthArrow(left + 40, top));
+            buildSimpleNorthArrow();
+            resolve();
             return;
           }
           // eslint-disable-next-line no-undef
           const svg = fabric.util.groupSVGElements(objects, options);
           svg.scaleToWidth(80);
-          svg.set({ left, top });
-          resolve([svg]);
+          svg.set({
+            left: CANVAS_W - 260, top: CANVAS_H - 260,
+            selectable: true, hasControls: true,
+          });
+          fabricCanvas.add(svg);
+          resolve();
         });
       })
-      .catch(() => resolve(buildSimpleNorthArrow(left + 40, top)));
+      .catch(() => {
+        buildSimpleNorthArrow();
+        resolve();
+      });
   });
-}
-
-async function placeScaleAndNorthArrow() {
-  const mapInstance = window.dotlenderMap;
-  if (!mapInstance) return;
-  const groupLeft = CANVAS_W - 400;
-  const groupTop = CANVAS_H - 220;
-  // North arrow at the top of the cluster; scale bar 110 px below it.
-  const arrowObjs = await loadNorthArrowSvg(groupLeft, groupTop);
-  const scaleObjs = buildScaleBarObjects(mapInstance, groupTop + 110);
-  // eslint-disable-next-line no-undef
-  const group = new fabric.Group([...arrowObjs, ...scaleObjs], {
-    selectable: true, hasControls: true,
-  });
-  fabricCanvas.add(group);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

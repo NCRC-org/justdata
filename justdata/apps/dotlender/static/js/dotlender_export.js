@@ -40,7 +40,14 @@ function captureCanvasTransparentWithoutPlaceholder() {
   if (!fc) return null;
   const ph = window.dotlenderMapPlaceholder;
   const strokeColor = ph?.strokeColor || '#4a90d9';
-  const placeholderObjects = fc.getObjects().filter((o) => isPlaceholderObject(o, strokeColor));
+  const all = fc.getObjects();
+  const placeholderObjects = all.filter((o) => isPlaceholderObject(o, strokeColor));
+  // eslint-disable-next-line no-console
+  console.log(
+    '[dotlender export] total objects:', all.length,
+    'placeholders found:', placeholderObjects.length,
+    'types:', placeholderObjects.map((o) => o.type),
+  );
   placeholderObjects.forEach((o) => o.set('visible', false));
   // Transparent background during capture so the map shows through
   // wherever the legend group doesn't paint pixels.
