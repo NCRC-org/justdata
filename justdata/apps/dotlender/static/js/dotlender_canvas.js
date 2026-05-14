@@ -72,6 +72,10 @@ export async function buildCanvas(mapData, state) {
     });
   }
 
+  // Dashed red rectangle showing the selected printable page area, sent
+  // to back so it sits behind all other canvas objects.
+  placePageCutoffMarker();
+
   // Aspect-locked draggable map frame — this is what the user positions
   // to choose where the captured map screenshot lands on the PDF. The
   // dashed county outline (added LAST) rides inside the frame purely as
@@ -120,6 +124,48 @@ function geojsonToPath(geometry, mapInstance, w, h) {
   });
   return pathStr.trim();
 }
+
+// --- Page cutoff marker --------------------------------------------------
+
+function placePageCutoffMarker() {
+  // Read the page size the user selected in the PDF modal dropdown.
+  // Page dimensions match dotlender_export.js (landscape orientation only).
+  const pageSize = document.getElementById('dl-page-size')?.value || 'letter';
+  const pageW = pageSize === 'tabloid' ? 431.8 : 279.4;
+  const pageH = pageSize === 'tabloid' ? 279.4 : 215.9;
+  // Fit at canvas-width scale; height letterboxes inside CANVAS_H.
+  const scale = CANVAS_W / pageW;
+  const markerW = pageW * scale;
+  const markerH = pageH * scale;
+  const left = 0;
+  const top = (CANVAS_H - markerH) / 2;
+  // eslint-disable-next-line no-undef
+  const marker = new fabric.Rect({
+    left, top, width: markerW, height: markerH,
+    fill: 'transparent',
+    stroke: '#c0392b',
+    strokeWidth: 4,
+    strokeDashArray: [16, 8],
+    selectable: false,
+    evented: false,
+    excludeFromExport: true,
+  });
+  fabricCanvas.add(marker);
+  fabricCanvas.sendToBack(marker);
+  window.dotlenderPageMarker = marker;
+}
+
+function refreshPageCutoffMarker() {
+  if (!fabricCanvas) return;
+  if (window.dotlenderPageMarker) {
+    fabricCanvas.remove(window.dotlenderPageMarker);
+    window.dotlenderPageMarker = null;
+  }
+  placePageCutoffMarker();
+  fabricCanvas.renderAll();
+}
+
+window.dotlenderRefreshPageMarker = refreshPageCutoffMarker;
 
 // --- Map frame (aspect-locked, draggable) --------------------------------
 
@@ -259,62 +305,74 @@ async function placeLogo() {
 
 function placeScaleBar(mapInstance) {
   if (!mapInstance) return;
-  // Real-world width of the currently shown map viewport in meters.
   const bounds = mapInstance.getBounds();
-  const west = bounds.getWest();
-  const east = bounds.getEast();
   const centerLat = mapInstance.getCenter().lat;
-  const lngDiff = east - west;
+  const lngDiff = bounds.getEast() - bounds.getWest();
   const metersPerDegLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
   const mapWidthMeters = lngDiff * metersPerDegLng;
-  // Width of the map IMAGE on the canvas (= the placeholder/outline width
-  // the user dragged into place). Falls back to 60% of canvas width when
-  // no placeholder is registered yet.
+  // Width of the map image on the canvas. Now that the interactive map
+  // is locked to letter landscape and the placeholder is aspect-locked
+  // to match, placeholder.width is the on-canvas map width.
   const placeholder = window.dotlenderMapPlaceholder;
   const mapCanvasWidth = placeholder?.width || (CANVAS_W * 0.6);
   const metersPerCanvasPx = mapWidthMeters / mapCanvasWidth;
   const mileInMeters = 1609.34;
-  // Pick a clean base mile value where one unit ≈ 40–120 canvas pixels.
+
+  // Target ~30% of the map width as the total scale bar span, then pick
+  // a "nice" unit value so we land on 4-6 ticks.
+  const targetTotalPx = mapCanvasWidth * 0.30;
+  const targetTotalMiles = (targetTotalPx * metersPerCanvasPx) / mileInMeters;
+  const niceSteps = [0.1, 0.25, 0.5, 1, 2, 2.5, 5, 10, 25, 50, 100];
   let baseMiles = 1;
-  while (baseMiles * mileInMeters / metersPerCanvasPx > 120) baseMiles /= 2;
-  while (baseMiles * mileInMeters / metersPerCanvasPx < 40) baseMiles *= 2;
-  if (baseMiles >= 2) baseMiles = Math.round(baseMiles);
-  if (baseMiles < 1 && baseMiles > 0.4) baseMiles = 0.5;
-  else if (baseMiles < 0.4) baseMiles = 0.25;
+  let numTicks = 4;
+  for (let i = 0; i < niceSteps.length; i += 1) {
+    const step = niceSteps[i];
+    if (step * 4 <= targetTotalMiles && step * 6 >= targetTotalMiles) {
+      baseMiles = step;
+      numTicks = Math.min(6, Math.max(4, Math.floor(targetTotalMiles / step)));
+      break;
+    }
+    if (step * 4 > targetTotalMiles) { baseMiles = step; numTicks = 4; break; }
+  }
 
   const unitPx = Math.round(baseMiles * mileInMeters / metersPerCanvasPx);
-  const totalPx = unitPx * 4;
-  const tickH = 14;
+  const totalPx = unitPx * numTicks;
+  const lineThickness = 4;
+  const tickH = 22;
+  const labelFontSize = 26;
+  const headerFontSize = 28;
   const objs = [];
 
   // eslint-disable-next-line no-undef
-  objs.push(new fabric.Line([0, 0, totalPx, 0], { stroke: '#222', strokeWidth: 2.5 }));
-  [0, 1, 2, 4].forEach((mult) => {
-    const x = mult * unitPx;
+  objs.push(new fabric.Line([0, 0, totalPx, 0], {
+    stroke: '#222', strokeWidth: lineThickness,
+  }));
+  for (let i = 0; i <= numTicks; i += 1) {
+    const x = i * unitPx;
     // eslint-disable-next-line no-undef
     objs.push(new fabric.Line([x, -tickH / 2, x, tickH / 2], {
-      stroke: '#222', strokeWidth: 2,
+      stroke: '#222', strokeWidth: 3,
     }));
-    const milesVal = mult * baseMiles;
-    const label = milesVal === 0
+    const val = i * baseMiles;
+    const label = val === 0
       ? '0'
-      : `${Number.isInteger(milesVal) ? milesVal : milesVal.toFixed(2)} mi`;
-    const offset = milesVal === 0 ? 4 : (label.length * 5);
+      : `${Number.isInteger(val) ? val : val.toFixed(2)}`;
+    const offset = val === 0 ? 5 : label.length * 7;
     // eslint-disable-next-line no-undef
     objs.push(new fabric.Text(label, {
-      left: x - offset, top: tickH / 2 + 4,
-      fontSize: 18, fontFamily: LEGEND_FONT, fill: '#222',
+      left: x - offset, top: tickH / 2 + 6,
+      fontSize: labelFontSize, fontFamily: LEGEND_FONT, fill: '#222',
     }));
-  });
+  }
   // eslint-disable-next-line no-undef
   objs.push(new fabric.Text('Miles', {
-    left: 0, top: -tickH / 2 - 28,
-    fontSize: 20, fontFamily: LEGEND_FONT, fontWeight: 'bold', fill: '#222',
+    left: 0, top: -tickH / 2 - headerFontSize - 8,
+    fontSize: headerFontSize, fontFamily: LEGEND_FONT, fontWeight: 'bold', fill: '#222',
   }));
 
   // eslint-disable-next-line no-undef
   const group = new fabric.Group(objs, {
-    left: CANVAS_W - 420, top: CANVAS_H - 120,
+    left: CANVAS_W - totalPx - 80, top: CANVAS_H - 140,
     selectable: true, hasControls: true,
   });
   fabricCanvas.add(group);
@@ -340,6 +398,37 @@ function addSimpleArrowFallback() {
   fabricCanvas.add(label);
 }
 
+function buildArrowPrimitives() {
+  // Upward-pointing arrow built from two Fabric primitives. Returns a
+  // fabric.Group sized to roughly match a 180px-tall N letterform.
+  // eslint-disable-next-line no-undef
+  const head = new fabric.Triangle({
+    width: 60, height: 60, fill: '#000',
+    originX: 'center', originY: 'bottom', top: 0, left: 0,
+  });
+  // eslint-disable-next-line no-undef
+  const shaft = new fabric.Rect({
+    width: 14, height: 110, fill: '#000',
+    originX: 'center', originY: 'top', top: 60, left: 0,
+  });
+  // eslint-disable-next-line no-undef
+  return new fabric.Group([head, shaft], { originX: 'center', originY: 'top' });
+}
+
+function placeCombinedNorthArrow(nObject) {
+  // Side-by-side: typographic N (left) + upward arrow (right), 30px gap.
+  nObject.set({ left: 0, top: 0 });
+  const nW = (nObject.width || 0) * (nObject.scaleX || 1);
+  const arrowGroup = buildArrowPrimitives();
+  arrowGroup.set({ left: nW + 30, top: 0 });
+  // eslint-disable-next-line no-undef
+  const combined = new fabric.Group([nObject, arrowGroup], {
+    left: CANVAS_W - 320, top: CANVAS_H - 320,
+    selectable: true, hasControls: true,
+  });
+  fabricCanvas.add(combined);
+}
+
 function loadNorthArrowAsImage(resolve) {
   console.log('[dotlender] north arrow: loadNorthArrowAsImage starting');
   // eslint-disable-next-line no-undef
@@ -350,13 +439,9 @@ function loadNorthArrowAsImage(resolve) {
       resolve();
       return;
     }
-    img.scaleToHeight(200);
-    img.set({
-      left: CANVAS_W - 280, top: CANVAS_H - 320,
-      selectable: true, hasControls: true,
-    });
-    fabricCanvas.add(img);
-    console.log('[dotlender] north arrow: image added');
+    img.scaleToHeight(180);
+    placeCombinedNorthArrow(img);
+    console.log('[dotlender] north arrow: image + arrow group added');
     resolve();
   }, { crossOrigin: 'anonymous' });
 }
@@ -379,14 +464,10 @@ async function placeNorthArrow() {
             return;
           }
           // eslint-disable-next-line no-undef
-          const svg = fabric.util.groupSVGElements(objects, options);
-          svg.scaleToHeight(200);
-          svg.set({
-            left: CANVAS_W - 280, top: CANVAS_H - 320,
-            selectable: true, hasControls: true,
-          });
-          fabricCanvas.add(svg);
-          console.log('[dotlender] north arrow: SVG added to canvas');
+          const nLetter = fabric.util.groupSVGElements(objects, options);
+          nLetter.scaleToHeight(180);
+          placeCombinedNorthArrow(nLetter);
+          console.log('[dotlender] north arrow: SVG + arrow group added');
           resolve();
         });
       })

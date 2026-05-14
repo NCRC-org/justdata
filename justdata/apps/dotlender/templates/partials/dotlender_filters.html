@@ -145,10 +145,34 @@
           <input type="checkbox" id="dl-show-county-boundary" checked style="margin:0;">
           <span>Clip Area</span>
         </label>
-        <label class="dl-race-item">
-          <input type="checkbox" id="dl-show-city-boundary" style="margin:0;">
-          <span id="dl-city-boundary-label">City Boundary</span>
-        </label>
+      </div>
+
+      <!-- City boundaries: per-city checkbox list, populated after each render -->
+      <div id="dl-city-boundary-section" style="margin-top:8px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="font-size:0.85rem; font-weight:500; color:#333;">
+            City Boundaries
+          </span>
+          <div style="display:flex; gap:6px;">
+            <button type="button" id="dl-city-select-all-btn"
+                    style="font-size:0.72rem; color:#4a90d9; background:none; border:none; cursor:pointer; padding:0;">
+              Show All
+            </button>
+            <span style="color:#ddd;">|</span>
+            <button type="button" id="dl-city-deselect-all-btn"
+                    style="font-size:0.72rem; color:#4a90d9; background:none; border:none; cursor:pointer; padding:0;">
+              Hide All
+            </button>
+          </div>
+        </div>
+        <div id="dl-city-list"
+             style="max-height:140px; overflow-y:auto; border:1px solid #ddd;
+                    border-radius:6px; padding:6px 8px; background:white;
+                    font-size:0.82rem;">
+          <div style="color:#999; font-style:italic; font-size:0.78rem;">
+            Render a map to see available cities
+          </div>
+        </div>
       </div>
 
       <!-- Advanced filters -->

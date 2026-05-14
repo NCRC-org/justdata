@@ -5,7 +5,7 @@
 import { getFilterState, initRenderButton } from './dotlender_filters.js';
 import {
   addCountyMask, removeCountyMask, clearCachedCounty,
-  addCityBoundaries, removeCityBoundaries,
+  addCityBoundaries,
   updateTitleOverlay, updateLegend,
   hideNonShieldLabels,
 } from './dotlender_overlays.js';
@@ -394,6 +394,11 @@ async function renderMap(mapData, state) {
   updateTitleOverlay(state);
   updateLegend(state.overlay_mode, getActiveRaceFilters());
 
+  // City boundary layer + sidebar checkbox population. Adds the source/
+  // layer once and pushes available cities to dotlender_filters.js; the
+  // user toggles individual city visibility from the sidebar list.
+  addCityBoundaries();
+
   // Choropleth tooltip — show per-tract loan count from server, joined by census_tract
   const tractLoans = {};
   (mapData.choropleth || []).forEach((t) => { tractLoans[t.census_tract] = t; });
@@ -454,9 +459,6 @@ function initOverlayToggles() {
   document.getElementById('dl-show-county-boundary')?.addEventListener('change', (e) => {
     if (!currentGeoidList.length) return;
     if (e.target.checked) addCountyMask(currentGeoidList); else removeCountyMask();
-  });
-  document.getElementById('dl-show-city-boundary')?.addEventListener('change', (e) => {
-    if (e.target.checked) addCityBoundaries(); else removeCityBoundaries();
   });
 }
 

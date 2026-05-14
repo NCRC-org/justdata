@@ -70,10 +70,12 @@
     background: white;
   }
 
-  /* Map dimensions — mirror BranchMapper breakpoints */
+  /* Live Mapbox container — locked to letter landscape aspect (11/8.5 ≈
+     1.294) so the captured screenshot matches the PDF page exactly and
+     the scale bar / map frame math stays consistent across viewports. */
   #dotlender-map {
     width: 100%;
-    height: 500px;
+    aspect-ratio: 11 / 8.5;
     box-sizing: border-box;
     border-radius: 8px;
   }
@@ -88,13 +90,9 @@
       overflow-y: auto;
     }
     .dl-content-wrapper { flex: 1 !important; }
-    #dotlender-map { height: 600px; }
-  }
-  @media (min-width: 768px) and (max-width: 991px) {
-    #dotlender-map { height: 450px; }
   }
   @media (max-width: 767px) {
-    #dotlender-map { height: 350px; }
+    #dotlender-map { max-height: 350px; }
   }
 
   /* ---- DotLender-specific elements ---- */
