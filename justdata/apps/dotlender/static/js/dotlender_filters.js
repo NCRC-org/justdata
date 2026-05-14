@@ -45,10 +45,11 @@ const STATE_LIST = [
 
 let _lastSummaryStats = null;
 
-// County chip state — array of {geoid5, label} objects
-let selectedCounties = [];
-// Full county list for the current metro / state — used by Select All.
+// Full county list for the current metro / state.
+//   availableCounties: [{ geoid5, county_state }]
+//   selectedCounties:  [{ geoid5, label }] — subset whose checkboxes are checked
 let availableCounties = [];
+let selectedCounties = [];
 
 async function initYearDropdowns() {
   const res = await fetch(API.maxYear);
@@ -79,45 +80,51 @@ function initCollapsibleToggle(toggleId, panelId, chevronId) {
   });
 }
 
-function renderCountyChips() {
-  const stack = document.getElementById('dl-county-stack');
+function updateCountyState() {
+  // Mirror the current selection into a global the overlays + map modules
+  // read from (city-boundary state filter, county-mask toggle).
+  window.currentGeoidList = selectedCounties.map((c) => c.geoid5);
   const countEl = document.getElementById('dl-county-count');
-  if (!stack) return;
-  stack.innerHTML = '';
-  selectedCounties.forEach(({ geoid5, label }) => {
-    const chip = document.createElement('div');
-    chip.style.cssText = 'display:inline-flex; align-items:center; gap:4px; padding:3px 8px;'
-      + 'background:#e8f0fe; border:1px solid #4a90d9; border-radius:12px;'
-      + 'font-size:0.78rem; color:#1a3a6e; flex-shrink:0; white-space:nowrap;';
-    const text = document.createElement('span');
-    text.textContent = label;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = '×';
-    btn.style.cssText = 'background:none; border:none; cursor:pointer; padding:0;'
-      + 'font-size:0.9rem; color:#666; line-height:1; flex-shrink:0;';
-    btn.addEventListener('click', () => removeCountyChip(geoid5));
-    chip.appendChild(text);
-    chip.appendChild(btn);
-    stack.appendChild(chip);
-  });
+  const totalEl = document.getElementById('dl-county-total');
   if (countEl) countEl.textContent = String(selectedCounties.length);
+  if (totalEl) totalEl.textContent = String(availableCounties.length);
 }
 
-function addCountyChip(geoid5, label) {
-  if (selectedCounties.find((c) => c.geoid5 === geoid5)) return;
-  selectedCounties.push({ geoid5, label });
-  renderCountyChips();
+function renderCountyList() {
+  const list = document.getElementById('dl-county-list');
+  if (!list) return;
+  list.innerHTML = '';
+  availableCounties.forEach(({ geoid5, label }) => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:3px 0; cursor:pointer;';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = geoid5;
+    cb.checked = selectedCounties.some((c) => c.geoid5 === geoid5);
+    cb.style.margin = '0';
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        if (!selectedCounties.some((c) => c.geoid5 === geoid5)) {
+          selectedCounties.push({ geoid5, label });
+        }
+      } else {
+        selectedCounties = selectedCounties.filter((c) => c.geoid5 !== geoid5);
+      }
+      updateCountyState();
+    });
+    const span = document.createElement('span');
+    span.textContent = label;
+    row.appendChild(cb);
+    row.appendChild(span);
+    list.appendChild(row);
+  });
+  updateCountyState();
 }
 
-function removeCountyChip(geoid5) {
-  selectedCounties = selectedCounties.filter((c) => c.geoid5 !== geoid5);
-  renderCountyChips();
-}
-
-function clearCountyChips() {
+function clearCountyList() {
+  availableCounties = [];
   selectedCounties = [];
-  renderCountyChips();
+  renderCountyList();
 }
 
 async function loadCountiesForSelection(item) {
@@ -138,34 +145,33 @@ async function loadCountiesForSelection(item) {
     window.currentPrincipalCity = null;
     window.currentStateFp = item.state_fips;
   }
-  clearCountyChips();
   availableCounties = counties.map((c) => ({
     geoid5: c.geoid5,
     label: c.county_state || c.geoid5,
   }));
-  counties.forEach((c) => addCountyChip(c.geoid5, c.county_state || c.geoid5));
+  // Default: all counties checked.
+  selectedCounties = availableCounties.map((c) => ({ geoid5: c.geoid5, label: c.label }));
+  renderCountyList();
   updateCityBoundaryLabel();
 }
 
 function initSelectAllButtons() {
   document.getElementById('dl-select-all-btn')?.addEventListener('click', () => {
-    availableCounties.forEach((c) => addCountyChip(c.geoid5, c.label));
+    selectedCounties = availableCounties.map((c) => ({ geoid5: c.geoid5, label: c.label }));
+    renderCountyList();
   });
   document.getElementById('dl-deselect-all-btn')?.addEventListener('click', () => {
-    clearCountyChips();
+    selectedCounties = [];
+    renderCountyList();
   });
 }
 
 function updateCityBoundaryLabel() {
-  // The visible label lives inside a dedicated <span> so we don't have
-  // to walk childNodes — that approach was rewriting every text node
-  // (including whitespace), producing duplicate "<City> boundary" text.
-  const cityName = window.currentPrincipalCity;
+  // Reset to default. The real label gets populated by addCityBoundaries()
+  // in overlays.js once the tileset has rendered and we can read its NAME
+  // values for the selected counties' states.
   const span = document.getElementById('dl-city-boundary-label');
-  if (span) span.textContent = cityName ? `${cityName} Boundary` : 'City Boundary';
-  // Cache for overlays.js
-  window.currentCityName = cityName;
-  window.currentCityStateFp = window.currentStateFp;
+  if (span) span.textContent = 'City Boundaries';
 }
 
 function showGeoError(msg) {
@@ -232,8 +238,7 @@ function initGeoSearch() {
 
   geoType.addEventListener('change', () => {
     input.value = '';
-    clearCountyChips();
-    availableCounties = [];
+    clearCountyList();
     suggestions.style.display = 'none';
     window.currentCbsaCode = null;
     window.currentPrincipalCity = null;
