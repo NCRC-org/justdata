@@ -105,32 +105,40 @@
       <div id="dl-race-breakpoints-panel"
            style="display:none; margin-bottom:10px; padding:10px;
                   background:#f8f9fa; border-radius:6px; border:1px solid #e0e6ed;">
-        <div style="font-size:0.78rem; font-weight:700; color:#1a3a6e;
-                    text-transform:uppercase; letter-spacing:0.4px; margin-bottom:8px;">
-          Breakpoints
-          <span id="dl-bp-overlay-label" style="font-weight:400; text-transform:none;
-                font-size:0.75rem; color:#666;"></span>
+        <div id="dl-bp-header"
+             style="display:flex; justify-content:space-between; align-items:center;
+                    cursor:pointer; user-select:none;">
+          <div style="font-size:0.78rem; font-weight:700; color:#1a3a6e;
+                      text-transform:uppercase; letter-spacing:0.4px;">
+            Breakpoints
+            <span id="dl-bp-overlay-label" style="font-weight:400;
+                  text-transform:none; font-size:0.75rem; color:#666;"></span>
+          </div>
+          <span id="dl-bp-chevron"
+                style="font-size:0.75rem; color:#1a3a6e; transition:transform 0.2s;">▼</span>
         </div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-          <label style="font-size:0.8rem; color:#444;">Number of breaks:</label>
-          <select id="dl-bp-count"
-                  style="font-size:0.8rem; padding:3px 6px; border-radius:4px; border:1px solid #ccc;">
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-          </select>
-        </div>
-        <div id="dl-bp-inputs" style="display:flex; flex-direction:column; gap:6px;"></div>
-        <button id="dl-bp-apply" type="button"
-                style="margin-top:10px; padding:5px 14px; font-size:0.82rem;
-                       background:#1a3a6e; color:#fff; border:none; border-radius:4px;
-                       cursor:pointer; width:100%;">
-          Apply Breakpoints
-        </button>
-        <div style="margin-top:6px; font-size:0.72rem; color:#888;">
-          Edit thresholds, 0–100%, then click Apply.
+        <div id="dl-bp-body" style="display:none; margin-top:8px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <label style="font-size:0.8rem; color:#444;">Number of breaks:</label>
+            <select id="dl-bp-count"
+                    style="font-size:0.8rem; padding:3px 6px; border-radius:4px; border:1px solid #ccc;">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+          <div id="dl-bp-inputs" style="display:flex; flex-direction:column; gap:6px;"></div>
+          <button id="dl-bp-apply" type="button"
+                  style="margin-top:10px; padding:5px 14px; font-size:0.82rem;
+                         background:#1a3a6e; color:#fff; border:none; border-radius:4px;
+                         cursor:pointer; width:100%;">
+            Apply Breakpoints
+          </button>
+          <div style="margin-top:6px; font-size:0.72rem; color:#888;">
+            Edit thresholds, 0–100%, then click Apply.
+          </div>
         </div>
       </div>
 
@@ -290,24 +298,8 @@
         </div>
       </div>
 
-      <!-- Render button -->
-      <button id="dl-render-btn" type="button"
-              style="width:100%; padding:10px; background:var(--ncrc-navy); color:white; border:none;
-                     border-radius:6px; font-size:0.9rem; font-weight:600; cursor:pointer; margin-bottom:10px;">
-        <span id="dl-render-spinner" class="dl-spinner"
-              style="display:none; margin-right:6px;"></span>
-        <i class="fas fa-map"></i> Render Map
-      </button>
-
-      <!-- Build PDF -->
-      <button id="dl-build-report-btn" type="button"
-              style="width:100%; padding:8px; background:white; color:var(--ncrc-navy);
-                     border:2px solid var(--ncrc-navy); border-radius:6px; font-size:0.85rem;
-                     font-weight:600; cursor:pointer; display:none;">
-        <span id="dl-pdf-spinner" class="dl-spinner"
-              style="display:none; margin-right:6px;"></span>
-        <i class="fas fa-file-pdf"></i> Build PDF Report
-      </button>
+      <!-- Render Map + Build PDF Report buttons live in the fixed
+           #dl-action-bar at the bottom of the page (dotlender_main.html). -->
 
       <!-- Summary stats -->
       <div id="dl-summary-stats" style="display:none; margin-top:12px; padding-top:10px;

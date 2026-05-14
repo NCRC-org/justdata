@@ -95,6 +95,12 @@
     border-width: 3px;
   }
 
+  /* Reserve room at the bottom so the fixed #dl-action-bar (Render Map
+     + Build PDF buttons) doesn't cover sidebar scroll content or the
+     map's lower edge. */
+  .dl-controls-sidebar { padding-bottom: 80px; }
+  .dl-map-container { margin-bottom: 70px; }
+
   /* Parameter sub-label inside a section. */
   .dl-param-label {
     display: block;

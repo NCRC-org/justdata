@@ -8,6 +8,33 @@
 {% block content %}
 {% include "partials/dotlender_filters.html" %}
 {% include "partials/dotlender_pdf_modal.html" %}
+
+<!-- Fixed action bar: Render + Build PDF buttons. Lives outside the
+     flex layout so it pins to the viewport bottom regardless of scroll
+     position. Sidebar + map container get extra padding-bottom in the
+     head CSS so their content isn't covered. -->
+<div id="dl-action-bar"
+     style="position:fixed; bottom:0; left:0; right:0; z-index:200;
+            background:#fff; border-top:2px solid #e0e6ed;
+            padding:10px 24px; display:flex; gap:12px;
+            align-items:center; justify-content:flex-end;
+            box-shadow:0 -2px 8px rgba(0,0,0,0.08);">
+  <button id="dl-render-btn" type="button"
+          style="padding:10px 22px; background:var(--ncrc-navy); color:white; border:none;
+                 border-radius:6px; font-size:0.9rem; font-weight:600; cursor:pointer;">
+    <span id="dl-render-spinner" class="dl-spinner"
+          style="display:none; margin-right:6px;"></span>
+    <i class="fas fa-map"></i> Render Map
+  </button>
+  <button id="dl-build-report-btn" type="button"
+          style="padding:10px 22px; background:white; color:var(--ncrc-navy);
+                 border:2px solid var(--ncrc-navy); border-radius:6px; font-size:0.9rem;
+                 font-weight:600; cursor:pointer; display:none;">
+    <span id="dl-pdf-spinner" class="dl-spinner"
+          style="display:none; margin-right:6px;"></span>
+    <i class="fas fa-file-pdf"></i> Build PDF Report
+  </button>
+</div>
 {% endblock %}
 
 {% block extra_js %}

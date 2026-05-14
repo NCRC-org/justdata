@@ -56,9 +56,25 @@ window.dotlenderSetBreakpoints = function (quartiles, overlayMode) {
   if (panel) panel.style.display = 'block';
   const overlayLabel = document.getElementById('dl-bp-overlay-label');
   if (overlayLabel) overlayLabel.textContent = `— ${RACE_OVERLAY_LABELS[overlayMode] || ''}`;
+  // Auto-expand the body so the user sees the controls without an extra
+  // click on the freshly loaded overlay.
+  const body = document.getElementById('dl-bp-body');
+  const chevron = document.getElementById('dl-bp-chevron');
+  if (body) body.style.display = 'block';
+  if (chevron) chevron.style.transform = 'rotate(180deg)';
 };
 
 export function initBreakpointPanel() {
+  // Header click toggles the body collapse/expand. The chevron rotates
+  // 180deg in the expanded state.
+  document.getElementById('dl-bp-header')?.addEventListener('click', () => {
+    const body = document.getElementById('dl-bp-body');
+    const chevron = document.getElementById('dl-bp-chevron');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  });
   document.getElementById('dl-bp-count')?.addEventListener('change', (e) => {
     const count = parseInt(e.target.value, 10);
     renderBreakpointInputs(count, bpValues);
