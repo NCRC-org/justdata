@@ -102,14 +102,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const placeholder = window.dotlenderMapPlaceholder;
     if (mapCapture && mapCapture.dataUrl) {
       if (placeholder) {
+        // Map canvas pixels to PDF mm. Note: scaleX != scaleY when the
+        // PDF page aspect (tabloid 1.546) differs from the canvas aspect
+        // (1.294) — applying them per-axis to placeholder.{width,height}
+        // would stretch the screenshot horizontally. Instead, compute the
+        // placeholder rectangle in mm and fit the captured PNG inside it
+        // with aspect-correct contain-fit (letterboxes the unused axis).
         const scaleX = pdfW / CANVAS_W;
         const scaleY = pdfH / CANVAS_H;
+        const phXmm = placeholder.left * scaleX;
+        const phYmm = placeholder.top * scaleY;
+        const phWmm = placeholder.width * scaleX;
+        const phHmm = placeholder.height * scaleY;
+        const fit = fitImageContain(mapCapture.width, mapCapture.height, phWmm, phHmm);
         pdf.addImage(
           mapCapture.dataUrl, 'PNG',
-          placeholder.left * scaleX,
-          placeholder.top * scaleY,
-          placeholder.width * scaleX,
-          placeholder.height * scaleY,
+          phXmm + fit.x, phYmm + fit.y, fit.w, fit.h,
         );
       } else {
         const { x, y, w, h } = fitImageContain(mapCapture.width, mapCapture.height, pdfW, pdfH);

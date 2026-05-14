@@ -209,28 +209,60 @@ export function addCityBoundaries() {
   // and canvas legend instead.
   map.setFilter('dl-city-bounds-line', null);
 
-  // After the layer renders, collect the visible cities, dedupe by
-  // STATEFP+NAME, and filter to the states that contain the user's
-  // selected counties.
+  // After the layer renders, dedupe rendered city features by STATEFP+NAME
+  // (keep every tile fragment so we can test all of them), then filter by
+  // spatial intersect against the cached county polygon. Falls back to a
+  // state-FIPS filter for state-level renders (no county geojson cached).
   map.once('idle', () => {
     if (!map.getLayer('dl-city-bounds-line')) return;
     const features = map.queryRenderedFeatures(undefined, {
       layers: ['dl-city-bounds-line'],
     });
-    const selectedStateFips = new Set(
-      (window.currentGeoidList || []).map((g) => String(g).substring(0, 2)),
-    );
     const cityMap = {};
     features.forEach((f) => {
       const stateFp = f.properties?.STATEFP;
       const name = f.properties?.NAME;
       if (!name || !stateFp) return;
-      if (selectedStateFips.size > 0 && !selectedStateFips.has(stateFp)) return;
       const key = `${stateFp}:${name}`;
-      if (!cityMap[key]) cityMap[key] = { name, stateFp };
+      if (!cityMap[key]) cityMap[key] = { name, stateFp, fragments: [f] };
+      else cityMap[key].fragments.push(f);
     });
-    const cities = Object.values(cityMap).sort((a, b) => a.name.localeCompare(b.name));
+
+    const countyPoly = cachedCountyGeojson?.features?.[0];
+    let kept = Object.values(cityMap);
+    // eslint-disable-next-line no-undef
+    if (countyPoly && typeof turf !== 'undefined') {
+      kept = kept.filter((city) => city.fragments.some((frag) => {
+        try {
+          // eslint-disable-next-line no-undef
+          return turf.booleanIntersects(frag, countyPoly);
+        } catch (e) { return false; }
+      }));
+    } else {
+      const selectedStateFips = new Set(
+        (window.currentGeoidList || []).map((g) => String(g).substring(0, 2)),
+      );
+      if (selectedStateFips.size > 0) {
+        kept = kept.filter((city) => selectedStateFips.has(city.stateFp));
+      }
+    }
+
+    kept.sort((a, b) => a.name.localeCompare(b.name));
+    const cities = kept.map((c) => ({ name: c.name, stateFp: c.stateFp }));
     window.dotlenderActiveCities = cities;
+
+    // Sync the rendered Mapbox layer to the kept set so users see only the
+    // cities that actually overlap their clip area.
+    if (cities.length > 0) {
+      const filter = ['any', ...cities.map((c) => [
+        'all',
+        ['==', ['get', 'NAME'], c.name],
+        ['==', ['get', 'STATEFP'], c.stateFp],
+      ])];
+      map.setFilter('dl-city-bounds-line', filter);
+    } else {
+      map.setFilter('dl-city-bounds-line', ['==', ['get', 'NAME'], '__none__']);
+    }
 
     const span = document.getElementById('dl-city-boundary-label');
     if (!span) return;
