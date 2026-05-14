@@ -117,7 +117,7 @@
           <span id="dl-bp-chevron"
                 style="font-size:0.75rem; color:#1a3a6e; transition:transform 0.2s;">▼</span>
         </div>
-        <div id="dl-bp-body" style="display:none; margin-top:8px;">
+        <div id="dl-bp-body" class="dl-collapsible" style="margin-top:8px;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
             <label style="font-size:0.8rem; color:#444;">Number of breaks:</label>
             <select id="dl-bp-count"
@@ -165,7 +165,7 @@
           Dot Color by Race
           <i class="fas fa-chevron-right" id="dl-race-chevron" style="float:right; font-size:0.7rem; margin-top:3px;"></i>
         </label>
-        <div id="dl-race-filters" style="display:none; margin-top:6px;">
+        <div id="dl-race-filters" class="dl-collapsible" style="margin-top:6px;">
           <label class="dl-race-item">
             <input type="checkbox" class="dl-race-cb" id="dl-race-all" value="all" checked style="margin:0;">
             <span class="dl-race-dot" style="background:#222;"></span> All races (black)
@@ -236,7 +236,7 @@
           Advanced Filters
           <i class="fas fa-chevron-right" id="dl-advanced-chevron" style="float:right; font-size:0.7rem; margin-top:3px;"></i>
         </label>
-        <div id="dotlender-advanced-filters" style="display:none; margin-top:6px;">
+        <div id="dotlender-advanced-filters" class="dl-collapsible" style="margin-top:6px;">
           <div style="margin-bottom:6px;">
             <label style="font-size:0.78rem; color:#555;">Loan Purpose</label>
             <select id="dl-loan-purpose" style="width:100%;">
@@ -308,6 +308,22 @@
       </div>
 
     </div><!-- /.dl-mapper-controls -->
+
+    <!-- Action bar pinned to the sidebar's bottom. The sidebar is a flex
+         column on desktop, so this stays put while .dl-mapper-controls
+         scrolls above it. -->
+    <div id="dl-action-bar">
+      <button id="dl-render-btn" type="button">
+        <span id="dl-render-spinner" class="dl-spinner"
+              style="display:none; margin-right:6px;"></span>
+        <i class="fas fa-map"></i> Render Map
+      </button>
+      <button id="dl-build-report-btn" type="button" style="display:none;">
+        <span id="dl-pdf-spinner" class="dl-spinner"
+              style="display:none; margin-right:6px;"></span>
+        <i class="fas fa-file-pdf"></i> Build PDF Report
+      </button>
+    </div>
   </aside><!-- /.dl-controls-sidebar -->
 
   <!-- Map content -->

@@ -95,11 +95,67 @@
     border-width: 3px;
   }
 
-  /* Reserve room at the bottom so the fixed #dl-action-bar (Render Map
-     + Build PDF buttons) doesn't cover sidebar scroll content or the
-     map's lower edge. */
-  .dl-controls-sidebar { padding-bottom: 80px; }
-  .dl-map-container { margin-bottom: 70px; }
+  /* Animated collapse helper. JS toggles .dl-open; the max-height ceiling
+     is generous so the transition runs to natural content height for any
+     panel up to ~600px. Add overflow:hidden so the collapse cleanly
+     clips inner controls during the animation. */
+  .dl-collapsible {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.25s ease-out, opacity 0.25s ease-out;
+  }
+  .dl-collapsible.dl-open {
+    max-height: 600px;
+    opacity: 1;
+    transition: max-height 0.3s ease-in, opacity 0.25s ease-in;
+  }
+
+  /* Sidebar acts as a flex column on desktop so the action bar pins to
+     its own bottom while the controls scroll above. Mobile (<992px)
+     falls back to natural document flow — the action bar just sits
+     below the controls. */
+  .dl-controls-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+  .dl-mapper-controls {
+    flex: 1;
+    min-height: 0;  /* allow inner overflow-y to actually scroll */
+    overflow-y: auto;
+  }
+  #dl-action-bar {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 2px solid #e0e6ed;
+    background: #fff;
+  }
+  #dl-action-bar #dl-render-btn,
+  #dl-action-bar #dl-build-report-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  #dl-action-bar #dl-render-btn {
+    background: var(--ncrc-navy);
+    color: white;
+    border: none;
+  }
+  #dl-action-bar #dl-build-report-btn {
+    background: white;
+    color: var(--ncrc-navy);
+    border: 2px solid var(--ncrc-navy);
+  }
 
   /* Parameter sub-label inside a section. */
   .dl-param-label {
@@ -138,8 +194,7 @@
       max-width: 300px !important;
       position: sticky !important;
       top: 20px !important;
-      max-height: calc(100vh - 40px);
-      overflow-y: auto;
+      height: calc(100vh - 40px);
     }
     .dl-content-wrapper { flex: 1 !important; }
   }

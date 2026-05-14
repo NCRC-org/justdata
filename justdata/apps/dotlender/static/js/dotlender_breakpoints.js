@@ -57,10 +57,11 @@ window.dotlenderSetBreakpoints = function (quartiles, overlayMode) {
   const overlayLabel = document.getElementById('dl-bp-overlay-label');
   if (overlayLabel) overlayLabel.textContent = `— ${RACE_OVERLAY_LABELS[overlayMode] || ''}`;
   // Auto-expand the body so the user sees the controls without an extra
-  // click on the freshly loaded overlay.
+  // click on the freshly loaded overlay. The .dl-collapsible CSS drives
+  // the smooth max-height/opacity transition.
   const body = document.getElementById('dl-bp-body');
   const chevron = document.getElementById('dl-bp-chevron');
-  if (body) body.style.display = 'block';
+  if (body) body.classList.add('dl-open');
   if (chevron) chevron.style.transform = 'rotate(180deg)';
 };
 
@@ -71,9 +72,9 @@ export function initBreakpointPanel() {
     const body = document.getElementById('dl-bp-body');
     const chevron = document.getElementById('dl-bp-chevron');
     if (!body) return;
-    const isOpen = body.style.display !== 'none';
-    body.style.display = isOpen ? 'none' : 'block';
-    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    const willOpen = !body.classList.contains('dl-open');
+    body.classList.toggle('dl-open', willOpen);
+    if (chevron) chevron.style.transform = willOpen ? 'rotate(180deg)' : '';
   });
   document.getElementById('dl-bp-count')?.addEventListener('change', (e) => {
     const count = parseInt(e.target.value, 10);
