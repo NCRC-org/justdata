@@ -6,9 +6,10 @@
 // inside the same map.once('idle') callback that draws the county outline
 // so projection and capture share a single viewport snapshot.
 
-import { INCOME_BAND_COLORS, getCurrentMapData, getActiveRaceFilters } from './dotlender_map.js';
+import { getCurrentMapData, getActiveRaceFilters } from './dotlender_map.js';
 import { getFilterState } from './dotlender_filters.js';
 import { getCachedCountyGeojson, getCachedMapContainerSize } from './dotlender_overlays.js';
+import { placeMapLegend } from './dotlender_legend.js';
 
 let fabricCanvas = null;
 
@@ -71,14 +72,19 @@ export async function buildCanvas(mapData, state) {
     });
   }
 
+  // Aspect-locked draggable map frame — this is what the user positions
+  // to choose where the captured map screenshot lands on the PDF. The
+  // dashed county outline (added LAST) rides inside the frame purely as
+  // a visual guide; the screenshot itself already has the county shape
+  // carved out by the dl-county-mask-fill white layer.
+  placeMapFrame();
+
   await placeLogo();
-  placeMapLegend(state, getActiveRaceFilters());
+  placeMapLegend(fabricCanvas, state, getActiveRaceFilters());
   placeScaleBar(mapInstance);
   await placeNorthArrow();
 
-  // County outline LAST so it renders on top of the other canvas elements.
-  // The outline path uses the same map.project() that the capture above
-  // used, so it stays aligned with the captured viewport.
+  // County outline LAST so it renders on top, fit inside the map frame.
   placeCountyOutline();
 
   fabricCanvas.renderAll();
@@ -115,30 +121,16 @@ function geojsonToPath(geometry, mapInstance, w, h) {
   return pathStr.trim();
 }
 
-function placeFallbackPlaceholder() {
-  const left = 40; const top = 120;
-  const width = CANVAS_W - 680; const height = CANVAS_H - 440;
-  // eslint-disable-next-line no-undef
-  const rect = new fabric.Rect({
-    left, top, width, height, fill: 'transparent',
-    stroke: PLACEHOLDER_STROKE, strokeWidth: 3, strokeDashArray: [12, 6],
-    selectable: true,
-    excludeFromExport: true,
-  });
-  fabricCanvas.add(rect);
-  window.dotlenderMapPlaceholder = { left, top, width, height };
-}
+// --- Map frame (aspect-locked, draggable) --------------------------------
 
-function syncPlaceholderFromPath(p) {
-  const b = p.getBoundingRect();
+function syncMapPlaceholderFromFrame(frame) {
+  const b = frame.getBoundingRect();
   window.dotlenderMapPlaceholder = {
     left: b.left, top: b.top, width: b.width, height: b.height,
   };
 }
 
 function rebuildScaleBar() {
-  // Remove the existing scale group (the one containing the "Miles" caption)
-  // and re-place from current bounds / placeholder width.
   const oldScale = fabricCanvas.getObjects().find((o) => (
     o.type === 'group' && (o._objects || o.getObjects?.() || [])
       .some((c) => c.type === 'text' && c.text === 'Miles')
@@ -148,42 +140,106 @@ function rebuildScaleBar() {
   fabricCanvas.renderAll();
 }
 
+function placeMapFrame() {
+  // Aspect-locked rectangle that drives where the captured Mapbox PNG
+  // lands on the exported PDF. Aspect matches the live Mapbox container
+  // (= the PNG's aspect), so no vertical stretch when the export scales
+  // the screenshot into these bounds.
+  const containerSize = getCachedMapContainerSize();
+  const aspect = containerSize
+    ? containerSize.width / containerSize.height
+    : 1.5;
+  const frameW = Math.round(CANVAS_W * 0.6);
+  const frameH = Math.round(frameW / aspect);
+  const frameLeft = Math.round((CANVAS_W - frameW) / 2);
+  const frameTop = Math.round((CANVAS_H - frameH) / 2);
+
+  // eslint-disable-next-line no-undef
+  const frame = new fabric.Rect({
+    left: frameLeft, top: frameTop, width: frameW, height: frameH,
+    fill: 'transparent',
+    stroke: PLACEHOLDER_STROKE,
+    strokeWidth: 2,
+    strokeDashArray: [8, 4],
+    selectable: true,
+    hasControls: true,
+    lockUniScaling: true,
+    excludeFromExport: true,
+  });
+  fabricCanvas.add(frame);
+  window.dotlenderMapFrame = frame;
+  syncMapPlaceholderFromFrame(frame);
+
+  frame.on('moving', () => {
+    syncMapPlaceholderFromFrame(frame);
+    updateCountyOutlineToFrame();
+  });
+  frame.on('scaling', () => {
+    syncMapPlaceholderFromFrame(frame);
+    updateCountyOutlineToFrame();
+    rebuildScaleBar();
+  });
+  return frame;
+}
+
+// --- County outline (visual guide, rides inside the frame) ---------------
+
+function fitPathToFrame(countyPath, frame) {
+  // Scale the projected county path (which lives in Mapbox container px
+  // space) into the current frame's actual rendered size, centered with
+  // a uniform contain-fit so the shape's aspect is preserved.
+  const pathBbox = countyPath.getBoundingRect(true);
+  const frameW = frame.width * (frame.scaleX || 1);
+  const frameH = frame.height * (frame.scaleY || 1);
+  const scale = Math.min(frameW / pathBbox.width, frameH / pathBbox.height);
+  const scaledW = pathBbox.width * scale;
+  const scaledH = pathBbox.height * scale;
+  const offsetX = (frameW - scaledW) / 2;
+  const offsetY = (frameH - scaledH) / 2;
+  countyPath.set({
+    scaleX: scale,
+    scaleY: scale,
+    left: frame.left + offsetX - (pathBbox.left * scale),
+    top: frame.top + offsetY - (pathBbox.top * scale),
+  });
+  countyPath.setCoords();
+}
+
+function updateCountyOutlineToFrame() {
+  const countyPath = window.dotlenderCountyOutline;
+  const frame = window.dotlenderMapFrame;
+  if (countyPath && frame) {
+    fitPathToFrame(countyPath, frame);
+    fabricCanvas.renderAll();
+  }
+}
+
 function placeCountyOutline() {
   const mapInstance = window.dotlenderMap;
   const geojson = getCachedCountyGeojson();
   const containerSize = getCachedMapContainerSize();
-  if (!mapInstance || !geojson?.features?.length || !containerSize) {
-    placeFallbackPlaceholder();
+  const frame = window.dotlenderMapFrame;
+  if (!mapInstance || !geojson?.features?.length || !containerSize || !frame) {
     return;
   }
   const pathStr = geojsonToPath(
     geojson.features[0].geometry, mapInstance,
     containerSize.width, containerSize.height,
   );
-  if (!pathStr) { placeFallbackPlaceholder(); return; }
+  if (!pathStr) return;
   // eslint-disable-next-line no-undef
   const countyPath = new fabric.Path(pathStr, {
     fill: 'transparent',
     stroke: PLACEHOLDER_STROKE,
-    strokeWidth: 3,
+    strokeWidth: 2,
     strokeDashArray: [12, 6],
-    selectable: true,
-    evented: true,
-    // Editor-only affordance: hide from PDF export so the dashed outline
-    // doesn't bleed into the final report on top of the captured map.
+    selectable: false,
+    evented: false,
     excludeFromExport: true,
   });
+  fitPathToFrame(countyPath, frame);
   fabricCanvas.add(countyPath);
-  syncPlaceholderFromPath(countyPath);
-
-  // Make the outline a true draggable map frame: dragging it on the canvas
-  // moves the map image on the exported PDF; resizing it changes both the
-  // map placement and the scale bar magnitude.
-  countyPath.on('moving', () => syncPlaceholderFromPath(countyPath));
-  countyPath.on('scaling', () => {
-    syncPlaceholderFromPath(countyPath);
-    rebuildScaleBar();
-  });
+  window.dotlenderCountyOutline = countyPath;
 }
 
 async function placeLogo() {
@@ -197,115 +253,6 @@ async function placeLogo() {
       resolve();
     }, { crossOrigin: 'anonymous' });
   });
-}
-
-// --- Legend group ---------------------------------------------------------
-
-const LEGEND_RACE_COLORS = {
-  'Hispanic or Latino': '#e41a1c',
-  'Black or African American': '#377eb8',
-  'Asian': '#4daf4a',
-  'White': '#a65628',
-  'American Indian or Alaska Native': '#999',
-  'Two or More Races': '#999',
-  'Unknown or Not Provided': '#999',
-  'other': '#999',
-};
-const OTHER_BUCKETS = ['American Indian or Alaska Native', 'Two or More Races', 'Unknown or Not Provided', 'other'];
-
-function addText(objects, text, opts) {
-  // eslint-disable-next-line no-undef
-  objects.push(new fabric.Text(text, { fontFamily: LEGEND_FONT, fill: '#222', ...opts }));
-}
-
-function placeMapLegend(state, activeRaces) {
-  const objects = [];
-  const x = 40;
-  let y = CANVAS_H - 540;
-  const lineH = 32;
-  const dotR = 9;
-
-  addText(objects, 'Home Mortgage Originations', { left: x, top: y, fontSize: 28, fontWeight: 'bold' });
-  y += 36;
-  const yearLabel = state.year_start === state.year_end
-    ? `(${state.year_start})`
-    : `(${state.year_start} – ${state.year_end})`;
-  addText(objects, yearLabel, { left: x, top: y, fontSize: 22, fontWeight: 'normal', fill: '#444' });
-  y += 30;
-
-  const density = parseInt(document.getElementById('dl-density-value')?.value, 10) || 1;
-  addText(objects, `1 Dot = ${density} Loan${density > 1 ? 's' : ''}`, {
-    left: x, top: y, fontSize: 24, fontWeight: 'bold',
-  });
-  y += 38;
-
-  const lenderLabel = state.lei ? state.lender_name : 'All Lenders';
-  if (activeRaces === 'all') {
-    // eslint-disable-next-line no-undef
-    objects.push(new fabric.Circle({ left: x, top: y, radius: dotR, fill: '#222' }));
-    addText(objects, `${lenderLabel} Originations`, {
-      left: x + 24, top: y - 4, fontSize: 22, fontWeight: 'normal',
-    });
-    y += lineH;
-  } else {
-    const seen = new Set();
-    activeRaces.forEach((race) => {
-      const label = OTHER_BUCKETS.includes(race) ? 'Other / Unknown' : race;
-      if (seen.has(label)) return;
-      seen.add(label);
-      const color = LEGEND_RACE_COLORS[race] || '#999';
-      // eslint-disable-next-line no-undef
-      objects.push(new fabric.Circle({ left: x, top: y, radius: dotR, fill: color }));
-      addText(objects, label, { left: x + 24, top: y - 4, fontSize: 22, fontWeight: 'normal' });
-      y += lineH;
-    });
-  }
-
-  y += 10;
-  const overlayMode = state.overlay_mode;
-  if (overlayMode && overlayMode !== 'none') {
-    const choroTitle = overlayMode === 'income' ? 'Tract Income Band' : 'Minority Population';
-    addText(objects, choroTitle, { left: x, top: y, fontSize: 24, fontWeight: 'bold' });
-    y += 30;
-    const items = overlayMode === 'income'
-      ? [['Low (<50% AMI)', INCOME_BAND_COLORS.low],
-         ['Moderate (50–80%)', INCOME_BAND_COLORS.moderate],
-         ['Middle (80–120%)', INCOME_BAND_COLORS.middle],
-         ['Upper (>120%)', INCOME_BAND_COLORS.upper]]
-      : [['<25% minority', '#deebf7'], ['25–50%', '#9ecae1'],
-         ['50–75%', '#3182bd'], ['>75%', '#08519c']];
-    items.forEach(([label, color]) => {
-      // eslint-disable-next-line no-undef
-      objects.push(new fabric.Rect({
-        left: x, top: y, width: 20, height: 20, fill: color, stroke: '#999', strokeWidth: 1,
-      }));
-      addText(objects, label, { left: x + 28, top: y - 2, fontSize: 20, fontWeight: 'normal' });
-      y += lineH;
-    });
-  }
-
-  if (document.getElementById('dl-show-city-boundary')?.checked) {
-    const cities = window.dotlenderActiveCities || [];
-    let cityLabel;
-    if (cities.length === 1) {
-      cityLabel = `${cities[0].name} Boundary`;
-    } else if (cities.length > 1 && cities.length <= 3) {
-      cityLabel = cities.map((c) => c.name).join(', ');
-    } else if (cities.length > 3) {
-      cityLabel = `${cities.length} City Boundaries`;
-    } else {
-      cityLabel = 'City Boundary';
-    }
-    // eslint-disable-next-line no-undef
-    objects.push(new fabric.Line([x, y + 10, x + 24, y + 10], {
-      stroke: '#c0392b', strokeWidth: 2,
-    }));
-    addText(objects, cityLabel, { left: x + 32, top: y, fontSize: 20, fontWeight: 'normal' });
-  }
-
-  // eslint-disable-next-line no-undef
-  const group = new fabric.Group(objects, { selectable: true, hasControls: true });
-  fabricCanvas.add(group);
 }
 
 // --- Scale bar (independent draggable group) -----------------------------
@@ -375,29 +322,58 @@ function placeScaleBar(mapInstance) {
 
 // --- North arrow (independent draggable group) ---------------------------
 
+function addSimpleArrowFallback() {
+  console.log('[dotlender] north arrow: using simple triangle fallback');
+  // eslint-disable-next-line no-undef
+  const arrow = new fabric.Triangle({
+    width: 60, height: 80, fill: '#000',
+    left: CANVAS_W - 260, top: CANVAS_H - 280,
+    selectable: true, hasControls: true,
+  });
+  // eslint-disable-next-line no-undef
+  const label = new fabric.Text('N', {
+    fontSize: 36, fontWeight: 'bold', fontFamily: LEGEND_FONT, fill: '#000',
+    left: CANVAS_W - 244, top: CANVAS_H - 200,
+    selectable: true,
+  });
+  fabricCanvas.add(arrow);
+  fabricCanvas.add(label);
+}
+
 function loadNorthArrowAsImage(resolve) {
-  // Fallback: rasterize the SVG via an <img>. Same shape, just not editable
-  // as Fabric paths. Used when loadSVGFromString returns no objects.
+  console.log('[dotlender] north arrow: loadNorthArrowAsImage starting');
   // eslint-disable-next-line no-undef
   fabric.Image.fromURL(NORTH_ARROW_SVG, (img) => {
-    if (!img || !img.width) { resolve(); return; }
+    if (!img || !img.width) {
+      console.warn('[dotlender] north arrow image load returned empty — using simple fallback');
+      addSimpleArrowFallback();
+      resolve();
+      return;
+    }
     img.scaleToHeight(120);
     img.set({
       left: CANVAS_W - 260, top: CANVAS_H - 280,
       selectable: true, hasControls: true,
     });
     fabricCanvas.add(img);
+    console.log('[dotlender] north arrow: image added');
     resolve();
-  });
+  }, { crossOrigin: 'anonymous' });
 }
 
 async function placeNorthArrow() {
   return new Promise((resolve) => {
+    console.log('[dotlender] placeNorthArrow: fetching', NORTH_ARROW_SVG);
     fetch(NORTH_ARROW_SVG)
-      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
+      .then((r) => {
+        console.log('[dotlender] north arrow fetch status:', r.status);
+        return r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`));
+      })
       .then((svgString) => {
+        console.log('[dotlender] north arrow SVG length:', svgString.length);
         // eslint-disable-next-line no-undef
         fabric.loadSVGFromString(svgString, (objects, options) => {
+          console.log('[dotlender] north arrow parsed objects:', objects?.length || 0);
           if (!objects || !objects.length) {
             loadNorthArrowAsImage(resolve);
             return;
@@ -410,11 +386,13 @@ async function placeNorthArrow() {
             selectable: true, hasControls: true,
           });
           fabricCanvas.add(svg);
+          console.log('[dotlender] north arrow: SVG added to canvas');
           resolve();
         });
       })
-      .catch(() => {
-        console.warn('[dotlender] north arrow load failed');
+      .catch((err) => {
+        console.error('[dotlender] north arrow load failed:', err);
+        addSimpleArrowFallback();
         resolve();
       });
   });
