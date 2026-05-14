@@ -173,6 +173,39 @@ def get_state_counties(state_fips: str) -> List[dict]:
     ]
 
 
+VALID_RACE_FIELDS = frozenset({
+    "black", "hispanic", "black_hispanic", "asian", "ai_an", "nh_opi", "white",
+})
+
+
+def get_race_shares(
+    geo_predicate: str,
+    geo_params: List[ScalarQueryParameter],
+    race_field: str,
+) -> List[dict]:
+    """Per-tract race share percentages from shared.census (2025 vintage).
+
+    Returns [{geoid, pct}] for all tracts >= 10 persons in the geography.
+    pct is 0-100 scale, matching the existing minority_population convention
+    used by the income/minority choropleth.
+    """
+    if race_field not in VALID_RACE_FIELDS:
+        raise ValueError(
+            f"invalid race_field: {race_field!r} "
+            f"(allowed: {sorted(VALID_RACE_FIELDS)})"
+        )
+    sql = load_sql("tract_race_shares.sql").format(geo_predicate=geo_predicate)
+    params = list(geo_params) + [
+        ScalarQueryParameter("race_field", "STRING", race_field),
+    ]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {"geoid": r.get("geoid"), "pct": float(r.get("pct") or 0)}
+        for r in rows
+        if r.get("geoid") and r.get("pct") is not None
+    ]
+
+
 def _income_band(tract_income_pct) -> str:
     if tract_income_pct is None:
         return "unknown"

@@ -3,6 +3,8 @@
 // geography search + county chips, render trigger.
 // Exposes getFilterState() and initRenderButton(onRender) for the map.
 
+import { initBreakpointPanel } from './dotlender_breakpoints.js';
+
 const API = {
   maxYear: '/dotlender/api/max-year',
   lenderSearch: '/dotlender/api/lender-search',
@@ -483,4 +485,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initLenderTypeahead();
   initSelectAllButtons();
   initCityListButtons();
+  initBreakpointPanel();
 });

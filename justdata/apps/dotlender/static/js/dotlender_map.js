@@ -14,6 +14,9 @@ import {
   collectTractPolygons, getCachedTractPolygons,
   stableJitterAsync, buildDotFeatures,
 } from './dotlender_dots.js';
+import {
+  addRaceLayer, setRaceLayerVisible, loadRaceOverlay,
+} from './dotlender_race_overlay.js';
 
 // Re-export the palette so other modules (canvas legend, future overlays)
 // keep a stable import path even though the constants live in dots.js now.
@@ -30,8 +33,8 @@ export const INCOME_BAND_COLORS = {
 };
 
 const MAPBOX_STYLE = 'mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3';
-const CENSUS_TILESET_ID = 'jedlebi.census-tracts';
-const CENSUS_SOURCE_LAYER = 'census_tracts';
+export const CENSUS_TILESET_ID = 'jedlebi.census-tracts';
+export const CENSUS_SOURCE_LAYER = 'census_tracts';
 
 const STATE_FIPS_TO_BOUNDS = {
   // minimal lookup for state-level fitBounds fallback (lng/lat); add more as needed
@@ -164,6 +167,9 @@ function addCensusLayers() {
     },
     layout: { visibility: 'none' },
   }, beforeChoropleth);
+  // Race-share choropleth: separate source with promoteId so feature-state
+  // drives per-tract colors. See dotlender_race_overlay.js.
+  addRaceLayer(beforeChoropleth);
 }
 
 function addDotsLayer() {
@@ -194,12 +200,14 @@ function setOverlayVisibility(mode) {
   currentOverlayMode = mode;
   const showIncome = mode === 'income';
   const showMinority = mode === 'minority';
+  const isRace = typeof mode === 'string' && mode.startsWith('race_');
   ['dl-income-fill'].forEach((id) => {
     map.setLayoutProperty(id, 'visibility', showIncome ? 'visible' : 'none');
   });
   ['dl-minority-fill'].forEach((id) => {
     map.setLayoutProperty(id, 'visibility', showMinority ? 'visible' : 'none');
   });
+  setRaceLayerVisible(isRace);
 }
 
 // --- Race filter wiring ---------------------------------------------------
@@ -347,27 +355,25 @@ async function scheduleDotPlacement() {
   map.triggerRepaint();
 }
 
-function fitToDots(dotsFC) {
-  if (!dotsFC.features.length) return;
-  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-  dotsFC.features.forEach((f) => {
-    const [lng, lat] = f.geometry.coordinates;
-    if (lng < minLng) minLng = lng; if (lat < minLat) minLat = lat;
-    if (lng > maxLng) maxLng = lng; if (lat > maxLat) maxLat = lat;
-  });
-  const pad = 0.05;
-  map.fitBounds(
-    [[minLng - pad, minLat - pad], [maxLng + pad, maxLat + pad]],
-    { padding: 30, duration: 600 },
-  );
-}
-
 async function renderMap(mapData, state) {
   if (!mapLoaded) {
     map.once('load', () => renderMap(mapData, state));
     return;
   }
+  // Cache the rendered geography so the overlay dropdown can re-fetch race
+  // shares when the user switches overlay modes without re-rendering.
+  window.dotlenderLastGeography = state;
   setOverlayVisibility(state.overlay_mode);
+
+  // Race overlay: fetch the per-tract shares for the current geography and
+  // push them onto the dl-race-fill layer's feature-state. Non-blocking
+  // — dot placement and other render steps proceed in parallel.
+  if (typeof state.overlay_mode === 'string'
+      && state.overlay_mode.startsWith('race_')) {
+    loadRaceOverlay(state.overlay_mode, state).catch(
+      (e) => console.warn('[dotlender] loadRaceOverlay error:', e),
+    );
+  }
 
   // Defer dot placement until the choropleth tiles have actually rendered
   // at the current viewport — that's when queryRenderedFeatures will
@@ -463,6 +469,19 @@ function initOverlayToggles() {
   document.getElementById('dl-show-county-boundary')?.addEventListener('change', (e) => {
     if (!currentGeoidList.length) return;
     if (e.target.checked) addCountyMask(currentGeoidList); else removeCountyMask();
+  });
+  // When the user changes the overlay mode between renders, flip layer
+  // visibility immediately and (if switching to a race overlay) re-fetch
+  // shares against the last rendered geography.
+  document.getElementById('dl-overlay-mode')?.addEventListener('change', (e) => {
+    const mode = e.target.value;
+    setOverlayVisibility(mode);
+    if (typeof mode === 'string' && mode.startsWith('race_')
+        && window.dotlenderLastGeography) {
+      loadRaceOverlay(mode, window.dotlenderLastGeography).catch(
+        (err) => console.warn('[dotlender] loadRaceOverlay error:', err),
+      );
+    }
   });
 }
 
