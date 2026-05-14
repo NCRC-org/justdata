@@ -326,14 +326,14 @@ function addSimpleArrowFallback() {
   console.log('[dotlender] north arrow: using simple triangle fallback');
   // eslint-disable-next-line no-undef
   const arrow = new fabric.Triangle({
-    width: 60, height: 80, fill: '#000',
-    left: CANVAS_W - 260, top: CANVAS_H - 280,
+    width: 100, height: 130, fill: '#000',
+    left: CANVAS_W - 280, top: CANVAS_H - 320,
     selectable: true, hasControls: true,
   });
   // eslint-disable-next-line no-undef
   const label = new fabric.Text('N', {
-    fontSize: 36, fontWeight: 'bold', fontFamily: LEGEND_FONT, fill: '#000',
-    left: CANVAS_W - 244, top: CANVAS_H - 200,
+    fontSize: 60, fontWeight: 'bold', fontFamily: LEGEND_FONT, fill: '#000',
+    left: CANVAS_W - 254, top: CANVAS_H - 200,
     selectable: true,
   });
   fabricCanvas.add(arrow);
@@ -350,9 +350,9 @@ function loadNorthArrowAsImage(resolve) {
       resolve();
       return;
     }
-    img.scaleToHeight(120);
+    img.scaleToHeight(200);
     img.set({
-      left: CANVAS_W - 260, top: CANVAS_H - 280,
+      left: CANVAS_W - 280, top: CANVAS_H - 320,
       selectable: true, hasControls: true,
     });
     fabricCanvas.add(img);
@@ -380,9 +380,9 @@ async function placeNorthArrow() {
           }
           // eslint-disable-next-line no-undef
           const svg = fabric.util.groupSVGElements(objects, options);
-          svg.scaleToHeight(120);
+          svg.scaleToHeight(200);
           svg.set({
-            left: CANVAS_W - 260, top: CANVAS_H - 280,
+            left: CANVAS_W - 280, top: CANVAS_H - 320,
             selectable: true, hasControls: true,
           });
           fabricCanvas.add(svg);
