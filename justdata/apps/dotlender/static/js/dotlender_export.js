@@ -78,6 +78,11 @@ function fitImageContain(imgW, imgH, pageW, pageH) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('dl-page-size')?.addEventListener('change', () => {
+    if (typeof window.dotlenderRefreshPageMarker === 'function') {
+      window.dotlenderRefreshPageMarker();
+    }
+  });
   document.getElementById('dl-export-pdf-btn')?.addEventListener('click', async () => {
     const pageSize = document.getElementById('dl-page-size').value;
     // eslint-disable-next-line no-undef

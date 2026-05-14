@@ -251,40 +251,36 @@ export function addCityBoundaries() {
     const cities = kept.map((c) => ({ name: c.name, stateFp: c.stateFp }));
     window.dotlenderActiveCities = cities;
 
-    // Sync the rendered Mapbox layer to the kept set so users see only the
-    // cities that actually overlap their clip area.
-    if (cities.length > 0) {
-      const filter = ['any', ...cities.map((c) => [
-        'all',
-        ['==', ['get', 'NAME'], c.name],
-        ['==', ['get', 'STATEFP'], c.stateFp],
-      ])];
-      map.setFilter('dl-city-bounds-line', filter);
+    // Push the available list to the sidebar checkbox component. The
+    // setter resets selection to "all checked" so the rendered layer
+    // matches the legend by default; per-city visibility is then driven
+    // by user clicks through dotlenderApplyCityFilter.
+    if (typeof window.dotlenderSetAvailableCities === 'function') {
+      window.dotlenderSetAvailableCities(cities);
     } else {
-      map.setFilter('dl-city-bounds-line', ['==', ['get', 'NAME'], '__none__']);
-    }
-
-    const span = document.getElementById('dl-city-boundary-label');
-    if (!span) return;
-    if (cities.length === 0) {
-      span.textContent = 'City Boundaries (none in area)';
-    } else if (cities.length === 1) {
-      span.textContent = `${cities[0].name} Boundary`;
-    } else if (cities.length <= 3) {
-      span.textContent = `${cities.map((c) => c.name).join(', ')} Boundaries`;
-    } else {
-      span.textContent = `${cities.length} City Boundaries`;
+      applyCityFilter();
     }
   });
 }
 
-export function removeCityBoundaries() {
+function applyCityFilter() {
   const map = getMap();
-  if (!map) return;
-  if (map.getLayer('dl-city-bounds-line')) map.removeLayer('dl-city-bounds-line');
-  if (map.getSource('dl-city-bounds')) map.removeSource('dl-city-bounds');
-  window.dotlenderActiveCities = [];
+  if (!map || !map.getLayer('dl-city-bounds-line')) return;
+  const selected = window.dotlenderSelectedCities
+    || window.dotlenderActiveCities || [];
+  if (selected.length === 0) {
+    map.setFilter('dl-city-bounds-line', ['==', ['get', 'NAME'], '__none__']);
+    return;
+  }
+  const filter = ['any', ...selected.map((c) => [
+    'all',
+    ['==', ['get', 'NAME'], c.name],
+    ['==', ['get', 'STATEFP'], c.stateFp],
+  ])];
+  map.setFilter('dl-city-bounds-line', filter);
 }
+
+window.dotlenderApplyCityFilter = applyCityFilter;
 
 // --- Title + legend overlays ----------------------------------------------
 

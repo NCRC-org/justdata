@@ -167,11 +167,78 @@ function initSelectAllButtons() {
 }
 
 function updateCityBoundaryLabel() {
-  // Reset to default. The real label gets populated by addCityBoundaries()
-  // in overlays.js once the tileset has rendered and we can read its NAME
-  // values for the selected counties' states.
-  const span = document.getElementById('dl-city-boundary-label');
-  if (span) span.textContent = 'City Boundaries';
+  // Reset the city checkbox list back to its empty-state hint. The real
+  // entries get populated by addCityBoundaries() in overlays.js after
+  // the rendered tileset features have been intersect-filtered.
+  if (typeof window.dotlenderSetAvailableCities === 'function') {
+    window.dotlenderSetAvailableCities([]);
+  }
+}
+
+// --- City boundary checkbox list -----------------------------------------
+
+// Module-level state for the sidebar city list.
+let availableCities = [];
+let selectedCities = new Set();
+
+function renderCityCheckboxes() {
+  const list = document.getElementById('dl-city-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (availableCities.length === 0) {
+    list.innerHTML = '<div style="color:#999; font-style:italic; font-size:0.78rem;">Render a map to see available cities</div>';
+    return;
+  }
+  availableCities.forEach((city) => {
+    const key = `${city.stateFp}:${city.name}`;
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:3px 0; cursor:pointer;';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = key;
+    cb.checked = selectedCities.has(key);
+    cb.style.margin = '0';
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedCities.add(key);
+      else selectedCities.delete(key);
+      pushCitySelection();
+    });
+    const span = document.createElement('span');
+    span.textContent = city.name;
+    row.appendChild(cb);
+    row.appendChild(span);
+    list.appendChild(row);
+  });
+}
+
+function pushCitySelection() {
+  window.dotlenderSelectedCities = availableCities.filter(
+    (c) => selectedCities.has(`${c.stateFp}:${c.name}`),
+  );
+  if (typeof window.dotlenderApplyCityFilter === 'function') {
+    window.dotlenderApplyCityFilter();
+  }
+}
+
+window.dotlenderSetAvailableCities = function (cities) {
+  availableCities = cities || [];
+  // Default selection = all available cities on each render.
+  selectedCities = new Set(availableCities.map((c) => `${c.stateFp}:${c.name}`));
+  renderCityCheckboxes();
+  pushCitySelection();
+};
+
+function initCityListButtons() {
+  document.getElementById('dl-city-select-all-btn')?.addEventListener('click', () => {
+    selectedCities = new Set(availableCities.map((c) => `${c.stateFp}:${c.name}`));
+    renderCityCheckboxes();
+    pushCitySelection();
+  });
+  document.getElementById('dl-city-deselect-all-btn')?.addEventListener('click', () => {
+    selectedCities = new Set();
+    renderCityCheckboxes();
+    pushCitySelection();
+  });
 }
 
 function showGeoError(msg) {
@@ -395,4 +462,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initGeoSearch();
   initLenderTypeahead();
   initSelectAllButtons();
+  initCityListButtons();
 });
