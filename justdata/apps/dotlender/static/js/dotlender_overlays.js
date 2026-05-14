@@ -113,6 +113,32 @@ async function fetchCountyGeojson(fips) {
   return resp.json();
 }
 
+// Pan/zoom the live map to fit a given FIPS list without triggering a
+// full render. Used by the sidebar checkbox handler so the map follows
+// the user's geography selection in real time.
+export async function zoomToCounties(fipsList) {
+  const map = getMap();
+  if (!map || !fipsList?.length) return;
+  try {
+    const geojsons = await Promise.all(fipsList.map((f) => fetchCountyGeojson(f)));
+    const valid = geojsons.filter((g) => g?.features?.length);
+    if (!valid.length) return;
+    let combined = valid[0];
+    for (let i = 1; i < valid.length; i += 1) {
+      try {
+        // eslint-disable-next-line no-undef
+        const u = turf.union(combined.features[0], valid[i].features[0]);
+        if (u) combined = { type: 'FeatureCollection', features: [u] };
+      } catch (e) { /* ignore degenerate */ }
+    }
+    fitToCountyBounds(combined);
+  } catch (err) {
+    console.warn('[dotlender] zoomToCounties failed:', err);
+  }
+}
+
+window.dotlenderZoomToCounties = zoomToCounties;
+
 export async function addCountyMask(fipsList) {
   const map = getMap();
   if (!map) return;
@@ -126,6 +152,12 @@ export async function addCountyMask(fipsList) {
       const geojsons = await Promise.all(list.map((f) => fetchCountyGeojson(f)));
       const valid = geojsons.filter((g) => g?.features?.length);
       if (!valid.length) return;
+      // Preserve the per-county features so dotlender_canvas.js can label
+      // each county individually after the unioned mask is applied.
+      window.dotlenderCountyGeojsonList = valid.map((g, i) => ({
+        fips: list[i],
+        feature: g.features[0],
+      }));
       if (valid.length === 1) {
         cachedCountyGeojson = valid[0];
       } else {
@@ -201,7 +233,7 @@ export function addCityBoundaries() {
       type: 'line',
       source: 'dl-city-bounds',
       'source-layer': CITY_BOUNDS_SOURCE_LAYER,
-      paint: { 'line-color': '#c0392b', 'line-width': 1.5, 'line-opacity': 0.85 },
+      paint: { 'line-color': '#c0392b', 'line-width': 2.5, 'line-opacity': 0.85 },
     });
   }
   // Clear any old NAME/STATEFP filter — we now keep all visible city
@@ -245,6 +277,28 @@ export function addCityBoundaries() {
       if (selectedStateFips.size > 0) {
         kept = kept.filter((city) => selectedStateFips.has(city.stateFp));
       }
+    }
+
+    // Compute a centroid for each kept city by unioning its rendered
+    // fragments into one feature, so the canvas can place a moveable
+    // text label at each city's center (when 2+ are selected).
+    // eslint-disable-next-line no-undef
+    if (typeof turf !== 'undefined') {
+      window.dotlenderCityCentroids = kept.map((city) => {
+        try {
+          const fc = city.fragments.length === 1
+            ? city.fragments[0]
+            : { type: 'FeatureCollection', features: city.fragments };
+          // eslint-disable-next-line no-undef
+          const c = turf.centroid(fc);
+          return {
+            name: city.name, stateFp: city.stateFp,
+            lng: c.geometry.coordinates[0], lat: c.geometry.coordinates[1],
+          };
+        } catch (e) { return null; }
+      }).filter(Boolean);
+    } else {
+      window.dotlenderCityCentroids = [];
     }
 
     kept.sort((a, b) => a.name.localeCompare(b.name));
