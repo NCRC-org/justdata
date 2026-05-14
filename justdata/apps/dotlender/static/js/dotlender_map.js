@@ -9,32 +9,15 @@ import {
   updateTitleOverlay, updateLegend,
   hideNonShieldLabels,
 } from './dotlender_overlays.js';
+import {
+  RACE_COLORS, RACE_ALL_COLOR, OTHER_RACE_BUCKETS,
+  collectTractPolygons, getCachedTractPolygons,
+  stableJitterAsync, buildDotFeatures,
+} from './dotlender_dots.js';
 
-// NCRC race/ethnicity color palette — keyed on the derived_race string returned
-// by /api/map-data (built server-side from is_* flags in queries.DERIVED_RACE_SQL).
-export const RACE_COLORS = {
-  'Hispanic or Latino': '#e41a1c',
-  'Black or African American': '#377eb8',
-  'Asian': '#4daf4a',
-  'American Indian or Alaska Native': '#984ea3',
-  'Two or More Races': '#ff7f00',
-  'White': '#a65628',
-  'Unknown or Not Provided': '#999999',
-};
-
-// Default dot color when no race filter is active (all races combined).
-export const RACE_ALL_COLOR = '#222222';
-
-// "Other / Unknown" checkbox value expands to these race buckets.
-const OTHER_RACE_BUCKETS = [
-  'Unknown or Not Provided',
-  'American Indian or Alaska Native',
-  'Two or More Races',
-];
-
-// Jitter halfwidth in degrees applied around tract centroids (~890m N–S).
-// Tight enough to keep dots inside most tract polygons.
-const JITTER_DEGREES = 0.016;
+// Re-export the palette so other modules (canvas legend, future overlays)
+// keep a stable import path even though the constants live in dots.js now.
+export { RACE_COLORS, RACE_ALL_COLOR };
 
 // Income band fill colors (used for the spec's choropleth legend on the canvas;
 // the live map uses the tileset's own pre-baked income_category coloring).
@@ -95,21 +78,6 @@ function minorityFillColor() {
   ];
 }
 
-function raceCircleColor() {
-  // Match on Feature property "derived_race"
-  return [
-    'match',
-    ['get', 'derived_race'],
-    'Hispanic or Latino', RACE_COLORS['Hispanic or Latino'],
-    'Black or African American', RACE_COLORS['Black or African American'],
-    'Asian', RACE_COLORS['Asian'],
-    'American Indian or Alaska Native', RACE_COLORS['American Indian or Alaska Native'],
-    'Two or More Races', RACE_COLORS['Two or More Races'],
-    'White', RACE_COLORS['White'],
-    RACE_COLORS['Unknown or Not Provided'],
-  ];
-}
-
 // --- Map init -------------------------------------------------------------
 
 function initMap() {
@@ -147,6 +115,13 @@ function initMap() {
     mapLoaded = true;
   });
   map.on('style.load', () => hideNonShieldLabels());
+  // Refresh the tract polygon cache after pan/zoom so a subsequent
+  // Build Report sees the up-to-date set of rendered tracts. We do NOT
+  // re-place dots here — dot positions stay stable for the user-visible
+  // session; only polygon cache is refreshed.
+  map.on('moveend', () => {
+    if ((window.dotlenderRawDots || []).length) collectTractPolygons(map);
+  });
 }
 
 function addCensusLayers() {
@@ -166,13 +141,22 @@ function addCensusLayers() {
   map.addLayer({
     id: 'dl-income-fill', type: 'fill',
     source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
-    paint: { 'fill-color': incomeFillColor(), 'fill-opacity': 0.45 },
+    paint: {
+      'fill-color': incomeFillColor(),
+      'fill-opacity': 0.45,
+      // Suppress Mapbox's default 1px tract outline.
+      'fill-outline-color': 'rgba(0,0,0,0)',
+    },
     layout: { visibility: 'none' },
   }, beforeChoropleth);
   map.addLayer({
     id: 'dl-minority-fill', type: 'fill',
     source: 'census-tileset', 'source-layer': CENSUS_SOURCE_LAYER,
-    paint: { 'fill-color': minorityFillColor(), 'fill-opacity': 0.45 },
+    paint: {
+      'fill-color': minorityFillColor(),
+      'fill-opacity': 0.45,
+      'fill-outline-color': 'rgba(0,0,0,0)',
+    },
     layout: { visibility: 'none' },
   }, beforeChoropleth);
 }
@@ -188,7 +172,9 @@ function addDotsLayer() {
     source: 'dl-dots',
     paint: {
       'circle-radius': 3,
-      'circle-color': RACE_ALL_COLOR,
+      // Color is baked into each feature's properties.color by
+      // buildDotFeatures in dotlender_dots.js — read it directly here.
+      'circle-color': ['get', 'color'],
       'circle-opacity': 0.8,
       'circle-stroke-width': 0,
     },
@@ -209,43 +195,6 @@ function setOverlayVisibility(mode) {
   ['dl-minority-fill'].forEach((id) => {
     map.setLayoutProperty(id, 'visibility', showMinority ? 'visible' : 'none');
   });
-}
-
-// Pre-compute per-dot jitter once per API response so density changes are
-// purely additive (same dots, fewer of them) instead of re-randomizing.
-function stableJitter(dotData) {
-  return dotData.map((tract) => ({
-    ...tract,
-    _jitter: Array.from({ length: tract.dot_count || 0 }, () => ({
-      dlat: (Math.random() - 0.5) * JITTER_DEGREES,
-      dlng: (Math.random() - 0.5) * JITTER_DEGREES,
-    })),
-  }));
-}
-
-function buildDotFeatures(dotData, densityRatio = 1) {
-  // True subsample: each tract emits floor(n / stride) dots at indices
-  // [0, stride, 2*stride, ...]. A tract with 2 raw dots at stride=5
-  // emits 0 dots — no per-tract minimum, so voids in lending stay visible.
-  const features = [];
-  let rawTotal = 0;
-  const stride = Math.max(1, parseInt(densityRatio, 10) || 1);
-  dotData.forEach((row) => {
-    if (row.centroid_lat == null || row.centroid_lng == null) return;
-    const n = row._jitter?.length || 0;
-    rawTotal += n;
-    for (let k = 0, count = Math.floor(n / stride); k < count; k += 1) {
-      const j = row._jitter[k * stride];
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [row.centroid_lng + j.dlng, row.centroid_lat + j.dlat] },
-        properties: { derived_race: row.derived_race, census_tract: row.census_tract },
-      });
-    }
-  });
-  // eslint-disable-next-line no-console
-  console.log(`[dotlender] density stride=${stride}  raw dots=${rawTotal}  rendered=${features.length}`);
-  return { type: 'FeatureCollection', features };
 }
 
 // --- Race filter wiring ---------------------------------------------------
@@ -269,14 +218,9 @@ export function getActiveRaceFilters() {
 function applyDotsStyle() {
   if (!map || !map.getLayer('dl-dots-circles')) return;
   const active = getActiveRaceFilters();
-  if (active === 'all') {
-    map.setFilter('dl-dots-circles', null);
-    map.setPaintProperty('dl-dots-circles', 'circle-color', RACE_ALL_COLOR);
-  } else {
-    map.setFilter('dl-dots-circles', ['in', ['get', 'derived_race'], ['literal', active]]);
-    map.setPaintProperty('dl-dots-circles', 'circle-color', raceCircleColor());
-  }
-  // Refresh the legend overlay so it mirrors the current race filter state.
+  // Color is baked into each Feature's properties.color (buildDotFeatures
+  // emits it based on the active race filter). Filter changes trigger a
+  // full feature rebuild via rebuildDotsFromCache rather than setFilter.
   updateLegend(currentOverlayMode, active);
 }
 
@@ -289,7 +233,9 @@ function getDensityRatio() {
 
 function rebuildDotsFromCache() {
   if (!map || !map.getSource('dl-dots') || !window.dotlenderDotData) return;
-  const fc = buildDotFeatures(window.dotlenderDotData, getDensityRatio());
+  const fc = buildDotFeatures(
+    window.dotlenderDotData, getDensityRatio(), getActiveRaceFilters(),
+  );
   map.getSource('dl-dots').setData(fc);
   applyDotsStyle();
 }
@@ -350,6 +296,52 @@ function fitToGeographyByFips(stateFips) {
   if (b) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 30, duration: 600 });
 }
 
+// Fit map to the lat/lng bounding box of the raw API centroid data. Used
+// when no county mask applies, before deferred polygon-sampled dot
+// placement has run (so we can't yet use the rendered point geometries).
+function fitToRawCentroids(rawDots) {
+  if (!rawDots?.length) return;
+  let minLng = Infinity; let minLat = Infinity;
+  let maxLng = -Infinity; let maxLat = -Infinity;
+  let any = false;
+  rawDots.forEach((r) => {
+    if (r.centroid_lng == null || r.centroid_lat == null) return;
+    any = true;
+    if (r.centroid_lng < minLng) minLng = r.centroid_lng;
+    if (r.centroid_lat < minLat) minLat = r.centroid_lat;
+    if (r.centroid_lng > maxLng) maxLng = r.centroid_lng;
+    if (r.centroid_lat > maxLat) maxLat = r.centroid_lat;
+  });
+  if (!any) return;
+  const pad = 0.05;
+  map.fitBounds(
+    [[minLng - pad, minLat - pad], [maxLng + pad, maxLat + pad]],
+    { padding: 30, duration: 600 },
+  );
+}
+
+// Run polygon collection + async dot placement once the choropleth tiles
+// have rendered at the current viewport. queryRenderedFeatures only
+// returns features that have actually been painted, so this must be
+// deferred until the next 'idle' event.
+async function scheduleDotPlacement() {
+  if (!map) return;
+  const placeDots = async () => {
+    collectTractPolygons(map);
+    const polygons = getCachedTractPolygons();
+    const raw = window.dotlenderRawDots || [];
+    window.dotlenderDotData = await stableJitterAsync(raw, polygons);
+    if (!map.getSource('dl-dots')) return;
+    const fc = buildDotFeatures(
+      window.dotlenderDotData, getDensityRatio(), getActiveRaceFilters(),
+    );
+    map.getSource('dl-dots').setData(fc);
+    applyDotsStyle();
+  };
+  map.once('idle', placeDots);
+  map.triggerRepaint();
+}
+
 function fitToDots(dotsFC) {
   if (!dotsFC.features.length) return;
   let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
@@ -365,21 +357,20 @@ function fitToDots(dotsFC) {
   );
 }
 
-function renderMap(mapData, state) {
+async function renderMap(mapData, state) {
   if (!mapLoaded) {
     map.once('load', () => renderMap(mapData, state));
     return;
   }
   setOverlayVisibility(state.overlay_mode);
 
-  // Cache raw dot rows augmented with stable per-dot jitter offsets so that
-  // density changes (and race-filter changes) re-render against the same
-  // dot positions instead of re-randomizing on every redraw.
-  window.dotlenderDotData = stableJitter(mapData.dots || []);
-
-  const dotsFC = buildDotFeatures(window.dotlenderDotData, getDensityRatio());
-  map.getSource('dl-dots').setData(dotsFC);
-  applyDotsStyle();
+  // Defer dot placement until the choropleth tiles have actually rendered
+  // at the current viewport — that's when queryRenderedFeatures will
+  // return tract polygons we can sample. Collect polygons inside the idle
+  // callback, then async-sample positions so the UI thread stays
+  // responsive on big datasets.
+  window.dotlenderRawDots = mapData.dots || [];
+  scheduleDotPlacement();
 
   // County mask only applies when exactly one county is selected. For
   // multi-county metros and state-level selections we skip the mask and
@@ -392,7 +383,7 @@ function renderMap(mapData, state) {
     removeCountyMask();
     const cbCb = document.getElementById('dl-show-county-boundary');
     if (!cbCb || cbCb.checked) addCountyMask(currentFips);
-    else fitToDots(dotsFC);
+    else fitToRawCentroids(window.dotlenderRawDots);
   } else {
     currentFips = null;
     clearCachedCounty();
@@ -400,7 +391,7 @@ function renderMap(mapData, state) {
     if (state.geo_type === 'state' && state.state_fips) {
       fitToGeographyByFips(state.state_fips);
     } else {
-      fitToDots(dotsFC);
+      fitToRawCentroids(window.dotlenderRawDots);
     }
   }
 

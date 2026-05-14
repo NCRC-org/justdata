@@ -27,7 +27,10 @@ function captureMapFromCache() {
 
 function isPlaceholderObject(obj, strokeColor) {
   if (!obj) return false;
+  // Honor Fabric's standard excludeFromExport flag first — most reliable.
+  if (obj.excludeFromExport) return true;
   if (obj.type === 'rect' && obj.stroke === strokeColor) return true;
+  if (obj.type === 'path' && obj.stroke === strokeColor) return true;
   if ((obj.type === 'textbox' || obj.type === 'text') && obj.fill === strokeColor) return true;
   return false;
 }
