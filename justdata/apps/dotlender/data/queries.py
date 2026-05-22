@@ -1,0 +1,395 @@
+"""BigQuery query functions for DotLender.
+
+All functions return plain Python types (dicts, lists, ints) — no BigQuery
+row objects leak out. SQL templates load from sql_templates/ and are
+parameterized via @param placeholders + ScalarQueryParameter; only the
+geography type, loan-scope predicates, and LEI inclusion are stitched in
+as Python strings, and those values come from allowlists or strict
+numeric-string validation in the caller (blueprint.py and filters.py).
+"""
+from typing import List, Optional
+
+from google.cloud.bigquery import ScalarQueryParameter
+
+from justdata.apps.dotlender.sql_loader import load_sql
+from justdata.shared.utils.bigquery_client import get_bigquery_client, run_query
+
+
+TABLE = "justdata-ncrc.dataexplorer.de_hmda"
+APP_NAME = "dotlender"
+
+# No per-tract dot cap: the client-side density stride is the user-facing
+# thinning control. The previous 50-cap silently clipped high-volume cells
+# (e.g. tracts with 100+ White originations in DC) to the same visual count
+# as 50-loan cells, flattening the upper tail of the distribution.
+
+# NCRC standard race/ethnicity hierarchy. Hispanic ethnicity takes precedence
+# over any race selection; multi-racial falls between AI/AN and White.
+# Defined as a single string so loan_dots.sql can interpolate it via
+# .format(derived_race_expr=DERIVED_RACE_SQL).
+DERIVED_RACE_SQL = (
+    "CASE "
+    "WHEN is_hispanic THEN 'Hispanic or Latino' "
+    "WHEN is_black THEN 'Black or African American' "
+    "WHEN is_asian THEN 'Asian' "
+    "WHEN is_native_american OR is_hopi THEN 'American Indian or Alaska Native' "
+    "WHEN is_multi_racial THEN 'Two or More Races' "
+    "WHEN is_white THEN 'White' "
+    "ELSE 'Unknown or Not Provided' "
+    "END"
+)
+
+
+def _client():
+    return get_bigquery_client(project_id="justdata-ncrc", app_name=APP_NAME)
+
+
+def _format_predicates(predicates: List[str]) -> str:
+    """Join loan-scope predicates with AND, or 'TRUE' when empty."""
+    return " AND ".join(predicates) if predicates else "TRUE"
+
+
+def get_max_year() -> int:
+    """Return the most recent activity_year currently loaded in de_hmda."""
+    sql = load_sql("max_year.sql").format(table=TABLE)
+    rows = run_query(_client(), sql)
+    if not rows or rows[0].get("max_year") is None:
+        return 0
+    return int(rows[0]["max_year"])
+
+
+def lender_search(search_term: str, year_start: int, year_end: int) -> List[dict]:
+    """Typeahead lender search.
+
+    Returns a list of {lei, respondent_name, loan_count} dicts, ranked by
+    origination count. Returns [] for terms shorter than 2 chars.
+    """
+    term = (search_term or "").strip()
+    if len(term) < 2:
+        return []
+    sql = load_sql("lender_lookup.sql").format(table=TABLE)
+    params = [
+        ScalarQueryParameter("search_term", "STRING", f"%{term}%"),
+        ScalarQueryParameter("year_start", "INT64", int(year_start)),
+        ScalarQueryParameter("year_end", "INT64", int(year_end)),
+    ]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "lei": r.get("lei"),
+            "respondent_name": r.get("respondent_name"),
+            "loan_count": int(r.get("loan_count") or 0),
+        }
+        for r in rows
+    ]
+
+
+# --- Geography lookup helpers --------------------------------------------
+
+def cbsa_search(search_term: str) -> List[dict]:
+    """Typeahead for metropolitan CBSAs (omb_metro_micro = '1').
+
+    Returns [{cbsa_code, cbsa_name, principal_city, states, county_count}]
+    ranked by county_count DESC so major metros surface first.
+    """
+    term = (search_term or "").strip()
+    if len(term) < 2:
+        return []
+    sql = """
+    SELECT
+      c.cbsa_code,
+      ANY_VALUE(cc.cbsa_name)        AS cbsa_name,
+      ANY_VALUE(cc.principal_city)   AS principal_city,
+      ANY_VALUE(cc.states)            AS states,
+      COUNT(DISTINCT c.geoid5)        AS county_count
+    FROM `justdata-ncrc.shared.cbsa_to_county` AS c
+    LEFT JOIN `justdata-ncrc.shared.cbsa_centroids` AS cc
+      ON cc.cbsa_code = c.cbsa_code
+    WHERE c.omb_metro_micro = '1'
+      AND c.antiquated = 0
+      AND (LOWER(cc.cbsa_name) LIKE LOWER(@term) OR LOWER(c.cbsa) LIKE LOWER(@term))
+    GROUP BY c.cbsa_code
+    ORDER BY county_count DESC, cbsa_name
+    LIMIT 20
+    """
+    params = [ScalarQueryParameter("term", "STRING", f"%{term}%")]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "cbsa_code": r.get("cbsa_code"),
+            "cbsa_name": r.get("cbsa_name") or r.get("cbsa_code"),
+            "principal_city": r.get("principal_city"),
+            "states": r.get("states"),
+            "county_count": int(r.get("county_count") or 0),
+        }
+        for r in rows
+    ]
+
+
+def get_cbsa_counties(cbsa_code: str) -> List[dict]:
+    """All counties in a CBSA.
+
+    Returns [{geoid5, county_state, omb_central_outlying}] ordered with
+    central counties first (omb_central_outlying ASC), then alphabetic.
+    """
+    sql = """
+    SELECT geoid5, county_state, omb_central_outlying
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+    WHERE cbsa_code = @cbsa_code
+      AND antiquated = 0
+    ORDER BY omb_central_outlying ASC, county_state
+    """
+    params = [ScalarQueryParameter("cbsa_code", "STRING", cbsa_code)]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "geoid5": r.get("geoid5"),
+            "county_state": r.get("county_state"),
+            "omb_central_outlying": r.get("omb_central_outlying"),
+        }
+        for r in rows
+    ]
+
+
+def get_state_counties(state_fips: str) -> List[dict]:
+    """All counties in a state (2-digit FIPS).
+
+    DISTINCT on geoid5 because cbsa_to_county can have multiple rows per
+    county when a county participates in more than one CBSA classification.
+    """
+    sql = """
+    SELECT geoid5, ANY_VALUE(county_state) AS county_state
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+    WHERE state_code = @state_fips
+      AND antiquated = 0
+    GROUP BY geoid5
+    ORDER BY county_state
+    """
+    params = [ScalarQueryParameter("state_fips", "STRING", state_fips)]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {"geoid5": r.get("geoid5"), "county_state": r.get("county_state")}
+        for r in rows
+    ]
+
+
+VALID_RACE_FIELDS = frozenset({
+    "black", "hispanic", "black_hispanic", "asian", "ai_an", "nh_opi", "white",
+})
+
+
+def get_race_shares(
+    geo_predicate: str,
+    geo_params: List[ScalarQueryParameter],
+    race_field: str,
+) -> List[dict]:
+    """Per-tract race share percentages from shared.census (2025 vintage).
+
+    Returns [{geoid, pct}] for all tracts >= 10 persons in the geography.
+    pct is 0-100 scale, matching the existing minority_population convention
+    used by the income/minority choropleth.
+    """
+    if race_field not in VALID_RACE_FIELDS:
+        raise ValueError(
+            f"invalid race_field: {race_field!r} "
+            f"(allowed: {sorted(VALID_RACE_FIELDS)})"
+        )
+    sql = load_sql("tract_race_shares.sql").format(geo_predicate=geo_predicate)
+    params = list(geo_params) + [
+        ScalarQueryParameter("race_field", "STRING", race_field),
+    ]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {"geoid": r.get("geoid"), "pct": float(r.get("pct") or 0)}
+        for r in rows
+        if r.get("geoid") and r.get("pct") is not None
+    ]
+
+
+def _income_band(tract_income_pct) -> str:
+    if tract_income_pct is None:
+        return "unknown"
+    pct = float(tract_income_pct)
+    if pct < 50:
+        return "low"
+    if pct < 80:
+        return "moderate"
+    if pct < 120:
+        return "middle"
+    return "upper"
+
+
+def get_choropleth_data(
+    geography_predicate: str,
+    geography_params: List[ScalarQueryParameter],
+    year_start: int,
+    year_end: int,
+    loan_scope_predicates: List[str],
+) -> List[dict]:
+    """Tract-level choropleth payload.
+
+    Each returned dict has census_tract, minority_pct, tract_income_pct,
+    income_band, msa_median_income, loan_count, housing_units.
+    income_band is derived in Python from tract_income_pct.
+    """
+    sql = load_sql("tract_choropleth.sql").format(
+        table=TABLE,
+        geography_predicate=geography_predicate,
+        loan_scope_predicates=_format_predicates(loan_scope_predicates),
+    )
+    params = list(geography_params) + [
+        ScalarQueryParameter("year_start", "INT64", int(year_start)),
+        ScalarQueryParameter("year_end", "INT64", int(year_end)),
+    ]
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "census_tract": r.get("census_tract"),
+            "minority_pct": (
+                float(r["minority_pct"]) if r.get("minority_pct") is not None else None
+            ),
+            "tract_income_pct": (
+                float(r["tract_income_pct"])
+                if r.get("tract_income_pct") is not None
+                else None
+            ),
+            "income_band": _income_band(r.get("tract_income_pct")),
+            "msa_median_income": (
+                int(r["msa_median_income"])
+                if r.get("msa_median_income") is not None
+                else None
+            ),
+            "loan_count": int(r.get("loan_count") or 0),
+            "housing_units": (
+                int(r["housing_units"]) if r.get("housing_units") is not None else None
+            ),
+        }
+        for r in rows
+    ]
+
+
+def _dot_count(loan_count: int, housing_units) -> int:
+    """Compute dot count for one (tract, race) cell.
+
+    No per-tract minimum floor and no per-tract cap. The client-side density
+    stride is the thinning control; voids in lending should be visible as
+    empty areas on the map.
+
+    When a housing-units source eventually lands, the proportional path
+    activates — until then, dot_count is the raw loan count.
+    """
+    if loan_count <= 0:
+        return 0
+    if housing_units in (None, 0):
+        return int(loan_count)
+    # Future path: proportional scaling once housing units are available.
+    SCALE_FACTOR = 20
+    raw = int(round(loan_count / float(housing_units) * SCALE_FACTOR))
+    return raw if raw > 0 else 0
+
+
+def get_loan_dots(
+    geography_predicate: str,
+    geography_params: List[ScalarQueryParameter],
+    year_start: int,
+    year_end: int,
+    loan_scope_predicates: List[str],
+    lei: Optional[str] = None,
+) -> List[dict]:
+    """Tract+race dot-density payload.
+
+    Each returned dict has census_tract, derived_race, dot_count.
+    dot_count is computed in Python (see _dot_count).
+    """
+    if lei:
+        lei_predicate = "AND lei = @lei"
+    else:
+        lei_predicate = ""
+    sql = load_sql("loan_dots.sql").format(
+        table=TABLE,
+        derived_race_expr=DERIVED_RACE_SQL,
+        geography_predicate=geography_predicate,
+        loan_scope_predicates=_format_predicates(loan_scope_predicates),
+        lei_predicate=lei_predicate,
+    )
+    params = list(geography_params) + [
+        ScalarQueryParameter("year_start", "INT64", int(year_start)),
+        ScalarQueryParameter("year_end", "INT64", int(year_end)),
+    ]
+    if lei:
+        params.append(ScalarQueryParameter("lei", "STRING", lei))
+    rows = run_query(_client(), sql, params=params)
+    return [
+        {
+            "census_tract": r.get("census_tract"),
+            "derived_race": r.get("derived_race"),
+            "dot_count": _dot_count(
+                int(r.get("loan_count") or 0), r.get("housing_units")
+            ),
+            "centroid_lat": (
+                float(r["centroid_lat"]) if r.get("centroid_lat") is not None else None
+            ),
+            "centroid_lng": (
+                float(r["centroid_lng"]) if r.get("centroid_lng") is not None else None
+            ),
+        }
+        for r in rows
+    ]
+
+
+def get_summary_stats(
+    geography_predicate: str,
+    geography_params: List[ScalarQueryParameter],
+    year_start: int,
+    year_end: int,
+    loan_scope_predicates: List[str],
+    lei: Optional[str] = None,
+) -> dict:
+    """Top-line summary stats dict.
+
+    Keys: total_loans, tracts_with_lending, lender_count,
+    loans_in_lmi_tracts, loans_in_majority_minority_tracts,
+    pct_lmi_tracts, pct_majority_minority_tracts, total_loan_amount.
+    """
+    if lei:
+        lei_predicate = "AND lei = @lei"
+    else:
+        lei_predicate = ""
+    sql = load_sql("summary_stats.sql").format(
+        table=TABLE,
+        geography_predicate=geography_predicate,
+        loan_scope_predicates=_format_predicates(loan_scope_predicates),
+        lei_predicate=lei_predicate,
+    )
+    params = list(geography_params) + [
+        ScalarQueryParameter("year_start", "INT64", int(year_start)),
+        ScalarQueryParameter("year_end", "INT64", int(year_end)),
+    ]
+    if lei:
+        params.append(ScalarQueryParameter("lei", "STRING", lei))
+    rows = run_query(_client(), sql, params=params)
+    if not rows:
+        return {
+            "total_loans": 0,
+            "tracts_with_lending": 0,
+            "lender_count": 0,
+            "loans_in_lmi_tracts": 0,
+            "loans_in_majority_minority_tracts": 0,
+            "pct_lmi_tracts": 0.0,
+            "pct_majority_minority_tracts": 0.0,
+            "total_loan_amount": 0,
+        }
+    r = rows[0]
+    total = int(r.get("total_loans") or 0)
+    lmi = int(r.get("loans_in_lmi_tracts") or 0)
+    mm = int(r.get("loans_in_majority_minority_tracts") or 0)
+    return {
+        "total_loans": total,
+        "tracts_with_lending": int(r.get("tracts_with_lending") or 0),
+        "lender_count": int(r.get("lender_count") or 0),
+        "loans_in_lmi_tracts": lmi,
+        "loans_in_majority_minority_tracts": mm,
+        "pct_lmi_tracts": (lmi / total * 100) if total else 0.0,
+        "pct_majority_minority_tracts": (mm / total * 100) if total else 0.0,
+        "total_loan_amount": int(r.get("total_loan_amount") or 0),
+    }
