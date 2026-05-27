@@ -829,8 +829,12 @@ def _perform_analysis(job_id, form_data):
                     'branches_in_mmct_market': 'market_branches_in_mmct',
                     'pct_mmct_market': 'market_pct_mmct'
                 })
-                # Fill missing values with 0
-                bank_a_branch = bank_a_branch.fillna(0)
+                # Fill numeric columns with 0, string/object columns with ''
+                # so cbsa_name NaN (market-only CBSAs) does not become integer 0
+                _numeric_cols = bank_a_branch.select_dtypes(include='number').columns
+                _str_cols = bank_a_branch.select_dtypes(exclude='number').columns
+                bank_a_branch[_numeric_cols] = bank_a_branch[_numeric_cols].fillna(0)
+                bank_a_branch[_str_cols] = bank_a_branch[_str_cols].fillna('')
             elif not subject_branch.empty:
                 bank_a_branch = subject_branch.copy()
                 # Add empty market columns
@@ -893,8 +897,12 @@ def _perform_analysis(job_id, form_data):
                     'branches_in_mmct_market': 'market_branches_in_mmct',
                     'pct_mmct_market': 'market_pct_mmct'
                 })
-                # Fill missing values with 0
-                bank_b_branch = bank_b_branch.fillna(0)
+                # Fill numeric columns with 0, string/object columns with ''
+                # so cbsa_name NaN (market-only CBSAs) does not become integer 0
+                _numeric_cols = bank_b_branch.select_dtypes(include='number').columns
+                _str_cols = bank_b_branch.select_dtypes(exclude='number').columns
+                bank_b_branch[_numeric_cols] = bank_b_branch[_numeric_cols].fillna(0)
+                bank_b_branch[_str_cols] = bank_b_branch[_str_cols].fillna('')
             elif not subject_branch.empty:
                 bank_b_branch = subject_branch.copy()
                 # Add empty market columns

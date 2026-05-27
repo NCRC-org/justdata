@@ -113,7 +113,9 @@ def transform_mortgage_data(
         )
     else:
         # Fill any remaining unmapped rows (non-rural)
-        unmapped = result_df['cbsa_name'].isna() | (result_df['cbsa_name'] == '')
+        unmapped = result_df['cbsa_name'].apply(
+            lambda v: not (isinstance(v, str) and v.strip())
+        )
         if unmapped.any():
             result_df.loc[unmapped, 'cbsa_name'] = result_df.loc[unmapped, 'cbsa_code'].map(
                 lambda x: cbsa_name_map.get(str(x), f"CBSA {x}")
@@ -183,7 +185,9 @@ def transform_sb_data(
             lambda x: cbsa_name_map.get(str(x), f"CBSA {x}")
         )
     else:
-        unmapped = result_df['cbsa_name'].isna() | (result_df['cbsa_name'] == '')
+        unmapped = result_df['cbsa_name'].apply(
+            lambda v: not (isinstance(v, str) and v.strip())
+        )
         if unmapped.any():
             result_df.loc[unmapped, 'cbsa_name'] = result_df.loc[unmapped, 'cbsa_code'].map(
                 lambda x: cbsa_name_map.get(str(x), f"CBSA {x}")
@@ -251,7 +255,9 @@ def transform_branch_data(
             lambda x: cbsa_name_map.get(str(x), f"CBSA {x}")
         )
     else:
-        unmapped = result_df['cbsa_name'].isna() | (result_df['cbsa_name'] == '')
+        unmapped = result_df['cbsa_name'].apply(
+            lambda v: not (isinstance(v, str) and v.strip())
+        )
         if unmapped.any():
             result_df.loc[unmapped, 'cbsa_name'] = result_df.loc[unmapped, 'cbsa_code'].map(
                 lambda x: cbsa_name_map.get(str(x), f"CBSA {x}")
