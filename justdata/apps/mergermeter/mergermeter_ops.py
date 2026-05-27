@@ -62,13 +62,13 @@ def _import_local_module(module_name, *attributes):
     else:
         # Fallback: try relative import
         try:
-            module = __import__(f'.{module_name}', fromlist=[*attributes] if attributes else [], package=__package__ or 'mergermeter')
+            module = importlib.import_module(f'.{module_name}', package=__package__ or 'mergermeter')
             if attributes:
                 result = tuple(getattr(module, attr) for attr in attributes)
                 # If only one attribute, return it directly (not as a tuple)
                 return result[0] if len(result) == 1 else result
             return module
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, TypeError, ModuleNotFoundError):
             # Last resort: try absolute import
             module = __import__(module_name, fromlist=[*attributes] if attributes else [])
             if attributes:
@@ -1286,7 +1286,7 @@ def _perform_analysis(job_id, form_data):
         update_progress(job_id, {'percent': 95, 'step': 'Generating Excel report...', 'done': False, 'error': None})
         
         # Generate Excel file
-        create_merger_excel = _import_local_module('excel_generator', 'create_merger_excel')
+        from justdata.apps.mergermeter.excel import build_mergermeter_workbook as create_merger_excel
         
         # Create filename with shortened acquiring bank name
         import re
