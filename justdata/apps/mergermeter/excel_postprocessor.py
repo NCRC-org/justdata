@@ -3,6 +3,8 @@ Post-processing functions for Excel formatting after generation.
 Handles Notes sheet, Assessment Areas, branch formatting, and sheet name cleanup.
 """
 
+import logging
+
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 from pathlib import Path
@@ -10,6 +12,8 @@ import pandas as pd
 from typing import Dict, Optional
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 from justdata.apps.mergermeter.config import PROJECT_ID
+
+logger = logging.getLogger(__name__)
 
 
 def post_process_excel(
@@ -326,7 +330,12 @@ def _update_assessment_areas_cbsa_names(wb, assessment_areas):
                     cbsa_name_cell.value = cbsa_code
         
     except Exception as e:
-        print(f"  Warning: Could not update Assessment Areas CBSA names: {e}")
+        logger.error(
+            "Assessment Areas CBSA name update failed — BigQuery call raised %s: %s",
+            type(e).__name__,
+            e,
+            exc_info=True,
+        )
 
 
 def _format_branch_sheets(wb):
