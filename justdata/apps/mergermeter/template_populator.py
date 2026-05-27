@@ -6,6 +6,8 @@ structure: Grand Total at row 2, then CBSA sections with merged cells in column 
 and formulas copied down as data is added.
 """
 
+import logging
+
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, range_boundaries
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -14,6 +16,8 @@ import pandas as pd
 from typing import Dict, Optional, List, Tuple
 import re
 from justdata.apps.mergermeter.config import PROJECT_ID
+
+logger = logging.getLogger(__name__)
 
 # State FIPS code to state name mapping (used for "Rural [State]" labels on CBSA 99999)
 STATE_FIPS_TO_NAME = {
@@ -1122,7 +1126,13 @@ def _get_cbsa_name_from_code(cbsa_code: str, client=None) -> str:
             return results[0]['cbsa_name']
         return str(cbsa_code)  # Fallback to code if name not found
     except Exception as e:
-        print(f"  Warning: Could not look up CBSA name for {cbsa_code}: {e}")
+        logger.error(
+            "CBSA lookup failed for code %s — BigQuery call raised %s: %s",
+            cbsa_code,
+            type(e).__name__,
+            e,
+            exc_info=True,
+        )
         return str(cbsa_code)
 
 

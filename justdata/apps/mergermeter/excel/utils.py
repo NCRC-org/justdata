@@ -41,7 +41,13 @@ def _get_cbsa_name_from_code(cbsa_code: str, cbsa_name_cache: Dict[str, str] = N
                 cbsa_name_cache[cbsa_code_str] = cbsa_name
                 return cbsa_name
     except Exception as e:
-        print(f"    Warning: Could not look up CBSA name for {cbsa_code_str}: {e}")
+        logger.error(
+            "CBSA lookup failed for code %s — BigQuery call raised %s: %s",
+            cbsa_code_str,
+            type(e).__name__,
+            e,
+            exc_info=True,
+        )
     
     # Fallback
     if cbsa_code_str == '99999' or cbsa_code_str == '':
