@@ -144,7 +144,38 @@ def build_mergermeter_workbook(
     
     # Build CBSA name map and required CBSAs from assessment areas
     # Also build reverse map from CBSA names to codes for matching
-    cbsa_name_map = {}
+    # Pre-load full national CBSA crosswalk so peer CBSAs outside the
+    # acquirer/target assessment areas resolve to real metro names instead
+    # of falling back to f"CBSA {code}" in merger_data_transformer.map().
+    cbsa_name_map: Dict[str, str] = {}
+    try:
+        bq_client = get_bigquery_client()
+        national_cbsa_query = f"""
+            SELECT DISTINCT
+                CAST(cbsa_code AS STRING) AS cbsa_code,
+                cbsa AS cbsa_name
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
+            WHERE cbsa_code IS NOT NULL
+              AND cbsa IS NOT NULL
+        """
+        national_results = bq_client.query(national_cbsa_query).result()
+        cbsa_name_map = {
+            str(row.cbsa_code).strip(): str(row.cbsa_name).strip()
+            for row in national_results
+            if row.cbsa_code and row.cbsa_name
+        }
+        logger.info(
+            "Loaded %d CBSA codes from national crosswalk (%s.shared.cbsa_to_county)",
+            len(cbsa_name_map),
+            PROJECT_ID,
+        )
+    except Exception as e:
+        logger.warning(
+            "Failed to load national CBSA crosswalk — falling back to assessment-area-only map: %s",
+            e,
+        )
+        cbsa_name_map = {}
+
     cbsa_name_to_code_map = {}  # Reverse mapping: name -> code
     bank_a_required_cbsas = set()
     bank_b_required_cbsas = set()
