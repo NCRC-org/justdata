@@ -223,3 +223,6 @@ branch_activity_update.py
 scripts/*.geojson.ld
 scripts/served*.txt
 scripts/style_check.json
+
+# One-time secret version cleanup logs (scripts/cleanup_secret_versions.py)
+cleanup_log_*.json
