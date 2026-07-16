@@ -1,17 +1,70 @@
 -- ============================================================================
--- Incremental Update for justdata.de_hmda
+-- Incremental Update for justdata.de_hmda  (idempotent, by year)
 -- ============================================================================
--- This query automatically adds new years to de_hmda when they become available
--- in the source HMDA table.
+-- Reprocesses (DELETE + re-INSERT) any RECENT year whose raw row count differs
+-- from the enriched copy. This catches both:
+--   * a brand-new year appearing in raw, AND
+--   * a full reload of an existing year (e.g. the June Snapshot replacing the
+--     March Modified LAR, or late resubmissions) — the old "activity_year > MAX"
+--     gate silently missed these, so the apps never saw the corrected data.
+--
+-- Stable historical years are intentionally left untouched: the reprocess set is
+-- bounded to a rolling window (latest raw year + `lookback_years` prior years) so
+-- a monthly run never rewrites long-settled prior-year snapshots. To repair an
+-- older year deliberately, widen `lookback_years` for a one-off run.
 --
 -- Usage:
---   1. Set up as BigQuery Scheduled Query (monthly recommended)
---   2. Destination: justdata.de_hmda
---   3. Write preference: WRITE_APPEND
---   4. This will only process years that don't exist in de_hmda yet
+--   1. Set up as a BigQuery Scheduled Query (monthly recommended).
+--   2. This is a MULTI-STATEMENT script that manages its own writes — leave the
+--      scheduled query's destination table / write preference UNSET (do NOT set
+--      WRITE_APPEND; that is only for single-statement INSERTs).
+--   3. Safe to re-run: once raw and enriched row counts match, it is a no-op.
 -- ============================================================================
 
-INSERT INTO `hdma1-242116.justdata.de_hmda`
+DECLARE lookback_years INT64 DEFAULT 1;  -- latest raw year + this many prior years
+DECLARE reprocess_years ARRAY<INT64>;
+
+-- Years to reprocess: recent raw years whose enriched row count is missing or stale.
+SET reprocess_years = (
+  WITH raw_years AS (
+    SELECT SAFE_CAST(activity_year AS INT64) AS y, COUNT(*) AS n
+    FROM `hdma1-242116.hmda.hmda`
+    WHERE SAFE_CAST(activity_year AS INT64) >= 2018
+    GROUP BY y
+  ),
+  enriched_years AS (
+    SELECT activity_year AS y, COUNT(*) AS n
+    FROM `hdma1-242116.justdata.de_hmda`
+    GROUP BY y
+  ),
+  max_raw AS (SELECT MAX(y) AS my FROM raw_years)
+  SELECT ARRAY_AGG(r.y)
+  FROM raw_years r
+  CROSS JOIN max_raw
+  LEFT JOIN enriched_years e USING (y)
+  WHERE r.y >= max_raw.my - lookback_years
+    AND (e.y IS NULL OR e.n != r.n)
+);
+
+-- Clear the enriched rows for the years being reprocessed (no-op if none).
+DELETE FROM `hdma1-242116.justdata.de_hmda`
+WHERE activity_year IN UNNEST(reprocess_years);
+
+-- Re-insert freshly enriched rows for exactly those years.
+-- Explicit column list (name-based mapping) — the deployed table has lien_status
+-- appended at the end, so a positional INSERT would misalign; do not rely on order.
+INSERT INTO `hdma1-242116.justdata.de_hmda` (
+  lei, activity_year, county_code, county_state, geoid5, census_tract, tract_code,
+  lender_name, lender_type, loan_purpose, loan_type, action_taken, occupancy_type,
+  total_units, construction_method, reverse_mortgage, lien_status, loan_amount,
+  property_value, interest_rate, total_loan_costs, origination_charges, income,
+  tract_minority_population_percent, tract_to_msa_income_percentage,
+  ffiec_msa_md_median_family_income, is_hispanic, is_black, is_asian, is_white,
+  is_native_american, is_hopi, is_multi_racial, has_demographic_data, is_lmib,
+  is_low_income_borrower, is_moderate_income_borrower, is_middle_income_borrower,
+  is_upper_income_borrower, is_lmict, is_low_income_tract, is_moderate_income_tract,
+  is_middle_income_tract, is_upper_income_tract, is_mmct
+)
 SELECT
   -- Identifiers
   h.lei,
@@ -586,13 +639,11 @@ LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
     -- For 2024: Use planning region code directly from county_code
     CAST(h.county_code AS STRING)
   ) = CAST(c.geoid5 AS STRING)
--- Join to lenders18 for lender name and type
-LEFT JOIN `hdma1-242116.hmda.lenders18` l
+-- Join to current lenders lookup for lender name and type
+-- (replaced deprecated hmda.lenders18, which lacked the newest LEIs)
+LEFT JOIN `hdma1-242116.hmda.lenders` l
   ON h.lei = l.lei
-WHERE CAST(h.activity_year AS INT64) > (
-  -- Only process years that don't exist in de_hmda yet
-  SELECT COALESCE(MAX(activity_year), 2017)
-  FROM `hdma1-242116.justdata.de_hmda`
-)
--- This ensures we only add new years, not duplicate existing ones
+-- Only the years selected for reprocessing above (matches the DELETE), so raw and
+-- enriched stay consistent whether a year is new or a full reload.
+WHERE CAST(h.activity_year AS INT64) IN UNNEST(reprocess_years)
 

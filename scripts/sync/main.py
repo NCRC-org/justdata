@@ -93,6 +93,57 @@ SYNC_SQL = {
         WHERE geoid5 IS NOT NULL
         GROUP BY year, geoid5, rssd, bank_name
     """,
+    # LendSight summary rollups off shared.de_hmda. Kept in lockstep with
+    # scripts/migration/24_refresh_lendsight_summaries.sql — update both together.
+    'de_hmda_county_summary': """
+        CREATE OR REPLACE TABLE `{dest_project}.lendsight.de_hmda_county_summary`
+        CLUSTER BY year, geoid5 AS
+        SELECT
+            activity_year as year,
+            county_code as geoid5,
+            lei,
+            lender_name,
+            COUNT(*) as total_applications,
+            SUM(CASE WHEN action_taken = '1' THEN 1 ELSE 0 END) as total_originations,
+            SUM(CASE WHEN action_taken = '1' THEN loan_amount ELSE 0 END) as total_loan_amount,
+            SUM(CASE WHEN action_taken = '1' AND is_hispanic THEN 1 ELSE 0 END) as hispanic_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_black THEN 1 ELSE 0 END) as black_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_white THEN 1 ELSE 0 END) as white_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_asian THEN 1 ELSE 0 END) as asian_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_lmib THEN 1 ELSE 0 END) as lmi_borrower_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_lmict THEN 1 ELSE 0 END) as lmi_tract_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_mmct THEN 1 ELSE 0 END) as majority_minority_tract_originations,
+            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '1' THEN 1 ELSE 0 END) as purchase_originations,
+            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '31' THEN 1 ELSE 0 END) as refinance_originations,
+            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '32' THEN 1 ELSE 0 END) as cash_out_refi_originations,
+            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '4' THEN 1 ELSE 0 END) as home_equity_originations
+        FROM `{dest_project}.shared.de_hmda`
+        WHERE county_code IS NOT NULL
+        GROUP BY activity_year, county_code, lei, lender_name
+    """,
+    'de_hmda_tract_summary': """
+        CREATE OR REPLACE TABLE `{dest_project}.lendsight.de_hmda_tract_summary`
+        CLUSTER BY year, geoid5, geoid11 AS
+        SELECT
+            activity_year as year,
+            census_tract as geoid11,
+            county_code as geoid5,
+            lei,
+            lender_name,
+            COUNT(*) as total_applications,
+            SUM(CASE WHEN action_taken = '1' THEN 1 ELSE 0 END) as total_originations,
+            SUM(CASE WHEN action_taken = '1' THEN loan_amount ELSE 0 END) as total_loan_amount,
+            SUM(CASE WHEN action_taken = '1' AND is_hispanic THEN 1 ELSE 0 END) as hispanic_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_black THEN 1 ELSE 0 END) as black_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_white THEN 1 ELSE 0 END) as white_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_asian THEN 1 ELSE 0 END) as asian_originations,
+            SUM(CASE WHEN action_taken = '1' AND is_lmib THEN 1 ELSE 0 END) as lmi_borrower_originations,
+            MAX(CAST(is_lmict AS INT64)) as is_lmi_tract,
+            MAX(CAST(is_mmct AS INT64)) as is_majority_minority_tract
+        FROM `{dest_project}.shared.de_hmda`
+        WHERE census_tract IS NOT NULL
+        GROUP BY activity_year, census_tract, county_code, lei, lender_name
+    """,
 }
 
 
@@ -167,8 +218,8 @@ def refresh_table(source_table: str, client: bigquery.Client) -> dict:
         
         # Execute sync
         job = client.query(sql)
-        result = job.result()
-        
+        job.result()
+
         # Get row count
         count_sql = f"SELECT COUNT(*) as cnt FROM `{DEST_PROJECT}.{dest_table}`"
         count_result = list(client.query(count_sql).result())[0]
@@ -224,9 +275,16 @@ def refresh_dependent_table(table: str, client: bigquery.Client):
             client.query(sql).result()
             logger.info(f"Refreshed dependent table: {table}")
             send_slack_notification(f"[SYNC] Cascaded refresh of `{table}` complete", 'success')
-        elif table.startswith('lendsight.de_hmda_'):
-            # Refresh LendSight summary tables
-            logger.info(f"Skipping {table} refresh - would need separate SQL")
+        elif table in ('lendsight.de_hmda_county_summary', 'lendsight.de_hmda_tract_summary'):
+            # Rebuild the LendSight summary rollup from the freshly-synced shared.de_hmda
+            template = ('de_hmda_county_summary'
+                        if table.endswith('county_summary') else 'de_hmda_tract_summary')
+            sql = SYNC_SQL[template].format(dest_project=DEST_PROJECT)
+            # Drop first to avoid clustering conflict on re-create
+            client.query(f"DROP TABLE IF EXISTS `{DEST_PROJECT}.{table}`").result()
+            client.query(sql).result()
+            logger.info(f"Refreshed dependent table: {table}")
+            send_slack_notification(f"[SYNC] Cascaded refresh of `{table}` complete", 'success')
     except Exception as e:
         logger.error(f"Failed to refresh dependent table {table}: {e}")
         send_slack_notification(f"[SYNC WARNING] Failed to refresh dependent `{table}`: {str(e)[:100]}", 'warning')
