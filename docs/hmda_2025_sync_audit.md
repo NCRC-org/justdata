@@ -16,6 +16,34 @@
 
 ---
 
+## Update 2026-07-16 — MLAR vs Snapshot, and work completed (supersedes parts of §3/§5)
+
+**Critical correction from Jad:** the 2025 rows currently in `de_hmda` are the **March 31, 2026 Modified LAR (MLAR)**, *not* the full Snapshot. That explains the audit observations — `derived_msa_md`, `derived_race/ethnicity/sex`, conforming/product fields are null **by design** in MLAR, and tract housing stats are proxied from 2024. The full **Snapshot National Loan-Level Dataset** for 2025 was released **2026-06-23**. NCRC's standard cycle: load MLAR in March, then a full **delete-and-reload** with the Snapshot in June. So the 9,450-orphan and ~46k null-lender-name gaps are **MLAR artifacts to be closed by the Snapshot reload**, not defects to patch in place.
+
+**Decision (Jad): snapshot-driven, not MLAR-patching.**
+- Jad loads the 2025 Snapshot on the `hdma1-242116` side (deletes MLAR, inserts Snapshot) using the existing **"HMDA JUNE SNAPSHOT - ADD NEW YEAR"** script (not re-implemented here).
+- Then the enrichment is re-run for 2025 off the Snapshot raw and synced to `justdata-ncrc.shared.de_hmda` + summaries.
+
+**Work completed on `feature/hmda-2025` (code only — no BigQuery data rewritten):**
+- **Phase 2A — pipeline fixes** (`justdata/apps/dataexplorer/update_de_hmda_incremental.sql`, `create_de_hmda_table.sql`, `scripts/sync/main.py`):
+  - Enrichment is now **idempotent by year** — reprocesses (DELETE + re-INSERT) any recent year whose raw row count differs from the enriched copy, bounded to a rolling lookback window. This is what lets the June Snapshot replacement actually reach the apps; the old `activity_year > MAX` gate silently skipped reloads of an existing year. **Required** for the Snapshot to propagate.
+  - Enrichment lender join switched `hmda.lenders18` → current `hmda.lenders`.
+  - Added explicit INSERT column lists (the live table has `lien_status` appended at position 46; a positional INSERT would have misaligned STRING→INT64 and failed — a latent bug).
+  - Restored the previously-skipped LendSight summary refresh in `sync/main.py`.
+  - Both SQL scripts validated via BigQuery `--dry_run`; `main.py` passes pyflakes.
+- **Phase 2B — curated year config** (`justdata/shared/core/hmda_years.py` + wiring): single source of truth for the exposed HMDA range; all HMDA apps derive available years / default range / validation from it. **`LATEST_HMDA_YEAR` is deliberately still 2024 — 2025 is not exposed in any UI yet.** This also **capped the previously-uncapped dynamic year lookups in LendSight (`/years`) and DotLender (`get_max_year`)**, which were already leaking the partial MLAR 2025 to users.
+
+**Rollout checklist — flipping 2025 on (do in order):**
+1. Jad loads the 2025 **Snapshot** into `hdma1-242116.hmda.hmda` (delete MLAR + insert Snapshot).
+2. Run the fixed enrichment for 2025 → `hdma1-242116.justdata.de_hmda` (the idempotent incremental now DELETE+INSERTs 2025 because its raw count changed). *Requires write access to `hdma1-242116.justdata`; confirm the service account has it.*
+3. Sync to `justdata-ncrc.shared.de_hmda` + `dataexplorer.de_hmda`, then rebuild the LendSight summaries.
+4. Verify 2025: row count ≈ Snapshot raw, race flags populated, lender_name null-rate back near 0, geography resolves.
+5. **Flip `LATEST_HMDA_YEAR` 2024 → 2025** in `justdata/shared/core/hmda_years.py` (one line). This auto-adds 2025 to every app's selector and shifts the default range to 2023–2025.
+6. Per-app UI smoke test (authenticated, not just the login gate): LendSight, MergerMeter, DataExplorer, DotLender render 2025; MergerMeter geographic rollups correct for 2025.
+7. **Deploy check (Jad, personal login):** confirm the Cloud Function / Pub/Sub / log sinks are actually deployed and that BigQuery Data-Access/job audit logs are enabled in `hdma1-242116` — otherwise the event-driven sync won't fire at runtime and steps 2–3 remain manual. See "Open items."
+
+---
+
 ## 1. Is `de_hmda` a view or a materialized table?
 
 **Materialized BASE TABLE** (confirmed via `INFORMATION_SCHEMA.TABLES`). Two copies exist:
