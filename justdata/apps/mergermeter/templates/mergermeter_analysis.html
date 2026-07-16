@@ -534,25 +534,15 @@
                                     <div style="flex: 0 0 auto;">
                                         <label for="hmda_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA Start</label>
                                         <select id="hmda_start_year" name="hmda_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
-                                            <option value="2018">2018</option>
-                                            <option value="2019">2019</option>
-                                            <option value="2020">2020</option>
-                                            <option value="2021">2021</option>
-                                            <option value="2022">2022</option>
-                                            <option value="2023" selected>2023</option>
-                                            <option value="2024">2024</option>
+                                            {% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_start %} selected{% endif %}>{{ y }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                     <div style="flex: 0 0 auto;">
                                         <label for="hmda_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA End</label>
                                         <select id="hmda_end_year" name="hmda_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
-                                            <option value="2018">2018</option>
-                                            <option value="2019">2019</option>
-                                            <option value="2020">2020</option>
-                                            <option value="2021">2021</option>
-                                            <option value="2022">2022</option>
-                                            <option value="2023">2023</option>
-                                            <option value="2024" selected>2024</option>
+                                            {% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_end %} selected{% endif %}>{{ y }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                     <div style="flex: 0 0 auto;">
@@ -589,25 +579,15 @@
                                     <div style="flex: 0 0 auto;">
                                         <label for="baseline_hmda_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA Start</label>
                                         <select id="baseline_hmda_start_year" name="baseline_hmda_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
-                                            <option value="2018">2018</option>
-                                            <option value="2019">2019</option>
-                                            <option value="2020">2020</option>
-                                            <option value="2021">2021</option>
-                                            <option value="2022">2022</option>
-                                            <option value="2023" selected>2023</option>
-                                            <option value="2024">2024</option>
+                                            {% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_start %} selected{% endif %}>{{ y }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                     <div style="flex: 0 0 auto;">
                                         <label for="baseline_hmda_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA End</label>
                                         <select id="baseline_hmda_end_year" name="baseline_hmda_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
-                                            <option value="2018">2018</option>
-                                            <option value="2019">2019</option>
-                                            <option value="2020">2020</option>
-                                            <option value="2021">2021</option>
-                                            <option value="2022">2022</option>
-                                            <option value="2023">2023</option>
-                                            <option value="2024" selected>2024</option>
+                                            {% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_end %} selected{% endif %}>{{ y }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                     <div style="flex: 0 0 auto;">

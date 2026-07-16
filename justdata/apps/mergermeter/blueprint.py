@@ -68,11 +68,20 @@ def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
     app_base_url = url_for('mergermeter.index').rstrip('/')
+    # HMDA year selector options/defaults from the platform-wide source of truth
+    # (see justdata/shared/core/hmda_years.py). Bumping LATEST_HMDA_YEAR there adds
+    # the new year to these dropdowns and shifts the default range automatically.
+    from justdata.shared.core.hmda_years import available_hmda_years, default_hmda_year_range
+    hmda_years = available_hmda_years()
+    hmda_default_start, hmda_default_end = default_hmda_year_range()
     return render_template('mergermeter_analysis.html',
                          version=__version__,
                          permissions=user_permissions,
                          app_base_url=app_base_url,
                          app_name='MergerMeter',
+                         hmda_years=hmda_years,
+                         hmda_default_start=hmda_default_start,
+                         hmda_default_end=hmda_default_end,
                          breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}])
 
 
@@ -180,6 +189,10 @@ def analyze():
     request_id = str(uuid.uuid4())
     
     try:
+        # Default HMDA analysis range from the platform-wide source of truth
+        # (see justdata/shared/core/hmda_years.py). Bump LATEST_HMDA_YEAR to roll forward.
+        from justdata.shared.core.hmda_years import default_hmda_year_range
+        _hmda_default_start, _hmda_default_end = (str(y) for y in default_hmda_year_range())
         form_data = {
             'acquirer_lei': request.form.get('acquirer_lei', '').strip(),
             'acquirer_rssd': request.form.get('acquirer_rssd', '').strip(),
@@ -194,14 +207,14 @@ def analyze():
             'use_national_data': request.form.get('use_national_data', '0'),  # National level data flag
             'loan_purpose': request.form.get('loan_purpose', ''),
             'peer_group': request.form.get('peer_group', 'volume_50_200').strip(),  # Peer group selection
-            # Analysis year ranges
-            'hmda_start_year': request.form.get('hmda_start_year', '2023').strip(),
-            'hmda_end_year': request.form.get('hmda_end_year', '2024').strip(),
+            # Analysis year ranges (HMDA defaults from shared source of truth; SB is a separate cadence)
+            'hmda_start_year': request.form.get('hmda_start_year', _hmda_default_start).strip(),
+            'hmda_end_year': request.form.get('hmda_end_year', _hmda_default_end).strip(),
             'sb_start_year': request.form.get('sb_start_year', '2023').strip(),
             'sb_end_year': request.form.get('sb_end_year', '2024').strip(),
             # Goal baseline year ranges
-            'baseline_hmda_start_year': request.form.get('baseline_hmda_start_year', '2023').strip(),
-            'baseline_hmda_end_year': request.form.get('baseline_hmda_end_year', '2024').strip(),
+            'baseline_hmda_start_year': request.form.get('baseline_hmda_start_year', _hmda_default_start).strip(),
+            'baseline_hmda_end_year': request.form.get('baseline_hmda_end_year', _hmda_default_end).strip(),
             'baseline_sb_start_year': request.form.get('baseline_sb_start_year', '2023').strip(),
             'baseline_sb_end_year': request.form.get('baseline_sb_end_year', '2024').strip(),
             'action_taken': request.form.get('action_taken', '1'),
