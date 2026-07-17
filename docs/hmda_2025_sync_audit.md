@@ -44,6 +44,37 @@
 
 ---
 
+## Update 2026-07-17 — deploy check + 2025 Snapshot re-run executed
+
+**Deploy check (STEP 1, run under `jedlebi@ncrc.org`) — the automation is deployed in pieces but non-functional end to end:**
+- **Cloud Function `table-sync-function`** IS deployed (gen2, **HTTP trigger**). Runtime SA = `854699313651-compute@developer.gserviceaccount.com`, which has **`roles/editor`** on justdata-ncrc → it does have write to `shared`/`lendsight`.
+- **No scheduled query** for the enrichment — only `update_cfpb_complaints` exists. So Hop A (`update_de_hmda_incremental`) was never automated.
+- **BQ data-access audit logs are DISABLED** in `hdma1-242116` (`auditConfigs = null`). The log sinks filter on `jobservice.insert` / `tableservice.*` (Data Access logs), so they can never fire.
+- **Zero Pub/Sub subscriptions.** The 8 sync topics exist (incl. `justdata-sync-hmda-hmda`) and log sinks route to them, but nothing subscribes, and the function is HTTP-triggered — so even if a sink fired, nothing would invoke the function. (One sink, `justdata-sync-0-sink`, is also misconfigured with `datasetId="0"`.)
+- Eventarc API isn't even enabled on `hdma1-242116`.
+
+**Net:** the event-driven sync is broken at three independent points (audit logs off, no subscription, no enrichment schedule), and the deployed function runs pre-fix code. 2025 propagation was and remains fully manual.
+
+**2025 Snapshot re-run (STEPS 2-4) — executed and verified.** Identity plan honored: **no standing grant** to the enrichment SA. Hop A ran as `justdata@hdma1-242116` (already had write to `hdma1-242116.justdata`); Hop B ran as `jedlebi@ncrc.org` (already had write to `shared`/`lendsight`/`dataexplorer` — the deployed function was not invoked because it runs stale code). All writes were 2025-only and schema-preserving (DELETE+INSERT) except `shared.de_hmda` (unpartitioned, full CREATE OR REPLACE).
+
+| Table | 2025 rows | Check |
+|---|---|---|
+| `hdma1-242116.justdata.de_hmda` | 13,543,606 | = snapshot raw |
+| `justdata-ncrc.shared.de_hmda` | 13,543,606 | ✅ (was 13,534,156) |
+| `justdata-ncrc.dataexplorer.de_hmda` | 13,543,606 | DotLender/DataExplorer source |
+| `lendsight.de_hmda_county_summary` | 632,022 | rebuilt via migration 05 logic |
+| `lendsight.de_hmda_tract_summary` | 3,465,000 | rebuilt via migration 06 logic |
+
+2025 quality in `shared.de_hmda`: null lender_name **46,189 → 3,707** (0.03%), county/geoid5 0-null, race flags present, pricing FLOAT64 populated (avg rate 6.788%). 2018–2024 untouched.
+
+**Correctness fix surfaced by the re-run:** migration 24 (and the summary SQL I'd copied from it into `sync/main.py`) does **not** match the live summary tables — the canonical builders are migrations **05/06**. `sync/main.py` was corrected to 05/06 logic and migration 24 marked DEPRECATED (commit `d7b5f8b`).
+
+**Permanent Hop-B owner (STEP 5 question) — for you/Jay to decide:** the deployed function *can* own Hop B going forward, but only after: (a) redeploying it from this branch (current code has the correct summary SQL + the restored summary refresh); (b) repairing the trigger chain — enable BQ data-access audit logs in `hdma1-242116`, fix the `hmda.hmda` sink, and create the Pub/Sub push subscription — **or** replacing the event trigger with a scheduled query / Cloud Run job; and (c) adding a scheduled Hop-A enrichment step (none exists). Its runtime SA currently holds broad `roles/editor`; a dedicated SA with dataset-scoped `dataEditor` on `shared`+`lendsight` would be the least-privilege permanent choice — grant deliberately when you decide the owner.
+
+**Not done (deliberately):** `LATEST_HMDA_YEAR` is still 2024 — 2025 is not exposed. The flip + flip-PR await your review of this verification.
+
+---
+
 ## 1. Is `de_hmda` a view or a materialized table?
 
 **Materialized BASE TABLE** (confirmed via `INFORMATION_SCHEMA.TABLES`). Two copies exist:
