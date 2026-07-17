@@ -537,15 +537,20 @@ def _perform_analysis(job_id, form_data):
         not_reverse = form_data.get('not_reverse', '1')
         peer_group = form_data.get('peer_group', 'volume_50_200')  # Peer group selection
 
+        # HMDA default range from the platform-wide source of truth
+        # (see justdata/shared/core/hmda_years.py); SB is a separate cadence.
+        from justdata.shared.core.hmda_years import default_hmda_year_range
+        _hmda_def_start, _hmda_def_end = default_hmda_year_range()
+
         # Parse analysis year ranges (for analysis sheets)
-        hmda_start_year = int(form_data.get('hmda_start_year') or 2023)
-        hmda_end_year = int(form_data.get('hmda_end_year') or 2024)
+        hmda_start_year = int(form_data.get('hmda_start_year') or _hmda_def_start)
+        hmda_end_year = int(form_data.get('hmda_end_year') or _hmda_def_end)
         sb_start_year = int(form_data.get('sb_start_year') or 2023)
         sb_end_year = int(form_data.get('sb_end_year') or 2024)
 
         # Parse baseline year ranges (for goals sheets)
-        baseline_hmda_start_year = int(form_data.get('baseline_hmda_start_year') or 2023)
-        baseline_hmda_end_year = int(form_data.get('baseline_hmda_end_year') or 2024)
+        baseline_hmda_start_year = int(form_data.get('baseline_hmda_start_year') or _hmda_def_start)
+        baseline_hmda_end_year = int(form_data.get('baseline_hmda_end_year') or _hmda_def_end)
         baseline_sb_start_year = int(form_data.get('baseline_sb_start_year') or 2023)
         baseline_sb_end_year = int(form_data.get('baseline_sb_end_year') or 2024)
 

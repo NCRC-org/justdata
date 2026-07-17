@@ -37,9 +37,12 @@ BRANCHES_DATASET = "branchsight"
 BRANCHES_TABLE = "sod"
 
 # Data Type Configuration
-HMDA_YEARS = list(range(2018, 2025))  # 2018-2024 (most recent is 2024)
-SB_YEARS = list(range(2019, 2024))  # 2019-2023
-BRANCH_YEARS = list(range(2017, 2026))  # 2017-2025
+# HMDA years come from the platform-wide source of truth (one-line yearly bump;
+# see justdata/shared/core/hmda_years.py and docs/hmda_2025_sync_audit.md).
+from justdata.shared.core.hmda_years import available_hmda_years
+HMDA_YEARS = available_hmda_years()  # 2018..LATEST_HMDA_YEAR
+SB_YEARS = list(range(2019, 2024))  # 2019-2023 (small-business / 1071 — separate cadence)
+BRANCH_YEARS = list(range(2017, 2026))  # 2017-2025 (FDIC SOD — separate cadence)
 
 # Input Validation Limits (CRITICAL - prevents resource exhaustion)
 MAX_YEARS = 10  # Maximum years per query

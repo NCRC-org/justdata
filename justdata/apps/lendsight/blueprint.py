@@ -943,7 +943,10 @@ def years():
     """Return available years dynamically from HMDA data"""
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        
+        from justdata.shared.core.hmda_years import (
+            available_hmda_years, EARLIEST_HMDA_YEAR, LATEST_HMDA_YEAR,
+        )
+
         # Use justdata-ncrc project with lendsight credentials
         client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
         # Query HMDA table for available years (using activity_year field)
@@ -955,15 +958,19 @@ def years():
         """
         query_job = client.query(query)
         results = query_job.result()
-        years = [row.year for row in results]
+        # Cap at the curated ceiling so a loaded-but-unverified year (e.g. the
+        # March MLAR ahead of the June Snapshot) is not surfaced to users.
+        years = [row.year for row in results
+                 if EARLIEST_HMDA_YEAR <= row.year <= LATEST_HMDA_YEAR]
         if not years:
-            years = list(range(2017, 2025))
+            years = available_hmda_years()
         return jsonify(years)
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         # Fallback
-        return jsonify(list(range(2017, 2025)))
+        from justdata.shared.core.hmda_years import available_hmda_years
+        return jsonify(available_hmda_years())
 
 
 @lendsight_bp.route('/health')

@@ -93,6 +93,81 @@ SYNC_SQL = {
         WHERE geoid5 IS NOT NULL
         GROUP BY year, geoid5, rssd, bank_name
     """,
+    # LendSight summary rollups. Schema/logic kept in lockstep with the canonical
+    # builders scripts/migration/05_create_hmda_county_summary.sql and
+    # 06_create_hmda_tract_summary.sql (NOT 24, which is stale and does not match the
+    # live tables). Originations only (LendSight scope); partitioned + clustered to
+    # match the deployed tables so refresh_dependent_table's DROP+CREATE preserves spec.
+    'de_hmda_county_summary': """
+        CREATE OR REPLACE TABLE `{dest_project}.lendsight.de_hmda_county_summary`
+        PARTITION BY RANGE_BUCKET(year, GENERATE_ARRAY(2018, 2030, 1))
+        CLUSTER BY geoid5, lei AS
+        SELECT
+            lei,
+            activity_year as year,
+            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+            county_state,
+            loan_purpose,
+            MAX(lender_name) as lender_name,
+            COUNT(*) as total_originations,
+            COUNTIF(is_hispanic) as hispanic_originations,
+            COUNTIF(is_black) as black_originations,
+            COUNTIF(is_asian) as asian_originations,
+            COUNTIF(is_white) as white_originations,
+            COUNTIF(is_native_american) as native_american_originations,
+            COUNTIF(is_hopi) as hopi_originations,
+            COUNTIF(is_multi_racial) as multi_racial_originations,
+            COUNTIF(is_lmib) as lmib_originations,
+            COUNTIF(is_low_income_borrower) as low_income_borrower_originations,
+            COUNTIF(is_moderate_income_borrower) as moderate_income_borrower_originations,
+            COUNTIF(is_middle_income_borrower) as middle_income_borrower_originations,
+            COUNTIF(is_upper_income_borrower) as upper_income_borrower_originations,
+            COUNTIF(is_lmict) as lmict_originations,
+            COUNTIF(is_mmct) as mmct_originations,
+            SUM(loan_amount) as total_loan_amount,
+            AVG(loan_amount) as avg_loan_amount,
+            AVG(SAFE_CAST(property_value AS FLOAT64)) as avg_property_value,
+            AVG(SAFE_CAST(interest_rate AS FLOAT64)) as avg_interest_rate,
+            AVG(SAFE_CAST(total_loan_costs AS FLOAT64)) as avg_total_loan_costs,
+            AVG(SAFE_CAST(origination_charges AS FLOAT64)) as avg_origination_charges,
+            COUNTIF(has_demographic_data) as loans_with_demographic_data
+        FROM `{dest_project}.shared.de_hmda`
+        WHERE action_taken = '1' AND occupancy_type = '1' AND total_units IN ('1','2','3','4')
+          AND construction_method = '1' AND (reverse_mortgage IS NULL OR reverse_mortgage != '1')
+        GROUP BY lei, activity_year, geoid5, county_state, loan_purpose
+    """,
+    'de_hmda_tract_summary': """
+        CREATE OR REPLACE TABLE `{dest_project}.lendsight.de_hmda_tract_summary`
+        PARTITION BY RANGE_BUCKET(year, GENERATE_ARRAY(2018, 2030, 1))
+        CLUSTER BY geoid5, lei AS
+        SELECT
+            lei,
+            activity_year as year,
+            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+            county_state,
+            tract_code,
+            tract_minority_population_percent,
+            tract_to_msa_income_percentage,
+            loan_purpose,
+            MAX(lender_name) as lender_name,
+            COUNT(*) as total_originations,
+            COUNTIF(is_hispanic) as hispanic_originations,
+            COUNTIF(is_black) as black_originations,
+            COUNTIF(is_asian) as asian_originations,
+            COUNTIF(is_white) as white_originations,
+            COUNTIF(is_lmict) as lmict_originations,
+            COUNTIF(is_low_income_tract) as low_income_tract_originations,
+            COUNTIF(is_moderate_income_tract) as moderate_income_tract_originations,
+            COUNTIF(is_middle_income_tract) as middle_income_tract_originations,
+            COUNTIF(is_upper_income_tract) as upper_income_tract_originations,
+            COUNTIF(is_mmct) as mmct_originations,
+            SUM(loan_amount) as total_loan_amount
+        FROM `{dest_project}.shared.de_hmda`
+        WHERE action_taken = '1' AND occupancy_type = '1' AND total_units IN ('1','2','3','4')
+          AND construction_method = '1' AND (reverse_mortgage IS NULL OR reverse_mortgage != '1')
+        GROUP BY lei, activity_year, geoid5, county_state, tract_code,
+            tract_minority_population_percent, tract_to_msa_income_percentage, loan_purpose
+    """,
 }
 
 
@@ -167,8 +242,8 @@ def refresh_table(source_table: str, client: bigquery.Client) -> dict:
         
         # Execute sync
         job = client.query(sql)
-        result = job.result()
-        
+        job.result()
+
         # Get row count
         count_sql = f"SELECT COUNT(*) as cnt FROM `{DEST_PROJECT}.{dest_table}`"
         count_result = list(client.query(count_sql).result())[0]
@@ -224,9 +299,16 @@ def refresh_dependent_table(table: str, client: bigquery.Client):
             client.query(sql).result()
             logger.info(f"Refreshed dependent table: {table}")
             send_slack_notification(f"[SYNC] Cascaded refresh of `{table}` complete", 'success')
-        elif table.startswith('lendsight.de_hmda_'):
-            # Refresh LendSight summary tables
-            logger.info(f"Skipping {table} refresh - would need separate SQL")
+        elif table in ('lendsight.de_hmda_county_summary', 'lendsight.de_hmda_tract_summary'):
+            # Rebuild the LendSight summary rollup from the freshly-synced shared.de_hmda
+            template = ('de_hmda_county_summary'
+                        if table.endswith('county_summary') else 'de_hmda_tract_summary')
+            sql = SYNC_SQL[template].format(dest_project=DEST_PROJECT)
+            # Drop first to avoid clustering conflict on re-create
+            client.query(f"DROP TABLE IF EXISTS `{DEST_PROJECT}.{table}`").result()
+            client.query(sql).result()
+            logger.info(f"Refreshed dependent table: {table}")
+            send_slack_notification(f"[SYNC] Cascaded refresh of `{table}` complete", 'success')
     except Exception as e:
         logger.error(f"Failed to refresh dependent table {table}: {e}")
         send_slack_notification(f"[SYNC WARNING] Failed to refresh dependent `{table}`: {str(e)[:100]}", 'warning')
