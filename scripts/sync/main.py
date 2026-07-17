@@ -93,56 +93,80 @@ SYNC_SQL = {
         WHERE geoid5 IS NOT NULL
         GROUP BY year, geoid5, rssd, bank_name
     """,
-    # LendSight summary rollups off shared.de_hmda. Kept in lockstep with
-    # scripts/migration/24_refresh_lendsight_summaries.sql — update both together.
+    # LendSight summary rollups. Schema/logic kept in lockstep with the canonical
+    # builders scripts/migration/05_create_hmda_county_summary.sql and
+    # 06_create_hmda_tract_summary.sql (NOT 24, which is stale and does not match the
+    # live tables). Originations only (LendSight scope); partitioned + clustered to
+    # match the deployed tables so refresh_dependent_table's DROP+CREATE preserves spec.
     'de_hmda_county_summary': """
         CREATE OR REPLACE TABLE `{dest_project}.lendsight.de_hmda_county_summary`
-        CLUSTER BY year, geoid5 AS
+        PARTITION BY RANGE_BUCKET(year, GENERATE_ARRAY(2018, 2030, 1))
+        CLUSTER BY geoid5, lei AS
         SELECT
-            activity_year as year,
-            county_code as geoid5,
             lei,
-            lender_name,
-            COUNT(*) as total_applications,
-            SUM(CASE WHEN action_taken = '1' THEN 1 ELSE 0 END) as total_originations,
-            SUM(CASE WHEN action_taken = '1' THEN loan_amount ELSE 0 END) as total_loan_amount,
-            SUM(CASE WHEN action_taken = '1' AND is_hispanic THEN 1 ELSE 0 END) as hispanic_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_black THEN 1 ELSE 0 END) as black_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_white THEN 1 ELSE 0 END) as white_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_asian THEN 1 ELSE 0 END) as asian_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_lmib THEN 1 ELSE 0 END) as lmi_borrower_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_lmict THEN 1 ELSE 0 END) as lmi_tract_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_mmct THEN 1 ELSE 0 END) as majority_minority_tract_originations,
-            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '1' THEN 1 ELSE 0 END) as purchase_originations,
-            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '31' THEN 1 ELSE 0 END) as refinance_originations,
-            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '32' THEN 1 ELSE 0 END) as cash_out_refi_originations,
-            SUM(CASE WHEN action_taken = '1' AND loan_purpose = '4' THEN 1 ELSE 0 END) as home_equity_originations
+            activity_year as year,
+            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+            county_state,
+            loan_purpose,
+            MAX(lender_name) as lender_name,
+            COUNT(*) as total_originations,
+            COUNTIF(is_hispanic) as hispanic_originations,
+            COUNTIF(is_black) as black_originations,
+            COUNTIF(is_asian) as asian_originations,
+            COUNTIF(is_white) as white_originations,
+            COUNTIF(is_native_american) as native_american_originations,
+            COUNTIF(is_hopi) as hopi_originations,
+            COUNTIF(is_multi_racial) as multi_racial_originations,
+            COUNTIF(is_lmib) as lmib_originations,
+            COUNTIF(is_low_income_borrower) as low_income_borrower_originations,
+            COUNTIF(is_moderate_income_borrower) as moderate_income_borrower_originations,
+            COUNTIF(is_middle_income_borrower) as middle_income_borrower_originations,
+            COUNTIF(is_upper_income_borrower) as upper_income_borrower_originations,
+            COUNTIF(is_lmict) as lmict_originations,
+            COUNTIF(is_mmct) as mmct_originations,
+            SUM(loan_amount) as total_loan_amount,
+            AVG(loan_amount) as avg_loan_amount,
+            AVG(SAFE_CAST(property_value AS FLOAT64)) as avg_property_value,
+            AVG(SAFE_CAST(interest_rate AS FLOAT64)) as avg_interest_rate,
+            AVG(SAFE_CAST(total_loan_costs AS FLOAT64)) as avg_total_loan_costs,
+            AVG(SAFE_CAST(origination_charges AS FLOAT64)) as avg_origination_charges,
+            COUNTIF(has_demographic_data) as loans_with_demographic_data
         FROM `{dest_project}.shared.de_hmda`
-        WHERE county_code IS NOT NULL
-        GROUP BY activity_year, county_code, lei, lender_name
+        WHERE action_taken = '1' AND occupancy_type = '1' AND total_units IN ('1','2','3','4')
+          AND construction_method = '1' AND (reverse_mortgage IS NULL OR reverse_mortgage != '1')
+        GROUP BY lei, activity_year, geoid5, county_state, loan_purpose
     """,
     'de_hmda_tract_summary': """
         CREATE OR REPLACE TABLE `{dest_project}.lendsight.de_hmda_tract_summary`
-        CLUSTER BY year, geoid5, geoid11 AS
+        PARTITION BY RANGE_BUCKET(year, GENERATE_ARRAY(2018, 2030, 1))
+        CLUSTER BY geoid5, lei AS
         SELECT
-            activity_year as year,
-            census_tract as geoid11,
-            county_code as geoid5,
             lei,
-            lender_name,
-            COUNT(*) as total_applications,
-            SUM(CASE WHEN action_taken = '1' THEN 1 ELSE 0 END) as total_originations,
-            SUM(CASE WHEN action_taken = '1' THEN loan_amount ELSE 0 END) as total_loan_amount,
-            SUM(CASE WHEN action_taken = '1' AND is_hispanic THEN 1 ELSE 0 END) as hispanic_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_black THEN 1 ELSE 0 END) as black_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_white THEN 1 ELSE 0 END) as white_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_asian THEN 1 ELSE 0 END) as asian_originations,
-            SUM(CASE WHEN action_taken = '1' AND is_lmib THEN 1 ELSE 0 END) as lmi_borrower_originations,
-            MAX(CAST(is_lmict AS INT64)) as is_lmi_tract,
-            MAX(CAST(is_mmct AS INT64)) as is_majority_minority_tract
+            activity_year as year,
+            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+            county_state,
+            tract_code,
+            tract_minority_population_percent,
+            tract_to_msa_income_percentage,
+            loan_purpose,
+            MAX(lender_name) as lender_name,
+            COUNT(*) as total_originations,
+            COUNTIF(is_hispanic) as hispanic_originations,
+            COUNTIF(is_black) as black_originations,
+            COUNTIF(is_asian) as asian_originations,
+            COUNTIF(is_white) as white_originations,
+            COUNTIF(is_lmict) as lmict_originations,
+            COUNTIF(is_low_income_tract) as low_income_tract_originations,
+            COUNTIF(is_moderate_income_tract) as moderate_income_tract_originations,
+            COUNTIF(is_middle_income_tract) as middle_income_tract_originations,
+            COUNTIF(is_upper_income_tract) as upper_income_tract_originations,
+            COUNTIF(is_mmct) as mmct_originations,
+            SUM(loan_amount) as total_loan_amount
         FROM `{dest_project}.shared.de_hmda`
-        WHERE census_tract IS NOT NULL
-        GROUP BY activity_year, census_tract, county_code, lei, lender_name
+        WHERE action_taken = '1' AND occupancy_type = '1' AND total_units IN ('1','2','3','4')
+          AND construction_method = '1' AND (reverse_mortgage IS NULL OR reverse_mortgage != '1')
+        GROUP BY lei, activity_year, geoid5, county_state, tract_code,
+            tract_minority_population_percent, tract_to_msa_income_percentage, loan_purpose
     """,
 }
 
