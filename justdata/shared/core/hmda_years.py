@@ -20,11 +20,10 @@ EARLIEST_HMDA_YEAR = 2018
 
 # Most recent HMDA year whose enriched de_hmda data is loaded AND verified.
 #
-# NOTE (2026-07): 2025 is intentionally NOT enabled yet. The 2025 rows currently in
-# de_hmda are the March Modified LAR (partial/degraded — nulled derived fields,
-# proxied tract stats). Bump this to 2025 in one line once the June Snapshot has
-# been loaded and the snapshot-based enrichment verified.
-LATEST_HMDA_YEAR = 2024
+# 2025 enabled 2026-07-17: the June Snapshot was loaded (13,543,606 rows), enrichment
+# re-run and verified end to end (lender join, geography, race flags, pricing), and
+# year-over-year continuity confirmed against 2024. See docs/hmda_2025_sync_audit.md.
+LATEST_HMDA_YEAR = 2025
 
 # How many of the most-recent years the default analysis range spans
 # (e.g. 3 -> the last three available years). With LATEST_HMDA_YEAR = 2025 this
