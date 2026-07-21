@@ -47,11 +47,10 @@ def parse_wizard_parameters(wizard_data: Dict[str, Any]) -> tuple:
         elif not isinstance(years, list):
             years = [int(years)]
     else:
-        # Default to most recent 5 years (dynamic based on current year, capped at 2024 for HMDA)
-        from datetime import datetime
-        current_year = datetime.now().year
-        max_year = min(current_year, 2024)  # HMDA data only available through 2024
-        years = list(range(max_year - 4, max_year + 1))  # Most recent 5 years, capped at 2024
+        # Default to the platform-wide HMDA analysis range (see shared/core/hmda_years.py).
+        # Bumping LATEST_HMDA_YEAR there rolls this forward automatically.
+        from justdata.shared.core.hmda_years import default_hmda_years
+        years = default_hmda_years()
     
     # Parse filters from wizard data
     filters = wizard_data.get('filters', {})

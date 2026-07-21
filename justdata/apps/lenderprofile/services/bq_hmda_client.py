@@ -460,7 +460,10 @@ class BigQueryHMDAClient:
             result = list(query_job.result())
 
             if result and result[0].max_year:
-                return result[0].max_year
+                # Cap at the curated ceiling so a loaded-but-unverified year (e.g. the
+                # March MLAR ahead of the June Snapshot) is not surfaced in profiles.
+                from justdata.shared.core.hmda_years import LATEST_HMDA_YEAR
+                return min(int(result[0].max_year), LATEST_HMDA_YEAR)
             return None
 
         except Exception as e:

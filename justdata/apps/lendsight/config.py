@@ -50,7 +50,10 @@ DATASET_ID = "hmda"
 TABLE_ID = "hmda"
 
 # Report Configuration
-DEFAULT_YEARS = list(range(2020, 2025))  # 2020-2024 (HMDA data)
+# HMDA year range comes from the platform-wide source of truth so a new year is a
+# one-line change in justdata/shared/core/hmda_years.py (see docs/hmda_2025_sync_audit.md).
+from justdata.shared.core.hmda_years import default_hmda_years
+DEFAULT_YEARS = default_hmda_years()  # most recent N years (2023-2025 once 2025 is enabled)
 MAX_LENDERS_DISPLAY = 10
 
 # API Keys

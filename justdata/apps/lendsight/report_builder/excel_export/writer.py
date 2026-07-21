@@ -10,6 +10,7 @@ import os
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+from justdata.shared.core.hmda_years import is_valid_hmda_year
 from justdata.apps.lendsight.report_builder.formatting import sanitize_sheet_name
 from justdata.apps.lendsight.report_builder.excel_export.demographic import (
     create_demographic_overview_table_for_excel,
@@ -210,8 +211,9 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
             if not top_lenders_table.empty:
                 top_lenders_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
 
-            # Section 3b: Top 10 Lenders Over Time (2020-2024) - Excel Export Only
-            export_years = [y for y in years if 2020 <= y <= 2024]
+            # Section 3b: Top 10 Lenders Over Time - Excel Export Only
+            # Guard to the exposed HMDA year range (see shared/core/hmda_years.py).
+            export_years = [y for y in years if is_valid_hmda_year(y)]
             if export_years:
                 top_lenders_by_year_table = create_top_lenders_by_year_table_for_excel(raw_df, export_years, top_n=10)
                 if not top_lenders_by_year_table.empty:

@@ -12,6 +12,7 @@ from typing import List, Optional
 from google.cloud.bigquery import ScalarQueryParameter
 
 from justdata.apps.dotlender.sql_loader import load_sql
+from justdata.shared.core.hmda_years import LATEST_HMDA_YEAR
 from justdata.shared.utils.bigquery_client import get_bigquery_client, run_query
 
 
@@ -50,12 +51,17 @@ def _format_predicates(predicates: List[str]) -> str:
 
 
 def get_max_year() -> int:
-    """Return the most recent activity_year currently loaded in de_hmda."""
+    """Return the most recent *exposed* activity_year in de_hmda.
+
+    Capped at LATEST_HMDA_YEAR so a year that is loaded but not yet verified
+    (e.g. a March Modified LAR sitting in de_hmda ahead of the June Snapshot)
+    is not surfaced to users. Raise LATEST_HMDA_YEAR to expose a new year.
+    """
     sql = load_sql("max_year.sql").format(table=TABLE)
     rows = run_query(_client(), sql)
     if not rows or rows[0].get("max_year") is None:
         return 0
-    return int(rows[0]["max_year"])
+    return min(int(rows[0]["max_year"]), LATEST_HMDA_YEAR)
 
 
 def lender_search(search_term: str, year_start: int, year_end: int) -> List[dict]:

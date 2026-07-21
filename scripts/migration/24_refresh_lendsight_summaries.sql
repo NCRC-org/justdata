@@ -1,4 +1,17 @@
--- Migration Script 24: Refresh LendSight summary tables from shared.de_hmda
+-- ⚠️ DEPRECATED / DO NOT RUN — schema does NOT match the live summary tables.
+-- This script produces columns (total_applications, purchase/refinance/cash_out_refi/
+-- home_equity_originations, lmi_borrower/lmi_tract/majority_minority_tract) and OMITS
+-- the origination filters + avg_* / native_american / hopi / multi_racial /
+-- loans_with_demographic_data columns that the deployed
+-- justdata-ncrc.lendsight.de_hmda_{county,tract}_summary tables actually have.
+-- Running it would corrupt the schema and break LendSight/DataExplorer.
+-- The CANONICAL builders are:
+--   scripts/migration/05_create_hmda_county_summary.sql
+--   scripts/migration/06_create_hmda_tract_summary.sql
+-- and the runtime refresh in scripts/sync/main.py is kept in lockstep with 05/06.
+-- Kept only for historical reference.
+--
+-- Migration Script 24 (historical): Refresh LendSight summary tables from shared.de_hmda
 -- Source: justdata-ncrc.shared.de_hmda
 -- Destination: justdata-ncrc.lendsight.de_hmda_county_summary, de_hmda_tract_summary
 -- Type: Aggregated refresh (~500K rows total)

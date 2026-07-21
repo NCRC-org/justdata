@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS `hdma1-242116.justdata.de_hmda` (
   tract_code STRING,  -- Same as census_tract, for compatibility
   
   -- Lender information (pre-joined)
-  lender_name STRING,  -- From hmda.lenders18
-  lender_type STRING,  -- From hmda.lenders18
+  lender_name STRING,  -- From hmda.lenders (current lookup; replaced deprecated lenders18)
+  lender_type STRING,  -- From hmda.lenders (current lookup; replaced deprecated lenders18)
   
   -- Loan characteristics
   loan_purpose STRING,
@@ -89,7 +89,20 @@ CLUSTER BY geoid5, lei, loan_purpose;
 -- This is a one-time ETL job that may take several hours for full HMDA dataset
 -- Consider running for specific years first to test, then expand to all years
 
-INSERT INTO `hdma1-242116.justdata.de_hmda`
+-- Explicit column list (name-based mapping) — the live table has lien_status
+-- appended at the end, so a positional INSERT would misalign; do not rely on order.
+INSERT INTO `hdma1-242116.justdata.de_hmda` (
+  lei, activity_year, county_code, county_state, geoid5, census_tract, tract_code,
+  lender_name, lender_type, loan_purpose, loan_type, action_taken, occupancy_type,
+  total_units, construction_method, reverse_mortgage, lien_status, loan_amount,
+  property_value, interest_rate, total_loan_costs, origination_charges, income,
+  tract_minority_population_percent, tract_to_msa_income_percentage,
+  ffiec_msa_md_median_family_income, is_hispanic, is_black, is_asian, is_white,
+  is_native_american, is_hopi, is_multi_racial, has_demographic_data, is_lmib,
+  is_low_income_borrower, is_moderate_income_borrower, is_middle_income_borrower,
+  is_upper_income_borrower, is_lmict, is_low_income_tract, is_moderate_income_tract,
+  is_middle_income_tract, is_upper_income_tract, is_mmct
+)
 SELECT
   -- Identifiers
   h.lei,
@@ -668,8 +681,9 @@ LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
     -- For 2024: Use planning region code directly from county_code
     CAST(h.county_code AS STRING)
   ) = CAST(c.geoid5 AS STRING)
--- Join to lenders18 for lender name and type
-LEFT JOIN `hdma1-242116.hmda.lenders18` l
+-- Join to current lenders lookup for lender name and type
+-- (replaced deprecated hmda.lenders18, which lacked the newest LEIs)
+LEFT JOIN `hdma1-242116.hmda.lenders` l
   ON h.lei = l.lei
 WHERE CAST(h.activity_year AS INT64) >= 2018  -- Adjust year range as needed
   -- Note: We're NOT filtering by action_taken, occupancy, etc. here
