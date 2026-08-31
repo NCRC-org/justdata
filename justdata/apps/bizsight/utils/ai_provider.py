@@ -41,7 +41,7 @@ class AIAnalyzer:
 
         # Set default models
         if not self.model:
-            self.model = "claude-sonnet-4-20250514"
+            self.model = "claude-sonnet-5"
 
     def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3) -> str:
         """Make a call to the configured AI provider.

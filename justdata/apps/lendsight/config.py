@@ -37,7 +37,7 @@ except (PermissionError, OSError):
 
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+CLAUDE_MODEL = "claude-sonnet-5"
 
 # BigQuery Configuration
 # Use environment variable for flexible project switching during migration

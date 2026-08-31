@@ -61,7 +61,7 @@ class ElectWatchConfig:
         os.getenv('ANTHROPIC_API_KEY') or
         os.getenv('CLAUDE_AI_API_KEY')
     )
-    CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-sonnet-4-20250514')
+    CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-sonnet-5')
 
     # Flask Configuration
     SECRET_KEY = os.getenv('SECRET_KEY', 'electwatch-secret-key-change-in-production')

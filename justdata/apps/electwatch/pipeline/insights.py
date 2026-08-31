@@ -68,7 +68,7 @@ RECENT NEWS:
 Write a concise summary suitable for a dashboard overview."""
 
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-5",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -96,7 +96,7 @@ def _generate_top_movers(coordinator, client) -> str:
 Be factual and avoid speculation."""
 
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-5",
             max_tokens=300,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -128,7 +128,7 @@ def _generate_industry_highlights(coordinator, client) -> str:
         prompt = f"""Based on congressional trading patterns showing {sector_trades.get('banking', 0)} banking trades and {sector_trades.get('crypto', 0)} crypto trades, write 2 sentences about industry focus."""
 
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-5",
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}]
         )
