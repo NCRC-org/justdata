@@ -36,9 +36,8 @@ except (PermissionError, OSError):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # AI Configuration
-AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")  # Options: "gpt-4", "claude"
+AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
-GPT_MODEL = "gpt-4"
 
 # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
@@ -52,7 +51,6 @@ MAX_BANKS_DISPLAY = 10
 
 # API Keys
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Load environment variables from .env if available
 try:
@@ -60,7 +58,6 @@ try:
     load_dotenv()
     # Reload after loading .env
     CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 except ImportError:
     pass
 

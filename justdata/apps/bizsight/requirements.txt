@@ -15,7 +15,6 @@ google-cloud-bigquery>=3.0.0
 
 # AI Services
 anthropic>=0.7.0
-openai>=1.0.0
 
 # Excel Export
 openpyxl>=3.0.0

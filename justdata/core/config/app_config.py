@@ -20,9 +20,7 @@ os.makedirs(os.path.join(DATA_DIR, 'raw'), exist_ok=True)
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
-GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # BigQuery Configuration
 PROJECT_ID = os.getenv("JUSTDATA_PROJECT_ID", "justdata-ncrc")
@@ -34,9 +32,7 @@ try:
     # Reload environment variables
     AI_PROVIDER = os.getenv("AI_PROVIDER", AI_PROVIDER)
     CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", CLAUDE_MODEL)
-    GPT_MODEL = os.getenv("GPT_MODEL", GPT_MODEL)
     CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     # Use JUSTDATA_PROJECT_ID for data queries (justdata-ncrc), NOT GCP_PROJECT_ID (hdma1-242116 hosting project)
     PROJECT_ID = os.getenv("JUSTDATA_PROJECT_ID", PROJECT_ID)
 except ImportError:
@@ -51,9 +47,7 @@ class AppConfig:
     DATA_DIR = DATA_DIR
     AI_PROVIDER = AI_PROVIDER
     CLAUDE_MODEL = CLAUDE_MODEL
-    GPT_MODEL = GPT_MODEL
     CLAUDE_API_KEY = CLAUDE_API_KEY
-    OPENAI_API_KEY = OPENAI_API_KEY
     PROJECT_ID = PROJECT_ID
     
     # Default years range

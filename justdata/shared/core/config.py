@@ -30,9 +30,7 @@ class BaseAppConfig(BaseSettings):
     # AI Services
     ai_provider: str = Field(default="claude", env="AI_PROVIDER")
     claude_api_key: Optional[str] = Field(default=None, env="CLAUDE_API_KEY")
-    openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     claude_model: str = Field(default="claude-sonnet-4-20250514", env="CLAUDE_MODEL")
-    gpt_model: str = Field(default="gpt-4", env="GPT_MODEL")
 
     # Census API
     census_api_key: Optional[str] = Field(default=None, env="CENSUS_API_KEY")
@@ -69,8 +67,6 @@ class BaseAppConfig(BaseSettings):
         errors = []
         if self.ai_provider == "claude" and not self.claude_api_key:
             errors.append("CLAUDE_API_KEY or ANTHROPIC_API_KEY not set")
-        if self.ai_provider == "openai" and not self.openai_api_key:
-            errors.append("OPENAI_API_KEY not set")
         return errors
 
     def validate_bigquery_config(self) -> List[str]:

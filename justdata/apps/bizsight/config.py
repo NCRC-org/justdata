@@ -92,9 +92,7 @@ class BizSightConfig:
         os.getenv('ANTHROPIC_API_KEY') or
         os.getenv('CLAUDE_AI_API_KEY')
     )
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-sonnet-4-20250514')
-    GPT_MODEL = os.getenv('GPT_MODEL', 'gpt-4')
     
     # Flask Configuration
     SECRET_KEY = os.getenv('SECRET_KEY') or __import__('secrets').token_hex(32)
@@ -118,11 +116,7 @@ class BizSightConfig:
         # Check for Claude API key (only if using Claude)
         if cls.AI_PROVIDER == 'claude' and not cls.CLAUDE_API_KEY:
             errors.append("CLAUDE_API_KEY not set (check root .env file or set environment variable)")
-        
-        # Check for OpenAI API key (only if using OpenAI)
-        if cls.AI_PROVIDER == 'openai' and not cls.OPENAI_API_KEY:
-            errors.append("OPENAI_API_KEY not set (check root .env file or set environment variable)")
-        
+
         # Check if credentials file exists (only if not set via env var)
         # Allow missing credentials if GOOGLE_APPLICATION_CREDENTIALS is set via env var
         if not os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
