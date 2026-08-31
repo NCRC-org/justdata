@@ -186,19 +186,3 @@ def mock_progress_tracker():
             "get": mock_get,
             "create": mock_create,
         }
-
-
-# ---------------------------------------------------------------------------
-# FDIC API mock
-# ---------------------------------------------------------------------------
-
-@pytest.fixture
-def mock_fdic_client():
-    """Mock FDIC API client for branch/merger event tests."""
-    with patch("justdata.apps.lenderprofile.services.fdic_client.FDICClient") as mock_cls:
-        client = MagicMock()
-        client.get_branch_events.return_value = []
-        client.get_merger_events.return_value = []
-        client.get_history.return_value = {"data": [], "totals": {"count": 0}}
-        mock_cls.return_value = client
-        yield client

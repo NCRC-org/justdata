@@ -758,11 +758,6 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
-        .app-lenderprofile .app-card-icon {
-            background: rgba(85, 45, 135, 0.1);
-            color: var(--ncrc-primary-blue);
-        }
-
         .app-commentmaker .app-card-icon {
             background: rgba(232, 46, 46, 0.1);
             color: var(--ncrc-accent-red);
@@ -1467,9 +1462,7 @@
                 <a href="/dotlender/" class="nav-item" data-app="dotlender" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-circle-dot" style="margin-right: 10px; color: #f97316;"></i>DotLender</a>
                 <a href="/mergermeter" class="nav-item" data-app="mergermeter" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
                 <a href="/dataexplorer" class="nav-item" data-app="dataexplorer" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
-                <a href="/lenderprofile" class="nav-item" data-app="lenderprofile" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
                 <a href="/analytics" class="nav-item" data-app="analytics" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-pie" style="margin-right: 10px; color: #10b981;"></i>Analytics</a>
-                <a href="/electwatch" class="nav-item" data-app="electwatch" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
                 <a href="/admin/users" class="nav-item" data-app="admin" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-cog" style="margin-right: 10px; color: #6b7280;"></i>Admin</a>
             </nav>
 
@@ -1746,28 +1739,6 @@
                                 <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()">
                                     Launch <i class="fas fa-arrow-right"></i>
                                 </a>
-                            </div>
-                        </div>
-
-                        <!-- ElectWatch Card - Coming Soon -->
-                        <div class="app-card coming-soon" data-app="electwatch" onclick="handleInfoClick('ElectWatch')">
-                            <h3 class="app-card-title">ElectWatch</h3>
-                            <p class="app-card-description">
-                                Track campaign contributions from financial institutions to Congress.
-                            </p>
-                            <div class="app-card-buttons">
-                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
-                            </div>
-                        </div>
-
-                        <!-- LenderProfile Card - Coming Soon -->
-                        <div class="app-card coming-soon" data-app="lenderprofile" onclick="handleInfoClick('LenderProfile')">
-                            <h3 class="app-card-title">LenderProfile</h3>
-                            <p class="app-card-description">
-                                Comprehensive lender intelligence combining corporate structure and CRA ratings.
-                            </p>
-                            <div class="app-card-buttons">
-                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
                             </div>
                         </div>
 
@@ -2317,26 +2288,6 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'electwatch': {  // Min tier 6 (staff) - Coming Soon
-                public_anonymous: 'hidden',
-                public_registered: 'hidden',
-                member: 'hidden',
-                member_premium: 'hidden',
-                non_member_org: 'hidden',
-                staff: 'full',
-                senior_executive: 'full',
-                admin: 'full'
-            },
-            'lenderprofile': {  // Min tier 6 (staff) - Coming Soon
-                public_anonymous: 'hidden',
-                public_registered: 'hidden',
-                member: 'hidden',
-                member_premium: 'hidden',
-                non_member_org: 'hidden',
-                staff: 'full',
-                senior_executive: 'full',
-                admin: 'full'
-            },
             'redlining': {  // Min tier 6 (staff) - Coming Soon
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
@@ -2380,7 +2331,6 @@
             'dataexplorer': '/dataexplorer',
             'dotlender': '/dotlender/',
             'mergermeter': '/mergermeter',
-            'lenderprofile': '/lenderprofile',
             'redlining': '/redlining'
         };
 
@@ -2832,12 +2782,6 @@
             },
             'Admin': {
                 description: 'Manage user accounts, permissions, and system settings. Control access levels across the eight-tier membership structure. Configure platform integrations and monitor system health.'
-            },
-            'ElectWatch': {
-                description: 'UNDER CONSTRUCTION. Track campaign contributions from financial institutions to members of Congress. See which banks fund which legislators and how those lawmakers vote on banking legislation. Connects the dots between financial influence and policy outcomes.'
-            },
-            'LenderProfile': {
-                description: 'UNDER CONSTRUCTION. Comprehensive intelligence on individual lenders combining corporate structure, regulatory identifiers, CRA ratings, and market position. One-stop lookup for understanding a lender\'s full profile before research or negotiations.'
             },
             'Redlining Dashboard': {
                 description: 'UNDER CONSTRUCTION. Compare bank lending in minority census tracts against peer institutions. Identifies lenders underperforming their markets in communities of color. Supports fair lending advocacy with clear disparity metrics and peer benchmarks.'

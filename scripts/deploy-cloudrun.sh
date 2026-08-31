@@ -166,7 +166,6 @@ load_env_vars() {
                [ "$key" = "BRANCHMAPPER_CREDENTIALS_JSON" ] || \
                [ "$key" = "MERGERMETER_CREDENTIALS_JSON" ] || \
                [ "$key" = "DATAEXPLORER_CREDENTIALS_JSON" ] || \
-               [ "$key" = "LENDERPROFILE_CREDENTIALS_JSON" ] || \
                [ "$key" = "ANALYTICS_CREDENTIALS_JSON" ] || \
                [ "$key" = "ELECTWATCH_CREDENTIALS_JSON" ]; then
                 continue
@@ -265,7 +264,7 @@ deploy() {
     )
     deploy_args+=(
         "--update-secrets"
-        "LENDSIGHT_CREDENTIALS_JSON=lendsight-bq-credentials:latest,BIZSIGHT_CREDENTIALS_JSON=bizsight-bq-credentials:latest,BRANCHSIGHT_CREDENTIALS_JSON=branchsight-bq-credentials:latest,BRANCHMAPPER_CREDENTIALS_JSON=branchmapper-bq-credentials:latest,MERGERMETER_CREDENTIALS_JSON=mergermeter-bq-credentials:latest,DATAEXPLORER_CREDENTIALS_JSON=dataexplorer-bq-credentials:latest,LENDERPROFILE_CREDENTIALS_JSON=lenderprofile-bq-credentials:latest,ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest,ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest"
+        "LENDSIGHT_CREDENTIALS_JSON=lendsight-bq-credentials:latest,BIZSIGHT_CREDENTIALS_JSON=bizsight-bq-credentials:latest,BRANCHSIGHT_CREDENTIALS_JSON=branchsight-bq-credentials:latest,BRANCHMAPPER_CREDENTIALS_JSON=branchmapper-bq-credentials:latest,MERGERMETER_CREDENTIALS_JSON=mergermeter-bq-credentials:latest,DATAEXPLORER_CREDENTIALS_JSON=dataexplorer-bq-credentials:latest,ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest,ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest"
     )
     
     # Execute deployment

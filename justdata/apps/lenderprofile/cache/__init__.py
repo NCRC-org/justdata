@@ -1,4 +1,0 @@
-"""
-Caching utilities for LenderProfile
-"""
-

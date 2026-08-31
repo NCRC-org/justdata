@@ -42,11 +42,6 @@ feature/*, fix/*, refactor/*, chore/*, docs/*  -->  staging  -->  main
 - Blueprint refactor, improved data_utils, census_tract_utils enhancements
 - BranchMapper logo added
 
-### FDIC OSCR History Client (merged to `staging`)
-- New `justdata/apps/lenderprofile/services/fdic_client.py`
-- Supports branch events, merger events, name changes via `https://api.fdic.gov/banks/history`
-- Schema analysis documented in `justdata/apps/lenderprofile/FDIC_OSCR_SCHEMA_ANALYSIS.md`
-
 ### Shared UI Updates
 - White app logos for all apps added to `justdata/shared/web/static/img/app-logos/`
 - Shared header template updated
@@ -76,7 +71,6 @@ python run_justdata.py  # All apps at localhost:8000
 ```bash
 python justdata/apps/branchsight/run.py    # Port 8080 - FDIC branch analysis (BranchSight)
 python justdata/apps/lendsight/run.py       # Port 8082 - HMDA mortgage analysis
-python justdata/apps/lenderprofile/run.py   # Port 8086 - Lender corporate analysis
 python justdata/apps/dataexplorer/run.py    # Port 8085 - Data exploration
 python justdata/apps/bizsight/run.py        # Port 8081 - Small business lending
 python justdata/apps/mergermeter/run.py     # Port 8083 - Bank merger analysis
@@ -121,16 +115,14 @@ justdata/
 ├── apps/                    # Flask applications
 │   ├── branchsight/         # BranchSight - FDIC branch analysis (fully functional)
 │   ├── lendsight/           # HMDA mortgage analysis
-│   ├── lenderprofile/       # Lender corporate structure analysis
 │   ├── dataexplorer/        # Data exploration tool
 │   ├── bizsight/            # Small business lending
 │   ├── mergermeter/         # Bank merger analysis
-│   ├── electwatch/          # Congressional financial tracking
+│   ├── electwatch/          # Congressional financial tracking (archived 2026-08-31, code retained, not deployed live)
 │   ├── branchmapper/        # Branch network mapping (major overhaul Feb 2026)
-│   ├── loantrends/          # Loan trend analysis
 │   └── memberview/          # Member dashboard
 ├── shared/                  # Shared modules used by all apps
-│   ├── analysis/            # AI analysis (Claude/OpenAI)
+│   ├── analysis/            # AI analysis (Claude)
 │   ├── utils/               # Utilities (BigQuery, env, progress)
 │   ├── reporting/           # Report generation (Excel, PDF, PowerPoint)
 │   ├── services/            # Business logic services
@@ -225,6 +217,8 @@ If the domain is missing, users see "Domain not authorized" or "The requested ac
 - **GLEIF** - Legal Entity Identifiers
 
 ## ElectWatch Data Architecture
+
+**Archived 2026-08-31.** ElectWatch is no longer registered in `justdata/main/app.py` and is not served at `/electwatch` on the live platform. Source code, tests, docs, and its BigQuery dataset are all retained for a possible future revival. The weekly Cloud Scheduler trigger (`electwatch-weekly-trigger`) has been **paused** (not deleted); the Cloud Run Job (`electwatch-weekly-update`) and its BigQuery dataset are untouched. The auto-redeploy workflow has been disabled (`.github/workflows/deploy-electwatch-job.yml.disabled`) so a future push can't silently reactivate it. To revive: re-register the blueprint in `justdata/main/app.py`, restore the nav links, resume the scheduler (`gcloud scheduler jobs resume electwatch-weekly-trigger --location=us-east1 --project=justdata-ncrc`), and rename the workflow file back to `.yml`.
 
 ElectWatch tracks congressional financial activity. Data is stored in BigQuery (`justdata-ncrc.electwatch`).
 
@@ -322,9 +316,9 @@ docker build -f Dockerfile.app .   # Build single app image
 | BizSight | 8081 | Small business lending |
 | LendSight | 8082 | HMDA mortgage analysis |
 | MergerMeter | 8083 | Bank merger analysis |
-| ElectWatch | 8084 | Congressional tracking |
 | DataExplorer | 8085 | Data exploration |
-| LenderProfile | 8086 | Lender corporate analysis |
+
+**Retired 2026-08-31:** LenderProfile and LoanTrends were removed entirely (experimental apps). ElectWatch was archived — port 8084, code retained under `justdata/apps/electwatch/`, not registered in the live app. See "ElectWatch Data Architecture" above.
 
 ## App Name Aliases
 

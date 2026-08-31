@@ -1,7 +1,7 @@
 """Single source of truth for the HMDA activity years the platform exposes.
 
-Every HMDA app (LendSight, MergerMeter, DataExplorer, DotLender, LoanTrends,
-LenderProfile) should derive its available-year list, default analysis range, and
+Every HMDA app (LendSight, MergerMeter, DataExplorer, DotLender) should derive
+its available-year list, default analysis range, and
 year validation from the helpers here instead of hardcoding year literals. That
 way, rolling the platform forward to a new HMDA year is a **one-line change** to
 ``LATEST_HMDA_YEAR`` below rather than a hunt across every app.

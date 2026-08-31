@@ -169,16 +169,6 @@ ACCESS_MATRIX = {
         'senior_executive': 'full',
         'admin': 'full'
     },
-    'lenderprofile': {
-        'public_anonymous': 'hidden',
-        'public_registered': 'hidden',
-        'member': 'hidden',
-        'member_premium': 'hidden',
-        'non_member_org': 'hidden',
-        'staff': 'full',
-        'senior_executive': 'full',
-        'admin': 'full'
-    },
     'mergermeter': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
@@ -189,17 +179,6 @@ ACCESS_MATRIX = {
         'senior_executive': 'full',
         'admin': 'full'
     },
-    'electwatch': {
-        'public_anonymous': 'hidden',
-        'public_registered': 'hidden',
-        'member': 'hidden',
-        'member_premium': 'hidden',
-        'non_member_org': 'hidden',
-        'staff': 'full',
-        'senior_executive': 'full',
-        'admin': 'full'
-    },
-
     # ========================================
     # Interactive Tools
     # ========================================
@@ -282,16 +261,6 @@ ACCESS_MATRIX = {
     # ========================================
     # Internal/Staff Tools
     # ========================================
-    'loantrends': {
-        'public_anonymous': 'hidden',
-        'public_registered': 'hidden',
-        'member': 'hidden',
-        'member_premium': 'hidden',
-        'non_member_org': 'hidden',
-        'staff': 'full',
-        'senior_executive': 'full',
-        'admin': 'full'
-    },
     'memberview': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',

@@ -29,7 +29,6 @@ SECRETS = [
     "dataexplorer-bq-credentials",
     "electwatch-bq-credentials",
     "firebase-admin-credentials",
-    "lenderprofile-bq-credentials",
     "lendsight-bq-credentials",
     "mergermeter-bq-credentials",
 ]

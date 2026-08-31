@@ -8,7 +8,7 @@ A financial data analysis platform built for [NCRC](https://ncrc.org) (National 
 
 ## Applications
 
-JustData runs as a unified platform with 10 specialized applications:
+JustData runs as a unified platform with 8 specialized applications:
 
 | App | Domain | Data Sources | Status |
 |-----|--------|-------------|--------|
@@ -16,14 +16,13 @@ JustData runs as a unified platform with 10 specialized applications:
 | **LendSight** | Mortgage lending analysis | HMDA, Census ACS | Fully functional |
 | **BizSight** | Small business lending | Section 1071, Census ACS | Fully functional |
 | **MergerMeter** | Bank merger analysis | FDIC, HMDA, SOD | Fully functional |
-| **LenderProfile** | Lender corporate analysis | SEC EDGAR, GLEIF, FDIC | Fully functional |
 | **DataExplorer** | Data exploration tool | HMDA, Census, FDIC | Fully functional |
-| **ElectWatch** | Congressional financial tracking | FEC, Congress.gov, STOCK Act | Fully functional |
 | **BranchMapper** | Branch network mapping | FDIC SOD, Mapbox | Fully functional |
 | **MemberView** | Member dashboard | Internal data | In development |
-| **LoanTrends** | Loan trend analysis | HMDA | In development |
 
 All apps are accessible from the unified landing page at `http://localhost:8000` when running locally.
+
+**Retired 2026-08-31:** LenderProfile and LoanTrends were removed entirely. ElectWatch was archived -- source retained under `justdata/apps/electwatch/` but not registered in the live app (see `CLAUDE.md` for revival steps).
 
 ---
 
@@ -68,7 +67,6 @@ python justdata/apps/branchsight/run.py   # Port 8080
 python justdata/apps/lendsight/run.py      # Port 8082
 python justdata/apps/bizsight/run.py       # Port 8081
 python justdata/apps/mergermeter/run.py    # Port 8083
-python justdata/apps/lenderprofile/run.py  # Port 8086
 python justdata/apps/dataexplorer/run.py   # Port 8085
 ```
 
@@ -84,14 +82,12 @@ justdata/
 │   │   ├── lendsight/          # HMDA mortgage analysis
 │   │   ├── bizsight/           # Small business lending
 │   │   ├── mergermeter/        # Bank merger analysis
-│   │   ├── lenderprofile/      # Lender corporate analysis
 │   │   ├── dataexplorer/       # Data exploration
-│   │   ├── electwatch/         # Congressional tracking
+│   │   ├── electwatch/         # Congressional tracking (archived, not registered live)
 │   │   ├── branchmapper/       # Branch network mapping
-│   │   ├── memberview/         # Member dashboard
-│   │   └── loantrends/         # Loan trend analysis
+│   │   └── memberview/         # Member dashboard
 │   ├── shared/                 # Shared modules
-│   │   ├── analysis/           # AI integration (Claude, OpenAI)
+│   │   ├── analysis/           # AI integration (Claude)
 │   │   ├── utils/              # BigQuery, env config, progress tracking
 │   │   ├── reporting/          # Report generation (Excel, PDF, PowerPoint)
 │   │   ├── services/           # Business logic services
@@ -187,7 +183,6 @@ Detailed documentation lives in the [docs/](docs/) directory:
 - [CACHE_IMPLEMENTATION.md](docs/CACHE_IMPLEMENTATION.md) -- BigQuery caching system
 - [DEPENDENCIES.md](DEPENDENCIES.md) -- Dependencies and data source reference
 - [docs/dataexplorer/](docs/dataexplorer/) -- DataExplorer implementation notes
-- [docs/lenderprofile/](docs/lenderprofile/) -- LenderProfile implementation notes
 
 Each app also has its own `README.md` with app-specific documentation.
 

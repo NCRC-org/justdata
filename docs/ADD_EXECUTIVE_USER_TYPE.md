@@ -42,8 +42,8 @@ ACCESS_MATRIX = {
         'admin': 'full'
     },
     # ... repeat for ALL apps in the matrix:
-    # bizsight, commentmaker, justpolicy, lenderprofile, mergermeter,
-    # branchmapper, dataexplorer, analytics, admin, loantrends, memberview
+    # bizsight, commentmaker, justpolicy, mergermeter,
+    # branchmapper, dataexplorer, analytics, admin, memberview
 }
 ```
 
@@ -272,7 +272,7 @@ After making changes:
 1. [ ] Start the app locally: `python run_justdata.py`
 2. [ ] Open browser to homepage
 3. [ ] Use the "View as" dropdown to select "Executive"
-4. [ ] Verify executive can see: LendSight, BizSight, BranchSight, BranchMapper, MergerMeter, DataExplorer, LenderProfile, MemberView, Analytics
+4. [ ] Verify executive can see: LendSight, BizSight, BranchSight, BranchMapper, MergerMeter, DataExplorer, MemberView, Analytics
 5. [ ] Verify executive CANNOT see: Administration
 6. [ ] Navigate to `/analytics` as executive - should load
 7. [ ] Navigate to `/admin` as executive - should redirect to homepage

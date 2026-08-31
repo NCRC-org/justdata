@@ -9,8 +9,11 @@ file. Per-app details live in each app's `README.md`.
 
 JustData is NCRC's internal Flask + BigQuery application suite. It bundles
 several sub-apps (BranchSight, LendSight, BizSight, MergerMeter, BranchMapper,
-DataExplorer, LenderProfile, LoanTrends, ElectWatch, MemberView, Analytics)
-behind a single unified entry point.
+DataExplorer, MemberView, Analytics) behind a single unified entry point.
+LenderProfile and LoanTrends were retired 2026-08-31 (removed entirely).
+ElectWatch was archived the same day — source retained under
+`justdata/apps/electwatch/`, not registered as a blueprint, not part of the
+live platform. See "ElectWatch Data Architecture" in `CLAUDE.md`.
 
 - **Process model:** one Flask app (`justdata/main/app.py`) registers each
   sub-app as a Flask Blueprint under its own URL prefix. There is no
@@ -74,23 +77,21 @@ which mounts each blueprint at its URL prefix:
 | mergermeter   | `/mergermeter`    |
 | branchmapper  | `/branchmapper`   |
 | dataexplorer  | `/dataexplorer`   |
-| lenderprofile | `/lenderprofile`  |
-| loantrends    | `/loantrends`     |
 | memberview    | `/memberview`     |
-| electwatch    | `/electwatch`     |
 | analytics     | `/analytics`      |
+
+(`electwatch` is not currently registered — archived, see §1.)
 
 Each blueprint uses `record_once` to install a `ChoiceLoader` so its own
 templates resolve before shared ones.
 
 ## 4. The report builder pattern
 
-Three apps build long-form reports through a `report_builder/` package that
+Two apps build long-form reports through a `report_builder/` package that
 isolates section-by-section logic from the route handlers:
 
 - `justdata/apps/lendsight/report_builder/`
 - `justdata/apps/dataexplorer/report_builder/`
-- `justdata/apps/lenderprofile/report_builder/`
 
 Common shape:
 
@@ -105,13 +106,14 @@ report_builder/
 ```
 
 `dataexplorer` additionally has `coordinator_all_lenders.py` for the
-all-lenders variant. `lenderprofile` keeps a top-level `report_builder.py`
-alongside the package for legacy entry points.
+all-lenders variant.
 
 ## 5. The pipeline pattern
 
-ElectWatch is the only app with a batch pipeline. It runs as a Cloud Run
-Job triggered by Cloud Scheduler weekly. The package layout under
+ElectWatch (archived, see §1) was the only app with a batch pipeline; the
+pattern is documented here for reference and possible revival. It ran as a
+Cloud Run Job triggered by Cloud Scheduler weekly (the scheduler trigger is
+now paused, not deleted). The package layout under
 `justdata/apps/electwatch/pipeline/` is:
 
 ```
@@ -179,9 +181,8 @@ CI runs on PRs targeting `test`, `staging`, and `main` via
 The refactor closed out with the structural changes shipped, but several
 debt items were carried forward as named branches/tickets:
 
-- `chore/fix-blueprint-static-url-paths` — 8 apps register a
-  `static_url_path` that doubles the prefix; lenderprofile is fixed,
-  the rest still need cleanup.
+- `chore/fix-blueprint-static-url-paths` — several apps register a
+  `static_url_path` that doubles the prefix; still needs cleanup.
 - `refactor/split-shared-templates` — four shared templates remain over
   1,000 lines: `shared_header.html`, `justdata_landing_page.html`,
   `admin-users.html`, `report_template.html`.

@@ -30,7 +30,6 @@ if __name__ == '__main__':
     print(f"  LendSight:         http://127.0.0.1:8000/lendsight/")
     print(f"  MergerMeter:       http://127.0.0.1:8000/mergermeter/")
     print(f"  BranchMapper:      http://127.0.0.1:8000/branchmapper/")
-    print(f"  ElectWatch:        http://127.0.0.1:8000/electwatch/")
     print("  Press Ctrl+C to stop the server")
     print("=" * 60)
     print()

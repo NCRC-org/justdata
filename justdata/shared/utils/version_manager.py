@@ -82,7 +82,6 @@ def get_app_version(app_name):
         'bizsight': 0,
         'branchmapper': 0,
         'mergermeter': 0,
-        'lenderprofile': 0,
     }
     
     offset = app_offsets.get(app_name.lower(), 0)
