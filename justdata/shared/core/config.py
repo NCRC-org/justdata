@@ -30,7 +30,7 @@ class BaseAppConfig(BaseSettings):
     # AI Services
     ai_provider: str = Field(default="claude", env="AI_PROVIDER")
     claude_api_key: Optional[str] = Field(default=None, env="CLAUDE_API_KEY")
-    claude_model: str = Field(default="claude-sonnet-4-20250514", env="CLAUDE_MODEL")
+    claude_model: str = Field(default="claude-sonnet-5", env="CLAUDE_MODEL")
 
     # Census API
     census_api_key: Optional[str] = Field(default=None, env="CENSUS_API_KEY")

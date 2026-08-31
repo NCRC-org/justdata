@@ -37,7 +37,7 @@ except (PermissionError, OSError):
 
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")  # Options: "gpt-4", "claude"
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+CLAUDE_MODEL = "claude-sonnet-5"
 GPT_MODEL = "gpt-4"
 
 # Quarterly API Configuration
