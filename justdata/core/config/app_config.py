@@ -19,7 +19,7 @@ os.makedirs(os.path.join(DATA_DIR, 'raw'), exist_ok=True)
 
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-5")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 
 # BigQuery Configuration

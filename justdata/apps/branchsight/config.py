@@ -37,7 +37,7 @@ except (PermissionError, OSError):
 
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+CLAUDE_MODEL = "claude-sonnet-5"
 
 # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')

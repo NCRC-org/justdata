@@ -16,7 +16,7 @@ from datetime import datetime
 # =============================================================================
 # Pricing per 1M tokens (as of Jan 2026)
 AI_PRICING = {
-    'claude-sonnet-4-20250514': {'input': 3.00, 'output': 15.00},
+    'claude-sonnet-5': {'input': 3.00, 'output': 15.00},
     'claude-3-5-sonnet-20241022': {'input': 3.00, 'output': 15.00},
     'claude-3-opus-20240229': {'input': 15.00, 'output': 75.00},
     'claude-3-haiku-20240307': {'input': 0.25, 'output': 1.25},
@@ -50,7 +50,7 @@ def log_ai_usage(
         dict with usage details and estimated cost
     """
     # Calculate cost
-    pricing = AI_PRICING.get(model, AI_PRICING['claude-sonnet-4-20250514'])  # Default to Claude Sonnet pricing
+    pricing = AI_PRICING.get(model, AI_PRICING['claude-sonnet-5'])  # Default to Claude Sonnet pricing
     input_cost = (input_tokens / 1_000_000) * pricing['input']
     output_cost = (output_tokens / 1_000_000) * pricing['output']
     total_cost = input_cost + output_cost
@@ -372,7 +372,7 @@ def ask_ai(
             raise Exception("anthropic module not installed. Install it with: pip install anthropic")
         client = anthropic.Anthropic(api_key=api_key)
         if not model:
-            model = "claude-sonnet-4-20250514"
+            model = "claude-sonnet-5"
         response = client.messages.create(
             model=model,
             max_tokens=max_tokens,
@@ -415,7 +415,7 @@ class AIAnalyzer:
 
         # Set default models
         if not self.model:
-            self.model = "claude-sonnet-4-20250514"
+            self.model = "claude-sonnet-5"
 
     def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
                   app_name: str = None, report_type: str = None, model: str = None) -> str:

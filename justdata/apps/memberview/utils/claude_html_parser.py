@@ -126,7 +126,7 @@ Return only valid JSON, no other text."""
             logger.info(f"Calling Claude API to extract staff from {url} (HTML length: {len(html_truncated)} chars)...")
             try:
                 message = self.client.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-5",
                     max_tokens=4000,
                     messages=[{"role": "user", "content": prompt}]
                 )
@@ -140,7 +140,7 @@ Return only valid JSON, no other text."""
                     time.sleep(wait_time)
                     # Retry once
                     message = self.client.messages.create(
-                        model="claude-sonnet-4-20250514",
+                        model="claude-sonnet-5",
                         max_tokens=4000,
                         messages=[{"role": "user", "content": prompt}]
                     )
@@ -294,7 +294,7 @@ Return only valid JSON, no other text."""
             logger.info(f"Calling Claude API to extract org info from {url}...")
             try:
                 message = self.client.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-5",
                     max_tokens=4000,
                     messages=[{"role": "user", "content": prompt}]
                 )
@@ -308,7 +308,7 @@ Return only valid JSON, no other text."""
                     time.sleep(wait_time)
                     # Retry once
                     message = self.client.messages.create(
-                        model="claude-sonnet-4-20250514",
+                        model="claude-sonnet-5",
                         max_tokens=4000,
                         messages=[{"role": "user", "content": prompt}]
                     )
@@ -400,20 +400,10 @@ Return only valid JSON, no other text."""
                 logger.debug(f"Rate limiting Claude API: waiting {sleep_time:.2f} seconds...")
                 time.sleep(sleep_time)
             self.last_claude_call_time = time.time()
-            
-        try:
-            # Rate limit Claude API calls
-            current_time = time.time()
-            time_since_last = current_time - self.last_claude_call_time
-            if time_since_last < self.claude_rate_limit_delay:
-                sleep_time = self.claude_rate_limit_delay - time_since_last
-                logger.debug(f"Rate limiting Claude API: waiting {sleep_time:.2f} seconds...")
-                time.sleep(sleep_time)
-            self.last_claude_call_time = time.time()
-            
+
             try:
                 message = self.client.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-5",
                     max_tokens=2000,
                     messages=[{"role": "user", "content": prompt}]
                 )
@@ -427,7 +417,7 @@ Return only valid JSON, no other text."""
                     time.sleep(wait_time)
                     # Retry once
                     message = self.client.messages.create(
-                        model="claude-sonnet-4-20250514",
+                        model="claude-sonnet-5",
                         max_tokens=2000,
                         messages=[{"role": "user", "content": prompt}]
                     )
@@ -444,7 +434,7 @@ Return only valid JSON, no other text."""
                     time.sleep(wait_time)
                     # Retry once
                     message = self.client.messages.create(
-                        model="claude-sonnet-4-20250514",
+                        model="claude-sonnet-5",
                         max_tokens=2000,
                         messages=[{"role": "user", "content": prompt}]
                     )
