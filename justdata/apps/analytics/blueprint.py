@@ -404,7 +404,7 @@ def api_costs():
 @staff_required
 def api_ai_costs():
     """
-    Get AI API cost summary (Claude/OpenAI usage).
+    Get AI API cost summary (Claude usage).
     
     Query params:
         days: Number of days to look back (default 30)

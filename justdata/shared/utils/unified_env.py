@@ -179,7 +179,6 @@ def get_unified_config(load_env: bool = True, verbose: bool = False) -> Dict[str
         # API Keys
         'CLAUDE_API_KEY': get_api_key('CLAUDE_API_KEY', 'ANTHROPIC_API_KEY', verbose=verbose),
         'CENSUS_API_KEY': get_api_key('CENSUS_API_KEY', verbose=verbose),
-        'OPENAI_API_KEY': get_api_key('OPENAI_API_KEY', verbose=verbose),
 
         # AI Provider
         'AI_PROVIDER': os.getenv('AI_PROVIDER', 'claude'),

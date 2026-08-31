@@ -29,7 +29,6 @@ def _mock_env(monkeypatch):
         "JUSTDATA_PROJECT_ID": "test-project",
         "CLAUDE_API_KEY": "sk-test-fake-key",
         "ANTHROPIC_API_KEY": "sk-test-fake-key",
-        "OPENAI_API_KEY": "sk-test-fake-key",
         "CENSUS_API_KEY": "test-census-key",
         "FLASK_DEBUG": "false",
         "MAPBOX_ACCESS_TOKEN": "pk.test-token",
@@ -94,7 +93,7 @@ def mock_bigquery_rows():
 
 @pytest.fixture
 def mock_ai_provider():
-    """Mock the shared AI provider so tests never call Claude/OpenAI.
+    """Mock the shared AI provider so tests never call Claude.
 
     Usage:
         def test_analysis(mock_ai_provider):

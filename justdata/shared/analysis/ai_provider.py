@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI analysis utilities for data analysis using GPT-4 and Claude.
+AI analysis utilities for data analysis using Claude.
 Shared across BranchSight, BizSight, and LendSight.
 """
 
@@ -20,10 +20,6 @@ AI_PRICING = {
     'claude-3-5-sonnet-20241022': {'input': 3.00, 'output': 15.00},
     'claude-3-opus-20240229': {'input': 15.00, 'output': 75.00},
     'claude-3-haiku-20240307': {'input': 0.25, 'output': 1.25},
-    'gpt-4': {'input': 30.00, 'output': 60.00},
-    'gpt-4-turbo': {'input': 10.00, 'output': 30.00},
-    'gpt-4o': {'input': 2.50, 'output': 10.00},
-    'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
 }
 
 # In-memory usage accumulator (flushed to BigQuery periodically)
@@ -43,18 +39,18 @@ def log_ai_usage(
     Log AI API usage for cost tracking.
     
     Args:
-        provider: 'claude' or 'openai'
+        provider: 'claude'
         model: Model name used
         input_tokens: Number of input/prompt tokens
         output_tokens: Number of output/completion tokens
         app_name: Application that made the call (e.g., 'lendsight', 'bizsight')
         report_type: Type of report being generated
-    
+
     Returns:
         dict with usage details and estimated cost
     """
     # Calculate cost
-    pricing = AI_PRICING.get(model, {'input': 10.0, 'output': 30.0})  # Default to GPT-4 pricing
+    pricing = AI_PRICING.get(model, AI_PRICING['claude-sonnet-4-20250514'])  # Default to Claude Sonnet pricing
     input_cost = (input_tokens / 1_000_000) * pricing['input']
     output_cost = (output_tokens / 1_000_000) * pricing['output']
     total_cost = input_cost + output_cost
@@ -328,33 +324,39 @@ def convert_numpy_types(obj):
         return obj
 
 def ask_ai(
-    prompt: str, 
-    ai_provider: str = "claude", 
-    model: str = None, 
+    prompt: str,
+    ai_provider: str = "claude",
+    model: str = None,
     api_key: str = None,
     app_name: str = None,
-    report_type: str = None
+    report_type: str = None,
+    max_tokens: int = 4000,
+    temperature: float = None,
 ) -> str:
     """
-    Send a prompt to the configured AI provider and return the response.
-    
+    Send a prompt to Claude and return the response.
+
     Args:
         prompt: The prompt to send
-        ai_provider: 'claude' or 'openai'
+        ai_provider: 'claude' (the only supported provider)
         model: Specific model to use (optional)
         api_key: API key (optional, defaults to env var)
         app_name: Application name for usage tracking
         report_type: Report type for usage tracking
-    
+        max_tokens: Maximum tokens to generate (default 4000)
+        temperature: Accepted for caller compatibility but not sent to the
+            API -- current Claude models reject a temperature parameter
+            ("temperature is deprecated for this model").
+
     Returns:
         The AI response text
     """
+    if ai_provider != "claude":
+        raise Exception(f"Unsupported AI provider: {ai_provider}")
+
     if not api_key:
         # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
-        if ai_provider == "claude":
-            api_key = os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
-        else:
-            api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
 
     # Strip any whitespace/newlines from API key (prevents "Illegal header value" errors)
     if api_key:
@@ -362,59 +364,33 @@ def ask_ai(
 
     if not api_key:
         raise Exception(f"No API key found for provider: {ai_provider}")
-    
+
     try:
-        if ai_provider == "openai":
-            from openai import OpenAI
-            client = OpenAI(api_key=api_key)
-            if not model:
-                model = "gpt-4"
-            response = client.chat.completions.create(
+        try:
+            import anthropic
+        except ImportError:
+            raise Exception("anthropic module not installed. Install it with: pip install anthropic")
+        client = anthropic.Anthropic(api_key=api_key)
+        if not model:
+            model = "claude-sonnet-4-20250514"
+        response = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        # Log usage
+        if hasattr(response, 'usage') and response.usage:
+            log_ai_usage(
+                provider='claude',
                 model=model,
-                messages=[{"role": "user", "content": prompt}]
+                input_tokens=response.usage.input_tokens or 0,
+                output_tokens=response.usage.output_tokens or 0,
+                app_name=app_name,
+                report_type=report_type
             )
-            
-            # Log usage
-            if hasattr(response, 'usage') and response.usage:
-                log_ai_usage(
-                    provider='openai',
-                    model=model,
-                    input_tokens=response.usage.prompt_tokens or 0,
-                    output_tokens=response.usage.completion_tokens or 0,
-                    app_name=app_name,
-                    report_type=report_type
-                )
-            
-            return response.choices[0].message.content
-            
-        elif ai_provider == "claude":
-            try:
-                import anthropic
-            except ImportError:
-                raise Exception("anthropic module not installed. Install it with: pip install anthropic")
-            client = anthropic.Anthropic(api_key=api_key)
-            if not model:
-                model = "claude-sonnet-4-20250514"
-            response = client.messages.create(
-                model=model,
-                max_tokens=4000,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            
-            # Log usage
-            if hasattr(response, 'usage') and response.usage:
-                log_ai_usage(
-                    provider='claude',
-                    model=model,
-                    input_tokens=response.usage.input_tokens or 0,
-                    output_tokens=response.usage.output_tokens or 0,
-                    app_name=app_name,
-                    report_type=report_type
-                )
-            
-            return response.content[0].text
-        else:
-            raise Exception(f"Unsupported AI provider: {ai_provider}")
+
+        return response.content[0].text
     except Exception as e:
         raise Exception(f"Error calling {ai_provider.upper()} API: {e}")
 
@@ -425,11 +401,10 @@ class AIAnalyzer:
     def __init__(self, ai_provider: str = "claude", model: str = None, api_key: str = None):
         self.provider = ai_provider
         self.model = model
-        if ai_provider == "claude":
-            # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
-            self.api_key = api_key or os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
-        else:
-            self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if ai_provider != "claude":
+            raise Exception(f"Unsupported AI provider: {ai_provider}")
+        # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
+        self.api_key = api_key or os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
 
         # Strip any whitespace/newlines from API key (prevents "Illegal header value" errors)
         if self.api_key:
@@ -437,63 +412,44 @@ class AIAnalyzer:
 
         if not self.api_key:
             raise Exception(f"No API key found for provider: {ai_provider}")
-        
+
         # Set default models
         if not self.model:
-            self.model = "claude-sonnet-4-20250514" if ai_provider == "claude" else "gpt-4"
-        
-    def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3, 
-                  app_name: str = None, report_type: str = None) -> str:
-        """Make a call to the configured AI provider with usage tracking."""
+            self.model = "claude-sonnet-4-20250514"
+
+    def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
+                  app_name: str = None, report_type: str = None, model: str = None) -> str:
+        """Make a call to Claude with usage tracking.
+
+        temperature is accepted for caller compatibility but not sent to the
+        API -- current Claude models reject a temperature parameter
+        ("temperature is deprecated for this model").
+        """
+        call_model = model or self.model
         try:
-            if self.provider == "openai":
-                from openai import OpenAI
-                client = OpenAI(api_key=self.api_key)
-                response = client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=max_tokens,
-                    temperature=temperature
+            try:
+                import anthropic
+            except ImportError:
+                raise Exception("anthropic module not installed. Install it with: pip install anthropic")
+            client = anthropic.Anthropic(api_key=self.api_key)
+            response = client.messages.create(
+                model=call_model,
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            # Log usage
+            if hasattr(response, 'usage') and response.usage:
+                log_ai_usage(
+                    provider='claude',
+                    model=call_model,
+                    input_tokens=response.usage.input_tokens or 0,
+                    output_tokens=response.usage.output_tokens or 0,
+                    app_name=app_name or getattr(self, 'app_name', None),
+                    report_type=report_type
                 )
-                
-                # Log usage
-                if hasattr(response, 'usage') and response.usage:
-                    log_ai_usage(
-                        provider='openai',
-                        model=self.model,
-                        input_tokens=response.usage.prompt_tokens or 0,
-                        output_tokens=response.usage.completion_tokens or 0,
-                        app_name=app_name or getattr(self, 'app_name', None),
-                        report_type=report_type
-                    )
-                
-                return response.choices[0].message.content.strip()
-                
-            elif self.provider == "claude":
-                try:
-                    import anthropic
-                except ImportError:
-                    raise Exception("anthropic module not installed. Install it with: pip install anthropic")
-                client = anthropic.Anthropic(api_key=self.api_key)
-                response = client.messages.create(
-                    model=self.model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                
-                # Log usage
-                if hasattr(response, 'usage') and response.usage:
-                    log_ai_usage(
-                        provider='claude',
-                        model=self.model,
-                        input_tokens=response.usage.input_tokens or 0,
-                        output_tokens=response.usage.output_tokens or 0,
-                        app_name=app_name or getattr(self, 'app_name', None),
-                        report_type=report_type
-                    )
-                
-                return response.content[0].text.strip()
+
+            return response.content[0].text.strip()
         except Exception as e:
             error_msg = f"Error calling {self.provider} API: {e}"
             print(error_msg)

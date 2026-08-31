@@ -90,7 +90,6 @@ MAX_SERIES_DISPLAY = 10  # Maximum number of series to display in tables
 
 # API Keys
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Load environment variables from .env if available
 try:
@@ -98,7 +97,6 @@ try:
     load_dotenv()
     # Reload after loading .env
     CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 except ImportError:
     pass
 

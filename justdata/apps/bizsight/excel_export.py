@@ -170,7 +170,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', 'This report includes AI-generated narrative analysis of small business lending data.'))
         notes_content.append(('', 'The AI-generated content provides contextual analysis and interpretation of data patterns.'))
         notes_content.append(('', 'All data and statistics are sourced from the databases described above.'))
-        notes_content.append(('', 'AI Model: Narratives generated using Claude AI (Anthropic) and/or OpenAI GPT models.'))
+        notes_content.append(('', 'AI Model: Narratives generated using Claude AI (Anthropic).'))
         notes_content.append(('', 'Human Review: AI-generated content has been reviewed for accuracy and appropriateness.'))
         notes_content.append(('', ''))
         
