@@ -329,7 +329,9 @@ def ask_ai(
     model: str = None,
     api_key: str = None,
     app_name: str = None,
-    report_type: str = None
+    report_type: str = None,
+    max_tokens: int = 4000,
+    temperature: float = None,
 ) -> str:
     """
     Send a prompt to Claude and return the response.
@@ -341,6 +343,10 @@ def ask_ai(
         api_key: API key (optional, defaults to env var)
         app_name: Application name for usage tracking
         report_type: Report type for usage tracking
+        max_tokens: Maximum tokens to generate (default 4000)
+        temperature: Accepted for caller compatibility but not sent to the
+            API -- current Claude models reject a temperature parameter
+            ("temperature is deprecated for this model").
 
     Returns:
         The AI response text
@@ -369,7 +375,7 @@ def ask_ai(
             model = "claude-sonnet-4-20250514"
         response = client.messages.create(
             model=model,
-            max_tokens=4000,
+            max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -412,8 +418,14 @@ class AIAnalyzer:
             self.model = "claude-sonnet-4-20250514"
 
     def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
-                  app_name: str = None, report_type: str = None) -> str:
-        """Make a call to Claude with usage tracking."""
+                  app_name: str = None, report_type: str = None, model: str = None) -> str:
+        """Make a call to Claude with usage tracking.
+
+        temperature is accepted for caller compatibility but not sent to the
+        API -- current Claude models reject a temperature parameter
+        ("temperature is deprecated for this model").
+        """
+        call_model = model or self.model
         try:
             try:
                 import anthropic
@@ -421,9 +433,8 @@ class AIAnalyzer:
                 raise Exception("anthropic module not installed. Install it with: pip install anthropic")
             client = anthropic.Anthropic(api_key=self.api_key)
             response = client.messages.create(
-                model=self.model,
+                model=call_model,
                 max_tokens=max_tokens,
-                temperature=temperature,
                 messages=[{"role": "user", "content": prompt}]
             )
 
@@ -431,7 +442,7 @@ class AIAnalyzer:
             if hasattr(response, 'usage') and response.usage:
                 log_ai_usage(
                     provider='claude',
-                    model=self.model,
+                    model=call_model,
                     input_tokens=response.usage.input_tokens or 0,
                     output_tokens=response.usage.output_tokens or 0,
                     app_name=app_name or getattr(self, 'app_name', None),

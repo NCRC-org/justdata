@@ -44,14 +44,18 @@ class AIAnalyzer:
             self.model = "claude-sonnet-4-20250514"
 
     def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3) -> str:
-        """Make a call to the configured AI provider."""
+        """Make a call to the configured AI provider.
+
+        temperature is accepted for caller compatibility but not sent to the
+        API -- current Claude models reject a temperature parameter
+        ("temperature is deprecated for this model").
+        """
         try:
             import anthropic
             client = anthropic.Anthropic(api_key=self.api_key)
             response = client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
-                temperature=temperature,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text.strip()
