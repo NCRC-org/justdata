@@ -58,7 +58,6 @@ def get_cost_summary(days: int = 30, project_id: str = None, skip_cache: bool = 
         'branchmapper@justdata-ncrc.iam.gserviceaccount.com',
         'mergermeter@justdata-ncrc.iam.gserviceaccount.com',
         'dataexplorer@justdata-ncrc.iam.gserviceaccount.com',
-        'lenderprofile@justdata-ncrc.iam.gserviceaccount.com',
         'analytics@justdata-ncrc.iam.gserviceaccount.com',
         'electwatch@justdata-ncrc.iam.gserviceaccount.com',
         

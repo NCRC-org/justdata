@@ -482,8 +482,7 @@ function renderAppUsage(appUsage) {
         'mergermeter_report': 'MergerMeter',
         'dataexplorer_report': 'DataExplorer',
         'dataexplorer_area_report': 'DE Area Report',
-        'dataexplorer_lender_report': 'DE Lender Report',
-        'lenderprofile_view': 'LenderProfile'
+        'dataexplorer_lender_report': 'DE Lender Report'
     };
 
     appUsage.forEach(function(app) {

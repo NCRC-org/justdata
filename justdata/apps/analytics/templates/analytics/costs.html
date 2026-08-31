@@ -284,7 +284,6 @@
     .bar-segment.dataexplorer, .app-dot.dataexplorer { background-color: #8b5cf6; }
     .bar-segment.mergermeter, .app-dot.mergermeter { background-color: #ef4444; }
     .bar-segment.analytics, .app-dot.analytics { background-color: #06b6d4; }
-    .bar-segment.lenderprofile, .app-dot.lenderprofile { background-color: #ec4899; }
     .bar-segment.electwatch, .app-dot.electwatch { background-color: #6366f1; }
     .bar-segment.other, .app-dot.other { background-color: #9ca3af; }
     
@@ -649,10 +648,10 @@ function renderAppBreakdown(apps) {
 }
 
 // Apps that use AI (for tooltip display)
-const AI_APPS = ['LendSight', 'BizSight', 'BranchSight', 'MergerMeter', 'LenderProfile', 'DataExplorer'];
+const AI_APPS = ['LendSight', 'BizSight', 'BranchSight', 'MergerMeter', 'DataExplorer'];
 
 // Consistent app order for stacking
-const APP_ORDER = ['LendSight', 'BizSight', 'BranchSight', 'DataExplorer', 'MergerMeter', 'Analytics', 'LenderProfile', 'ElectWatch', 'Other'];
+const APP_ORDER = ['LendSight', 'BizSight', 'BranchSight', 'DataExplorer', 'MergerMeter', 'Analytics', 'ElectWatch', 'Other'];
 
 function renderDailyChart(days) {
     const container = document.getElementById('daily-chart');
@@ -802,7 +801,6 @@ function getAppClass(name) {
     if (lower === 'dataexplorer') return 'dataexplorer';
     if (lower === 'mergermeter') return 'mergermeter';
     if (lower === 'analytics') return 'analytics';
-    if (lower === 'lenderprofile') return 'lenderprofile';
     if (lower === 'electwatch') return 'electwatch';
     return 'other';
 }
@@ -835,8 +833,7 @@ function formatAppName(name) {
         'branchsight': 'BranchSight',
         'dataexplorer': 'DataExplorer',
         'mergermeter': 'MergerMeter',
-        'analytics': 'Analytics',
-        'lenderprofile': 'LenderProfile'
+        'analytics': 'Analytics'
     };
     return names[name.toLowerCase()] || name;
 }

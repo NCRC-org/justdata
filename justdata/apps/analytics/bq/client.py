@@ -85,7 +85,6 @@ LENDER_APPS = [
     'lendsight_report',
     'bizsight_report',
     'mergermeter_report',
-    'lenderprofile_view',
     'dataexplorer_lender_report'
 ]
 

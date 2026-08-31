@@ -74,7 +74,6 @@ WHERE
         'dataexplorer_area_report',
         'dataexplorer_lender_report',
         'mergermeter_report',
-        'lenderprofile_view',
         'branchmapper_report'
     );
 
@@ -146,7 +145,7 @@ SELECT
     geo.region AS researcher_state
 FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
-    event_name IN ('lendsight_report', 'lenderprofile_view', 'dataexplorer_lender_report', 'mergermeter_report')
+    event_name IN ('lendsight_report', 'dataexplorer_lender_report', 'mergermeter_report')
     AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
     AND FORMAT_DATE('%Y%m%d', CURRENT_DATE());
 
@@ -203,8 +202,7 @@ WHERE
         'branchmapper_report',
         'mergermeter_report',
         'dataexplorer_area_report',
-        'dataexplorer_lender_report',
-        'lenderprofile_view'
+        'dataexplorer_lender_report'
     )
     AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
     AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
@@ -225,8 +223,7 @@ SELECT
     COUNTIF(event_name = 'branchmapper_report') AS branchmapper_events,
     COUNTIF(event_name = 'mergermeter_report') AS mergermeter_events,
     COUNTIF(event_name = 'dataexplorer_area_report') AS dataexplorer_area_events,
-    COUNTIF(event_name = 'dataexplorer_lender_report') AS dataexplorer_lender_events,
-    COUNTIF(event_name = 'lenderprofile_view') AS lenderprofile_events
+    COUNTIF(event_name = 'dataexplorer_lender_report') AS dataexplorer_lender_events
 FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
     event_name IN (
@@ -236,8 +233,7 @@ WHERE
         'branchmapper_report',
         'mergermeter_report',
         'dataexplorer_area_report',
-        'dataexplorer_lender_report',
-        'lenderprofile_view'
+        'dataexplorer_lender_report'
     )
     AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
     AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
