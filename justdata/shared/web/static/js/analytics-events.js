@@ -185,19 +185,6 @@ function logDataExplorerLenderReport(params) {
 }
 
 /**
- * Log LenderProfile view
- * @param {Object} params - View parameters
- */
-function logLenderProfileView(params) {
-    logAnalyticsEvent('lenderprofile_view', {
-        lender_name: params.lenderName || '',
-        lei: params.lei || '',
-        rssd_id: params.rssdId || '',
-        view_type: params.viewType || 'profile'
-    });
-}
-
-/**
  * Log page view
  * @param {string} pageName - Name of the page
  * @param {Object} params - Additional parameters
@@ -251,7 +238,6 @@ window.JustDataAnalytics = {
     logMergerMeterReport: logMergerMeterReport,
     logDataExplorerAreaReport: logDataExplorerAreaReport,
     logDataExplorerLenderReport: logDataExplorerLenderReport,
-    logLenderProfileView: logLenderProfileView,
     logPageView: logPageView,
     logSearch: logSearch,
     logDownload: logDownload

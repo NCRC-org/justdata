@@ -501,18 +501,6 @@ def register_blueprints(app: Flask):
         print("[WARN] DataExplorer blueprint not yet created")
     
     try:
-        from justdata.apps.lenderprofile.blueprint import lenderprofile_bp
-        app.register_blueprint(lenderprofile_bp, url_prefix='/lenderprofile')
-    except ImportError:
-        print("[WARN] LenderProfile blueprint not yet created")
-    
-    try:
-        from justdata.apps.loantrends.blueprint import loantrends_bp
-        app.register_blueprint(loantrends_bp, url_prefix='/loantrends')
-    except ImportError:
-        print("[WARN] LoanTrends blueprint not yet created")
-    
-    try:
         from justdata.apps.memberview.blueprint import memberview_bp
         app.register_blueprint(memberview_bp, url_prefix='/memberview')
     except ImportError:
@@ -538,12 +526,8 @@ def register_blueprints(app: Flask):
     except ImportError:
         print("[WARN] Analytics blueprint not yet created")
 
-    # ElectWatch - Congressional financial tracking
-    try:
-        from justdata.apps.electwatch.blueprint import electwatch_bp
-        app.register_blueprint(electwatch_bp, url_prefix='/electwatch')
-    except ImportError:
-        print("[WARN] ElectWatch blueprint not yet created")
+    # ElectWatch - archived 2026-08-31, source code retained under justdata/apps/electwatch/
+    # for possible revival; blueprint intentionally not registered.
 
     # Redlining Dashboard - Staff/Admin fair lending analysis
     try:

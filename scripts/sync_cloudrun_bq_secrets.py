@@ -31,7 +31,6 @@ SECRET_PAIRS: List[Tuple[str, str]] = [
     ("BRANCHMAPPER_CREDENTIALS_JSON", "branchmapper-bq-credentials"),
     ("MERGERMETER_CREDENTIALS_JSON", "mergermeter-bq-credentials"),
     ("DATAEXPLORER_CREDENTIALS_JSON", "dataexplorer-bq-credentials"),
-    ("LENDERPROFILE_CREDENTIALS_JSON", "lenderprofile-bq-credentials"),
     ("ANALYTICS_CREDENTIALS_JSON", "analytics-bq-credentials"),
     ("ELECTWATCH_CREDENTIALS_JSON", "electwatch-bq-credentials"),
 ]
