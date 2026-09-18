@@ -19,7 +19,15 @@ REGION="${GCP_REGION:-us-east1}"
 SERVICE_NAME="${SERVICE_NAME:-justdata-test}"
 IMAGE_REPO="us-east1-docker.pkg.dev/${PROJECT_ID}/justdata-repo/${SERVICE_NAME}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-SERVICE_ACCOUNT="${SERVICE_ACCOUNT:-justdata@${PROJECT_ID}.iam.gserviceaccount.com}"
+# justdata@... does not exist in this project; manual deploys failed with
+# PERMISSION_DENIED until overridden by hand. Default to the compute default SA
+# the live services actually run under, resolved at deploy time.
+if [ -z "${SERVICE_ACCOUNT:-}" ]; then
+    PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)' 2>/dev/null)"
+    if [ -n "${PROJECT_NUMBER}" ]; then
+        SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+    fi
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -160,6 +168,8 @@ load_env_vars() {
                [ "$key" = "ANTHROPIC_API_KEY" ] || \
                [ "$key" = "OPENAI_API_KEY" ] || \
                [ "$key" = "CENSUS_API_KEY" ] || \
+               [ "$key" = "FDIC_API_KEY" ] || \
+               [ "$key" = "MERGERMETER_API_KEY" ] || \
                [ "$key" = "LENDSIGHT_CREDENTIALS_JSON" ] || \
                [ "$key" = "BIZSIGHT_CREDENTIALS_JSON" ] || \
                [ "$key" = "BRANCHSIGHT_CREDENTIALS_JSON" ] || \
@@ -257,14 +267,21 @@ deploy() {
         deploy_args+=("--env-vars-file" "${env_file}")
     fi
 
-    # Secret Manager: shared + per-app BigQuery (same mapping as .github/workflows/deploy-cloudrun.yml)
+    # Tell the app which environment it is, so analysis_cache picks the right dataset.
+    case "${SERVICE_NAME}" in
+        justdata)         local justdata_env="production" ;;
+        justdata-testing) local justdata_env="testing" ;;
+        *)                local justdata_env="staging" ;;
+    esac
+    deploy_args+=("--set-env-vars" "JUSTDATA_ENV=${justdata_env}")
+
+    # Secret Manager: shared + per-app BigQuery + API keys (same mapping as
+    # .github/workflows/deploy-cloudrun.yml). This must be ONE --update-secrets
+    # flag: gcloud keeps only the last occurrence, so splitting it across several
+    # silently dropped everything but the final group.
     deploy_args+=(
         "--update-secrets"
-        "GOOGLE_APPLICATION_CREDENTIALS_JSON=bigquery-credentials:latest,FIREBASE_CREDENTIALS_JSON=firebase-admin-credentials:latest"
-    )
-    deploy_args+=(
-        "--update-secrets"
-        "LENDSIGHT_CREDENTIALS_JSON=lendsight-bq-credentials:latest,BIZSIGHT_CREDENTIALS_JSON=bizsight-bq-credentials:latest,BRANCHSIGHT_CREDENTIALS_JSON=branchsight-bq-credentials:latest,BRANCHMAPPER_CREDENTIALS_JSON=branchmapper-bq-credentials:latest,MERGERMETER_CREDENTIALS_JSON=mergermeter-bq-credentials:latest,DATAEXPLORER_CREDENTIALS_JSON=dataexplorer-bq-credentials:latest,ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest,ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest"
+        "GOOGLE_APPLICATION_CREDENTIALS_JSON=bigquery-credentials:latest,FIREBASE_CREDENTIALS_JSON=firebase-admin-credentials:latest,LENDSIGHT_CREDENTIALS_JSON=lendsight-bq-credentials:latest,BIZSIGHT_CREDENTIALS_JSON=bizsight-bq-credentials:latest,BRANCHSIGHT_CREDENTIALS_JSON=branchsight-bq-credentials:latest,BRANCHMAPPER_CREDENTIALS_JSON=branchmapper-bq-credentials:latest,MERGERMETER_CREDENTIALS_JSON=mergermeter-bq-credentials:latest,DATAEXPLORER_CREDENTIALS_JSON=dataexplorer-bq-credentials:latest,ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest,ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest,MERGERMETER_API_KEY=mergermeter-api-key:latest,FDIC_API_KEY=fdic-api-key:latest"
     )
     
     # Execute deployment

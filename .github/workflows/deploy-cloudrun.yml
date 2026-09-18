@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - staging
+      - testing
   workflow_dispatch:  # Allow manual trigger
 
 env:
@@ -22,11 +23,19 @@ jobs:
 
       - name: Set deployment target based on branch
         run: |
+          # JUSTDATA_ENV picks the BigQuery cache dataset at runtime, so tester
+          # traffic on justdata-testing never lands in the same tables as prod.
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "DEPLOY_SERVICE_NAME=justdata" >> $GITHUB_ENV
+            echo "JUSTDATA_ENV=production" >> $GITHUB_ENV
             echo "🚀 Deploying to PRODUCTION (justdata)"
+          elif [[ "${{ github.ref }}" == "refs/heads/testing" ]]; then
+            echo "DEPLOY_SERVICE_NAME=justdata-testing" >> $GITHUB_ENV
+            echo "JUSTDATA_ENV=testing" >> $GITHUB_ENV
+            echo "🧑‍🔬 Deploying to EXTERNAL TESTING (justdata-testing)"
           else
             echo "DEPLOY_SERVICE_NAME=justdata-test" >> $GITHUB_ENV
+            echo "JUSTDATA_ENV=staging" >> $GITHUB_ENV
             echo "🧪 Deploying to DEV (justdata-test)"
           fi
 
@@ -99,6 +108,7 @@ jobs:
             --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
             --set-env-vars "USE_SUMMARY_TABLES=false" \
             --set-env-vars "PYTHONPATH=/app" \
+            --set-env-vars "JUSTDATA_ENV=${{ env.JUSTDATA_ENV }}" \
             --set-env-vars "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" \
             --set-env-vars "MAPBOX_STYLE=${{ secrets.MAPBOX_STYLE }}" \
             --update-secrets "CLAUDE_API_KEY=claude-api-key:latest" \
@@ -114,7 +124,8 @@ jobs:
             --update-secrets "DATAEXPLORER_CREDENTIALS_JSON=dataexplorer-bq-credentials:latest" \
             --update-secrets "ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest" \
             --update-secrets "ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest" \
-            --update-secrets "MERGERMETER_API_KEY=mergermeter-api-key:latest"
+            --update-secrets "MERGERMETER_API_KEY=mergermeter-api-key:latest" \
+            --update-secrets "FDIC_API_KEY=fdic-api-key:latest"
 
       - name: Get Service URL
         run: |
