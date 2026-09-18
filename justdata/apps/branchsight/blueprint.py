@@ -16,9 +16,15 @@ from datetime import datetime
 from pathlib import Path
 import math
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, is_privileged_user
+from justdata.main.auth import (
+    require_access, get_user_permissions, get_user_type, login_required,
+    is_privileged_user, can_force_refresh, get_current_user,
+)
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
-from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id, generate_cache_key
+from justdata.shared.utils.analysis_cache import (
+    get_cached_result, store_cached_result, log_usage, generate_cache_key,
+    get_analysis_result_by_job_id,
+)
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
@@ -132,6 +138,10 @@ def progress_handler(job_id):
 @require_access('branchsight', 'limited')
 def analyze():
     """Handle analysis request"""
+    import time as time_module
+    start_time = time_module.time()
+    request_id = str(uuid.uuid4())
+
     try:
         data = request.get_json()
         selection_type = data.get('selection_type', 'county')
@@ -185,9 +195,57 @@ def analyze():
         }
         user_type = get_user_type()
 
+        # Capture identity before the worker thread, which has no request context
+        current_user = get_current_user()
+        user_id = current_user.get('uid') if current_user else None
+        user_email = current_user.get('email') if current_user else None
+        if not user_id and not user_email and 'firebase_user' in session:
+            fb_user = session.get('firebase_user', {})
+            user_id = fb_user.get('uid') or user_id
+            user_email = fb_user.get('email') or user_email
+
+        # Check for force_refresh parameter to bypass cache (privileged users only)
+        force_refresh = bool(data.get('force_refresh', False)) and can_force_refresh()
+
+        cached_result = None
+        if not force_refresh:
+            cached_result = get_cached_result('branchsight', cache_params, user_type)
+        else:
+            print(f"[INFO] Force refresh requested - bypassing cache")
+
+        if cached_result:
+            # Cache hit - reuse the stored result instead of re-running BigQuery and Claude
+            job_id = cached_result['job_id']
+
+            update_progress(job_id, {
+                'percent': 100,
+                'step': 'Analysis complete (from cache)',
+                'done': True,
+                'cached': True
+            })
+
+            session['counties'] = ';'.join(counties_list) if counties_list else counties_str
+            session['years'] = years
+            session['job_id'] = job_id
+            session['selection_type'] = selection_type
+
+            log_usage(
+                user_type=user_type,
+                app_name='branchsight',
+                params=cache_params,
+                cache_key=cached_result['cache_key'],
+                cache_hit=True,
+                job_id=job_id,
+                response_time_ms=int((time_module.time() - start_time) * 1000),
+                costs={'bigquery': 0.0, 'ai': 0.0, 'total': 0.0},
+                request_id=request_id,
+                user_id=user_id,
+                user_email=user_email,
+            )
+
+            return jsonify({'success': True, 'job_id': job_id, 'cached': True})
+
         def run_job():
-            import time as time_module
-            start_time = time_module.time()
             try:
                 result = run_analysis(';'.join(counties_list), ','.join(map(str, years_list)), job_id, progress_tracker,
                                        selection_type, state_code, metro_code)
@@ -222,6 +280,22 @@ def analyze():
                     # Fall back to in-memory storage so user can still see results
                     _result_fallback[job_id] = result
                     progress_tracker.complete(success=True)
+
+                try:
+                    log_usage(
+                        user_type=user_type,
+                        app_name='branchsight',
+                        params=cache_params,
+                        cache_key=generate_cache_key('branchsight', cache_params),
+                        cache_hit=False,
+                        job_id=job_id,
+                        response_time_ms=int((time_module.time() - start_time) * 1000),
+                        request_id=request_id,
+                        user_id=user_id,
+                        user_email=user_email,
+                    )
+                except Exception as usage_error:
+                    print(f"WARNING: Failed to log usage: {usage_error}")
 
             except Exception as e:
                 error_msg = str(e)
