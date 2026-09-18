@@ -108,15 +108,46 @@ def mock_ai_provider():
 # Flask app fixtures
 # ---------------------------------------------------------------------------
 
+def _blueprint_app(blueprint):
+    """Bare Flask app hosting one blueprint.
+
+    Registers a stub `landing` endpoint because the auth decorators redirect to
+    `url_for('landing')` on non-JSON denials, which only exists on the unified app.
+    """
+    from flask import Flask
+    test_app = Flask(__name__)
+    test_app.register_blueprint(blueprint, url_prefix="")
+    test_app.config["TESTING"] = True
+    test_app.config["SECRET_KEY"] = "test-secret-key-not-for-production"
+    test_app.add_url_rule("/__landing__", "landing", lambda: "landing")
+    return test_app
+
+
+@pytest.fixture
+def sign_in():
+    """Put a user of a given tier into a test client's session.
+
+    Usage:
+        def test_x(lendsight_client, sign_in):
+            sign_in(lendsight_client, "member")
+    """
+    def _sign_in(client, user_type, email="tester@example.org", uid="test-uid"):
+        with client.session_transaction() as sess:
+            sess["firebase_user"] = {
+                "uid": uid,
+                "email": email,
+                "name": "Test User",
+                "email_verified": True,
+            }
+            sess["user_type"] = user_type
+    return _sign_in
+
+
 @pytest.fixture
 def branchsight_app():
     """Create a BranchSight Flask test app (blueprint only, no standalone app)."""
-    from flask import Flask
     from justdata.apps.branchsight.blueprint import branchsight_bp
-    test_app = Flask(__name__)
-    test_app.register_blueprint(branchsight_bp, url_prefix="")
-    test_app.config["TESTING"] = True
-    return test_app
+    return _blueprint_app(branchsight_bp)
 
 
 @pytest.fixture
@@ -128,12 +159,8 @@ def branchsight_client(branchsight_app):
 @pytest.fixture
 def lendsight_app():
     """Create a LendSight Flask test app (blueprint only, no standalone app)."""
-    from flask import Flask
     from justdata.apps.lendsight.blueprint import lendsight_bp
-    test_app = Flask(__name__)
-    test_app.register_blueprint(lendsight_bp, url_prefix="")
-    test_app.config["TESTING"] = True
-    return test_app
+    return _blueprint_app(lendsight_bp)
 
 
 @pytest.fixture
@@ -145,12 +172,8 @@ def lendsight_client(lendsight_app):
 @pytest.fixture
 def bizsight_app():
     """Create a BizSight Flask test app (blueprint only, no standalone app)."""
-    from flask import Flask
     from justdata.apps.bizsight.blueprint import bizsight_bp
-    test_app = Flask(__name__)
-    test_app.register_blueprint(bizsight_bp, url_prefix="")
-    test_app.config["TESTING"] = True
-    return test_app
+    return _blueprint_app(bizsight_bp)
 
 
 @pytest.fixture

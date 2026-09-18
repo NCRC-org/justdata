@@ -129,16 +129,6 @@ ACCESS_MATRIX = {
         'senior_executive': 'full',
         'admin': 'full'
     },
-    'branchsight': {
-        'public_anonymous': 'locked',
-        'public_registered': 'locked',
-        'member': 'full',
-        'member_premium': 'full',
-        'non_member_org': 'full',
-        'staff': 'full',
-        'senior_executive': 'full',
-        'admin': 'full'
-    },
     'bizsight': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
@@ -889,6 +879,16 @@ def is_privileged_user(user_type: Optional[UserType] = None) -> bool:
     if user_type is None:
         user_type = get_user_type()
     return user_type in PRIVILEGED_ROLES
+
+
+def can_force_refresh(user_type: Optional[UserType] = None) -> bool:
+    """
+    Check if user may bypass the analysis cache (Regenerate Report / Clear Cache).
+
+    Regenerating triggers fresh BigQuery scans and Anthropic API calls, so this
+    is gated on privileged roles to keep spend attributable.
+    """
+    return is_privileged_user(user_type)
 
 
 # ========================================

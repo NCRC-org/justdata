@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user, is_privileged_user, can_force_refresh
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
@@ -64,13 +64,13 @@ def configure_template_loader(state):
 
 @bizsight_bp.route('/')
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def index():
     """Main page with the US map for county selection."""
     user_permissions = get_user_permissions()
     user_type = get_user_type()
-    # Staff and admin users can see the "clear cache" checkbox
-    is_staff = (user_type in ('staff', 'admin'))
+    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
+    is_staff = is_privileged_user(user_type)
     app_base_url = url_for('bizsight.index').rstrip('/')
 
     # Breadcrumb for main page
@@ -127,7 +127,7 @@ def progress_handler(job_id):
 
 @bizsight_bp.route('/analyze', methods=['POST'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def analyze():
     """Handle analysis request with caching."""
     import time as time_module
@@ -207,8 +207,8 @@ def analyze():
         if not user_id and not user_email:
             print(f"[WARN] BizSight analyze: No user identity captured despite @login_required")
 
-        # Check for force_refresh parameter to bypass cache
-        force_refresh = data.get('force_refresh', False)
+        # Check for force_refresh parameter to bypass cache (privileged users only)
+        force_refresh = bool(data.get('force_refresh', False)) and can_force_refresh()
 
         # Prepare parameters for cache lookup
         cache_params = {
@@ -416,7 +416,7 @@ def analyze():
 
 @bizsight_bp.route('/data', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def data():
     """Return data for the application (counties, years)."""
     try:
@@ -433,7 +433,7 @@ def data():
 
 @bizsight_bp.route('/api/states', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def get_states():
     """Get list of available states."""
     try:
@@ -448,7 +448,7 @@ def get_states():
 
 @bizsight_bp.route('/api/planning-regions', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def get_planning_regions():
     """Get Connecticut planning regions for 2024 data."""
     planning_regions = [
@@ -467,7 +467,7 @@ def get_planning_regions():
 
 @bizsight_bp.route('/api/counties-by-state/<state_code>', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def get_counties_by_state(state_code):
     """Get counties for a specific state.
 
@@ -579,7 +579,7 @@ def get_counties_by_state(state_code):
 
 @bizsight_bp.route('/api/county-boundaries', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def get_county_boundaries():
     """Get county boundaries for mapping."""
     try:
@@ -595,7 +595,7 @@ def get_county_boundaries():
 
 @bizsight_bp.route('/api/state-boundaries', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def get_state_boundaries():
     """Get state boundaries for mapping."""
     try:
@@ -611,7 +611,7 @@ def get_state_boundaries():
 
 @bizsight_bp.route('/api/tract-boundaries/<geoid5>', methods=['GET'])
 @login_required
-@require_access('bizsight', 'partial')
+@require_access('bizsight', 'limited')
 def get_tract_boundaries_endpoint(geoid5):
     """Get census tract boundaries for a county."""
     try:
@@ -625,7 +625,8 @@ def get_tract_boundaries_endpoint(geoid5):
 
 
 @bizsight_bp.route('/report', methods=['GET'])
-@require_access('bizsight', 'partial')
+@login_required
+@require_access('bizsight', 'limited')
 def report():
     """Report display page."""
     job_id = request.args.get('job_id')
@@ -651,7 +652,8 @@ def report():
 
 
 @bizsight_bp.route('/report-data', methods=['GET'])
-@require_access('bizsight', 'partial')
+@login_required
+@require_access('bizsight', 'limited')
 def report_data():
     """Return the analysis report data for web display."""
     try:
@@ -742,7 +744,8 @@ def report_data():
 
 
 @bizsight_bp.route('/download', methods=['GET'])
-@require_access('bizsight', 'partial')
+@login_required
+@require_access('bizsight', 'full')
 def download():
     """Download analysis results."""
     try:
