@@ -72,6 +72,24 @@ def sanitize_nan_values(data: Any, precision: int = 4) -> Any:
         return data
 
 
+def _normalize_years(value: Any) -> str:
+    """Render a years parameter as a stable string.
+
+    The apps disagree on the type: LendSight, BizSight and BranchMapper pass the
+    raw comma-separated string from the form, while BranchSight passes the parsed
+    list of ints from parse_web_parameters. Calling .strip() on the list raised
+    AttributeError inside store_cached_result, whose caller swallows exceptions
+    and falls back to in-memory storage, so BranchSight's cache writes failed
+    silently from early 2026. A string round-trips unchanged here, so existing
+    cache keys for the other apps are unaffected.
+    """
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (list, tuple)):
+        return ','.join(str(year) for year in value)
+    return '' if value is None else str(value)
+
+
 def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalize parameters to ensure consistent cache keys.
@@ -89,7 +107,7 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
         else:
             normalized['counties'] = counties
         
-        normalized['years'] = params.get('years', '').strip()
+        normalized['years'] = _normalize_years(params.get('years'))
         normalized['selection_type'] = params.get('selection_type', 'county').lower()
         normalized['state_code'] = params.get('state_code', '').strip().upper() if params.get('state_code') else None
         normalized['metro_code'] = params.get('metro_code', '').strip() if params.get('metro_code') else None
@@ -108,7 +126,7 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
             years = sorted(list(range(int(start_year), int(end_year) + 1)))
             normalized['years'] = ','.join(map(str, years))
         else:
-            normalized['years'] = params.get('years', '').strip()
+            normalized['years'] = _normalize_years(params.get('years'))
     
     elif app_name.lower() == 'mergermeter':
         normalized['acquirer_lei'] = (params.get('acquirer_lei') or '').strip().upper()
@@ -143,14 +161,14 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
         if isinstance(counties, str):
             counties_list = [c.strip().lower() for c in counties.split(';') if c.strip()]
             normalized['counties'] = ';'.join(sorted(counties_list))
-        normalized['years'] = params.get('years', '').strip()
+        normalized['years'] = _normalize_years(params.get('years'))
     
     elif app_name.lower() == 'branchmapper':
         counties = params.get('counties', '')
         if isinstance(counties, str):
             counties_list = [c.strip().lower() for c in counties.split(';') if c.strip()]
             normalized['counties'] = ';'.join(sorted(counties_list))
-        normalized['years'] = params.get('years', '').strip()
+        normalized['years'] = _normalize_years(params.get('years'))
     
     return normalized
 

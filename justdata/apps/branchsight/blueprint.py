@@ -7,8 +7,6 @@ from flask import Blueprint, render_template, request, jsonify, session, Respons
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
-import uuid
-import threading
 import time
 import json
 import zipfile
@@ -18,13 +16,14 @@ import math
 
 from justdata.main.auth import (
     require_access, get_user_permissions, get_user_type, login_required,
-    is_privileged_user, can_force_refresh, get_current_user,
+    is_privileged_user,
 )
-from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
-from justdata.shared.utils.analysis_cache import (
-    get_cached_result, store_cached_result, log_usage, generate_cache_key,
-    get_analysis_result_by_job_id,
+from justdata.backend import (
+    new_job_id, run_in_background, sse_response,
+    identify_caller, lookup_cached_analysis, record_cache_hit, record_completion,
 )
+from justdata.shared.utils.progress_tracker import get_progress, create_progress_tracker, store_analysis_result, get_analysis_result
+from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
@@ -108,29 +107,7 @@ def index():
 @login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
-    def event_stream():
-        last_percent = -1
-        while True:
-            try:
-                progress = get_progress(job_id)
-                percent = progress.get("percent", 0)
-                step = progress.get("step", "Starting...")
-                done = progress.get("done", False)
-                error = progress.get("error", None)
-
-                if percent != last_percent or done or error:
-                    yield f"data: {{\"percent\": {percent}, \"step\": \"{step}\", \"done\": {str(done).lower()}, \"error\": {json.dumps(error) if error else 'null'}}}\n\n"
-                    last_percent = percent
-
-                if done or error:
-                    break
-
-                time.sleep(0.5)
-            except Exception as e:
-                yield f"data: {{\"percent\": 0, \"step\": \"Error: {str(e)}\", \"done\": true, \"error\": \"{str(e)}\"}}\n\n"
-                break
-
-    return Response(event_stream(), mimetype="text/event-stream")
+    return sse_response(job_id)
 
 
 @branchsight_bp.route('/analyze', methods=['POST'])
@@ -138,9 +115,8 @@ def progress_handler(job_id):
 @require_access('branchsight', 'limited')
 def analyze():
     """Handle analysis request"""
-    import time as time_module
-    start_time = time_module.time()
-    request_id = str(uuid.uuid4())
+    start_time = time.time()
+    request_id = new_job_id()
 
     try:
         data = request.get_json()
@@ -149,7 +125,7 @@ def analyze():
         years = data.get('years', '').strip()
         state_code = data.get('state_code', None)
         metro_code = data.get('metro_code', None)
-        job_id = str(uuid.uuid4())
+        job_id = new_job_id()
 
         # Create progress tracker for this job
         progress_tracker = create_progress_tracker(job_id)
@@ -180,11 +156,13 @@ def analyze():
         except Exception as e:
             return jsonify({'error': f'Error parsing parameters: {str(e)}'}), 400
 
-        # Store in session for download
-        session['counties'] = ';'.join(counties_list) if counties_list else counties_str
-        session['years'] = years
-        session['job_id'] = job_id
-        session['selection_type'] = selection_type
+        def remember_in_session(active_job_id):
+            session['counties'] = ';'.join(counties_list) if counties_list else counties_str
+            session['years'] = years
+            session['job_id'] = active_job_id
+            session['selection_type'] = selection_type
+
+        remember_in_session(job_id)
 
         cache_params = {
             'counties': counties_list,
@@ -193,57 +171,21 @@ def analyze():
             'state_code': state_code or '',
             'metro_code': metro_code or '',
         }
-        user_type = get_user_type()
 
-        # Capture identity before the worker thread, which has no request context
-        current_user = get_current_user()
-        user_id = current_user.get('uid') if current_user else None
-        user_email = current_user.get('email') if current_user else None
-        if not user_id and not user_email and 'firebase_user' in session:
-            fb_user = session.get('firebase_user', {})
-            user_id = fb_user.get('uid') or user_id
-            user_email = fb_user.get('email') or user_email
+        caller = identify_caller()
+        user_type = caller.user_type
 
-        # Check for force_refresh parameter to bypass cache (privileged users only)
-        force_refresh = bool(data.get('force_refresh', False)) and can_force_refresh()
+        cached = lookup_cached_analysis(
+            'branchsight', cache_params, caller,
+            force_refresh_requested=bool(data.get('force_refresh', False)),
+        )
 
-        cached_result = None
-        if not force_refresh:
-            cached_result = get_cached_result('branchsight', cache_params, user_type)
-        else:
-            print(f"[INFO] Force refresh requested - bypassing cache")
-
-        if cached_result:
-            # Cache hit - reuse the stored result instead of re-running BigQuery and Claude
-            job_id = cached_result['job_id']
-
-            update_progress(job_id, {
-                'percent': 100,
-                'step': 'Analysis complete (from cache)',
-                'done': True,
-                'cached': True
-            })
-
-            session['counties'] = ';'.join(counties_list) if counties_list else counties_str
-            session['years'] = years
-            session['job_id'] = job_id
-            session['selection_type'] = selection_type
-
-            log_usage(
-                user_type=user_type,
-                app_name='branchsight',
-                params=cache_params,
-                cache_key=cached_result['cache_key'],
-                cache_hit=True,
-                job_id=job_id,
-                response_time_ms=int((time_module.time() - start_time) * 1000),
-                costs={'bigquery': 0.0, 'ai': 0.0, 'total': 0.0},
-                request_id=request_id,
-                user_id=user_id,
-                user_email=user_email,
-            )
-
-            return jsonify({'success': True, 'job_id': job_id, 'cached': True})
+        if cached:
+            # Reuse the stored result instead of re-running BigQuery and Claude
+            remember_in_session(cached.job_id)
+            record_cache_hit('branchsight', cache_params, caller, cached,
+                             start_time, request_id)
+            return jsonify({'success': True, 'job_id': cached.job_id, 'cached': True})
 
         def run_job():
             try:
@@ -260,7 +202,7 @@ def analyze():
                     cache_metadata = {
                         'counties': counties_list,
                         'years': years_list,
-                        'duration_seconds': time_module.time() - start_time,
+                        'duration_seconds': time.time() - start_time,
                         'total_records': result.get('metadata', {}).get('total_records', 0) if isinstance(result.get('metadata'), dict) else 0,
                         'generated_at': datetime.now().isoformat()
                     }
@@ -281,27 +223,14 @@ def analyze():
                     _result_fallback[job_id] = result
                     progress_tracker.complete(success=True)
 
-                try:
-                    log_usage(
-                        user_type=user_type,
-                        app_name='branchsight',
-                        params=cache_params,
-                        cache_key=generate_cache_key('branchsight', cache_params),
-                        cache_hit=False,
-                        job_id=job_id,
-                        response_time_ms=int((time_module.time() - start_time) * 1000),
-                        request_id=request_id,
-                        user_id=user_id,
-                        user_email=user_email,
-                    )
-                except Exception as usage_error:
-                    print(f"WARNING: Failed to log usage: {usage_error}")
+                record_completion('branchsight', cache_params, caller, job_id,
+                                  start_time, request_id)
 
             except Exception as e:
                 error_msg = str(e)
                 progress_tracker.complete(success=False, error=error_msg)
 
-        threading.Thread(target=run_job, daemon=True).start()
+        run_in_background(run_job)
 
         return jsonify({'success': True, 'job_id': job_id})
 
