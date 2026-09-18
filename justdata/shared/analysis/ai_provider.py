@@ -395,12 +395,35 @@ def ask_ai(
         raise Exception(f"Error calling {ai_provider.upper()} API: {e}")
 
 
+NCRC_STYLE_GUIDE = """
+        NCRC STYLE GUIDE (apply to all narrative output):
+        - Keep sentences short and direct. Maximum one subordinate clause per sentence.
+        - If a sentence exceeds 30 words, break it into two sentences.
+        - State the finding first, then the explanation. Do not front-load qualifiers.
+        - Do not hedge excessively. Use "suggest," "appear to," or "may indicate" no more than once per paragraph. After that, state findings directly.
+        - Prefer periods over semicolons. Use semicolons only to separate items in a complex list.
+        - Do not use the Oxford comma (no comma before "and" or "or" in a series).
+        - Do not insert commas before dependent clauses that complete the main thought. When in doubt, omit the comma.
+        - One sentence maximum for table or chart introductions. Lead with what the data shows, not what the visual element is.
+        - Do not separately describe a chart and its underlying table when they show the same data.
+        - Professional, objective, measured tone. No promotional language.
+        - Avoid adjectives that editorialize: "dramatic," "alarming," "impressive," "significant" (unless statistically significant). Let the data speak.
+        - Do not use em-dashes. Use commas, periods or colons instead.
+        - Do not use emoticons or emoji.
+        """
+
+
 class AIAnalyzer:
     """Base AI analyzer class for all applications."""
-    
-    def __init__(self, ai_provider: str = "claude", model: str = None, api_key: str = None):
+
+    def __init__(self, ai_provider: str = "claude", model: str = None, api_key: str = None,
+                 style_guide: str = None, app_name: str = None):
         self.provider = ai_provider
         self.model = model
+        # Prepended to every prompt this analyzer sends. All four report apps pass
+        # NCRC_STYLE_GUIDE; leave it unset for prompts that should go through as written.
+        self.style_guide = style_guide
+        self.app_name = app_name
         if ai_provider != "claude":
             raise Exception(f"Unsupported AI provider: {ai_provider}")
         # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
@@ -421,10 +444,15 @@ class AIAnalyzer:
                   app_name: str = None, report_type: str = None, model: str = None) -> str:
         """Make a call to Claude with usage tracking.
 
+        Prepends this analyzer's style guide when it has one, so every narrative
+        path gets it regardless of whether the caller went through generate_text.
+
         temperature is accepted for caller compatibility but not sent to the
         API -- current Claude models reject a temperature parameter
         ("temperature is deprecated for this model").
         """
+        if self.style_guide:
+            prompt = self.style_guide + "\n" + prompt
         call_model = model or self.model
         try:
             try:
@@ -458,6 +486,17 @@ class AIAnalyzer:
             # Re-raise the exception so calling code can handle it
             raise Exception(error_msg) from e
         
+    def generate_text(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
+                      app_name: str = None, report_type: str = None) -> str:
+        """Generate narrative text. The style guide is applied in _call_ai."""
+        return self._call_ai(
+            prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            app_name=app_name or self.app_name,
+            report_type=report_type,
+        )
+
     def generate_executive_summary(self, data: Dict[str, Any]) -> str:
         """Generate an executive summary of the analysis."""
         raise NotImplementedError("Subclasses must implement generate_executive_summary")

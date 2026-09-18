@@ -6,38 +6,16 @@ Similar structure to BranchSight but for mortgage origination data.
 
 import json
 from typing import Dict, Any
-from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
+from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types, NCRC_STYLE_GUIDE
 
 
 class LendSightAnalyzer(AIAnalyzer):
     """AI analyzer specifically for HMDA mortgage lending data."""
 
-    @staticmethod
-    def _get_style_guide() -> str:
-        """Return the NCRC AI narrative style block for consistent output across all reports."""
-        return """
-        NCRC STYLE GUIDE (apply to all narrative output):
-        - Keep sentences short and direct. Maximum one subordinate clause per sentence.
-        - If a sentence exceeds 30 words, break it into two sentences.
-        - State the finding first, then the explanation. Do not front-load qualifiers.
-        - Do not hedge excessively. Use "suggest," "appear to," or "may indicate" no more than once per paragraph. After that, state findings directly.
-        - Prefer periods over semicolons. Use semicolons only to separate items in a complex list.
-        - Do not use the Oxford comma (no comma before "and" or "or" in a series).
-        - Do not insert commas before dependent clauses that complete the main thought. When in doubt, omit the comma.
-        - One sentence maximum for table or chart introductions. Lead with what the data shows, not what the visual element is.
-        - Do not separately describe a chart and its underlying table when they show the same data.
-        - Professional, objective, measured tone. No promotional language.
-        - Avoid adjectives that editorialize: "dramatic," "alarming," "impressive," "significant" (unless statistically significant). Let the data speak.
-        - Do not use em-dashes. Use commas, periods or colons instead.
-        - Do not use emoticons or emoji.
-        """
-
-    def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
-                  app_name: str = None, report_type: str = None) -> str:
-        """Override to prepend NCRC style guide to every prompt."""
-        styled_prompt = self._get_style_guide() + "\n" + prompt
-        return super()._call_ai(styled_prompt, max_tokens=max_tokens, temperature=temperature,
-                                app_name=app_name, report_type=report_type)
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('style_guide', NCRC_STYLE_GUIDE)
+        kwargs.setdefault('app_name', 'lendsight')
+        super().__init__(*args, **kwargs)
 
     def _get_ncrc_report_sources(self) -> str:
         """Return formatted NCRC report sources for AI prompts."""

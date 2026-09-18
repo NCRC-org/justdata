@@ -2516,10 +2516,11 @@ def generate_ai_summary():
                 hhi_analysis = {'summary': f'Error analyzing data: {str(e)}'}
         
         # Generate AI summary
-        from justdata.shared.analysis.ai_provider import AIAnalyzer
-        
+        from justdata.shared.analysis.ai_provider import AIAnalyzer, NCRC_STYLE_GUIDE
+
         try:
-            analyzer = AIAnalyzer(ai_provider="claude")
+            analyzer = AIAnalyzer(ai_provider="claude", style_guide=NCRC_STYLE_GUIDE,
+                                  app_name='mergermeter')
         except Exception as e:
             error_msg = str(e)
             if "No API key found" in error_msg or "API key" in error_msg:
