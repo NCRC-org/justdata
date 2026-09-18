@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 import math
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, is_privileged_user
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
 from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id, generate_cache_key
 
@@ -77,13 +77,13 @@ def configure_template_loader(state):
 
 @branchsight_bp.route('/')
 @login_required
-@require_access('branchsight', 'partial')
+@require_access('branchsight', 'limited')
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
     user_type = get_user_type()
-    # Staff and admin users can see the "clear cache" checkbox
-    is_staff = (user_type in ('staff', 'admin'))
+    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
+    is_staff = is_privileged_user(user_type)
     cache_buster = int(time.time())
     app_base_url = url_for('branchsight.index').rstrip('/')
     response = make_response(render_template('branchsight_analysis.html',
@@ -128,7 +128,8 @@ def progress_handler(job_id):
 
 
 @branchsight_bp.route('/analyze', methods=['POST'])
-@require_access('branchsight', 'partial')
+@login_required
+@require_access('branchsight', 'limited')
 def analyze():
     """Handle analysis request"""
     try:
@@ -238,7 +239,8 @@ def analyze():
 
 
 @branchsight_bp.route('/report')
-@require_access('branchsight', 'partial')
+@login_required
+@require_access('branchsight', 'limited')
 def report():
     """Report display page"""
     from jinja2 import Environment, ChoiceLoader, FileSystemLoader, select_autoescape
@@ -259,7 +261,8 @@ def report():
 
 
 @branchsight_bp.route('/report-data')
-@require_access('branchsight', 'partial')
+@login_required
+@require_access('branchsight', 'limited')
 def report_data():
     """Return the analysis report data for web display"""
     try:
@@ -332,7 +335,8 @@ def report_data():
 
 
 @branchsight_bp.route('/download')
-@require_access('branchsight', 'partial')
+@login_required
+@require_access('branchsight', 'full')
 def download():
     """Download the generated reports in various formats"""
     try:
@@ -628,7 +632,7 @@ def download_zip(report_data, metadata, analysis_result=None):
 
 @branchsight_bp.route('/counties')
 @login_required
-@require_access('branchsight', 'partial')
+@require_access('branchsight', 'limited')
 def counties():
     """Return a list of all available counties"""
     try:
@@ -645,7 +649,7 @@ def counties():
 
 @branchsight_bp.route('/states')
 @login_required
-@require_access('branchsight', 'partial')
+@require_access('branchsight', 'limited')
 def states():
     """Return a list of all available states"""
     try:
@@ -662,7 +666,7 @@ def states():
 
 @branchsight_bp.route('/metro-areas')
 @login_required
-@require_access('branchsight', 'partial')
+@require_access('branchsight', 'limited')
 def metro_areas():
     """Return a list of all available metro areas (CBSAs)"""
     try:
@@ -678,7 +682,7 @@ def metro_areas():
 
 @branchsight_bp.route('/counties-by-state/<state_code>')
 @login_required
-@require_access('branchsight', 'partial')
+@require_access('branchsight', 'limited')
 def counties_by_state(state_code):
     """Get list of counties for a specific state.
 

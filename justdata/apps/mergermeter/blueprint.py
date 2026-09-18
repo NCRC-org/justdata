@@ -16,7 +16,7 @@ import json
 from typing import List, Dict
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user, can_force_refresh
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
@@ -253,8 +253,8 @@ def analyze():
         cache_params = form_data.copy()
         # Cache key includes all year parameters (analysis + baseline)
 
-        # Check for force_refresh parameter to bypass cache
-        force_refresh = request.form.get('force_refresh', '0') == '1'
+        # Check for force_refresh parameter to bypass cache (privileged users only)
+        force_refresh = request.form.get('force_refresh', '0') == '1' and can_force_refresh()
 
         # Check cache first (unless force_refresh is True)
         cached_result = None

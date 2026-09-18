@@ -14,7 +14,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user, is_privileged_user, can_force_refresh
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 
@@ -130,13 +130,13 @@ def configure_template_loader(state):
 
 @lendsight_bp.route('/')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
     user_type = get_user_type()
-    # Staff and admin users can see the "clear cache" checkbox
-    is_staff = (user_type in ('staff', 'admin'))
+    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
+    is_staff = is_privileged_user(user_type)
     cache_buster = int(time.time())  # Timestamp for cache-busting
     # Set base URL for JavaScript API calls
     app_base_url = url_for('lendsight.index').rstrip('/')
@@ -157,7 +157,7 @@ def index():
 
 @lendsight_bp.route('/progress', methods=['GET'])
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def progress_status():
     """JSON poll for job progress (fallback when SSE connection drops)."""
     try:
@@ -214,7 +214,7 @@ def progress_handler(job_id):
 
 @lendsight_bp.route('/analyze', methods=['POST'])
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def analyze():
     """Handle analysis request with caching"""
     import time as time_module
@@ -253,8 +253,8 @@ def analyze():
         if not user_id and not user_email:
             print(f"[WARN] LendSight analyze: No user identity captured despite @login_required")
 
-        # Check for force_refresh parameter to bypass cache
-        force_refresh = data.get('force_refresh', False)
+        # Check for force_refresh parameter to bypass cache (privileged users only)
+        force_refresh = bool(data.get('force_refresh', False)) and can_force_refresh()
 
         # Parse counties - handle both new format (objects with FIPS) and old format (strings)
         counties_list = []
@@ -542,7 +542,7 @@ def analyze():
 
 @lendsight_bp.route('/report')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def report():
     """Report display page"""
     app_base_url = url_for('lendsight.index').rstrip('/')
@@ -561,7 +561,7 @@ def report():
 
 @lendsight_bp.route('/report-data', methods=['GET'])
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def report_data():
     """Return the analysis report data for web display"""
     try:
@@ -657,7 +657,7 @@ def report_data():
 
 @lendsight_bp.route('/download')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'full')
 def download():
     """Download the generated reports"""
     try:
@@ -765,7 +765,7 @@ def download():
 
 @lendsight_bp.route('/data')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def data():
     """Return data for the application"""
     # To be implemented
@@ -774,7 +774,7 @@ def data():
 
 @lendsight_bp.route('/counties')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def counties():
     """Return a list of available counties for lending analysis"""
     try:
@@ -808,7 +808,7 @@ def counties():
 
 @lendsight_bp.route('/states')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def states():
     """Return a list of available states for lending analysis"""
     try:
@@ -825,7 +825,7 @@ def states():
 
 @lendsight_bp.route('/metro-areas')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def metro_areas():
     """Return a list of available metro areas for lending analysis"""
     # TODO: Implement HMDA metro area data lookup
@@ -834,7 +834,7 @@ def metro_areas():
 
 @lendsight_bp.route('/counties-by-state/<state_code>')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def counties_by_state(state_code):
     """Return a list of counties for a specific state.
 
@@ -938,7 +938,7 @@ def counties_by_state(state_code):
 
 @lendsight_bp.route('/years')
 @login_required
-@require_access('lendsight', 'partial')
+@require_access('lendsight', 'limited')
 def years():
     """Return available years dynamically from HMDA data"""
     try:
