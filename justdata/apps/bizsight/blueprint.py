@@ -6,23 +6,21 @@ Converts the standalone BizSight app into a blueprint.
 from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
-import sys
-import uuid
-import threading
 import time
-import json
 from pathlib import Path
 from datetime import datetime
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user, is_privileged_user, can_force_refresh
-from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, is_privileged_user
+from justdata.backend import (
+    new_job_id, run_in_background, sse_response,
+    identify_caller, lookup_cached_analysis, record_cache_hit, record_completion,
+)
+from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
 from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
-from justdata.apps.bizsight.utils.progress_tracker import (
-    get_progress, update_progress, create_progress_tracker
-)
+from justdata.shared.utils.progress_tracker import create_progress_tracker, get_progress
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
@@ -100,29 +98,7 @@ def index():
 @login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events."""
-    def event_stream():
-        last_percent = -1
-        while True:
-            try:
-                progress = get_progress(job_id)
-                percent = progress.get("percent", 0)
-                step = progress.get("step", "Starting...")
-                done = progress.get("done", False)
-                error = progress.get("error", None)
-                
-                if percent != last_percent or done or error:
-                    yield f"data: {{\"percent\": {percent}, \"step\": \"{step}\", \"done\": {str(done).lower()}, \"error\": {json.dumps(error) if error else 'null'}}}\n\n"
-                    last_percent = percent
-                
-                if done or error:
-                    break
-                
-                time.sleep(0.5)
-            except Exception as e:
-                yield f"data: {{\"percent\": 0, \"step\": \"Error: {str(e)}\", \"done\": true, \"error\": \"{str(e)}\"}}\n\n"
-                break
-    
-    return Response(event_stream(), mimetype="text/event-stream")
+    return sse_response(job_id)
 
 
 @bizsight_bp.route('/analyze', methods=['POST'])
@@ -130,9 +106,8 @@ def progress_handler(job_id):
 @require_access('bizsight', 'limited')
 def analyze():
     """Handle analysis request with caching."""
-    import time as time_module
-    start_time = time_module.time()
-    request_id = str(uuid.uuid4())
+    start_time = time.time()
+    request_id = new_job_id()
     
     try:
         data = request.get_json()
@@ -191,24 +166,10 @@ def analyze():
             years = list(range(start_year, end_year + 1))
             years_str = ','.join(map(str, years))
         
-        # Get user type and identity for logging
-        user_type = get_user_type()
-        current_user = get_current_user()
-        user_id = current_user.get('uid') if current_user else None
-        user_email = current_user.get('email') if current_user else None
-        
-        # Fallback: Try to get from session directly if get_current_user() returned None
-        if not user_id and not user_email and 'firebase_user' in session:
-            fb_user = session.get('firebase_user', {})
-            user_id = fb_user.get('uid') or user_id
-            user_email = fb_user.get('email') or user_email
-        
-        # Log warning if still no user identity
-        if not user_id and not user_email:
+        caller = identify_caller()
+        user_type = caller.user_type
+        if not caller.user_id and not caller.user_email:
             print(f"[WARN] BizSight analyze: No user identity captured despite @login_required")
-
-        # Check for force_refresh parameter to bypass cache (privileged users only)
-        force_refresh = bool(data.get('force_refresh', False)) and can_force_refresh()
 
         # Prepare parameters for cache lookup
         cache_params = {
@@ -218,66 +179,32 @@ def analyze():
             'years': years_str
         }
 
-        # Check cache first (unless force_refresh is True)
-        cached_result = None
-        if not force_refresh:
-            cached_result = get_cached_result('bizsight', cache_params, user_type)
-        else:
-            print(f"[INFO] Force refresh requested - bypassing cache")
-
-        if cached_result:
-            # Cache hit - use cached result
-            job_id = cached_result['job_id']
-            result_data = cached_result['result_data']
-            
-            # Result is already stored in BigQuery via store_cached_result
-            # No need for in-memory storage - BigQuery-only approach
-            update_progress(job_id, {
-                'percent': 100,
-                'step': 'Analysis complete (from cache)',
-                'done': True,
-                'cached': True
-            })
-            
-            # Store in session
+        def remember_in_session(active_job_id):
             session['county_data'] = county_data
             session['years'] = years_str
-            session['job_id'] = job_id
-            
-            # Log usage (cache hit)
-            response_time_ms = int((time_module.time() - start_time) * 1000)
-            cache_key = cached_result['cache_key']
-            log_usage(
-                user_type=user_type,
-                app_name='bizsight',
-                params=cache_params,
-                cache_key=cache_key,
-                cache_hit=True,
-                job_id=job_id,
-                response_time_ms=response_time_ms,
-                costs={'bigquery': 0.01, 'ai': 0.0, 'total': 0.01},
-                request_id=request_id,
-                user_id=user_id,
-                user_email=user_email
-            )
-            
+            session['job_id'] = active_job_id
+
+        cached = lookup_cached_analysis(
+            'bizsight', cache_params, caller,
+            force_refresh_requested=bool(data.get('force_refresh', False)),
+        )
+
+        if cached:
+            # Reuse the stored result instead of re-running BigQuery and Claude
+            remember_in_session(cached.job_id)
+            record_cache_hit('bizsight', cache_params, caller, cached,
+                             start_time, request_id)
             return jsonify({
                 'success': True,
-                'job_id': job_id,
+                'job_id': cached.job_id,
                 'cached': True
             })
-        
+
         # Cache miss - run new analysis
-        job_id = str(uuid.uuid4())
-        
-        # Create progress tracker
+        job_id = new_job_id()
         progress_tracker = create_progress_tracker(job_id)
-        
-        # Store in session
-        session['county_data'] = county_data
-        session['years'] = years_str
-        session['job_id'] = job_id
-        
+        remember_in_session(job_id)
+
         def run_job():
             try:
                 result = run_analysis(
@@ -290,23 +217,8 @@ def analyze():
                 if not result.get('success'):
                     error_msg = result.get('error', 'Unknown error')
                     progress_tracker.complete(success=False, error=error_msg)
-                    
-                    # Log failed request
-                    response_time_ms = int((time_module.time() - start_time) * 1000)
-                    cache_key = generate_cache_key('bizsight', cache_params)
-                    log_usage(
-                        user_type=user_type,
-                        app_name='bizsight',
-                        params=cache_params,
-                        cache_key=cache_key,
-                        cache_hit=False,
-                        job_id=job_id,
-                        response_time_ms=response_time_ms,
-                        error_message=error_msg,
-                        request_id=request_id,
-                        user_id=user_id,
-                        user_email=user_email
-                    )
+                    record_completion('bizsight', cache_params, caller, job_id,
+                                      start_time, request_id, error_message=error_msg)
                     return
                 
                 # Store in BigQuery cache BEFORE marking as complete
@@ -316,7 +228,7 @@ def analyze():
                     metadata = {
                         'counties': [county_data] if not isinstance(county_data, list) else county_data,
                         'years': years,
-                        'duration_seconds': time_module.time() - start_time,
+                        'duration_seconds': time.time() - start_time,
                         'total_records': result.get('metadata', {}).get('total_records', 0) if isinstance(result.get('metadata'), dict) else 0,
                         'loan_purpose': result.get('metadata', {}).get('loan_purpose', ['purchase']) if isinstance(result.get('metadata'), dict) else ['purchase'],
                         'census_data': result.get('metadata', {}).get('census_data', None) if isinstance(result.get('metadata'), dict) else None,
@@ -342,72 +254,30 @@ def analyze():
                     progress_tracker.complete(success=True)
 
                 print(f"[DEBUG] Progress marked complete for job_id: {job_id}")
-                
-                # Log usage (cache miss, new analysis)
-                response_time_ms = int((time_module.time() - start_time) * 1000)
-                cache_key = generate_cache_key('bizsight', cache_params)
-                log_usage(
-                    user_type=user_type,
-                    app_name='bizsight',
-                    params=cache_params,
-                    cache_key=cache_key,
-                    cache_hit=False,
-                    job_id=job_id,
-                    response_time_ms=response_time_ms,
-                    costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3},  # Estimated costs
-                    request_id=request_id,
-                    user_id=user_id,
-                    user_email=user_email
-                )
-                
+
+                record_completion('bizsight', cache_params, caller, job_id,
+                                  start_time, request_id,
+                                  costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3})
+
             except Exception as e:
                 error_msg = str(e)
                 progress_tracker.complete(success=False, error=error_msg)
-                
-                # Log failed request
-                response_time_ms = int((time_module.time() - start_time) * 1000)
-                cache_key = generate_cache_key('bizsight', cache_params)
-                log_usage(
-                    user_type=user_type,
-                    app_name='bizsight',
-                    params=cache_params,
-                    cache_key=cache_key,
-                    cache_hit=False,
-                    job_id=job_id,
-                    response_time_ms=response_time_ms,
-                    error_message=error_msg,
-                    request_id=request_id,
-                    user_id=user_id,
-                    user_email=user_email
-                )
-        
-        # Start background job
-        threading.Thread(target=run_job, daemon=True).start()
-        
+                record_completion('bizsight', cache_params, caller, job_id,
+                                  start_time, request_id, error_message=error_msg)
+
+        run_in_background(run_job)
+
         return jsonify({'success': True, 'job_id': job_id})
         
     except Exception as e:
-        # Log error
-        response_time_ms = int((time_module.time() - start_time) * 1000)
-        try:
-            _user = get_current_user() if 'user_id' not in locals() else None
-            _user_id = user_id if 'user_id' in locals() else (_user.get('uid') if _user else None)
-            _user_email = user_email if 'user_email' in locals() else (_user.get('email') if _user else None)
-            log_usage(
-                user_type=get_user_type(),
-                app_name='bizsight',
-                params=cache_params if 'cache_params' in locals() else {},
-                cache_key=generate_cache_key('bizsight', cache_params) if 'cache_params' in locals() else '',
-                cache_hit=False,
-                job_id=job_id if 'job_id' in locals() else str(uuid.uuid4()),
-                response_time_ms=response_time_ms,
-                error_message=str(e),
-                request_id=request_id,
-                user_id=_user_id,
-                user_email=_user_email
-            )
-        except:
-            pass
+        # The failure may predate caller/cache_params being set, so fall back.
+        record_completion(
+            'bizsight',
+            cache_params if 'cache_params' in locals() else {},
+            caller if 'caller' in locals() else identify_caller(),
+            job_id if 'job_id' in locals() else new_job_id(),
+            start_time, request_id, error_message=str(e),
+        )
         return jsonify({
             'success': False,
             'error': f'An error occurred: {str(e)}'

@@ -18,7 +18,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.apps.bizsight.config import BizSightConfig
 from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
-from justdata.apps.bizsight.utils.progress_tracker import ProgressTracker
+from justdata.shared.utils.progress_tracker import ProgressTracker
 from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
 

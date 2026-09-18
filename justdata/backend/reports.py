@@ -94,14 +94,19 @@ def record_cache_hit(app_name: str, params: Dict[str, Any], caller: Caller,
 def record_completion(app_name: str, params: Dict[str, Any], caller: Caller,
                       job_id: str, started_at: float,
                       request_id: Optional[str] = None,
-                      costs: Optional[Dict[str, float]] = None) -> None:
-    """Log a freshly computed analysis. Safe to call from a worker thread."""
+                      costs: Optional[Dict[str, float]] = None,
+                      error_message: Optional[str] = None) -> None:
+    """Log a freshly computed analysis, successful or failed.
+
+    Safe to call from a worker thread. Pass error_message when the analysis
+    failed, so the run still appears in usage reporting rather than vanishing.
+    """
     _log(app_name, params, caller, generate_cache_key(app_name, params), False,
-         job_id, started_at, request_id, costs=costs)
+         job_id, started_at, request_id, costs=costs, error_message=error_message)
 
 
 def _log(app_name, params, caller, cache_key, cache_hit, job_id, started_at,
-         request_id, costs=None) -> None:
+         request_id, costs=None, error_message=None) -> None:
     # Usage logging is telemetry: a failure here must never surface as a failed
     # analysis to the user.
     try:
@@ -114,6 +119,7 @@ def _log(app_name, params, caller, cache_key, cache_hit, job_id, started_at,
             job_id=job_id,
             response_time_ms=int((time.time() - started_at) * 1000),
             costs=costs,
+            error_message=error_message,
             request_id=request_id,
             user_id=caller.user_id,
             user_email=caller.user_email,
