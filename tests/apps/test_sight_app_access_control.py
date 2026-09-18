@@ -130,9 +130,9 @@ class TestForceRefreshIsServerEnforced:
 
     def test_member_cannot_bypass_cache(self, bizsight_client, sign_in):
         sign_in(bizsight_client, "member")
-        with patch("justdata.apps.bizsight.blueprint.get_cached_result") as cached, \
-             patch("justdata.apps.bizsight.blueprint.log_usage"), \
-             patch("justdata.apps.bizsight.blueprint.update_progress"):
+        with patch("justdata.backend.reports.get_cached_result") as cached, \
+             patch("justdata.backend.reports.log_usage"), \
+             patch("justdata.backend.reports.update_progress"):
             cached.return_value = self.CACHED
             resp = bizsight_client.post("/analyze", json=self.PAYLOAD)
 
@@ -141,13 +141,14 @@ class TestForceRefreshIsServerEnforced:
 
     def test_staff_may_bypass_cache(self, bizsight_client, sign_in):
         sign_in(bizsight_client, "staff")
-        with patch("justdata.apps.bizsight.blueprint.get_cached_result") as cached, \
-             patch("justdata.apps.bizsight.blueprint.log_usage"), \
+        with patch("justdata.backend.reports.get_cached_result") as cached, \
+             patch("justdata.backend.reports.log_usage"), \
              patch("justdata.apps.bizsight.blueprint.create_progress_tracker"), \
-             patch("threading.Thread"):
+             patch("justdata.apps.bizsight.blueprint.run_in_background") as started:
             resp = bizsight_client.post("/analyze", json=self.PAYLOAD)
 
         assert not cached.called, "privileged user's force_refresh should skip the cache"
+        assert started.called
         assert resp.status_code == 200
 
 
