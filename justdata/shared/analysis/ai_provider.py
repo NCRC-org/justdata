@@ -420,8 +420,8 @@ class AIAnalyzer:
                  style_guide: str = None, app_name: str = None):
         self.provider = ai_provider
         self.model = model
-        # Prepended to prompts sent through generate_text(). Opt-in: apps that
-        # do not pass one keep sending prompts exactly as written.
+        # Prepended to every prompt this analyzer sends. All four report apps pass
+        # NCRC_STYLE_GUIDE; leave it unset for prompts that should go through as written.
         self.style_guide = style_guide
         self.app_name = app_name
         if ai_provider != "claude":
@@ -444,10 +444,15 @@ class AIAnalyzer:
                   app_name: str = None, report_type: str = None, model: str = None) -> str:
         """Make a call to Claude with usage tracking.
 
+        Prepends this analyzer's style guide when it has one, so every narrative
+        path gets it regardless of whether the caller went through generate_text.
+
         temperature is accepted for caller compatibility but not sent to the
         API -- current Claude models reject a temperature parameter
         ("temperature is deprecated for this model").
         """
+        if self.style_guide:
+            prompt = self.style_guide + "\n" + prompt
         call_model = model or self.model
         try:
             try:
@@ -483,9 +488,7 @@ class AIAnalyzer:
         
     def generate_text(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
                       app_name: str = None, report_type: str = None) -> str:
-        """Generate narrative text, applying this analyzer's style guide if it has one."""
-        if self.style_guide:
-            prompt = self.style_guide + "\n" + prompt
+        """Generate narrative text. The style guide is applied in _call_ai."""
         return self._call_ai(
             prompt,
             max_tokens=max_tokens,
