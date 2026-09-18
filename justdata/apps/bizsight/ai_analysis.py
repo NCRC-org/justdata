@@ -13,14 +13,14 @@ from typing import Dict, Any, Optional
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
-from justdata.apps.bizsight.utils.ai_provider import AIProvider
+from justdata.shared.analysis.ai_provider import AIAnalyzer, NCRC_STYLE_GUIDE
 
 
 class BizSightAnalyzer:
     """AI analyzer for BizSight small business lending reports."""
 
     def __init__(self):
-        self.ai = AIProvider()
+        self.ai = AIAnalyzer(style_guide=NCRC_STYLE_GUIDE, app_name='bizsight')
 
     def _get_data_source_context(self) -> str:
         """Return context about what Section 1071 small business lending data represents."""
