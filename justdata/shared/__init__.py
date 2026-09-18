@@ -2,7 +2,8 @@
 # This module provides shared utilities across all JustData applications
 
 # Core infrastructure
-from justdata.shared.core import create_app, register_standard_routes
+# The Flask app factory is imported directly from justdata.shared.web.app_factory
+# by the apps that use it; it is deliberately not re-exported here.
 from justdata.shared.core.config import BaseAppConfig, get_settings
 
 # Utilities
@@ -17,8 +18,6 @@ from justdata.shared.utils.json_utils import (
 
 __all__ = [
     # Core
-    'create_app',
-    'register_standard_routes',
     'BaseAppConfig',
     'get_settings',
     # JSON utilities
