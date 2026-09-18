@@ -14,6 +14,12 @@ from justdata.shared.utils.progress_tracker import get_progress
 _POLL_SECONDS = 0.5
 _KEEPALIVE_EVERY = 20
 
+# A read of the progress store can fail transiently. Ending the stream on the
+# first error drops a running analysis the client can no longer follow, so retry
+# a few times before giving up rather than either quitting at once or, as
+# MergerMeter's version did, retrying forever on a permanent failure.
+_MAX_CONSECUTIVE_READ_ERRORS = 5
+
 
 def new_job_id() -> str:
     return str(uuid.uuid4())
@@ -46,11 +52,13 @@ def sse_response(job_id: str) -> Response:
     def stream():
         last = None
         idle_polls = 0
+        read_errors = 0
         yield ": connected\n\n"
 
         while True:
             try:
                 progress = get_progress(job_id) or {}
+                read_errors = 0
                 percent = progress.get('percent', 0)
                 step = progress.get('step', 'Starting...')
                 done = progress.get('done', False)
@@ -74,8 +82,11 @@ def sse_response(job_id: str) -> Response:
             except GeneratorExit:
                 break
             except Exception as e:
-                yield _event(0, f"Error: {e}", True, str(e))
-                break
+                read_errors += 1
+                if read_errors >= _MAX_CONSECUTIVE_READ_ERRORS:
+                    yield _event(0, f"Error: {e}", True, str(e))
+                    break
+                time.sleep(_POLL_SECONDS)
 
     return Response(
         stream(),

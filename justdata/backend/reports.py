@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from flask import session
+from flask import request, session
 
 from justdata.main.auth import can_force_refresh, get_current_user, get_user_type
 from justdata.shared.utils.analysis_cache import (
@@ -21,6 +21,8 @@ class Caller:
     user_type: str
     user_id: Optional[str] = None
     user_email: Optional[str] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,14 @@ def identify_caller() -> Caller:
         user_id = stored.get('uid') or user_id
         user_email = stored.get('email') or user_email
 
-    return Caller(user_type=get_user_type(), user_id=user_id, user_email=user_email)
+    return Caller(
+        user_type=get_user_type(),
+        user_id=user_id,
+        user_email=user_email,
+        # Captured here because the worker thread has no request to read them from.
+        ip_address=request.remote_addr,
+        user_agent=request.headers.get('User-Agent'),
+    )
 
 
 def lookup_cached_analysis(app_name: str, params: Dict[str, Any], caller: Caller,
@@ -123,6 +132,8 @@ def _log(app_name, params, caller, cache_key, cache_hit, job_id, started_at,
             request_id=request_id,
             user_id=caller.user_id,
             user_email=caller.user_email,
+            ip_address=caller.ip_address,
+            user_agent=caller.user_agent,
         )
     except Exception as e:
         print(f"[WARN] {app_name}: failed to log usage for job {job_id}: {e}")

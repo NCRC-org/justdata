@@ -76,3 +76,21 @@ class TestProgressStream:
     def test_emits_keepalive_before_the_first_update(self, app):
         body = self._stream(app, [{"percent": 0, "step": "Starting...", "done": True}])
         assert body.startswith(": connected")
+
+    def test_survives_a_transient_read_failure(self, app):
+        """A blip reading the progress store must not drop a running analysis."""
+        body = self._stream(app, [
+            {"percent": 10, "step": "Querying data...", "done": False},
+            RuntimeError("transient"),
+            {"percent": 100, "step": "Complete", "done": True},
+        ])
+        events = _events(body)
+        assert events[-1]["done"] is True
+        assert not any(e.get("error") for e in events)
+
+    def test_gives_up_after_repeated_read_failures(self, app):
+        """But a permanently broken store must end the stream, not spin forever."""
+        body = self._stream(app, [RuntimeError("down")] * 10)
+        events = _events(body)
+        assert events[-1]["done"] is True
+        assert events[-1]["error"] == "down"

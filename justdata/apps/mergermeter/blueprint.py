@@ -10,14 +10,17 @@ import tempfile
 import zipfile
 from datetime import datetime
 import uuid
-import threading
 import time
 import json
 from typing import List, Dict
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user, can_force_refresh
-from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
+from justdata.main.auth import require_access, get_user_permissions, login_required
+from justdata.backend import (
+    new_job_id, run_in_background, sse_response,
+    identify_caller, lookup_cached_analysis, record_cache_hit, record_completion,
+)
+from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
 from .version import __version__
@@ -118,65 +121,7 @@ def goals_calculator():
 @login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
-    def event_stream():
-        last_percent = -1
-        last_step = ""
-        keepalive_counter = 0
-        max_keepalive = 20
-        
-        try:
-            yield f": connected\n\n"
-            
-            while True:
-                try:
-                    progress = get_progress(job_id)
-                    if not progress:
-                        progress = {'percent': 0, 'step': 'Starting...', 'done': False, 'error': None}
-                    
-                    percent = progress.get("percent", 0)
-                    step = progress.get("step", "Starting...")
-                    done = progress.get("done", False)
-                    error = progress.get("error", None)
-                    
-                    step_escaped = step.replace('"', '\\"').replace('\n', '\\n').replace('\r', '')
-                    
-                    if percent != last_percent or step != last_step or done or error:
-                        yield f"data: {{\"percent\": {percent}, \"step\": \"{step_escaped}\", \"done\": {str(done).lower()}, \"error\": {json.dumps(error) if error else 'null'}}}\n\n"
-                        last_percent = percent
-                        last_step = step
-                        keepalive_counter = 0
-                    
-                    if done or error:
-                        break
-                    
-                    keepalive_counter += 1
-                    if keepalive_counter >= max_keepalive:
-                        yield f": keepalive\n\n"
-                        keepalive_counter = 0
-                    
-                    time.sleep(0.5)
-                    
-                except GeneratorExit:
-                    break
-                except Exception as e:
-                    import traceback
-                    traceback.print_exc()
-                    time.sleep(1)
-        except GeneratorExit:
-            pass
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            try:
-                yield f"data: {{\"percent\": 0, \"step\": \"Connection error\", \"done\": true, \"error\": \"Progress tracking error: {str(e)}\"}}\n\n"
-            except:
-                pass
-    
-    response = Response(event_stream(), mimetype="text/event-stream")
-    response.headers['Cache-Control'] = 'no-cache'
-    response.headers['X-Accel-Buffering'] = 'no'
-    response.headers['Connection'] = 'keep-alive'
-    return response
+    return sse_response(job_id)
 
 
 @mergermeter_bp.route('/analyze', methods=['POST'])
@@ -184,9 +129,8 @@ def progress_handler(job_id):
 @require_access('mergermeter', 'full')
 def analyze():
     """Handle analysis request with caching - returns immediately, runs analysis in background thread"""
-    import time as time_module
-    start_time = time_module.time()
-    request_id = str(uuid.uuid4())
+    start_time = time.time()
+    request_id = new_job_id()
     
     try:
         # Default HMDA analysis range from the platform-wide source of truth
@@ -228,82 +172,35 @@ def analyze():
         print(f"[DEBUG] Form received - acquirer_sb_id: '{form_data.get('acquirer_sb_id', 'NOT SET')}'")
         print(f"[DEBUG] Form received - target_sb_id: '{form_data.get('target_sb_id', 'NOT SET')}'")
         
-        # Get user type and identity for logging
-        user_type = get_user_type()
-        current_user = get_current_user()
-        user_id = current_user.get('uid') if current_user else None
-        user_email = current_user.get('email') if current_user else None
-        
-        # Fallback: Try to get from session directly if get_current_user() returned None
-        if not user_id and not user_email and 'firebase_user' in session:
-            fb_user = session.get('firebase_user', {})
-            user_id = fb_user.get('uid') or user_id
-            user_email = fb_user.get('email') or user_email
-        
-        # Log warning if still no user identity (shouldn't happen with @login_required)
-        if not user_id and not user_email:
+        # Resolves tier, identity, IP and user agent while the request still exists
+        caller = identify_caller()
+        user_type = caller.user_type
+        if not caller.user_id and not caller.user_email:
             print(f"[WARN] MergerMeter analyze: No user identity captured despite @login_required")
             print(f"[WARN] Session keys: {list(session.keys())}")
-        
-        # Capture IP and user agent before thread (request context not available in thread)
-        client_ip = request.remote_addr
-        client_user_agent = request.headers.get('User-Agent')
-        
+
         # For cache key, normalize the year ranges
         cache_params = form_data.copy()
         # Cache key includes all year parameters (analysis + baseline)
 
-        # Check for force_refresh parameter to bypass cache (privileged users only)
-        force_refresh = request.form.get('force_refresh', '0') == '1' and can_force_refresh()
+        cached = lookup_cached_analysis(
+            'mergermeter', cache_params, caller,
+            force_refresh_requested=request.form.get('force_refresh', '0') == '1',
+        )
 
-        # Check cache first (unless force_refresh is True)
-        cached_result = None
-        if not force_refresh:
-            cached_result = get_cached_result('mergermeter', cache_params, user_type)
-        else:
-            print(f"[INFO] Force refresh requested - bypassing cache")
-
-        if cached_result:
-            # Cache hit - use cached result
-            job_id = cached_result['job_id']
-            session['job_id'] = job_id
-            
-            # Result is already stored in BigQuery via store_cached_result
-            # No need for in-memory storage - BigQuery-only approach
-            update_progress(job_id, {
-                'percent': 100,
-                'step': 'Analysis complete (from cache)',
-                'done': True,
-                'cached': True
-            })
-            
-            # Log usage (cache hit)
-            response_time_ms = int((time_module.time() - start_time) * 1000)
-            cache_key = cached_result.get('cache_key') or generate_cache_key('mergermeter', cache_params)
-            log_usage(
-                user_type=user_type,
-                app_name='mergermeter',
-                params=cache_params,
-                cache_key=cache_key,
-                cache_hit=True,
-                job_id=job_id,
-                response_time_ms=response_time_ms,
-                costs={'bigquery': 0.01, 'ai': 0.0, 'total': 0.01},
-                request_id=request_id,
-                user_id=user_id,
-                user_email=user_email,
-                ip_address=client_ip,
-                user_agent=client_user_agent
-            )
-            
+        if cached:
+            # Reuse the stored result instead of re-running BigQuery and Claude
+            session['job_id'] = cached.job_id
+            record_cache_hit('mergermeter', cache_params, caller, cached,
+                             start_time, request_id)
             return jsonify({
                 'success': True,
-                'job_id': job_id,
+                'job_id': cached.job_id,
                 'cached': True
             })
-        
+
         # Cache miss - run new analysis
-        job_id = request.form.get('job_id') or str(uuid.uuid4())
+        job_id = request.form.get('job_id') or new_job_id()
         session['job_id'] = job_id
         
         update_progress(job_id, {'percent': 0, 'step': 'Initializing analysis...', 'done': False, 'error': None})
@@ -317,7 +214,7 @@ def analyze():
                 if result and result.get('success'):
                     try:
                         metadata = {
-                            'duration_seconds': time_module.time() - start_time
+                            'duration_seconds': time.time() - start_time
                         }
                         # Use cache_params for storing (with 'auto' for years)
                         store_cached_result(
@@ -331,83 +228,33 @@ def analyze():
                     except Exception as cache_error:
                         print(f"Warning: Failed to store in cache: {cache_error}")
                 
-                # Log usage (cache miss, new analysis)
-                response_time_ms = int((time_module.time() - start_time) * 1000)
-                cache_key = generate_cache_key('mergermeter', cache_params)
-                log_usage(
-                    user_type=user_type,
-                    app_name='mergermeter',
-                    params=cache_params,
-                    cache_key=cache_key,
-                    cache_hit=False,
-                    job_id=job_id,
-                    response_time_ms=response_time_ms,
-                    costs={'bigquery': 3.0, 'ai': 0.5, 'total': 3.5},  # Estimated costs
-                    request_id=request_id,
-                    user_id=user_id,
-                    user_email=user_email,
-                    ip_address=client_ip,
-                    user_agent=client_user_agent
-                )
-                
+                record_completion('mergermeter', cache_params, caller, job_id,
+                                  start_time, request_id,
+                                  costs={'bigquery': 3.0, 'ai': 0.5, 'total': 3.5})
+
             except Exception as e:
                 import traceback
                 error_msg = str(e)
                 traceback.print_exc()
                 update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
-                
-                # Log failed request
-                response_time_ms = int((time_module.time() - start_time) * 1000)
-                cache_key = generate_cache_key('mergermeter', form_data)
-                log_usage(
-                    user_type=user_type,
-                    app_name='mergermeter',
-                    params=cache_params if 'cache_params' in locals() else form_data,
-                    cache_key=cache_key,
-                    cache_hit=False,
-                    job_id=job_id,
-                    response_time_ms=response_time_ms,
-                    error_message=error_msg,
-                    request_id=request_id,
-                    user_id=user_id,
-                    user_email=user_email,
-                    ip_address=client_ip,
-                    user_agent=client_user_agent
-                )
-        
-        thread = threading.Thread(target=run_analysis, daemon=True)
-        thread.start()
+                record_completion('mergermeter', cache_params, caller, job_id,
+                                  start_time, request_id, error_message=error_msg)
+
+        run_in_background(run_analysis)
         
         return jsonify({'success': True, 'job_id': job_id})
         
     except Exception as e:
         import traceback
         traceback.print_exc()
-        # Log error
-        try:
-            _user = get_current_user() if 'user_id' not in locals() else None
-            _user_id = user_id if 'user_id' in locals() else (_user.get('uid') if _user else None)
-            _user_email = user_email if 'user_email' in locals() else (_user.get('email') if _user else None)
-            _ip = client_ip if 'client_ip' in locals() else request.remote_addr
-            _ua = client_user_agent if 'client_user_agent' in locals() else request.headers.get('User-Agent')
-            response_time_ms = int((time_module.time() - start_time) * 1000)
-            log_usage(
-                user_type=get_user_type(),
-                app_name='mergermeter',
-                params=cache_params if 'cache_params' in locals() else (form_data if 'form_data' in locals() else {}),
-                cache_key=generate_cache_key('mergermeter', cache_params if 'cache_params' in locals() else (form_data if 'form_data' in locals() else {})),
-                cache_hit=False,
-                job_id=job_id if 'job_id' in locals() else str(uuid.uuid4()),
-                response_time_ms=response_time_ms,
-                error_message=str(e),
-                request_id=request_id,
-                user_id=_user_id,
-                user_email=_user_email,
-                ip_address=_ip,
-                user_agent=_ua
-            )
-        except:
-            pass
+        # The failure may predate caller/cache_params being set, so fall back.
+        record_completion(
+            'mergermeter',
+            cache_params if 'cache_params' in locals() else (form_data if 'form_data' in locals() else {}),
+            caller if 'caller' in locals() else identify_caller(),
+            job_id if 'job_id' in locals() else new_job_id(),
+            start_time, request_id, error_message=str(e),
+        )
         return jsonify({'error': str(e)}), 500
 
 
