@@ -93,8 +93,43 @@ jobs:
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }}
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:latest
 
+      # Secrets the app runs fine without. FDIC_API_KEY only raises BranchMapper's
+      # FDIC rate limit; the code already falls back to unauthenticated calls.
+      # Referencing one that does not exist fails revision creation, and because
+      # --update-secrets is additive the bad reference then persists in the service
+      # spec and breaks every later deploy, including ones that never mention it.
+      # So: attach an optional secret when it exists, and explicitly remove the
+      # reference when it does not, which also clears a stale one.
+      - name: Resolve optional secrets
+        run: |
+          OPTIONAL_SECRETS="FDIC_API_KEY=fdic-api-key"
+          UPDATE=""
+          REMOVE=""
+          for pair in $OPTIONAL_SECRETS; do
+            env_name="${pair%%=*}"
+            secret_name="${pair##*=}"
+            if gcloud secrets describe "$secret_name" --project="${{ env.PROJECT_ID }}" >/dev/null 2>&1; then
+              UPDATE="${UPDATE:+$UPDATE,}${env_name}=${secret_name}:latest"
+            else
+              echo "::warning::Optional secret '$secret_name' not found in ${{ env.PROJECT_ID }}; deploying without $env_name"
+              REMOVE="${REMOVE:+$REMOVE,}${env_name}"
+            fi
+          done
+          echo "OPTIONAL_SECRETS_UPDATE=$UPDATE" >> $GITHUB_ENV
+          echo "OPTIONAL_SECRETS_REMOVE=$REMOVE" >> $GITHUB_ENV
+
       - name: Deploy to Cloud Run
         run: |
+          # gcloud allows --update-secrets and --remove-secrets together and
+          # applies the removals first, which is what makes this self-healing.
+          OPTIONAL_ARGS=()
+          if [ -n "$OPTIONAL_SECRETS_REMOVE" ]; then
+            OPTIONAL_ARGS+=(--remove-secrets "$OPTIONAL_SECRETS_REMOVE")
+          fi
+          if [ -n "$OPTIONAL_SECRETS_UPDATE" ]; then
+            OPTIONAL_ARGS+=(--update-secrets "$OPTIONAL_SECRETS_UPDATE")
+          fi
+
           gcloud run deploy ${{ env.DEPLOY_SERVICE_NAME }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }} \
             --platform managed \
@@ -125,7 +160,7 @@ jobs:
             --update-secrets "ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest" \
             --update-secrets "ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest" \
             --update-secrets "MERGERMETER_API_KEY=mergermeter-api-key:latest" \
-            --update-secrets "FDIC_API_KEY=fdic-api-key:latest"
+            "${OPTIONAL_ARGS[@]}"
 
       - name: Get Service URL
         run: |
