@@ -16,7 +16,11 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 # Project and dataset
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-DATASET_ID = 'cache'
+
+# The external-testing deployment writes to its own dataset so tester activity
+# never mixes with staff/production cache entries or usage rows. Same schema,
+# separate tables. Anything other than JUSTDATA_ENV=testing uses the live dataset.
+DATASET_ID = 'cache_testing' if os.getenv('JUSTDATA_ENV') == 'testing' else 'cache'
 
 # Table names
 CACHE_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_cache'

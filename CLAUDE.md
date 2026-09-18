@@ -17,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Always use `--source .` deploys to justdata-test for testing
 - Production deploys happen via GitHub Actions on merge to `main`
 - Staging deploys happen via GitHub Actions on merge to `staging`
+- External-testing deploys happen via GitHub Actions on merge to `testing` (service `justdata-testing`)
 - If unsure whether a deploy target is test or production, STOP and ask
 - Never run `gcloud run deploy justdata` directly — use the deploy script which defaults to test
 
@@ -25,13 +26,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 feature/*, fix/*, refactor/*, chore/*, docs/*  -->  staging  -->  main
                                               (1 approval)  (2 approvals)
+
+                                           -->  testing
+                                              (1 approval)
 ```
 
 - Feature branches from `staging` using prefixes: `fix/`, `feature/`, `refactor/`, `chore/`, `docs/`
 - PR feature branch to `staging` (1 approval)
 - `staging` -- pre-production, auto-deploys `justdata-test` Cloud Run service, PR to `main` (2 approvals)
+- `testing` -- external-tester environment for LendSight, BizSight, BranchSight and MergerMeter; cut from `staging`, auto-deploys the `justdata-testing` Cloud Run service with `JUSTDATA_ENV=testing`
 - `main` -- production, auto-deploys `justdata` Cloud Run service
 - No persistent developer branches. Old `jay_test`, `jad_test`, `test` branches are retired.
+
+### Environments
+
+| Branch | Cloud Run service | `JUSTDATA_ENV` | BigQuery cache dataset |
+|--------|-------------------|----------------|------------------------|
+| `main` | `justdata` | `production` | `justdata-ncrc.cache` |
+| `staging` | `justdata-test` | `staging` | `justdata-ncrc.cache` |
+| `testing` | `justdata-testing` | `testing` | `justdata-ncrc.cache_testing` |
+
+`JUSTDATA_ENV=testing` is what keeps external-tester cache entries and usage rows
+out of the live tables; it is set by the deploy pipeline, not by hand.
 
 ## Recent Work (Feb 2026)
 
