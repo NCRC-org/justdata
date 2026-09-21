@@ -1,0 +1,702 @@
+/* =========================================================
+   JustData Shell CSS
+   Header, off-canvas nav sidebar, footer, breadcrumb, auth
+   modal, member-request modals and banners. Tokens only --
+   see shared/web/static/css/tokens.css. Reusable component
+   classes (.btn, .card, .form-field, .alert, ...) live in
+   style.css, not here; this file is shell-specific layout
+   and the pieces that don't generalize.
+
+   See L5 "JustData -- Frontend buildout spec -- 2026-09-21"
+   Part C step 2.
+   ========================================================= */
+
+/* -----------------------------------------------------
+   Header
+   ----------------------------------------------------- */
+.shell-header {
+    background: var(--color-bg-dark);
+    color: var(--color-fg-on-dark);
+    position: sticky;
+    top: 0;
+    z-index: 998;
+    box-shadow: var(--sh-1);
+}
+
+.shell-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-h);
+    padding: 0 var(--s-5);
+    max-width: var(--container-max);
+    margin: 0 auto;
+}
+
+.shell-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    min-width: 0;
+}
+
+.shell-menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--color-fg-on-dark);
+    cursor: pointer;
+    padding: var(--s-2);
+    display: flex;
+    align-items: center;
+    border-radius: var(--r-sm);
+}
+
+.shell-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.shell-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    text-decoration: none;
+    min-width: 0;
+}
+
+.shell-brand-logo {
+    height: 28px;
+    width: auto;
+}
+
+.shell-brand .app-name {
+    font-family: var(--font-display);
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-h4);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-tight);
+    color: var(--color-fg-on-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shell-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex: 0 0 auto;
+}
+
+.shell-header-ghost {
+    color: var(--color-fg-on-dark);
+}
+
+/* -----------------------------------------------------
+   User menu
+   ----------------------------------------------------- */
+.user-menu-container {
+    position: relative;
+}
+
+.user-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--r-md);
+    padding: var(--s-1) var(--s-3);
+    cursor: pointer;
+    color: var(--color-fg-on-dark);
+    transition: background var(--dur-fast) var(--ease);
+}
+
+.user-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.user-menu-toggle.open .user-menu-arrow {
+    transform: rotate(180deg);
+}
+
+.user-menu-arrow {
+    transition: transform var(--dur-fast) var(--ease);
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: var(--lh-tight);
+}
+
+.user-email {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-role {
+    font-size: 10px;
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wide);
+    color: var(--ncrc-cyan-300);
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: var(--s-2);
+    background: var(--color-bg);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-3);
+    min-width: 220px;
+    overflow: hidden;
+    z-index: 1001;
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    color: var(--color-fg);
+    text-decoration: none;
+    font-size: var(--fs-body-sm);
+}
+
+.user-dropdown-item:hover {
+    background: var(--color-bg-muted);
+}
+
+.user-dropdown-item i {
+    width: 18px;
+    color: var(--color-fg-muted);
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background: var(--color-divider);
+    margin: var(--s-1) 0;
+}
+
+/* -----------------------------------------------------
+   Breadcrumb
+   ----------------------------------------------------- */
+.breadcrumb-bar {
+    padding: var(--s-3) var(--s-5);
+    background: var(--color-bg-muted);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--fs-caption);
+}
+
+.breadcrumb-bar .breadcrumb {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    max-width: var(--container-max);
+}
+
+.breadcrumb-bar .breadcrumb-item {
+    display: flex;
+    align-items: center;
+    color: var(--color-fg-muted);
+}
+
+.breadcrumb-bar .breadcrumb-item + .breadcrumb-item::before {
+    content: "\203A";
+    color: var(--color-fg-subtle);
+    margin: 0 var(--s-2);
+}
+
+.breadcrumb-bar .breadcrumb-item a {
+    color: var(--color-link);
+    text-decoration: none;
+}
+
+.breadcrumb-bar .breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-bar .breadcrumb-item.active {
+    color: var(--color-fg);
+    font-weight: var(--fw-medium);
+}
+
+/* -----------------------------------------------------
+   Nav sidebar (off-canvas)
+   ----------------------------------------------------- */
+.nav-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 14, 16, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease);
+}
+
+.nav-backdrop.active {
+    display: block;
+    opacity: 1;
+}
+
+.nav-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    height: 100dvh;
+    background: var(--color-bg);
+    transform: translateX(-100%);
+    transition: transform var(--dur-base) var(--ease);
+    z-index: 1000;
+    overflow-y: auto;
+    box-shadow: var(--sh-3);
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-sidebar.active {
+    transform: translateX(0);
+}
+
+.nav-sidebar-header {
+    background: var(--color-bg-dark);
+    color: var(--color-fg-on-dark);
+    padding: var(--s-4) var(--s-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-sidebar-title {
+    font-family: var(--font-display);
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-h4);
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.nav-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-fg-on-dark);
+    cursor: pointer;
+    padding: var(--s-1);
+    display: flex;
+    border-radius: var(--r-sm);
+}
+
+.nav-close-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-sidebar-items {
+    flex: 1;
+    padding: var(--s-2) 0;
+}
+
+.nav-sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    padding: var(--s-3) var(--s-5);
+    color: var(--color-fg);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-weight: var(--fw-medium);
+    font-size: var(--fs-body);
+    border-left: 3px solid transparent;
+}
+
+.nav-sidebar .nav-item:hover {
+    background: var(--color-bg-muted);
+}
+
+.nav-sidebar .nav-item.is-active {
+    border-left-color: var(--color-bg-accent);
+    background: var(--color-bg-brand-soft);
+}
+
+.nav-sidebar .nav-item.is-locked {
+    color: var(--color-fg-muted);
+}
+
+.nav-sidebar .nav-item i {
+    color: var(--color-fg-subtle);
+}
+
+.nav-sidebar-footer {
+    padding: var(--s-4) var(--s-5);
+    border-top: 1px solid var(--color-divider);
+    display: flex;
+    gap: var(--s-5);
+}
+
+.nav-sidebar-footer-link {
+    font-size: var(--fs-body-sm);
+    color: var(--color-fg-muted);
+    text-decoration: none;
+}
+
+.nav-sidebar-footer-link:hover {
+    color: var(--color-fg);
+    text-decoration: underline;
+}
+
+body.nav-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* -----------------------------------------------------
+   Main content wrapper. Deliberately NOT named .container --
+   style.css already defines .container for the old report/
+   analysis page layout (flex-wrap + a slide-up entrance
+   animation starting at opacity: 0), which would make every
+   base_app.html page start invisible if reused here.
+   ----------------------------------------------------- */
+.shell-main {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--container-pad);
+    min-height: 50vh;
+}
+
+/* -----------------------------------------------------
+   Footer
+   ----------------------------------------------------- */
+.shell-footer {
+    background: var(--color-bg-dark);
+    color: var(--color-fg-on-dark);
+    padding: var(--s-7) var(--s-5);
+    margin-top: var(--s-10);
+}
+
+.shell-footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: var(--s-5);
+}
+
+.shell-footer-copyright,
+.shell-footer-col p {
+    margin: 0 0 var(--s-2);
+    font-size: var(--fs-caption);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.shell-footer-version {
+    font-size: 11px;
+    color: var(--ncrc-blue-200);
+}
+
+.shell-footer-credits {
+    font-size: 11px;
+    color: var(--ncrc-blue-200);
+    margin-top: var(--s-3);
+}
+
+.shell-footer-links {
+    display: flex;
+    gap: var(--s-4);
+    font-size: var(--fs-caption);
+    flex-wrap: wrap;
+}
+
+.shell-footer-links a {
+    color: var(--color-fg-on-dark);
+    text-decoration: none;
+}
+
+.shell-footer-links a:hover {
+    text-decoration: underline;
+}
+
+.shell-footer-logo img {
+    height: 44px;
+    width: auto;
+    opacity: 0.9;
+}
+
+@media (max-width: 900px) {
+    .shell-footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+}
+
+/* -----------------------------------------------------
+   Auth tabs (inside the sign-in modal)
+   ----------------------------------------------------- */
+.auth-tabs {
+    display: flex;
+    margin-bottom: var(--s-6);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.auth-tab {
+    flex: 1;
+    padding: var(--s-3) var(--s-4);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-fg-muted);
+    cursor: pointer;
+}
+
+.auth-tab.is-active {
+    color: var(--color-bg-dark);
+    font-weight: var(--fw-semibold);
+    border-bottom-color: var(--color-bg-dark);
+}
+
+/* -----------------------------------------------------
+   Modals (auth modal + member-request modals)
+   ----------------------------------------------------- */
+.shell-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(13, 14, 16, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.shell-modal-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+.shell-modal-content {
+    position: relative;
+    background: var(--color-bg);
+    border-radius: var(--r-lg);
+    padding: var(--s-8);
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--sh-3);
+    margin: var(--s-5);
+}
+
+.shell-modal-close {
+    position: absolute;
+    top: var(--s-3);
+    right: var(--s-3);
+    background: none;
+    border: none;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    padding: var(--s-1);
+    display: flex;
+    border-radius: var(--r-sm);
+}
+
+.shell-modal-close:hover {
+    background: var(--color-bg-muted);
+    color: var(--color-fg);
+}
+
+.shell-modal-content h2 {
+    margin: 0 0 var(--s-2);
+    font-size: var(--fs-h3);
+}
+
+.shell-modal-content h3 {
+    font-size: var(--fs-body-lg);
+    margin: 0 0 var(--s-2);
+}
+
+.shell-modal-subtitle {
+    color: var(--color-fg-muted);
+    margin-bottom: var(--s-5);
+}
+
+.shell-modal-step {
+    text-align: center;
+}
+
+.shell-modal-step .form-field,
+.shell-modal-step form {
+    text-align: left;
+}
+
+.shell-modal-success-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--color-success);
+    margin-bottom: var(--s-4);
+}
+
+.shell-modal-buttons {
+    display: flex;
+    gap: var(--s-3);
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: var(--s-5);
+}
+
+.shell-modal-footnote {
+    margin-top: var(--s-5);
+    text-align: center;
+    color: var(--color-fg-subtle);
+    font-size: var(--fs-caption);
+}
+
+.shell-modal-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    margin: var(--s-6) 0;
+    color: var(--color-fg-subtle);
+    font-size: var(--fs-caption);
+}
+
+.shell-modal-divider::before,
+.shell-modal-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
+.shell-modal-form-row {
+    display: flex;
+    gap: var(--s-3);
+}
+
+.shell-modal-form-row .form-field {
+    flex: 1;
+}
+
+.shell-modal-submit {
+    width: 100%;
+    justify-content: center;
+}
+
+.shell-google-btn {
+    gap: var(--s-3);
+}
+
+.required {
+    color: var(--color-danger);
+}
+
+/* -----------------------------------------------------
+   Banners (verification / pending / grace-period)
+   ----------------------------------------------------- */
+.shell-banner {
+    border-radius: var(--r-none);
+    align-items: center;
+    max-width: var(--container-max);
+    margin: 0 auto;
+}
+
+.shell-banner-text {
+    flex: 1;
+}
+
+.shell-banner-dismiss {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    padding: var(--s-1);
+    opacity: 0.7;
+}
+
+.shell-banner-dismiss:hover {
+    opacity: 1;
+}
+
+/* -----------------------------------------------------
+   Icons
+   ----------------------------------------------------- */
+[data-lucide] {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.75;
+}
+
+.btn [data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+.badge [data-lucide],
+.shell-banner-dismiss [data-lucide],
+.nav-close-btn [data-lucide],
+.shell-modal-close [data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+/* -----------------------------------------------------
+   Responsive
+   ----------------------------------------------------- */
+@media (max-width: 768px) {
+    .shell-header-inner {
+        padding: 0 var(--s-4);
+    }
+
+    .user-email,
+    .user-role {
+        display: none;
+    }
+
+    .shell-header-right .btn span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-sidebar {
+        width: 260px;
+    }
+
+    .shell-modal-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-sidebar,
+    .nav-backdrop,
+    .shell-menu-toggle,
+    .user-menu-arrow {
+        transition: none;
+    }
+}

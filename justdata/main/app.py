@@ -75,6 +75,44 @@ def create_app():
             'user_type': get_user_type()
         }
 
+    # Context processor for the shared shell (nav sidebar, footer version).
+    # App-wide, so every blueprint's templates get visible_apps/platform_version --
+    # including the ones still using the legacy shared_header.html include
+    # directly rather than extending base_app.html (see the step 2 PR/L5 log
+    # for why shared_header.html itself was kept rather than deleted).
+    @app.context_processor
+    def inject_shell():
+        """Make the platform-shell nav list and version available to templates."""
+        from justdata.shared.utils.versions import get_version
+
+        shell_user_type = get_user_type()
+        shell_app_order = [
+            ('lendsight', 'LendSight', '/lendsight'),
+            ('bizsight', 'BizSight', '/bizsight'),
+            ('branchsight', 'BranchSight', '/branchsight'),
+            ('branchmapper', 'BranchMapper', '/branchmapper'),
+            ('mergermeter', 'MergerMeter', '/mergermeter'),
+            ('dataexplorer', 'DataExplorer', '/dataexplorer'),
+            ('analytics', 'Analytics', '/analytics'),
+            ('admin', 'Administration', '/admin/users'),
+        ]
+        visible_apps = []
+        for shell_key, shell_name, shell_url in shell_app_order:
+            shell_access = get_app_access(shell_key, shell_user_type)
+            if shell_access == 'hidden':
+                continue
+            visible_apps.append({
+                'key': shell_key,
+                'name': shell_name,
+                'url': shell_url,
+                'access': shell_access,
+            })
+
+        return {
+            'visible_apps': visible_apps,
+            'platform_version': get_version('platform'),
+        }
+
     # Daily analytics aggregation trigger
     @app.before_request
     def check_daily_analytics():

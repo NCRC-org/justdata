@@ -165,7 +165,18 @@ def test_no_emoji_in_scope():
 # step that converts a file's inline styles to CSS lowers that file's number;
 # step 8 drives every budget to 0. A file exceeding its budget fails -- a file
 # under budget is fine (it means a later step already improved it).
+#
+# Step 2 addendum: the three new shell partials below (_auth_modal.html,
+# _banners.html, _header.html) carry a small, deliberate budget -- every
+# entry is `style="display: none;"`, the JS-toggle initial state shell.js's
+# verbatim-moved functions expect (they set `.style.display` directly, not
+# a CSS class). This is the functional category the ratchet doesn't target;
+# see the audit's finding 4 and the step 1/2 spec text for the distinction
+# from decorative inline styling. _nav.html and _footer.html need none.
 INLINE_STYLE_BUDGET: dict[str, int] = {
+    "justdata/shared/web/templates/partials/_auth_modal.html": 8,
+    "justdata/shared/web/templates/partials/_banners.html": 4,
+    "justdata/shared/web/templates/partials/_header.html": 6,
     "justdata/apps/analytics/templates/analytics/coalitions.html": 3,
     "justdata/apps/analytics/templates/analytics/costs.html": 4,
     "justdata/apps/analytics/templates/analytics/dashboard.html": 7,
@@ -205,14 +216,11 @@ INLINE_STYLE_BUDGET: dict[str, int] = {
     "justdata/shared/web/templates/admin-dashboard.html": 4,
     "justdata/shared/web/templates/admin-users.html": 24,
     "justdata/shared/web/templates/analysis_template.html": 15,
-    "justdata/shared/web/templates/base_app.html": 17,
-    "justdata/shared/web/templates/bizsight_template.html": 14,
-    "justdata/shared/web/templates/branchsight_template.html": 17,
+    "justdata/shared/web/templates/base_app.html": 0,
     "justdata/shared/web/templates/contact.html": 1,
     "justdata/shared/web/templates/email_verified.html": 4,
     "justdata/shared/web/templates/justdata_landing_page.html": 127,
-    "justdata/shared/web/templates/lendsight_template.html": 17,
-    "justdata/shared/web/templates/member_request_modal.html": 6,
+    "justdata/shared/web/templates/member_request_modal.html": 4,
     "justdata/shared/web/templates/nav_menu.html": 7,
     "justdata/shared/web/templates/report_template.html": 33,
     "justdata/shared/web/templates/shared_header.html": 79,

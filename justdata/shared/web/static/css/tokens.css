@@ -12,8 +12,9 @@
    Part B3 for the full rationale and the WCAG contrast numbers
    this file's semantic pairs are required to satisfy.
 
-   Lucide icon library version pin: recorded in step 2 (this
-   file, step 1, does not load Lucide).
+   Lucide icon library version pin (step 2, gate G7): 1.47.0
+   (https://cdn.jsdelivr.net/npm/lucide@1.47.0/dist/umd/lucide.min.js).
+   Do not upgrade without asking -- see spec Part A4 G7.
    ========================================================= */
 
 :root {
@@ -207,19 +208,19 @@
   --ease:     cubic-bezier(.2,.6,.2,1);
 
   /* -----------------------------------------------------
-     LEGACY ALIASES -- step 1 only, removed in step 7.
-     Values below are the CURRENT shared style.css values so
-     step 1 is visually neutral. Step 2 re-points the dark-blue
-     aliases to --ncrc-blue-500.
+     LEGACY ALIASES -- removed in step 7.
+     Step 1 pointed these at the pre-buildout navy/purple values
+     for zero visual change; step 2 re-points the dark-surface
+     aliases to the brand deep blue and cyan per Part B1.
      ----------------------------------------------------- */
-  --ncrc-navy: #1e3a5f;
-  --ncrc-dark-blue: #1e3a5f;
-  --ncrc-justdata-blue: #1e3a5f;
-  --ncrc-primary-blue: #552d87;
+  --ncrc-navy: var(--ncrc-blue-500);
+  --ncrc-dark-blue: var(--ncrc-blue-500);
+  --ncrc-justdata-blue: var(--ncrc-blue-500);
+  --ncrc-primary-blue: var(--ncrc-blue-500);
   --ncrc-secondary-blue: var(--ncrc-cyan-500);
   --ncrc-accent-red: var(--ncrc-red);
   --ncrc-pink: var(--ncrc-magenta);
-  --ncrc-light-blue: #E6F2FF;
+  --ncrc-light-blue: var(--ncrc-blue-50);
   --ncrc-white: var(--ncrc-neutral-0);
   --ncrc-gray-light: var(--ncrc-neutral-50);
   --ncrc-gray-dark: var(--ncrc-neutral-700);
@@ -232,8 +233,8 @@
      :root without a rewrite; step 7 retires this group and
      rewrites analytics.css onto the semantic tokens directly.
      ----------------------------------------------------- */
-  --analytics-header: var(--ncrc-navy);
-  --analytics-accent: #0077B6;
+  --analytics-header: var(--ncrc-blue-500);
+  --analytics-accent: var(--ncrc-cyan-500);
   --analytics-text: var(--color-fg);
   --analytics-text-secondary: var(--color-fg-muted);
   --analytics-text-muted: var(--color-fg-subtle);
