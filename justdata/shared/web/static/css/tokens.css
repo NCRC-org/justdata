@@ -1,0 +1,257 @@
+/* =========================================================
+   JustData Design Tokens
+   Single source of truth for every color, font, size,
+   spacing, radius, and shadow value on the platform.
+
+   Source: NCRC Brand Guidelines V19b (color palette, page 7;
+   typography, page 8) + the ncrc-design skill kit (neutral
+   scale, cyan scale, deep-blue scale, semantic layer).
+
+   Do not define color/font/size/radius/shadow values anywhere
+   else. See L5 "JustData -- Frontend buildout spec -- 2026-09-21"
+   Part B3 for the full rationale and the WCAG contrast numbers
+   this file's semantic pairs are required to satisfy.
+
+   Lucide icon library version pin: recorded in step 2 (this
+   file, step 1, does not load Lucide).
+   ========================================================= */
+
+:root {
+  /* -----------------------------------------------------
+     BRAND PALETTE -- NCRC Brand Guidelines V19b, page 7
+     ----------------------------------------------------- */
+  --ncrc-cyan:    #2FADE3;
+  --ncrc-black:   #000000;
+  --ncrc-red:     #E82E2E;
+  --ncrc-purple:  #552D87;
+  --ncrc-magenta: #EB2F89;
+  --ncrc-blue:    #034EA0;
+  --ncrc-gray:    #818390;
+  --ncrc-gold:    #FFC23A;
+
+  /* -----------------------------------------------------
+     DEEP BLUE SCALE -- spec-defined from #034EA0
+     (tints mix white, shades mix black)
+     ----------------------------------------------------- */
+  --ncrc-blue-50:  #EBF1F7;
+  --ncrc-blue-100: #CDDCEC;
+  --ncrc-blue-200: #9AB8D9;
+  --ncrc-blue-300: #6895C6;
+  --ncrc-blue-500: #034EA0;
+  --ncrc-blue-600: #034288;
+  --ncrc-blue-700: #023770;
+  --ncrc-blue-800: #022B58;
+
+  /* -----------------------------------------------------
+     CYAN SCALE -- from the ncrc-design kit
+     ----------------------------------------------------- */
+  --ncrc-cyan-50:  #E8F7FC;
+  --ncrc-cyan-100: #BEE7F5;
+  --ncrc-cyan-300: #6EC6EA;
+  --ncrc-cyan-500: #2FADE3;
+  --ncrc-cyan-600: #1F97CC;
+  --ncrc-cyan-700: #167AA8;
+
+  /* -----------------------------------------------------
+     RED TEXT SHADE -- spec-defined; brand red fails AA as
+     body text on white (4.32:1)
+     ----------------------------------------------------- */
+  --ncrc-red-700: #A22020;
+
+  /* -----------------------------------------------------
+     NEUTRAL SCALE -- from the ncrc-design kit
+     ----------------------------------------------------- */
+  --ncrc-neutral-0:   #FFFFFF;
+  --ncrc-neutral-50:  #F6F6F7;
+  --ncrc-neutral-100: #EEEEEE;
+  --ncrc-neutral-200: #DFE0E3;
+  --ncrc-neutral-300: #C4C5CC;
+  --ncrc-neutral-400: #A0A2AC;
+  --ncrc-neutral-500: #818390;
+  --ncrc-neutral-600: #5F6069;
+  --ncrc-neutral-700: #3F4046;
+  --ncrc-neutral-800: #24252A;
+  --ncrc-neutral-900: #0D0E10;
+
+  /* -----------------------------------------------------
+     SEMANTIC -- use these in components, never the raw scale
+     ----------------------------------------------------- */
+  --color-bg:             var(--ncrc-neutral-0);
+  --color-bg-muted:       var(--ncrc-neutral-50);
+  --color-bg-alt:         var(--ncrc-neutral-100);
+  --color-bg-dark:        var(--ncrc-blue-500);     /* header, footer, report bands, sidebar */
+  --color-bg-dark-hover:  var(--ncrc-blue-600);
+  --color-bg-accent:      var(--ncrc-cyan-500);
+  --color-bg-accent-soft: var(--ncrc-cyan-50);
+  --color-bg-brand-soft:  var(--ncrc-blue-50);
+
+  --color-fg:            var(--ncrc-black);
+  --color-fg-muted:      var(--ncrc-neutral-600);  /* 6.24:1 on white -- AA body text */
+  --color-fg-subtle:     var(--ncrc-neutral-500);  /* 3.76:1 -- large text (>=18px) or non-text only */
+  --color-fg-on-dark:    #FFFFFF;                  /* 8.07:1 on blue-500 */
+  --color-fg-on-accent:  var(--ncrc-black);        /* 8.21:1 on cyan; white on cyan FAILS at 2.56 */
+
+  --color-border:        var(--ncrc-neutral-200);
+  --color-border-strong: var(--ncrc-black);
+  --color-divider:       var(--ncrc-neutral-200);
+
+  --color-link:          var(--ncrc-blue-500);
+  --color-link-hover:    var(--ncrc-blue-700);
+  --color-focus-ring:    var(--ncrc-cyan-500);
+
+  --color-success:      #1F8F4C;
+  --color-success-bg:   #E6F4ED;
+  --color-success-text: #1B7E43;   /* darkened from #1F8F4C: raw value contrasts
+                                       3.64:1 on --color-success-bg, below the 4.5:1
+                                       minimum; corrected value hits 4.51:1. Same
+                                       pattern as --ncrc-red-700 above. Confirmed by
+                                       Jad 2026-09-21, see L5 buildout spec step 1 log. */
+
+  --color-warning:      var(--ncrc-gold);
+  --color-warning-bg:   #FFF6E1;
+  --color-warning-text: var(--ncrc-neutral-800);
+
+  --color-danger:      var(--ncrc-red);
+  --color-danger-bg:   #FDEAEA;
+  --color-danger-text: var(--ncrc-red-700);
+
+  --color-info:      var(--ncrc-blue-500);
+  --color-info-bg:   var(--ncrc-blue-50);
+  --color-info-text: var(--ncrc-blue-700);
+
+  /* -----------------------------------------------------
+     TYPE
+     ----------------------------------------------------- */
+  --font-display: 'Barlow Condensed', 'Helvetica Neue Condensed', Impact, sans-serif;
+  --font-body:    'Barlow', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-prose:   Georgia, 'Times New Roman', serif;
+  --font-mono:    ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    800;
+
+  --fs-display-1: clamp(48px, 7vw, 96px);
+  --fs-display-2: clamp(40px, 5.5vw, 72px);
+  --fs-h1: clamp(34px, 4vw, 56px);
+  --fs-h2: clamp(28px, 3vw, 42px);
+  --fs-h3: clamp(22px, 2.2vw, 30px);
+  --fs-h4: 20px;
+  --fs-body-lg: 19px;
+  --fs-body: 16px;
+  --fs-body-sm: 14px;
+  --fs-caption: 12px;
+  --fs-eyebrow: 13px;
+  --fs-prose: 17px;
+
+  --lh-tight:  1.05;
+  --lh-snug:   1.2;
+  --lh-normal: 1.45;
+  --lh-loose:  1.65;
+
+  --ls-tight:  -0.01em;
+  --ls-normal: 0;
+  --ls-wide:   0.08em;
+  --ls-wider:  0.14em;
+
+  /* -----------------------------------------------------
+     SPACING (4px base)
+     ----------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 48px;
+  --s-10: 64px;
+  --s-11: 80px;
+  --s-12: 96px;
+  --s-13: 128px;
+
+  /* -----------------------------------------------------
+     RADII -- NCRC leans sharp
+     ----------------------------------------------------- */
+  --r-none: 0;
+  --r-sm:   2px;
+  --r-md:   4px;
+  --r-lg:   8px;
+  --r-pill: 999px;
+
+  /* -----------------------------------------------------
+     SHADOWS -- flat, editorial
+     ----------------------------------------------------- */
+  --sh-0: none;
+  --sh-1: 0 1px 2px rgba(13,14,16,.06), 0 1px 1px rgba(13,14,16,.04);
+  --sh-2: 0 4px 10px rgba(13,14,16,.08), 0 2px 4px rgba(13,14,16,.04);
+  --sh-3: 0 10px 24px rgba(13,14,16,.10), 0 4px 8px rgba(13,14,16,.06);
+
+  /* -----------------------------------------------------
+     LAYOUT
+     ----------------------------------------------------- */
+  --container-max: 1200px;
+  --container-pad: clamp(16px, 3vw, 32px);
+  --gutter:        24px;
+  --header-h:      64px;
+  --sidebar-w:     280px;
+
+  /* -----------------------------------------------------
+     MOTION
+     ----------------------------------------------------- */
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --ease:     cubic-bezier(.2,.6,.2,1);
+
+  /* -----------------------------------------------------
+     LEGACY ALIASES -- step 1 only, removed in step 7.
+     Values below are the CURRENT shared style.css values so
+     step 1 is visually neutral. Step 2 re-points the dark-blue
+     aliases to --ncrc-blue-500.
+     ----------------------------------------------------- */
+  --ncrc-navy: #1e3a5f;
+  --ncrc-dark-blue: #1e3a5f;
+  --ncrc-justdata-blue: #1e3a5f;
+  --ncrc-primary-blue: #552d87;
+  --ncrc-secondary-blue: var(--ncrc-cyan-500);
+  --ncrc-accent-red: var(--ncrc-red);
+  --ncrc-pink: var(--ncrc-magenta);
+  --ncrc-light-blue: #E6F2FF;
+  --ncrc-white: var(--ncrc-neutral-0);
+  --ncrc-gray-light: var(--ncrc-neutral-50);
+  --ncrc-gray-dark: var(--ncrc-neutral-700);
+  --ncrc-success: var(--color-success);
+  --ncrc-success-hover: #1A7A41;
+
+  /* -----------------------------------------------------
+     ANALYTICS ALIASES -- step 1 only, removed in step 7.
+     Lets apps/analytics/static/css/analytics.css drop its own
+     :root without a rewrite; step 7 retires this group and
+     rewrites analytics.css onto the semantic tokens directly.
+     ----------------------------------------------------- */
+  --analytics-header: var(--ncrc-navy);
+  --analytics-accent: #0077B6;
+  --analytics-text: var(--color-fg);
+  --analytics-text-secondary: var(--color-fg-muted);
+  --analytics-text-muted: var(--color-fg-subtle);
+  --analytics-bg: var(--color-bg);
+  --analytics-bg-alt: var(--color-bg-muted);
+  --analytics-bg-card: var(--color-bg);
+  --analytics-border: var(--color-border);
+  --analytics-border-light: var(--ncrc-neutral-100);
+  --analytics-success: var(--color-success);
+  --analytics-warning: #f57c00;
+  --analytics-danger: var(--color-danger);
+  --analytics-info: var(--color-info);
+  --font-serif: var(--font-prose);
+  --font-sans: var(--font-body);
+  --spacing-xs: var(--s-1);
+  --spacing-sm: var(--s-2);
+  --spacing-md: var(--s-4);
+  --spacing-lg: var(--s-6);
+  --spacing-xl: var(--s-7);
+  --spacing-xxl: var(--s-9);
+}

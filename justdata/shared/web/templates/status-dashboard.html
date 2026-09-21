@@ -10,23 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Mapbox GL JS CSS -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
-    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+
     <style>
-        /* NCRC Brand Colors */
-        :root {
-            --ncrc-primary-blue: #552d87;
-            --ncrc-secondary-blue: #2fade3;
-            --ncrc-accent-red: #e82e2e;
-            --ncrc-pink: #eb2f89;
-            --ncrc-dark-blue: #034ea0;
-            --ncrc-light-blue: #E6F2FF;
-            --ncrc-gold: #ffc23a;
-            --ncrc-gray: #818390;
-            --ncrc-white: #FFFFFF;
-            --ncrc-black: #000000;
-            --ncrc-gray-light: #F5F5F5;
-            --ncrc-gray-dark: #333333;
-        }
+        /* NCRC Brand Colors: now defined once in shared/web/static/css/tokens.css. */
 
         * {
             margin: 0;

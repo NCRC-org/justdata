@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <!-- Firebase SDK for Authentication -->
@@ -22,10 +23,7 @@
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 
     <style>
-        :root {
-            --ncrc-dark-blue: #1E3D5C;
-            --ncrc-primary-blue: #0077B6;
-        }
+        /* :root block removed: values now come from shared/web/static/css/tokens.css. */
 
         * {
             box-sizing: border-box;

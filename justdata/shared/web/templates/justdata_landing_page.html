@@ -14,51 +14,15 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
 
     <style>
         /* ProPublica-Inspired Design - Clean, Professional, Minimal */
-        :root {
-            /* Colors - ProPublica Style */
-            --color-header: #1E3D5C;           /* Navy header bar */
-            --color-primary: #0077B6;          /* Primary accent - Launch buttons, links */
-            --color-primary-hover: #005a8c;    /* Primary hover state */
-            --color-text: #1a1a1a;             /* Main text color */
-            --color-text-secondary: #666666;  /* Secondary text */
-            --color-text-muted: #999999;       /* Muted text */
-            --color-background: #f8f8f8;       /* Page background */
-            --color-card: #ffffff;             /* Card background */
-            --color-border: #e0e0e0;           /* Card borders */
-            --color-locked-bg: #f5f5f5;        /* Locked card background */
-
-            /* Legacy variables for compatibility */
-            --ncrc-primary-blue: #0077B6;
-            --ncrc-secondary-blue: #005a8c;
-            --ncrc-dark-blue: #1E3D5C;
-            --ncrc-light-blue: #E6F2FF;
-            --ncrc-gold: #ffc23a;
-            --ncrc-gray: #666666;
-            --ncrc-white: #FFFFFF;
-            --ncrc-black: #000000;
-            --ncrc-gray-light: #f8f8f8;
-            --ncrc-gray-dark: #1a1a1a;
-
-            /* Typography */
-            --font-serif: Georgia, "Times New Roman", serif;
-            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
-            /* Spacing */
-            --spacing-xs: 8px;
-            --spacing-sm: 12px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            --spacing-xl: 48px;
-
-            /* Border radius */
-            --radius-sm: 4px;
-
-            /* Shadows */
-            --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+        /* :root block removed: values now come from shared/web/static/css/tokens.css.
+           This page's own --color-*/--spacing-*/--radius-sm/--shadow-card-hover names
+           have no tokens.css equivalent and are now unset (accepted temporary breakage
+           per L5 "JustData -- Frontend buildout spec -- 2026-09-21" step 1 log --
+           this whole page is replaced in step 3). */
 
         /* Reset and Base Styles */
         * {
