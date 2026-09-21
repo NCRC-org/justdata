@@ -9,43 +9,13 @@
  */
 
 /* ============================================
-   CSS Variables - ProPublica Color Palette
+   CSS Variables: now defined once, aliased for this file,
+   in shared/web/static/css/tokens.css (the "ANALYTICS ALIASES"
+   group). See L5 "JustData -- Frontend buildout spec --
+   2026-09-21" Part B3 and Part C step 1. That alias group is
+   removed in step 7, when this file is rewritten onto the
+   semantic tokens directly.
    ============================================ */
-:root {
-    /* Primary Colors */
-    --analytics-header: #1E3D5C;      /* Dark navy header */
-    --analytics-accent: #0077B6;       /* Bright blue accent */
-    --analytics-text: #1a1a1a;         /* Near-black text */
-    --analytics-text-secondary: #666666;
-    --analytics-text-muted: #888888;
-
-    /* Background Colors */
-    --analytics-bg: #ffffff;
-    --analytics-bg-alt: #f7f7f7;
-    --analytics-bg-card: #ffffff;
-
-    /* Border Colors */
-    --analytics-border: #e0e0e0;
-    --analytics-border-light: #eeeeee;
-
-    /* Status Colors */
-    --analytics-success: #2e7d32;
-    --analytics-warning: #f57c00;
-    --analytics-danger: #c62828;
-    --analytics-info: #0277bd;
-
-    /* Typography */
-    --font-serif: Georgia, "Times New Roman", Times, serif;
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-
-    /* Spacing */
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
-    --spacing-xl: 32px;
-    --spacing-xxl: 48px;
-}
 
 /* ============================================
    Base Typography

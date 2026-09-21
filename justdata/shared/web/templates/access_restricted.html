@@ -12,15 +12,13 @@
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
 
     <style>
-        :root {
-            --color-header: #1E3D5C;
-            --color-primary: #0077B6;
-            --color-text: #1a1a1a;
-            --color-background: #f8f8f8;
-            --ncrc-dark-blue: #1E3D5C;
-        }
+        /* :root block removed: values now come from shared/web/static/css/tokens.css.
+           This page's own --color-header/--color-primary/--color-text/--color-background
+           names have no tokens.css equivalent and are now unset (accepted temporary
+           breakage per L5 "JustData -- Frontend buildout spec -- 2026-09-21" step 1 log). */
 
         * {
             margin: 0;
