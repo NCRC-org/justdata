@@ -1,66 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ app_name }} - JustData{% endblock %}</title>
-    <meta name="description" content="{{ app_description|default('JustData - AI-powered financial data analysis') }}">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
-    
-    <!-- Shared CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
-    {% block extra_head %}{% endblock %}
-    
-    {% block extra_css %}{% endblock %}
+{% include 'partials/_head.html' %}
 </head>
-<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    {% include 'shared_header.html' %}
-
-    {% include 'member_request_modal.html' %}
+<body class="has-sidebar">
+    {% include 'partials/_banners.html' %}
+    {% include 'partials/_header.html' %}
+    {% include 'partials/_nav.html' %}
 
     {% block before_content %}{% endblock %}
 
-    <!-- Main Content -->
-    <main>
+    <main id="main" class="shell-main">
         {% block content %}{% endblock %}
     </main>
 
     {% block after_content %}{% endblock %}
 
-    <!-- Standardized Footer (matches landing page) -->
-    <footer class="footer" style="background: #1E3D5C; color: white; padding: 0; margin-top: 40px;">
-        <div class="footer-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
-            <!-- Left side: Copyright and links -->
-            <div style="text-align: left;">
-                <p style="margin: 0 0 4px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
-                {% if version %}<p style="margin: 0 0 8px 0; font-size: 11px; color: rgba(255,255,255,0.6);">{{ app_name | default('App') }} v{{ version }}</p>{% endif %}
-                <div style="display: flex; gap: 16px; font-size: 13px;">
-                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="/privacy" style="color: #8bb8ff; text-decoration: none;">Privacy</a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="/terms" style="color: #8bb8ff; text-decoration: none;">Terms</a>
-                </div>
-                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
-                    Created by Jay Richardson &amp; Jad Edlebi
-                </p>
-            </div>
-            <!-- Right side: NCRC Logo -->
-            <div style="flex-shrink: 0;">
-                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; width: auto; opacity: 0.9;">
-            </div>
-        </div>
-    </footer>
+    {% include 'partials/_footer.html' %}
+    {% include 'partials/_auth_modal.html' %}
+    {% include 'member_request_modal.html' %}
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -73,8 +31,14 @@
     <!-- JustData Analytics Event Logging -->
     <script src="{{ url_for('static', filename='js/analytics-events.js') }}"></script>
 
-    {% block extra_js %}{% endblock %}
+    <!-- JustData Shell (nav, header user menu, auth modal, member-request modals).
+         Split into three files to stay under CI's 500-line JS limit; see
+         shell-nav.js's header comment. Order matters: shell-auth.js and
+         shell-member.js call functions shell-nav.js defines at module scope. -->
+    <script src="{{ url_for('static', filename='js/shell-nav.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/shell-auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/shell-member.js') }}"></script>
 
-    {% include 'shared_header_js.html' %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

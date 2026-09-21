@@ -1,0 +1,26 @@
+<!-- Verification / grace-period / pending-request banners. Ids read by shell-auth.js
+     (verification) and shell-member.js (grace-period, pending) -- do not rename.
+     Consolidated here from shared_header.html (verification) and member_request_modal.html
+     (grace-period, pending) per the buildout spec step 2. -->
+<div id="emailVerificationBanner" class="alert alert-warning shell-banner" style="display: none;">
+    <i data-lucide="mail" aria-hidden="true"></i>
+    <span class="shell-banner-text"><strong>Verify your email</strong> to get full staff access. Check your inbox for a verification link.</span>
+    <button type="button" onclick="resendVerificationEmail()" id="resendVerificationBtn" class="btn btn-sm btn-secondary">
+        <span id="resendVerificationText">Resend Email</span>
+        <span id="resendVerificationSpinner" style="display: none;"><i data-lucide="loader-circle" class="is-spinning" aria-hidden="true"></i></span>
+    </button>
+    <button type="button" onclick="checkEmailVerified()" class="btn btn-sm btn-ghost">I've verified</button>
+    <button type="button" onclick="dismissVerificationBanner()" class="shell-banner-dismiss" aria-label="Dismiss"><i data-lucide="x" aria-hidden="true"></i></button>
+</div>
+
+<div id="pendingRequestBanner" class="alert alert-warning shell-banner" style="display: none;">
+    <i data-lucide="clock" aria-hidden="true"></i>
+    <span class="shell-banner-text">Your member access request is pending review. We'll email you when it's processed.</span>
+    <button type="button" onclick="dismissPendingBanner()" class="shell-banner-dismiss" aria-label="Dismiss"><i data-lucide="x" aria-hidden="true"></i></button>
+</div>
+
+<div id="gracePeriodBanner" class="alert alert-warning shell-banner" style="display: none;">
+    <i data-lucide="triangle-alert" aria-hidden="true"></i>
+    <span class="shell-banner-text">Your organization's NCRC membership is currently in a grace period. Please contact your account manager to renew your membership.</span>
+    <button type="button" onclick="dismissGraceBanner()" class="shell-banner-dismiss" aria-label="Dismiss"><i data-lucide="x" aria-hidden="true"></i></button>
+</div>

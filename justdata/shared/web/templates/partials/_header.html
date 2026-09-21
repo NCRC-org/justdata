@@ -1,0 +1,74 @@
+<!-- Shell header. Variables: app_name (optional), breadcrumb_items (optional list of {name, url}). -->
+<header class="shell-header" data-shell="header">
+    <div class="shell-header-inner">
+        <div class="shell-header-left">
+            <button type="button" class="shell-menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navSidebar">
+                <i data-lucide="menu" aria-hidden="true"></i>
+            </button>
+            <a href="/" class="shell-brand">
+                <img src="{{ url_for('static', filename='img/justdata-logo-white.png') }}" alt="JustData" class="shell-brand-logo">
+                {% if app_name and app_name != 'JustData' %}<h1 class="app-name">{{ app_name }}</h1>{% endif %}
+            </a>
+        </div>
+
+        <div class="shell-header-right">
+            <!-- User menu (shown when logged in) -->
+            <div id="userMenuContainer" class="user-menu-container" style="display: none;">
+                <button type="button" id="userMenuToggle" class="user-menu-toggle" onclick="toggleUserMenu()">
+                    <img id="userAvatar" src="" alt="" class="user-avatar" style="display: none;">
+                    <span class="user-details">
+                        <span id="userEmail" class="user-email"></span>
+                        <span id="userTypeBadge" class="user-role"></span>
+                    </span>
+                    <i data-lucide="chevron-down" class="user-menu-arrow" aria-hidden="true"></i>
+                </button>
+                <div id="userDropdownMenu" class="user-dropdown-menu" style="display: none;">
+                    <a href="#" id="requestMemberAccessLink" class="user-dropdown-item" onclick="openMemberRequestModal(); closeUserMenu(); return false;" style="display: none;">
+                        <i data-lucide="id-card" aria-hidden="true"></i>
+                        <span>Request Member Access</span>
+                    </a>
+                    <div id="dropdownDivider" class="user-dropdown-divider" style="display: none;"></div>
+                    <a href="#" class="user-dropdown-item" onclick="JustDataAuth.signOut(); return false;">
+                        <i data-lucide="log-out" aria-hidden="true"></i>
+                        <span>Sign Out</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Sign in (shown when logged out) -->
+            <button type="button" id="loginBtn" class="btn btn-accent btn-sm" onclick="openLoginModal()">
+                <i data-lucide="log-in" aria-hidden="true"></i>
+                <span>Sign In</span>
+            </button>
+
+            <!-- Legacy sign-out button (hidden; dropdown is used when userMenuContainer is present) -->
+            <button type="button" id="logoutBtn" class="btn btn-ghost btn-sm shell-header-ghost" onclick="JustDataAuth.signOut()" style="display: none;">
+                <i data-lucide="log-out" aria-hidden="true"></i>
+                <span>Sign Out</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Breadcrumb navigation -->
+{% if breadcrumb_items %}
+<nav class="breadcrumb-bar" aria-label="Breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        {% for item in breadcrumb_items %}
+            {% if loop.last %}
+                <li class="breadcrumb-item active" aria-current="page">{{ item.name }}</li>
+            {% else %}
+                <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.name }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+{% elif app_name and app_name != 'JustData' %}
+<nav class="breadcrumb-bar" aria-label="Breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ app_name }}</li>
+    </ol>
+</nav>
+{% endif %}
