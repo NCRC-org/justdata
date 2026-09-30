@@ -1,0 +1,44 @@
+{% extends "base_app.html" %}
+
+{% block title %}Apps - JustData | NCRC Data Analysis Platform{% endblock %}
+{% block extra_head %}
+<meta name="description" content="Launch a JustData tool.">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/apps.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Apps</h1>
+</div>
+
+{% for group in app_groups %}
+<section class="apps-group">
+    <h2>{{ group.heading }}</h2>
+    <div class="apps-grid">
+        {% for app in group.apps %}
+        <div class="card app-card{% if app.access == 'locked' %} is-locked{% endif %}" data-app="{{ app.key }}">
+            <h3 class="apps-card-title">
+                {% if app.access == 'locked' %}<i data-lucide="lock" aria-hidden="true"></i>{% endif %}
+                <span>{{ app.name }}</span>
+            </h3>
+            <p class="apps-card-description">{{ app.description }}</p>
+            <div class="apps-card-footer">
+                {% if app.access == 'locked' %}
+                    {% if is_authenticated %}
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openMemberRequestModal()">Request access</button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openLoginModal()">Request access</button>
+                    {% endif %}
+                {% else %}
+                <a href="{{ app.url }}" class="btn btn-primary btn-sm">Open</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+{% endblock %}

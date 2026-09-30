@@ -1,0 +1,70 @@
+/* =========================================================
+   App launcher -- shared/web/templates/apps.html.
+   Tokens only. Card grid moved here from home.css when the home
+   page split into a landing page (home.html) and this launcher,
+   at Jad's request 2026-09-30. See L5 "JustData -- Frontend
+   buildout spec -- 2026-09-21" step-3b revision note.
+   ========================================================= */
+
+.apps-group {
+    margin-bottom: var(--s-9);
+}
+
+.apps-group h2 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-tight);
+    font-size: var(--fs-h2);
+    margin-bottom: var(--s-5);
+}
+
+.apps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-6);
+}
+
+@media (max-width: 1024px) {
+    .apps-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .apps-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.app-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.apps-card-title {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-family: var(--font-display);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-tight);
+    font-size: var(--fs-h4);
+    margin-bottom: var(--s-2);
+}
+
+.apps-card-description {
+    color: var(--color-fg-muted);
+    font-size: var(--fs-body-sm);
+    flex: 1;
+    margin-bottom: var(--s-5);
+}
+
+.apps-card-footer {
+    margin-top: auto;
+}
+
+.app-card.is-locked {
+    background: var(--color-bg-muted);
+}

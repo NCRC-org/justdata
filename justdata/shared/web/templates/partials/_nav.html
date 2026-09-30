@@ -2,12 +2,11 @@
      no client-side access filtering.
 
      `request` is only checked with `is defined`: most routes render via Flask's
-     render_template() (request is always present there), but a few legacy
-     routes (landing(), admin_users(), the access_restricted render inside
-     check_privileged_access) still use a raw jinja2.Environment that never
-     gets Flask's request global -- fixed properly when steps 3/4 convert
-     those routes. Until then this just skips the active-item highlight
-     instead of crashing with UndefinedError. -->
+     render_template() (request is always present there), but admin_users()
+     still uses a raw jinja2.Environment that never gets Flask's request
+     global -- fixed properly when step 4 converts that route. Until then
+     this just skips the active-item highlight there instead of crashing
+     with UndefinedError. -->
 <div class="nav-backdrop" id="navBackdrop" aria-hidden="true"></div>
 
 <nav class="nav-sidebar" id="navSidebar" aria-label="Main navigation" role="navigation">
@@ -20,6 +19,9 @@
     <div class="nav-sidebar-items">
         <a href="/" class="nav-item{% if request is defined and request.path == '/' %} is-active{% endif %}" data-app="home">
             <span>Home</span>
+        </a>
+        <a href="/apps" class="nav-item{% if request is defined and request.path == '/apps' %} is-active{% endif %}" data-app="apps">
+            <span>Apps</span>
         </a>
         {% for app in visible_apps %}
         <a href="{{ app.url }}" class="nav-item{% if app.access == 'locked' %} is-locked{% endif %}{% if request is defined and request.path.startswith(app.url) %} is-active{% endif %}" data-app="{{ app.key }}"{% if app.access == 'locked' %} aria-disabled="true"{% endif %}>
