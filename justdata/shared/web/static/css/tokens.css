@@ -121,6 +121,20 @@
   --color-info-text: var(--ncrc-blue-700);
 
   /* -----------------------------------------------------
+     OVERLAYS -- added after step 3's test backfill found
+     shell.css (step 2) using 8 literal rgba() values with no
+     token. Approved by Jad 2026-09-30, see L5 buildout spec
+     step 3 log addendum. Values are shell.css's own pre-existing
+     ones, named by purpose, not changed.
+     ----------------------------------------------------- */
+  --color-overlay-hover-subtle:  rgba(255, 255, 255, 0.1);
+  --color-overlay-hover:         rgba(255, 255, 255, 0.12);
+  --color-overlay-border:        rgba(255, 255, 255, 0.25);
+  --color-overlay-border-strong: rgba(255, 255, 255, 0.3);
+  --color-fg-on-dark-muted:      rgba(255, 255, 255, 0.9);
+  --color-scrim:                 rgba(13, 14, 16, 0.5);
+
+  /* -----------------------------------------------------
      TYPE
      ----------------------------------------------------- */
   --font-display: 'Barlow Condensed', 'Helvetica Neue Condensed', Impact, sans-serif;

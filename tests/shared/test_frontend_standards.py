@@ -25,14 +25,16 @@ later steps land is the same pattern this file already uses for
 INLINE_STYLE_BUDGET (a ratcheting per-file budget) and test_no_emoji_in_scope
 (xfail until the step that fixes it).
 
-One real, unresolved finding surfaced while writing item 2's test (see that
-test's own docstring): `shell.css` (step 2) has 8 literal `rgba(255,255,255,
-...)` / `rgba(13,14,16,0.5)` overlay values with no Part B3 token equivalent
--- translucent-white and dark-scrim overlays aren't in the locked palette.
-Introducing one is a new color decision, which Part A2 says needs Jad, not
-a test-backfill call. `shell.css` is therefore deliberately left OUT of
-item 2's enforced file set for now; flagged in the PR body for a decision
-rather than silently fixed or silently ignored.
+UPDATE (same PR, same day): writing item 2's test found `shell.css` (step 2)
+using 8 literal `rgba(255,255,255,...)` / `rgba(13,14,16,0.5)` overlay
+values with no Part B3 token equivalent. Flagged to Jad rather than fixed
+unilaterally, since Part B is locked and this meant a new color decision;
+Jad approved adding an overlay token group. Part B3 now has
+`--color-overlay-hover-subtle`, `--color-overlay-hover`,
+`--color-overlay-border`, `--color-overlay-border-strong`,
+`--color-fg-on-dark-muted` and `--color-scrim` (shell.css's own
+pre-existing values, named by purpose -- nothing visually changed).
+`shell.css` is now fully on tokens and is in item 2's enforced file set.
 
 Implemented here: items 1, 6, 7, 13 (step 1); 11, 12-partial (step 3);
 2, 3, 4, 5, 8, 9, 10 (backfilled this commit, scoped as described above).
@@ -559,10 +561,7 @@ FONT_FAMILY_LITERAL_RE = re.compile(r"font-family:\s*(['\"]?)(?!var\()[A-Za-z]")
 # currentColor/transparent/inherit (not literal colors).
 TOKEN_ONLY_CSS_FILES = [
     "justdata/shared/web/static/css/home.css",
-    # shell.css is deliberately NOT here -- see the module docstring's
-    # HISTORY note. It has 8 literal rgba(255,255,255,...)/rgba(13,14,16,
-    # 0.5) overlay values with no Part B3 token, a real gap this backfill
-    # surfaced but does not fix (that's a new color decision for Jad).
+    "justdata/shared/web/static/css/shell.css",
 ]
 
 
