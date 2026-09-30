@@ -3,14 +3,13 @@ Main Flask application for JustData.
 Serves as the central entry point with all sub-apps as blueprints.
 """
 
-from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect, make_response
+from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect
 from justdata.main.auth import (
     get_user_type, set_user_type, get_app_access, get_user_permissions,
     auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
     login_required, admin_required
 )
 from justdata.main.config import MainConfig
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import os
 
 
@@ -156,15 +155,7 @@ def create_app():
                 }), 403
 
             # For regular requests, render the restricted access page
-            from flask import url_for
-            env = Environment(
-                loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
-                autoescape=select_autoescape(['html', 'xml'])
-            )
-            env.globals['url_for'] = url_for
-
-            template = env.get_template('access_restricted.html')
-            return make_response(template.render(user_type=get_user_type())), 200
+            return render_template('access_restricted.html'), 200
 
         return None
 
@@ -191,73 +182,87 @@ def create_app():
     # Main landing page route
     @app.route('/')
     def landing():
-        """Main landing page with app selection."""
-        from jinja2 import Environment, FileSystemLoader, select_autoescape
-        from flask import url_for
-        
-        user_type = get_user_type()
-        permissions = get_user_permissions(user_type)
-        
-        # Create Jinja2 environment with Flask's url_for function
-        env = Environment(
-            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
-        
-        # Add Flask's url_for to the template globals
-        env.globals['url_for'] = url_for
-        
-        template = env.get_template('justdata_landing_page.html')
+        """Main landing page with app selection.
+
+        app_groups is built here (not in inject_shell(), which serves the
+        nav sidebar's flat list) because the home page needs per-app
+        descriptions and a fixed group/heading structure the nav doesn't
+        carry. See L5 "JustData -- Frontend buildout spec -- 2026-09-21"
+        Part C step 3.
+        """
         from justdata.shared.utils.versions import get_version
-        return template.render(
-            user_type=user_type,
-            permissions=permissions,
-            platform_version=get_version('platform')
+
+        user_type = get_user_type()
+
+        home_group_defs = [
+            ('Reports', [
+                ('lendsight', 'LendSight',
+                 'Mortgage lending analysis with AI-generated narratives identifying disparities and compliance concerns.',
+                 '/lendsight'),
+                ('bizsight', 'BizSight',
+                 'Small business lending patterns using CRA data with AI-powered gap analysis.',
+                 '/bizsight'),
+                ('branchsight', 'BranchSight',
+                 'Bank branch network analysis tracking openings, closings, and market concentration.',
+                 '/branchsight'),
+            ]),
+            ('Data tools', [
+                ('branchmapper', 'BranchMapper',
+                 'Interactive map of branch locations with demographic overlays and filters.',
+                 '/branchmapper'),
+                ('dataexplorer', 'DataExplorer',
+                 'Query the full HMDA dataset with custom filters. Export raw data for your own analysis.',
+                 '/dataexplorer'),
+                ('mergermeter', 'MergerMeter',
+                 'Bank merger impact analysis with CBA goal recommendations and peer comparisons.',
+                 '/mergermeter'),
+            ]),
+            ('Staff tools', [
+                ('analytics', 'Analytics',
+                 'Monitor platform usage, report generation, and feature adoption.',
+                 '/analytics'),
+                ('admin', 'Administration',
+                 'Manage user accounts, permissions, and system integrations.',
+                 '/admin/users'),
+            ]),
+        ]
+
+        app_groups = []
+        for heading, group_apps in home_group_defs:
+            visible = []
+            for key, name, description, url in group_apps:
+                access = get_app_access(key, user_type)
+                if access == 'hidden':
+                    continue
+                visible.append({
+                    'key': key,
+                    'name': name,
+                    'description': description,
+                    'url': url,
+                    'access': access,
+                })
+            if visible:
+                app_groups.append({'heading': heading, 'apps': visible})
+
+        return render_template(
+            'home.html',
+            app_name='JustData',
+            app_description='Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.',
+            app_groups=app_groups,
+            platform_version=get_version('platform'),
         )
-    
+
     # About page route
     @app.route('/about')
     def about():
         """About page."""
-        from jinja2 import Environment, FileSystemLoader, select_autoescape
-        from flask import url_for
-        
-        user_type = get_user_type()
-        permissions = get_user_permissions(user_type)
-        
-        # Create Jinja2 environment with Flask's url_for function
-        env = Environment(
-            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
-        
-        # Add Flask's url_for to the template globals
-        env.globals['url_for'] = url_for
-        
-        template = env.get_template('about.html')
-        return template.render(user_type=user_type, permissions=permissions)
-    
+        return render_template('about.html')
+
     # Contact page route
     @app.route('/contact')
     def contact():
         """Contact Us page."""
-        from jinja2 import Environment, FileSystemLoader, select_autoescape
-        from flask import url_for
-
-        user_type = get_user_type()
-        permissions = get_user_permissions(user_type)
-
-        # Create Jinja2 environment with Flask's url_for function
-        env = Environment(
-            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
-
-        # Add Flask's url_for to the template globals
-        env.globals['url_for'] = url_for
-
-        template = env.get_template('contact.html')
-        return template.render(user_type=user_type, permissions=permissions)
+        return render_template('contact.html')
 
     # Email verified landing page
     @app.route('/email-verified')
@@ -267,23 +272,7 @@ def create_app():
         Firebase handles the actual verification - this page just
         prompts the user to refresh their session.
         """
-        from jinja2 import Environment, FileSystemLoader, select_autoescape
-        from flask import url_for
-
-        user_type = get_user_type()
-        permissions = get_user_permissions(user_type)
-
-        # Create Jinja2 environment with Flask's url_for function
-        env = Environment(
-            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
-
-        # Add Flask's url_for to the template globals
-        env.globals['url_for'] = url_for
-
-        template = env.get_template('email_verified.html')
-        return template.render(user_type=user_type, permissions=permissions)
+        return render_template('email_verified.html')
 
     # Register blueprints
     register_blueprints(app)

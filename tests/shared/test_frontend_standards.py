@@ -16,10 +16,22 @@ Part D items NOT yet implemented here, and the step that adds them:
   8  No <style> blocks in converted templates                       -- step 2 (ratchets per step)
   9  Every converted entry template extends base_app.html           -- step 2 (ratchets per step)
   10 DOM-ID contract (shell renders every ID auth.js/shell.js need) -- step 2
-  11 Home page gating (per-user-type data-app sets)                 -- step 3
-  12 Surfaces render (status-code table per app)                    -- steps 3-7
 
-Implemented here (step 1): items 1, 6, 7, 13.
+NOTE added in step 3: items 2, 3, 4, 5, 8, 9 and 10 above are still not
+implemented in this file even though step 2 (PR #193, merged) is the step
+that was supposed to add them, and both step 2's PR acceptance checklist and
+its L5 log state they pass. They do not exist anywhere in the repo as of
+this commit (confirmed: `git show 5b9883b -- tests/shared/test_frontend_standards.py`
+touches only the INLINE_STYLE_BUDGET dict). This is a real gap between what
+step 2 claimed was verified and what actually landed on `testing` -- not
+something step 3 fixes (out of this step's file list/scope), but flagged
+here, in the step 3 PR body, and in the step 3 L5 log for Jad. Items 11 and
+12 below are implemented now because step 3 is explicitly their step.
+
+Implemented here: items 1, 6, 7, 13 (step 1); 11, 12-partial (step 3, scoped
+to the routes step 3 actually converts -- '/', '/about', '/contact',
+'/email-verified'; the rest of item 12's table is added as steps 4-7 convert
+their routes).
 """
 from __future__ import annotations
 
@@ -212,14 +224,15 @@ INLINE_STYLE_BUDGET: dict[str, int] = {
     "justdata/apps/mergermeter/templates/partials/_analysis_template_scripts.html": 27,
     "justdata/apps/mergermeter/templates/partials/_mergermeter_report_main.html": 7,
     "justdata/apps/mergermeter/templates/partials/_mergermeter_report_scripts.html": 65,
-    "justdata/shared/web/templates/access_restricted.html": 67,
+    "justdata/shared/web/templates/access_restricted.html": 2,
     "justdata/shared/web/templates/admin-dashboard.html": 4,
     "justdata/shared/web/templates/admin-users.html": 24,
     "justdata/shared/web/templates/analysis_template.html": 15,
+    "justdata/shared/web/templates/about.html": 0,
     "justdata/shared/web/templates/base_app.html": 0,
     "justdata/shared/web/templates/contact.html": 1,
-    "justdata/shared/web/templates/email_verified.html": 4,
-    "justdata/shared/web/templates/justdata_landing_page.html": 127,
+    "justdata/shared/web/templates/email_verified.html": 3,
+    "justdata/shared/web/templates/home.html": 0,
     "justdata/shared/web/templates/member_request_modal.html": 4,
     "justdata/shared/web/templates/nav_menu.html": 7,
     "justdata/shared/web/templates/report_template.html": 33,
@@ -374,3 +387,118 @@ def test_color_fg_on_accent_is_black_not_white():
     black."""
     raw = _parse_tokens_css()
     assert _resolve_hex("color-fg-on-accent", raw) == "#000000"
+
+
+# ---------------------------------------------------------------------------
+# Part D item 11 (step 3): home page gating. `/` is built server-side in
+# landing() from ACCESS_MATRIX via get_app_access() -- no client-side
+# filtering exists any more. This mirrors the grouping in main/app.py's
+# landing() exactly (see that function's home_group_defs).
+# ---------------------------------------------------------------------------
+
+HOME_PAGE_APPS = [
+    "lendsight", "bizsight", "branchsight",
+    "branchmapper", "dataexplorer", "mergermeter",
+    "analytics", "admin",
+]
+
+# Marker only ever present on the real home page (the stats bar section),
+# never on the platform-wide access_restricted.html page a non-privileged
+# user gets instead -- see main/app.py's check_privileged_access.
+HOME_PAGE_MARKER = b'id="platformStats"'
+
+
+def test_home_page_gating():
+    """Part D item 11: for every VALID_USER_TYPE, `/` shows exactly the
+    apps ACCESS_MATRIX grants (and nothing else), or -- for the five
+    non-privileged types, which check_privileged_access blocks from every
+    route including `/` regardless of ACCESS_MATRIX -- the platform-wide
+    restricted page, unchanged by this step. This is the same pattern
+    tests/apps/dotlender/test_dotlender_smoke.py already uses."""
+    from justdata.main.app import create_app
+    from justdata.main.auth import VALID_USER_TYPES, PRIVILEGED_ROLES, get_app_access
+
+    app = create_app()
+    app.config["TESTING"] = True
+
+    for user_type in VALID_USER_TYPES:
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess["firebase_user"] = {
+                "uid": f"test-{user_type}",
+                "email": f"test-{user_type}@example.org",
+                "email_verified": True,
+            }
+            sess["user_type"] = user_type
+
+        resp = client.get("/")
+        assert resp.status_code == 200, f"{user_type}: expected 200, got {resp.status_code}"
+        body = resp.data
+
+        if user_type not in PRIVILEGED_ROLES:
+            assert HOME_PAGE_MARKER not in body, (
+                f"{user_type}: non-privileged user reached the real home page "
+                "(check_privileged_access should have blocked it)"
+            )
+            continue
+
+        assert HOME_PAGE_MARKER in body, f"{user_type}: expected the real home page"
+
+        for key in HOME_PAGE_APPS:
+            access = get_app_access(key, user_type)
+            marker = f'data-app="{key}"'.encode()
+            if access == "hidden":
+                assert marker not in body, f"{user_type}/{key}: expected hidden, but card is present"
+            else:
+                assert marker in body, f"{user_type}/{key}: expected visible ({access}), but card is missing"
+                if access == "locked":
+                    locked_marker = f'data-app="{key}"'.encode()
+                    idx = body.find(locked_marker)
+                    # the card div carries "is-locked" on the same element as data-app
+                    line_start = body.rfind(b"<div", 0, idx)
+                    line_end = body.find(b">", idx)
+                    assert b"is-locked" in body[line_start:line_end], (
+                        f"{user_type}/{key}: locked app card missing is-locked class"
+                    )
+
+
+# ---------------------------------------------------------------------------
+# Part D item 12 (step 3 slice): surfaces render. Only the routes step 3
+# actually converts to the shell -- '/', '/about', '/contact',
+# '/email-verified' -- are covered here. Steps 4-7 add their own routes to
+# this table as each converts; do not add rows here for routes that don't
+# extend base_app.html yet (they will fail the data-shell="header" check).
+# ---------------------------------------------------------------------------
+
+STEP3_SHELL_ROUTES = ["/", "/about", "/contact", "/email-verified"]
+SHELL_HEADER_MARKER = b'data-shell="header"'
+
+
+def test_step3_surfaces_render():
+    """Part D item 12 (partial): every step-3-converted route renders 200
+    for admin and for public_registered (the latter via the unchanged
+    platform-wide restricted page, itself now also on the shell), and both
+    carry the shell header marker."""
+    from justdata.main.app import create_app
+
+    app = create_app()
+    app.config["TESTING"] = True
+
+    for user_type in ("admin", "public_registered"):
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess["firebase_user"] = {
+                "uid": f"test-{user_type}",
+                "email": f"test-{user_type}@example.org",
+                "email_verified": True,
+            }
+            sess["user_type"] = user_type
+
+        for path in STEP3_SHELL_ROUTES:
+            resp = client.get(path)
+            assert resp.status_code == 200, f"{user_type} {path}: expected 200, got {resp.status_code}"
+            assert SHELL_HEADER_MARKER in resp.data, f"{user_type} {path}: missing shell header marker"
+            if user_type == "public_registered":
+                assert HOME_PAGE_MARKER not in resp.data, (
+                    f"public_registered {path}: reached real page content, expected the restricted page"
+                )
