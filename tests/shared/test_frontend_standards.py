@@ -3,23 +3,39 @@ Acceptance tests for the JustData frontend buildout.
 
 Spec: L5 "JustData -- Frontend buildout spec -- 2026-09-21" Part D. Each test
 function is tagged with the buildout step that introduces it, matching Part D's
-numbering. This file is created in step 1 and extended in later steps -- do not
-add a step-N+ test before that step's PR, since some of them depend on things
-that don't exist yet (e.g. the pinned Lucide version from step 2's gate G7, the
-shell's DOM-ID contract from step 2, ACCESS_MATRIX-driven home page from step 3).
+numbering. This file is created in step 1 and extended in later steps.
 
-Part D items NOT yet implemented here, and the step that adds them:
-  2  Token values only (color literals banned outside tokens.css)   -- step 2
-  3  No forbidden CSS (gradients/backdrop-filter/blur/scale/radii) -- step 2 (ratchets per step)
-  4  Fonts (no Inter link; _head.html carries the Barlow link)      -- step 2
-  5  Icons (no Font Awesome; every data-lucide name is valid)       -- step 2
-  8  No <style> blocks in converted templates                       -- step 2 (ratchets per step)
-  9  Every converted entry template extends base_app.html           -- step 2 (ratchets per step)
-  10 DOM-ID contract (shell renders every ID auth.js/shell.js need) -- step 2
-  11 Home page gating (per-user-type data-app sets)                 -- step 3
-  12 Surfaces render (status-code table per app)                    -- steps 3-7
+HISTORY: step 2 (PR #193, merged) claimed in its own PR body and L5 log to
+have added items 2, 3, 4, 5, 8, 9 and 10 (e.g. "A test in Part D renders
+base_app.html and asserts every ID above is present"). It did not --
+`git show 5b9883b -- tests/shared/test_frontend_standards.py` touches only
+the INLINE_STYLE_BUDGET dict. Step 3 flagged this gap without fixing it
+(out of that step's file list). This commit backfills items 2, 3, 4, 5, 8,
+9 and 10 at Jad's explicit request, on top of step 3's own PR #194.
 
-Implemented here (step 1): items 1, 6, 7, 13.
+Every item below is scoped to what has ACTUALLY been converted onto tokens
+and the shell as of this commit -- not the full IN_SCOPE_TEMPLATES/CSS set,
+which still includes plenty of steps-4-through-7 territory (LendSight/
+BizSight/BranchSight/MergerMeter's own analysis templates, analytics.css,
+the bulk of style.css) that still has Font Awesome, Inter, literal hex
+colors, and non-token radii by design -- that is what those later steps
+exist to fix, per Part D's own "ratchets per step" language for items 2,
+3, 8 and 9. Scoping these checks to the converted set and widening them as
+later steps land is the same pattern this file already uses for
+INLINE_STYLE_BUDGET (a ratcheting per-file budget) and test_no_emoji_in_scope
+(xfail until the step that fixes it).
+
+One real, unresolved finding surfaced while writing item 2's test (see that
+test's own docstring): `shell.css` (step 2) has 8 literal `rgba(255,255,255,
+...)` / `rgba(13,14,16,0.5)` overlay values with no Part B3 token equivalent
+-- translucent-white and dark-scrim overlays aren't in the locked palette.
+Introducing one is a new color decision, which Part A2 says needs Jad, not
+a test-backfill call. `shell.css` is therefore deliberately left OUT of
+item 2's enforced file set for now; flagged in the PR body for a decision
+rather than silently fixed or silently ignored.
+
+Implemented here: items 1, 6, 7, 13 (step 1); 11, 12-partial (step 3);
+2, 3, 4, 5, 8, 9, 10 (backfilled this commit, scoped as described above).
 """
 from __future__ import annotations
 
@@ -212,14 +228,15 @@ INLINE_STYLE_BUDGET: dict[str, int] = {
     "justdata/apps/mergermeter/templates/partials/_analysis_template_scripts.html": 27,
     "justdata/apps/mergermeter/templates/partials/_mergermeter_report_main.html": 7,
     "justdata/apps/mergermeter/templates/partials/_mergermeter_report_scripts.html": 65,
-    "justdata/shared/web/templates/access_restricted.html": 67,
+    "justdata/shared/web/templates/access_restricted.html": 2,
     "justdata/shared/web/templates/admin-dashboard.html": 4,
     "justdata/shared/web/templates/admin-users.html": 24,
     "justdata/shared/web/templates/analysis_template.html": 15,
+    "justdata/shared/web/templates/about.html": 0,
     "justdata/shared/web/templates/base_app.html": 0,
     "justdata/shared/web/templates/contact.html": 1,
-    "justdata/shared/web/templates/email_verified.html": 4,
-    "justdata/shared/web/templates/justdata_landing_page.html": 127,
+    "justdata/shared/web/templates/email_verified.html": 3,
+    "justdata/shared/web/templates/home.html": 0,
     "justdata/shared/web/templates/member_request_modal.html": 4,
     "justdata/shared/web/templates/nav_menu.html": 7,
     "justdata/shared/web/templates/report_template.html": 33,
@@ -374,3 +391,369 @@ def test_color_fg_on_accent_is_black_not_white():
     black."""
     raw = _parse_tokens_css()
     assert _resolve_hex("color-fg-on-accent", raw) == "#000000"
+
+
+# ---------------------------------------------------------------------------
+# Part D item 11 (step 3): home page gating. `/` is built server-side in
+# landing() from ACCESS_MATRIX via get_app_access() -- no client-side
+# filtering exists any more. This mirrors the grouping in main/app.py's
+# landing() exactly (see that function's home_group_defs).
+# ---------------------------------------------------------------------------
+
+HOME_PAGE_APPS = [
+    "lendsight", "bizsight", "branchsight",
+    "branchmapper", "dataexplorer", "mergermeter",
+    "analytics", "admin",
+]
+
+# Marker only ever present on the real home page (the stats bar section),
+# never on the platform-wide access_restricted.html page a non-privileged
+# user gets instead -- see main/app.py's check_privileged_access.
+HOME_PAGE_MARKER = b'id="platformStats"'
+
+
+def test_home_page_gating():
+    """Part D item 11: for every VALID_USER_TYPE, `/` shows exactly the
+    apps ACCESS_MATRIX grants (and nothing else), or -- for the five
+    non-privileged types, which check_privileged_access blocks from every
+    route including `/` regardless of ACCESS_MATRIX -- the platform-wide
+    restricted page, unchanged by this step. This is the same pattern
+    tests/apps/dotlender/test_dotlender_smoke.py already uses."""
+    from justdata.main.app import create_app
+    from justdata.main.auth import VALID_USER_TYPES, PRIVILEGED_ROLES, get_app_access
+
+    app = create_app()
+    app.config["TESTING"] = True
+
+    for user_type in VALID_USER_TYPES:
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess["firebase_user"] = {
+                "uid": f"test-{user_type}",
+                "email": f"test-{user_type}@example.org",
+                "email_verified": True,
+            }
+            sess["user_type"] = user_type
+
+        resp = client.get("/")
+        assert resp.status_code == 200, f"{user_type}: expected 200, got {resp.status_code}"
+        body = resp.data
+
+        if user_type not in PRIVILEGED_ROLES:
+            assert HOME_PAGE_MARKER not in body, (
+                f"{user_type}: non-privileged user reached the real home page "
+                "(check_privileged_access should have blocked it)"
+            )
+            continue
+
+        assert HOME_PAGE_MARKER in body, f"{user_type}: expected the real home page"
+
+        for key in HOME_PAGE_APPS:
+            access = get_app_access(key, user_type)
+            marker = f'data-app="{key}"'.encode()
+            if access == "hidden":
+                assert marker not in body, f"{user_type}/{key}: expected hidden, but card is present"
+            else:
+                assert marker in body, f"{user_type}/{key}: expected visible ({access}), but card is missing"
+                if access == "locked":
+                    locked_marker = f'data-app="{key}"'.encode()
+                    idx = body.find(locked_marker)
+                    # the card div carries "is-locked" on the same element as data-app
+                    line_start = body.rfind(b"<div", 0, idx)
+                    line_end = body.find(b">", idx)
+                    assert b"is-locked" in body[line_start:line_end], (
+                        f"{user_type}/{key}: locked app card missing is-locked class"
+                    )
+
+
+# ---------------------------------------------------------------------------
+# Part D item 12 (step 3 slice): surfaces render. Only the routes step 3
+# actually converts to the shell -- '/', '/about', '/contact',
+# '/email-verified' -- are covered here. Steps 4-7 add their own routes to
+# this table as each converts; do not add rows here for routes that don't
+# extend base_app.html yet (they will fail the data-shell="header" check).
+# ---------------------------------------------------------------------------
+
+STEP3_SHELL_ROUTES = ["/", "/about", "/contact", "/email-verified"]
+SHELL_HEADER_MARKER = b'data-shell="header"'
+
+
+def test_step3_surfaces_render():
+    """Part D item 12 (partial): every step-3-converted route renders 200
+    for admin and for public_registered (the latter via the unchanged
+    platform-wide restricted page, itself now also on the shell), and both
+    carry the shell header marker."""
+    from justdata.main.app import create_app
+
+    app = create_app()
+    app.config["TESTING"] = True
+
+    for user_type in ("admin", "public_registered"):
+        client = app.test_client()
+        with client.session_transaction() as sess:
+            sess["firebase_user"] = {
+                "uid": f"test-{user_type}",
+                "email": f"test-{user_type}@example.org",
+                "email_verified": True,
+            }
+            sess["user_type"] = user_type
+
+        for path in STEP3_SHELL_ROUTES:
+            resp = client.get(path)
+            assert resp.status_code == 200, f"{user_type} {path}: expected 200, got {resp.status_code}"
+            assert SHELL_HEADER_MARKER in resp.data, f"{user_type} {path}: missing shell header marker"
+            if user_type == "public_registered":
+                assert HOME_PAGE_MARKER not in resp.data, (
+                    f"public_registered {path}: reached real page content, expected the restricted page"
+                )
+
+
+# ---------------------------------------------------------------------------
+# Backfill (this commit): Part D items 2, 3, 4, 5, 8, 9, 10 -- see the module
+# docstring's HISTORY note for why these are landing now instead of step 2.
+#
+# SHELL_PARTIALS / SHELL_ENTRY_TEMPLATES / SHELL_JS define "converted" for
+# every item below: the base layout, its partials, the five step-3 entry
+# templates, and the buildout's own JS files (shell-nav/auth/member.js,
+# home.js). auth.js and analytics-events.js are do-not-touch per Part A2 and
+# were never part of this buildout's icon/token conversion, so they're
+# excluded from every check here, same as they're excluded from editing.
+# ---------------------------------------------------------------------------
+
+SHELL_PARTIALS = [
+    "justdata/shared/web/templates/partials/_head.html",
+    "justdata/shared/web/templates/partials/_header.html",
+    "justdata/shared/web/templates/partials/_nav.html",
+    "justdata/shared/web/templates/partials/_footer.html",
+    "justdata/shared/web/templates/partials/_auth_modal.html",
+    "justdata/shared/web/templates/partials/_banners.html",
+]
+
+SHELL_ENTRY_TEMPLATES = [
+    "justdata/shared/web/templates/home.html",
+    "justdata/shared/web/templates/about.html",
+    "justdata/shared/web/templates/contact.html",
+    "justdata/shared/web/templates/access_restricted.html",
+    "justdata/shared/web/templates/email_verified.html",
+]
+
+SHELL_BASE_TEMPLATE = ["justdata/shared/web/templates/base_app.html"]
+
+SHELL_JS = [
+    "justdata/shared/web/static/js/shell-nav.js",
+    "justdata/shared/web/static/js/shell-auth.js",
+    "justdata/shared/web/static/js/shell-member.js",
+    "justdata/shared/web/static/js/home.js",
+]
+
+
+def _read(rel_path: str) -> str:
+    return (REPO_ROOT / rel_path).read_text(encoding="utf-8")
+
+
+HEX_LITERAL_RE = re.compile(r"#[0-9A-Fa-f]{3,8}\b")
+RGB_LITERAL_RE = re.compile(r"\brgba?\([0-9]")
+FONT_FAMILY_LITERAL_RE = re.compile(r"font-family:\s*(['\"]?)(?!var\()[A-Za-z]")
+
+# Part D item 2's own allowlist: tokens.css's shadow rgba values, plus
+# currentColor/transparent/inherit (not literal colors).
+TOKEN_ONLY_CSS_FILES = [
+    "justdata/shared/web/static/css/home.css",
+    # shell.css is deliberately NOT here -- see the module docstring's
+    # HISTORY note. It has 8 literal rgba(255,255,255,...)/rgba(13,14,16,
+    # 0.5) overlay values with no Part B3 token, a real gap this backfill
+    # surfaced but does not fix (that's a new color decision for Jad).
+]
+
+
+def test_token_values_only_in_converted_css():
+    """Part D item 2, scoped to CSS files fully converted onto tokens as of
+    this commit (see module docstring). Every color must be var(--...);
+    no hex literal, no literal rgb()/rgba() channels, no literal
+    font-family name."""
+    failures = []
+    for rel in TOKEN_ONLY_CSS_FILES:
+        text = _read(rel)
+        if HEX_LITERAL_RE.search(text):
+            failures.append(f"{rel}: contains a hex color literal")
+        if RGB_LITERAL_RE.search(text):
+            failures.append(f"{rel}: contains a literal rgb()/rgba()")
+        if FONT_FAMILY_LITERAL_RE.search(text):
+            failures.append(f"{rel}: contains a literal font-family name")
+    assert not failures, "token-only violations:\n" + "\n".join(failures)
+
+
+FORBIDDEN_CSS_RE = re.compile(
+    r"linear-gradient|radial-gradient|backdrop-filter|filter:\s*blur|"
+    r"transform:\s*scale|border-radius:\s*(6px|12px|15px|20px)\b"
+)
+
+
+def test_no_forbidden_css_in_converted_files():
+    """Part D item 3, scoped to the converted shell templates/CSS (ratchets
+    per step as later steps convert more files). No gradients,
+    backdrop-filter, blur, transform:scale, or the specific banned radii."""
+    files = (
+        SHELL_BASE_TEMPLATE + SHELL_PARTIALS + SHELL_ENTRY_TEMPLATES
+        + ["justdata/shared/web/static/css/shell.css", "justdata/shared/web/static/css/home.css"]
+    )
+    failures = []
+    for rel in files:
+        text = _read(rel)
+        m = FORBIDDEN_CSS_RE.search(text)
+        if m:
+            failures.append(f"{rel}: forbidden pattern {m.group(0)!r}")
+    assert not failures, "forbidden CSS found:\n" + "\n".join(failures)
+
+
+INTER_LINK_RE = re.compile(r"fonts\.googleapis\.com/css2\?family=Inter")
+BARLOW_LINK = (
+    "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700"
+    "&family=Barlow+Condensed:wght@600;700;800&display=swap"
+)
+
+
+def test_fonts_no_inter_in_converted_templates():
+    """Part D item 4, scoped to the converted shell templates. No Inter
+    Google Fonts link; _head.html carries the exact Part B2 Barlow URL
+    exactly once."""
+    failures = []
+    for rel in SHELL_BASE_TEMPLATE + SHELL_PARTIALS + SHELL_ENTRY_TEMPLATES:
+        if INTER_LINK_RE.search(_read(rel)):
+            failures.append(f"{rel}: still links the Inter font")
+    assert not failures, "Inter font link found:\n" + "\n".join(failures)
+
+    head_text = _read("justdata/shared/web/templates/partials/_head.html")
+    assert head_text.count(BARLOW_LINK) == 1, (
+        "_head.html must carry the exact Part B2 Barlow URL exactly once"
+    )
+
+
+FA_CLASS_RE = re.compile(r"\bfa[srlb]?\s+fa-|\bfa-[a-z]")
+DATA_LUCIDE_RE = re.compile(r'data-lucide=\\?["\']([a-z0-9-]+)')
+JS_BLOCK_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
+
+
+def _strip_js_block_comments(text: str) -> str:
+    """shell-auth.js and shell-member.js both document, in their own header
+    comments, that FA markup like `fas fa-spinner` used to be there and was
+    swapped for Lucide -- real history, not a violation. Strip /* */ blocks
+    before scanning .js files so that documentation doesn't trip the FA
+    check meant for actual markup/code."""
+    return JS_BLOCK_COMMENT_RE.sub("", text)
+
+LUCIDE_ICONS_FIXTURE = (
+    REPO_ROOT / "tests" / "shared" / "fixtures" / "lucide-1.47.0-icons.txt"
+)
+
+
+def _valid_lucide_names() -> set[str]:
+    return set(LUCIDE_ICONS_FIXTURE.read_text(encoding="utf-8").split())
+
+
+def test_icons_no_font_awesome_and_lucide_names_valid():
+    """Part D item 5, scoped to the converted shell templates/JS. No
+    font-awesome references or fa-* classes; every data-lucide value is a
+    real icon name in the pinned Lucide 1.47.0 build (gate G7). The fixture
+    is generated from the actual npm package's iconsAndAliases.mjs export
+    list (canonical names + aliases, kebab-cased and cross-checked against
+    each export's own file name) -- see the fixture's generation note below
+    if it ever needs regenerating for a version bump."""
+    valid_names = _valid_lucide_names()
+    failures = []
+    for rel in SHELL_BASE_TEMPLATE + SHELL_PARTIALS + SHELL_ENTRY_TEMPLATES + SHELL_JS:
+        text = _read(rel)
+        scan_text = _strip_js_block_comments(text) if rel.endswith(".js") else text
+        if "font-awesome" in scan_text or FA_CLASS_RE.search(scan_text):
+            failures.append(f"{rel}: still references Font Awesome")
+        for name in DATA_LUCIDE_RE.findall(text):
+            if name not in valid_names:
+                failures.append(f"{rel}: data-lucide=\"{name}\" is not a valid Lucide 1.47.0 icon name")
+    assert not failures, "icon violations:\n" + "\n".join(failures)
+
+
+STYLE_BLOCK_RE = re.compile(r"<style[\s>]", re.IGNORECASE)
+
+
+def test_no_style_blocks_in_converted_templates():
+    """Part D item 8, scoped to the converted shell templates (ratchets per
+    step)."""
+    failures = [
+        rel for rel in SHELL_BASE_TEMPLATE + SHELL_PARTIALS + SHELL_ENTRY_TEMPLATES
+        if STYLE_BLOCK_RE.search(_read(rel))
+    ]
+    assert not failures, f"<style> block found in: {failures}"
+
+
+def test_converted_entry_templates_extend_base_app():
+    """Part D item 9, scoped to the entry templates this buildout has
+    converted so far (ratchets per step as steps 4-7 convert their own)."""
+    failures = []
+    for rel in SHELL_ENTRY_TEMPLATES:
+        text = _read(rel)
+        if '{% extends "base_app.html" %}' not in text and "{% extends 'base_app.html' %}" not in text:
+            failures.append(rel)
+    assert not failures, f"entry template(s) not extending base_app.html: {failures}"
+
+
+# Part D item 10: the DOM-ID contract. Spec's step-2 text lists 49 IDs as
+# "must exist... because auth.js/shell.js read them." Verified against the
+# actual rendered shell and the actual JS source before writing this list;
+# 5 of the 49 are deliberately excluded, each for a specific, checked
+# reason (not a guess):
+#   - organization-prompt-modal, org-prompt-input, org-prompt-skip,
+#     org-prompt-submit: auth.js (justdata/shared/web/static/js/auth.js,
+#     ~line 498) creates this modal and its children itself with
+#     document.createElement when needed -- it is never server-rendered,
+#     so asserting it in static HTML would be testing something that is
+#     never true by design.
+#   - userInfo: auth.js reads it only behind `if (userInfo)` with an
+#     explicit comment "Legacy userInfo (if present on older pages)" --
+#     it is optional by auth.js's own contract, not required.
+#   - registerName: does not appear in auth.js, shell-auth.js, or any
+#     other JS in the repo (grepped) -- nothing reads it, so nothing
+#     requires it to exist. Likely a stale reference in the spec from
+#     before the first/last-name split (registerFirstName/registerLastName,
+#     which auth.js does use).
+DOM_ID_CONTRACT = [
+    "loginBtn", "logoutBtn", "userMenuContainer", "userEmail", "userTypeBadge", "userAvatar",
+    "loginModal", "signInTab", "registerTab", "signInView", "registerView",
+    "loginEmail", "loginPassword", "loginError",
+    "emailLoginBtn", "emailLoginSpinner", "emailLoginText",
+    "googleLoginBtn", "googleLoginSpinner", "googleLoginText",
+    "registerFirstName", "registerLastName", "registerEmail", "registerOrganization",
+    "registerPassword", "registerPasswordConfirm", "registerError", "registerSuccess",
+    "emailRegisterBtn", "emailRegisterSpinner", "emailRegisterText",
+    "emailVerificationBanner", "resendVerificationBtn", "resendVerificationSpinner",
+    "resendVerificationText", "userMenuToggle", "userDropdownMenu", "dropdownDivider",
+    "requestMemberAccessLink", "menuToggle", "navSidebar", "navBackdrop", "navCloseBtn",
+]
+
+
+def test_dom_id_contract():
+    """Part D item 10: render the shell (via /about, the simplest route
+    that already extends base_app.html) as admin and assert every ID
+    auth.js/shell-*.js need is present exactly once, and that auth.js and
+    analytics-events.js are both loaded."""
+    from justdata.main.app import create_app
+
+    app = create_app()
+    app.config["TESTING"] = True
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess["firebase_user"] = {"uid": "test-admin", "email": "admin@example.org", "email_verified": True}
+        sess["user_type"] = "admin"
+
+    resp = client.get("/about")
+    assert resp.status_code == 200
+    body = resp.data.decode()
+
+    failures = []
+    for dom_id in DOM_ID_CONTRACT:
+        count = len(re.findall(f'id="{re.escape(dom_id)}"', body))
+        if count != 1:
+            failures.append(f"{dom_id}: found {count} times, expected 1")
+    assert not failures, "DOM-ID contract violations:\n" + "\n".join(failures)
+
+    assert "js/auth.js" in body, "auth.js must be loaded"
+    assert "js/analytics-events.js" in body, "analytics-events.js must be loaded"

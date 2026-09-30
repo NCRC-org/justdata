@@ -1,0 +1,72 @@
+{% extends "base_app.html" %}
+
+{% block title %}JustData - NCRC Data Analysis Platform{% endblock %}
+{% block extra_head %}
+<meta name="theme-color" content="#034EA0">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+    <p class="eyebrow">{% if is_authenticated %}Welcome back{% else %}NCRC{% endif %}</p>
+    <h1 class="display-2">JustData</h1>
+    <p class="home-hero-lead">Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.</p>
+    {% if not is_authenticated %}
+    <button type="button" class="btn btn-accent btn-lg" onclick="openLoginModal()">Sign in</button>
+    {% endif %}
+</section>
+
+<section class="stats-bar" id="platformStats">
+    <div class="stat-tile">
+        <div class="stat-tile-value" id="mortgageRecords">--</div>
+        <div class="stat-tile-label">Mortgage Records Analyzed</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-tile-value" id="lendersTracked">--</div>
+        <div class="stat-tile-label">Lenders Tracked</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-tile-value" id="reportsGenerated">--</div>
+        <div class="stat-tile-label">Reports Generated</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-tile-value" id="activeResearchers">--</div>
+        <div class="stat-tile-label">Active Researchers</div>
+    </div>
+</section>
+
+{% for group in app_groups %}
+<section class="home-app-group">
+    <h2>{{ group.heading }}</h2>
+    <div class="home-app-grid">
+        {% for app in group.apps %}
+        <div class="card app-card{% if app.access == 'locked' %} is-locked{% endif %}" data-app="{{ app.key }}">
+            <h3 class="home-app-card-title">
+                {% if app.access == 'locked' %}<i data-lucide="lock" aria-hidden="true"></i>{% endif %}
+                <span>{{ app.name }}</span>
+            </h3>
+            <p class="home-app-card-description">{{ app.description }}</p>
+            <div class="home-app-card-footer">
+                {% if app.access == 'locked' %}
+                    {% if is_authenticated %}
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openMemberRequestModal()">Request access</button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openLoginModal()">Request access</button>
+                    {% endif %}
+                {% else %}
+                <a href="{{ app.url }}" class="btn btn-primary btn-sm">Open</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}
