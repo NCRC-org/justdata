@@ -52,7 +52,7 @@
 }
 
 .shell-menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--color-overlay-hover);
 }
 
 .shell-brand {
@@ -103,7 +103,7 @@
     align-items: center;
     gap: var(--s-2);
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--color-overlay-border);
     border-radius: var(--r-md);
     padding: var(--s-1) var(--s-3);
     cursor: pointer;
@@ -112,7 +112,7 @@
 }
 
 .user-menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-overlay-hover-subtle);
 }
 
 .user-menu-toggle.open .user-menu-arrow {
@@ -128,7 +128,7 @@
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid var(--color-overlay-border-strong);
 }
 
 .user-details {
@@ -245,7 +245,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(13, 14, 16, 0.5);
+    background: var(--color-scrim);
     z-index: 999;
     opacity: 0;
     transition: opacity var(--dur-base) var(--ease);
@@ -305,7 +305,7 @@
 }
 
 .nav-close-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--color-overlay-hover);
 }
 
 .nav-sidebar-items {
@@ -406,7 +406,7 @@ body.nav-open {
 .shell-footer-col p {
     margin: 0 0 var(--s-2);
     font-size: var(--fs-caption);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-fg-on-dark-muted);
 }
 
 .shell-footer-version {
@@ -487,7 +487,7 @@ body.nav-open {
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: rgba(13, 14, 16, 0.5);
+    background: var(--color-scrim);
     align-items: center;
     justify-content: center;
 }
