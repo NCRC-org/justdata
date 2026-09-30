@@ -1,7 +1,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}{{ app_name }} - JustData{% endblock %}</title>
 <meta name="description" content="{{ app_description|default('JustData - AI-powered financial data analysis') }}">
+<meta name="theme-color" content="#034EA0">
 
 <!-- Favicon -->
 <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
@@ -18,7 +18,3 @@
 
 <!-- Icons -->
 <script src="https://cdn.jsdelivr.net/npm/lucide@1.47.0/dist/umd/lucide.min.js"></script>
-
-{% block extra_head %}{% endblock %}
-
-{% block extra_css %}{% endblock %}

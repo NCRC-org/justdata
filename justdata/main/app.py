@@ -155,7 +155,10 @@ def create_app():
                 }), 403
 
             # For regular requests, render the restricted access page
-            return render_template('access_restricted.html'), 200
+            return render_template(
+                'access_restricted.html',
+                app_description='JustData - NCRC Data Analysis Platform',
+            ), 200
 
         return None
 
@@ -266,6 +269,7 @@ def create_app():
         return render_template(
             'apps.html',
             app_name='Apps',
+            app_description='Launch a JustData tool.',
             app_groups=app_groups,
         )
 
@@ -273,13 +277,26 @@ def create_app():
     @app.route('/about')
     def about():
         """About page."""
-        return render_template('about.html')
+        return render_template(
+            'about.html',
+            app_description=(
+                "Learn about JustData, NCRC's comprehensive data analysis platform "
+                "providing insights across banking, mortgage, small business, and "
+                "member management."
+            ),
+        )
 
     # Contact page route
     @app.route('/contact')
     def contact():
         """Contact Us page."""
-        return render_template('contact.html')
+        return render_template(
+            'contact.html',
+            app_description=(
+                'Contact JustData and the National Community Reinvestment Coalition '
+                'for questions, support, or partnership opportunities.'
+            ),
+        )
 
     # Email verified landing page
     @app.route('/email-verified')
@@ -289,7 +306,10 @@ def create_app():
         Firebase handles the actual verification - this page just
         prompts the user to refresh their session.
         """
-        return render_template('email_verified.html')
+        return render_template(
+            'email_verified.html',
+            app_description='Email verification confirmation for JustData',
+        )
 
     # Register blueprints
     register_blueprints(app)

@@ -785,3 +785,36 @@ def test_dom_id_contract():
 
     assert "js/auth.js" in body, "auth.js must be loaded"
     assert "js/analytics-events.js" in body, "analytics-events.js must be loaded"
+
+
+def test_title_and_extra_css_blocks_apply_through_included_head():
+    """Regression guard: {% block title %}, {% block extra_head %} and
+    {% block extra_css %} used to live inside partials/_head.html, which
+    base_app.html pulls in via {% include %} rather than {% extends %}.
+    Jinja's block-override resolution only follows the {% extends %}
+    chain -- a block nested inside an included template is invisible to
+    it, so every child template's override of those three blocks was
+    silently discarded platform-wide since step 2 introduced this
+    structure (found while investigating why home.css never visibly
+    applied, 2026-09-30; confirmed it also broke about.html's title/
+    meta-description and every other already-converted template's title).
+    Fixed by moving the block definitions into base_app.html itself. This
+    test renders two different pages and checks each one's override
+    actually took effect, so a future refactor that reintroduces the same
+    include/block mismatch fails loudly instead of silently."""
+    from justdata.main.app import create_app
+
+    app = create_app()
+    app.config["TESTING"] = True
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess["firebase_user"] = {"uid": "test-admin", "email": "admin@example.org", "email_verified": True}
+        sess["user_type"] = "admin"
+
+    home_body = client.get("/").data.decode()
+    assert "<title>JustData - NCRC Data Analysis Platform</title>" in home_body
+    assert "css/home.css" in home_body
+
+    apps_body = client.get("/apps").data.decode()
+    assert "<title>Apps - JustData | NCRC Data Analysis Platform</title>" in apps_body
+    assert "css/apps.css" in apps_body
