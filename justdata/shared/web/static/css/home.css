@@ -1,7 +1,11 @@
 /* =========================================================
-   Home page -- shared/web/templates/home.html.
+   Home page (landing page) -- shared/web/templates/home.html.
    Tokens only. See L5 "JustData -- Frontend buildout spec --
-   2026-09-21" Part C step 3.
+   2026-09-21" Part C step 3, and the step-3b revision note:
+   split into a landing page (here) + a separate app launcher
+   (apps.html/apps.css) at Jad's request 2026-09-30, after the
+   combined single-page version read as too plain for a
+   tester-facing platform.
 
    .display-2 is a platform-wide display utility (Part B3 defines
    --fs-display-2 but no step before this one needed the class
@@ -20,12 +24,39 @@
     margin: var(--s-2) 0 var(--s-4);
 }
 
+/* Hero */
 .home-hero {
+    position: relative;
+    overflow: hidden;
     background: var(--color-bg-dark);
     color: var(--color-fg-on-dark);
     border-radius: var(--r-lg);
-    padding: var(--s-9) var(--s-7);
+    padding: var(--s-12) var(--s-7);
     margin: var(--s-7) 0;
+}
+
+.home-hero-mark {
+    position: absolute;
+    top: 50%;
+    right: -80px;
+    transform: translateY(-50%);
+    width: 420px;
+    height: 420px;
+    pointer-events: none;
+}
+
+.home-hero-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    opacity: 0.08;
+}
+
+.home-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
 }
 
 .home-hero .display-2 {
@@ -37,7 +68,23 @@
     font-size: var(--fs-body-lg);
     line-height: var(--lh-loose);
     color: var(--color-fg-on-dark);
-    margin: 0 0 var(--s-6);
+    margin: 0 0 var(--s-7);
+}
+
+.home-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    flex-wrap: wrap;
+}
+
+.home-hero-ghost {
+    color: var(--color-fg-on-dark);
+    border-color: var(--color-overlay-border);
+}
+
+.home-hero-ghost:hover {
+    background: var(--color-overlay-hover);
 }
 
 /* Stats bar */
@@ -46,7 +93,7 @@
     grid-template-columns: repeat(4, 1fr);
     gap: var(--s-6);
     padding: var(--s-6) 0;
-    margin-bottom: var(--s-7);
+    margin-bottom: var(--s-9);
     border-bottom: 1px solid var(--color-divider);
 }
 
@@ -56,66 +103,33 @@
     }
 }
 
-/* App groups */
-.home-app-group {
-    margin-bottom: var(--s-9);
+/* Mission */
+.home-mission {
+    max-width: 680px;
+    margin: 0 auto var(--s-12);
+    padding: var(--s-9) 0;
+    text-align: center;
 }
 
-.home-app-group h2 {
-    font-family: var(--font-display);
-    font-weight: var(--fw-bold);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-tight);
-    font-size: var(--fs-h2);
-    margin-bottom: var(--s-5);
+.home-mission-lead {
+    font-family: var(--font-body);
+    font-size: var(--fs-body-lg);
+    line-height: var(--lh-loose);
+    color: var(--color-fg);
+    margin: 0 0 var(--s-6);
+    text-align: left;
 }
 
-.home-app-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--s-6);
-}
-
-@media (max-width: 1024px) {
-    .home-app-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.home-mission .btn {
+    margin-top: var(--s-4);
 }
 
 @media (max-width: 640px) {
-    .home-app-grid {
-        grid-template-columns: 1fr;
+    .home-hero-mark {
+        display: none;
     }
-}
 
-.app-card {
-    display: flex;
-    flex-direction: column;
-}
-
-.home-app-card-title {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
-    font-family: var(--font-display);
-    font-weight: var(--fw-semibold);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-tight);
-    font-size: var(--fs-h4);
-    margin-bottom: var(--s-2);
-}
-
-.home-app-card-description {
-    color: var(--color-fg-muted);
-    font-size: var(--fs-body-sm);
-    flex: 1;
-    margin-bottom: var(--s-5);
-}
-
-.home-app-card-footer {
-    margin-top: auto;
-}
-
-.app-card.is-locked {
-    background: var(--color-bg-muted);
+    .home-hero {
+        padding: var(--s-8) var(--s-5);
+    }
 }

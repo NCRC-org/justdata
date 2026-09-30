@@ -182,16 +182,35 @@ def create_app():
     # Main landing page route
     @app.route('/')
     def landing():
-        """Main landing page with app selection.
+        """Main landing page: what JustData is, for anyone landing on it.
 
-        app_groups is built here (not in inject_shell(), which serves the
-        nav sidebar's flat list) because the home page needs per-app
-        descriptions and a fixed group/heading structure the nav doesn't
-        carry. See L5 "JustData -- Frontend buildout spec -- 2026-09-21"
-        Part C step 3.
+        No app list here -- that's /apps (apps_index() below). Split at
+        Jad's direct request 2026-09-30: the home page originally combined
+        a marketing pitch and the app launcher on one page and read as too
+        plain/functional for a tester-facing platform; Jad asked for a real
+        landing page here with the launcher moved to its own page. See L5
+        "JustData -- Frontend buildout spec -- 2026-09-21" Part C step 3
+        and its step-3b revision note.
         """
         from justdata.shared.utils.versions import get_version
 
+        return render_template(
+            'home.html',
+            app_name='JustData',
+            app_description='Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.',
+            platform_version=get_version('platform'),
+        )
+
+    # App launcher: the ACCESS_MATRIX-driven grid that used to live on '/'.
+    @app.route('/apps')
+    def apps_index():
+        """App launcher grid, grouped and gated by ACCESS_MATRIX.
+
+        app_groups is built here (not in inject_shell(), which serves the
+        nav sidebar's flat list) because this page needs per-app
+        descriptions and a fixed group/heading structure the nav doesn't
+        carry.
+        """
         user_type = get_user_type()
 
         home_group_defs = [
@@ -245,11 +264,9 @@ def create_app():
                 app_groups.append({'heading': heading, 'apps': visible})
 
         return render_template(
-            'home.html',
-            app_name='JustData',
-            app_description='Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.',
+            'apps.html',
+            app_name='Apps',
             app_groups=app_groups,
-            platform_version=get_version('platform'),
         )
 
     # About page route

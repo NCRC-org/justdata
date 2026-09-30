@@ -396,13 +396,16 @@ def test_color_fg_on_accent_is_black_not_white():
 
 
 # ---------------------------------------------------------------------------
-# Part D item 11 (step 3): home page gating. `/` is built server-side in
-# landing() from ACCESS_MATRIX via get_app_access() -- no client-side
-# filtering exists any more. This mirrors the grouping in main/app.py's
-# landing() exactly (see that function's home_group_defs).
+# Part D item 11 (step 3, revised step 3b): app-launcher gating. Originally
+# this checked '/' itself, back when the home page combined the marketing
+# pitch and the app grid on one page. Jad asked 2026-09-30 to split those --
+# home.html is now a landing page with no app list, and the ACCESS_MATRIX-
+# driven grid this item is actually about lives at '/apps' (apps_index() in
+# main/app.py). Updated to match; the underlying ACCESS_MATRIX-driven
+# gating logic this item tests is unchanged, only which route renders it.
 # ---------------------------------------------------------------------------
 
-HOME_PAGE_APPS = [
+APPS_PAGE_APPS = [
     "lendsight", "bizsight", "branchsight",
     "branchmapper", "dataexplorer", "mergermeter",
     "analytics", "admin",
@@ -413,12 +416,16 @@ HOME_PAGE_APPS = [
 # user gets instead -- see main/app.py's check_privileged_access.
 HOME_PAGE_MARKER = b'id="platformStats"'
 
+# Marker only ever present on the real /apps page (its page-header h1),
+# never on access_restricted.html.
+APPS_PAGE_MARKER = b"<h1>Apps</h1>"
 
-def test_home_page_gating():
-    """Part D item 11: for every VALID_USER_TYPE, `/` shows exactly the
+
+def test_apps_page_gating():
+    """Part D item 11: for every VALID_USER_TYPE, `/apps` shows exactly the
     apps ACCESS_MATRIX grants (and nothing else), or -- for the five
     non-privileged types, which check_privileged_access blocks from every
-    route including `/` regardless of ACCESS_MATRIX -- the platform-wide
+    route including `/apps` regardless of ACCESS_MATRIX -- the platform-wide
     restricted page, unchanged by this step. This is the same pattern
     tests/apps/dotlender/test_dotlender_smoke.py already uses."""
     from justdata.main.app import create_app
@@ -437,20 +444,20 @@ def test_home_page_gating():
             }
             sess["user_type"] = user_type
 
-        resp = client.get("/")
+        resp = client.get("/apps")
         assert resp.status_code == 200, f"{user_type}: expected 200, got {resp.status_code}"
         body = resp.data
 
         if user_type not in PRIVILEGED_ROLES:
-            assert HOME_PAGE_MARKER not in body, (
-                f"{user_type}: non-privileged user reached the real home page "
+            assert APPS_PAGE_MARKER not in body, (
+                f"{user_type}: non-privileged user reached the real /apps page "
                 "(check_privileged_access should have blocked it)"
             )
             continue
 
-        assert HOME_PAGE_MARKER in body, f"{user_type}: expected the real home page"
+        assert APPS_PAGE_MARKER in body, f"{user_type}: expected the real /apps page"
 
-        for key in HOME_PAGE_APPS:
+        for key in APPS_PAGE_APPS:
             access = get_app_access(key, user_type)
             marker = f'data-app="{key}"'.encode()
             if access == "hidden":
@@ -469,19 +476,29 @@ def test_home_page_gating():
 
 
 # ---------------------------------------------------------------------------
-# Part D item 12 (step 3 slice): surfaces render. Only the routes step 3
-# actually converts to the shell -- '/', '/about', '/contact',
-# '/email-verified' -- are covered here. Steps 4-7 add their own routes to
-# this table as each converts; do not add rows here for routes that don't
-# extend base_app.html yet (they will fail the data-shell="header" check).
+# Part D item 12 (step 3 slice, extended step 3b): surfaces render. Only the
+# routes steps 3/3b actually convert to the shell -- '/', '/apps', '/about',
+# '/contact', '/email-verified' -- are covered here. Steps 4-7 add their own
+# routes to this table as each converts; do not add rows here for routes
+# that don't extend base_app.html yet (they will fail the
+# data-shell="header" check).
 # ---------------------------------------------------------------------------
 
-STEP3_SHELL_ROUTES = ["/", "/about", "/contact", "/email-verified"]
+STEP3_SHELL_ROUTES = ["/", "/apps", "/about", "/contact", "/email-verified"]
 SHELL_HEADER_MARKER = b'data-shell="header"'
+
+# Per-route marker that only appears on that route's real (non-restricted)
+# page. Routes with no entry here are still checked for the shell header
+# and for absence of HOME_PAGE_MARKER as a blanket sanity check, but don't
+# get a route-specific "did the real page render" assertion.
+ROUTE_REAL_PAGE_MARKERS = {
+    "/": HOME_PAGE_MARKER,
+    "/apps": APPS_PAGE_MARKER,
+}
 
 
 def test_step3_surfaces_render():
-    """Part D item 12 (partial): every step-3-converted route renders 200
+    """Part D item 12 (partial): every step-3/3b-converted route renders 200
     for admin and for public_registered (the latter via the unchanged
     platform-wide restricted page, itself now also on the shell), and both
     carry the shell header marker."""
@@ -508,6 +525,15 @@ def test_step3_surfaces_render():
                 assert HOME_PAGE_MARKER not in resp.data, (
                     f"public_registered {path}: reached real page content, expected the restricted page"
                 )
+                route_marker = ROUTE_REAL_PAGE_MARKERS.get(path)
+                if route_marker:
+                    assert route_marker not in resp.data, (
+                        f"public_registered {path}: reached real page content, expected the restricted page"
+                    )
+            elif user_type == "admin":
+                route_marker = ROUTE_REAL_PAGE_MARKERS.get(path)
+                if route_marker:
+                    assert route_marker in resp.data, f"admin {path}: expected the real page, got the restricted page"
 
 
 # ---------------------------------------------------------------------------
@@ -533,6 +559,7 @@ SHELL_PARTIALS = [
 
 SHELL_ENTRY_TEMPLATES = [
     "justdata/shared/web/templates/home.html",
+    "justdata/shared/web/templates/apps.html",
     "justdata/shared/web/templates/about.html",
     "justdata/shared/web/templates/contact.html",
     "justdata/shared/web/templates/access_restricted.html",
@@ -561,6 +588,7 @@ FONT_FAMILY_LITERAL_RE = re.compile(r"font-family:\s*(['\"]?)(?!var\()[A-Za-z]")
 # currentColor/transparent/inherit (not literal colors).
 TOKEN_ONLY_CSS_FILES = [
     "justdata/shared/web/static/css/home.css",
+    "justdata/shared/web/static/css/apps.css",
     "justdata/shared/web/static/css/shell.css",
 ]
 
@@ -594,7 +622,8 @@ def test_no_forbidden_css_in_converted_files():
     backdrop-filter, blur, transform:scale, or the specific banned radii."""
     files = (
         SHELL_BASE_TEMPLATE + SHELL_PARTIALS + SHELL_ENTRY_TEMPLATES
-        + ["justdata/shared/web/static/css/shell.css", "justdata/shared/web/static/css/home.css"]
+        + ["justdata/shared/web/static/css/shell.css", "justdata/shared/web/static/css/home.css",
+           "justdata/shared/web/static/css/apps.css"]
     )
     failures = []
     for rel in files:
