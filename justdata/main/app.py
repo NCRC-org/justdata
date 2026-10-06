@@ -84,7 +84,7 @@ def create_app():
     @app.context_processor
     def inject_shell():
         """Make the platform-shell nav list and version available to templates."""
-        from justdata.main.auth import ACCESS_MATRIX
+        from justdata.main.auth import get_access_row
         from justdata.shared.utils.versions import get_version
         from justdata.shared.web.registry import SECONDARY_PAGES, resolve_registry
 
@@ -113,7 +113,7 @@ def create_app():
 
         return {
             'visible_apps': visible_apps,
-            'nav_groups': resolve_registry(ACCESS_MATRIX, shell_user_type),
+            'nav_groups': resolve_registry(get_access_row, shell_user_type),
             'secondary_pages': SECONDARY_PAGES,
             'platform_version': get_version('platform'),
         }

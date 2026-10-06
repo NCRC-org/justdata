@@ -31,6 +31,8 @@ from typing import Optional, Literal, Dict, List, TYPE_CHECKING
 import firebase_admin
 from firebase_admin import credentials, auth as firebase_auth, firestore
 
+from justdata.main.auth.access_overlay import overlay_row
+
 # Firebase client wrappers (extracted into services module)
 from justdata.main.auth.services.firebase_client import (
     init_firebase,
@@ -895,13 +897,22 @@ def can_force_refresh(user_type: Optional[UserType] = None) -> bool:
 # Access Control Functions
 # ========================================
 
+def get_access_row(app_name: str) -> Dict[str, AccessLevel]:
+    """ACCESS_MATRIX row for an app, with the testing-site overlay applied.
+
+    The single read path for app access: get_app_access() and the nav
+    registry both go through here (see access_overlay.py).
+    """
+    app_name = app_name.lower()
+    return overlay_row(app_name, ACCESS_MATRIX.get(app_name, {}), PRIVILEGED_ROLES)
+
+
 def get_app_access(app_name: str, user_type: Optional[UserType] = None) -> AccessLevel:
     """Get access level for an app based on user type."""
     if user_type is None:
         user_type = get_user_type()
 
-    app_name = app_name.lower()
-    return ACCESS_MATRIX.get(app_name, {}).get(user_type, 'hidden')
+    return get_access_row(app_name).get(user_type, 'hidden')
 
 
 def has_access(app_name: str, required_level: AccessLevel = 'full',
@@ -961,8 +972,8 @@ def get_apps_by_access_level(access_level: AccessLevel, user_type: Optional[User
     if user_type is None:
         user_type = get_user_type()
 
-    return [app for app, levels in ACCESS_MATRIX.items()
-            if levels.get(user_type) == access_level]
+    return [app for app in ACCESS_MATRIX
+            if get_access_row(app).get(user_type) == access_level]
 
 
 def get_tier_info(user_type: Optional[UserType] = None) -> dict:

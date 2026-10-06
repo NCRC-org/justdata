@@ -2,9 +2,16 @@
 
 Every surface that lists apps or pages (nav drawer, /apps launcher, landing
 roster, footer) renders from NAV_GROUPS. Access policy is NOT decided here:
-each item's state and lock tag are read at request time from ACCESS_MATRIX
-(main/auth), passed in by inject_shell() in main/app.py. Do not add access
-rules to this file; change the matrix instead.
+each item's state and lock tag are read at request time through
+get_access_row() (main/auth), passed in by inject_shell() in main/app.py.
+Do not add access rules to this file; change the matrix instead.
+
+Testing-site overlay: on JUSTDATA_ENV=testing, get_access_row() applies
+main/auth/access_overlay.py, which limits non-staff users to LendSight,
+BizSight, BranchSight and MergerMeter and opens MergerMeter to testers.
+That resolves D2 as "tester-facing" for the testing deploy only and is the
+one deliberate access change made with spec 01. This file does not
+special-case it; it just reads the overlaid rows.
 
 `sources` names only datasets the app's code actually queries (checked
 against each app's sql_templates/ and query builders, 2026-10-06).
@@ -100,7 +107,7 @@ def item_state(level):
 def locked_tag(matrix_row):
     """Tag text for a locked item: the lowest role that unlocks it.
 
-    Read from the item's ACCESS_MATRIX row, checked in this order:
+    Read from the item's access row (matrix plus overlay), in this order:
       "Members"          the plain `member` role opens it
       "Premium members"  `member` does not, `member_premium` does
       "Staff"            only staff roles (staff, senior_executive, admin) do
@@ -117,19 +124,20 @@ def locked_tag(matrix_row):
     return None
 
 
-def resolve_registry(access_matrix, user_type):
+def resolve_registry(get_access_row, user_type):
     """Return NAV_GROUPS as plain dicts with per-item `state` and `tag`.
 
-    Looks up each item exactly as get_app_access() does
-    (access_matrix[key][user_type], default "hidden"). Hidden items are
-    dropped, and so is any group left with no items, which is how the
-    Staff group disappears for non-staff users.
+    `get_access_row(key)` is main.auth.get_access_row: the item's matrix row
+    with any environment overlay applied, the same row get_app_access()
+    reads (default "hidden"). Hidden items are dropped, and so is any group
+    left with no items, which is how the Staff group disappears for
+    non-staff users.
     """
     groups = []
     for group in NAV_GROUPS:
         items = []
         for entry in group.items:
-            row = access_matrix.get(entry.key, {})
+            row = {} if entry.key in ALWAYS_AVAILABLE else get_access_row(entry.key)
             if entry.key in ALWAYS_AVAILABLE:
                 state = "available"
             else:
