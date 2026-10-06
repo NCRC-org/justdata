@@ -7,8 +7,11 @@
             </button>
             <a href="/" class="shell-brand">
                 <img src="{{ url_for('static', filename='img/justdata-logo-white.png') }}" alt="JustData" class="shell-brand-logo">
-                {% if app_name and app_name != 'JustData' %}<h1 class="app-name">{{ app_name }}</h1>{% endif %}
             </a>
+            {% if app_name and app_name != 'JustData' %}
+            <span class="shell-header-divider" aria-hidden="true"></span>
+            <span class="shell-header-app">{{ app_name }}</span>
+            {% endif %}
         </div>
 
         <div class="shell-header-right">
@@ -25,26 +28,25 @@
                 <div id="userDropdownMenu" class="user-dropdown-menu" style="display: none;">
                     <a href="#" id="requestMemberAccessLink" class="user-dropdown-item" onclick="openMemberRequestModal(); closeUserMenu(); return false;" style="display: none;">
                         <i data-lucide="id-card" aria-hidden="true"></i>
-                        <span>Request Member Access</span>
+                        <span>Request member access</span>
                     </a>
                     <div id="dropdownDivider" class="user-dropdown-divider" style="display: none;"></div>
                     <a href="#" class="user-dropdown-item" onclick="JustDataAuth.signOut(); return false;">
                         <i data-lucide="log-out" aria-hidden="true"></i>
-                        <span>Sign Out</span>
+                        <span>Sign out</span>
                     </a>
                 </div>
             </div>
 
             <!-- Sign in (shown when logged out) -->
             <button type="button" id="loginBtn" class="btn btn-accent btn-sm" onclick="openLoginModal()">
-                <i data-lucide="log-in" aria-hidden="true"></i>
-                <span>Sign In</span>
+                <span>Sign in</span>
             </button>
 
             <!-- Legacy sign-out button (hidden; dropdown is used when userMenuContainer is present) -->
             <button type="button" id="logoutBtn" class="btn btn-ghost btn-sm shell-header-ghost" onclick="JustDataAuth.signOut()" style="display: none;">
                 <i data-lucide="log-out" aria-hidden="true"></i>
-                <span>Sign Out</span>
+                <span>Sign out</span>
             </button>
         </div>
     </div>

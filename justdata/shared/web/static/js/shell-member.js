@@ -5,7 +5,7 @@
  * Split from shell.js -- see shell-nav.js's header comment for why.
  *
  * Moved from member_request_modal.html per L5 "JustData -- Frontend
- * buildout spec -- 2026-09-21" Part C step 2. FA `<i class="fas fa-...">`
+ * buildout spec -- 2026-09-21" Part C step 2. Legacy icon-font `<i>`
  * strings built dynamically (submit-button spinner states) are swapped
  * for Lucide `data-lucide` markup per Part B5, with lucide.createIcons()
  * called after each dynamic insert.

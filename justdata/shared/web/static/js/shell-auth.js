@@ -4,7 +4,7 @@
  * Split from shell.js -- see shell-nav.js's header comment for why.
  *
  * Moved from shared_header.html per L5 "JustData -- Frontend buildout
- * spec -- 2026-09-21" Part C step 2. FA `<i class="fas fa-...">` strings
+ * spec -- 2026-09-21" Part C step 2. Legacy icon-font `<i>` strings
  * built dynamically (the account-created success message) are swapped
  * for Lucide `data-lucide` markup per Part B5, with lucide.createIcons()
  * called after the insert.
@@ -280,3 +280,28 @@ function checkVerificationBannerOnLoad() {
 document.addEventListener('DOMContentLoaded', function () {
     setTimeout(checkVerificationBannerOnLoad, 1500);
 });
+
+// ---------------------------------------------------------------------
+// Drawer user block: mirrors the header's #userEmail / #userTypeBadge into
+// #navSidebarUser, which CSS shows only under 768px (where the header
+// hides them). auth.js fills the header in updateAuthUI() before it runs
+// onAuthStateChanged callbacks, so the header text is current here.
+// ---------------------------------------------------------------------
+function syncNavUser(email, roleLabel) {
+    var box = document.getElementById('navSidebarUser');
+    if (!box) return;
+    if (!email) {
+        box.hidden = true;
+        return;
+    }
+    document.getElementById('navUserEmail').textContent = email;
+    document.getElementById('navUserRole').textContent = roleLabel || '';
+    box.hidden = false;
+}
+
+if (window.JustDataAuth && typeof window.JustDataAuth.onAuthStateChanged === 'function') {
+    window.JustDataAuth.onAuthStateChanged(function (user) {
+        var badge = document.getElementById('userTypeBadge');
+        syncNavUser(user ? user.email : null, badge ? badge.textContent : '');
+    });
+}

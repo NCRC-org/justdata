@@ -1,37 +1,58 @@
-<!-- Off-canvas nav sidebar. Server-rendered from visible_apps (see main/app.py inject_shell());
-     no client-side access filtering.
+<!-- Off-canvas nav drawer. Server-rendered from nav_groups (shared/web/registry.py,
+     resolved against ACCESS_MATRIX in main/app.py inject_shell()); no
+     client-side access filtering. Ids navSidebar, navBackdrop, navCloseBtn
+     are read by shell-nav.js; navSidebarUser/navUserEmail/navUserRole by
+     shell-auth.js.
 
-     `request` is only checked with `is defined`: most routes render via Flask's
-     render_template() (request is always present there), but admin_users()
-     still uses a raw jinja2.Environment that never gets Flask's request
-     global -- fixed properly when step 4 converts that route. Until then
-     this just skips the active-item highlight there instead of crashing
-     with UndefinedError. -->
+     `request` is only checked with `is defined`: admin_users() still renders
+     through a raw jinja2.Environment without Flask's request global, so the
+     active-item highlight is skipped there instead of raising UndefinedError. -->
 <div class="nav-backdrop" id="navBackdrop" aria-hidden="true"></div>
 
-<nav class="nav-sidebar" id="navSidebar" aria-label="Main navigation" role="navigation">
+<nav class="nav-sidebar" id="navSidebar" aria-label="Main navigation">
     <div class="nav-sidebar-header">
-        <h2 class="nav-sidebar-title">JustData</h2>
+        <a href="/" class="nav-sidebar-brand">
+            <img src="{{ url_for('static', filename='img/justdata-logo-white.png') }}" alt="JustData">
+        </a>
         <button type="button" class="nav-close-btn" id="navCloseBtn" aria-label="Close navigation menu">
             <i data-lucide="x" aria-hidden="true"></i>
         </button>
     </div>
+
     <div class="nav-sidebar-items">
-        <a href="/" class="nav-item{% if request is defined and request.path == '/' %} is-active{% endif %}" data-app="home">
-            <span>Home</span>
-        </a>
-        <a href="/apps" class="nav-item{% if request is defined and request.path == '/apps' %} is-active{% endif %}" data-app="apps">
-            <span>Apps</span>
-        </a>
-        {% for app in visible_apps %}
-        <a href="{{ app.url }}" class="nav-item{% if app.access == 'locked' %} is-locked{% endif %}{% if request is defined and request.path.startswith(app.url) %} is-active{% endif %}" data-app="{{ app.key }}"{% if app.access == 'locked' %} aria-disabled="true"{% endif %}>
-            <span>{{ app.name }}</span>
-            {% if app.access == 'locked' %}<i data-lucide="lock" aria-hidden="true"></i>{% endif %}
-        </a>
+        {% set current = request.path if request is defined else '' %}
+        {% for group in nav_groups %}
+        <div class="nav-group">
+            {% if group.label %}<p class="nav-group-label">{{ group.label }}</p>{% endif %}
+            {% for item in group['items'] %}
+                {% set active = (item.url == '/' and current == '/') or (item.url != '/' and (current == item.url or current.startswith(item.url ~ '/'))) %}
+                {% if item.state == 'available' %}
+                <a href="{{ item.url }}" class="nav-item{% if active %} is-active{% endif %}" data-app="{{ item.key }}"{% if active %} aria-current="page"{% endif %}>
+                    <span class="nav-item-name">{{ item.name }}</span>
+                </a>
+                {% else %}
+                <a href="/apps#request-access" class="nav-item is-locked" data-app="{{ item.key }}" aria-describedby="navLockedHelp">
+                    <span class="nav-item-name">{{ item.name }}</span>
+                    {% if item.tag %}<span class="nav-item-tag">{{ item.tag }}</span>{% endif %}
+                    <i data-lucide="lock" aria-hidden="true"></i>
+                </a>
+                {% endif %}
+            {% endfor %}
+        </div>
         {% endfor %}
+        <p id="navLockedHelp" class="visually-hidden">Locked. Request access from the apps page.</p>
     </div>
+
+    <div class="nav-sidebar-user" id="navSidebarUser" hidden>
+        <span class="nav-sidebar-user-email" id="navUserEmail"></span>
+        <span class="nav-sidebar-user-role" id="navUserRole"></span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="JustDataAuth.signOut()">Sign out</button>
+    </div>
+
     <div class="nav-sidebar-footer">
-        <a href="/about" class="nav-sidebar-footer-link">About</a>
-        <a href="/contact" class="nav-sidebar-footer-link">Contact</a>
+        {% for key, name, url in secondary_pages %}
+        <a href="{{ url }}" class="nav-sidebar-footer-link">{{ name }}</a>
+        {% endfor %}
+        {% if platform_version %}<span class="nav-sidebar-footer-version">v{{ platform_version }}</span>{% endif %}
     </div>
 </nav>
