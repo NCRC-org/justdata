@@ -11,8 +11,9 @@
  *
  * Moved from shared_header.html per L5 "JustData -- Frontend buildout
  * spec -- 2026-09-21" Part C step 2. filterNavMenuByAccess() and the
- * inline ACCESS_MATRIX copy are gone -- the nav sidebar is now
- * server-rendered from visible_apps (see main/app.py inject_shell()).
+ * inline ACCESS_MATRIX copy are gone -- the nav drawer is now
+ * server-rendered from nav_groups (shared/web/registry.py, resolved in
+ * main/app.py inject_shell()).
  */
 
 // ---------------------------------------------------------------------
@@ -23,20 +24,33 @@ const navSidebar = document.getElementById('navSidebar');
 const navBackdrop = document.getElementById('navBackdrop');
 const navCloseBtn = document.getElementById('navCloseBtn');
 
+// Focusable elements inside the drawer, in DOM order, skipping hidden ones
+// (e.g. #navSidebarUser when signed out or above 768px).
+function navFocusables() {
+    return Array.prototype.filter.call(
+        navSidebar.querySelectorAll('a[href], button:not([disabled])'),
+        function (el) { return el.offsetParent !== null; }
+    );
+}
+
 function openNavMenu() {
     navSidebar.classList.add('active');
     navBackdrop.classList.add('active');
     document.body.classList.add('nav-open');
     menuToggle.setAttribute('aria-expanded', 'true');
     navBackdrop.setAttribute('aria-hidden', 'false');
+    var firstItem = navSidebar.querySelector('.nav-item');
+    if (firstItem) firstItem.focus();
 }
 
 function closeNavMenu() {
+    var wasOpen = navSidebar.classList.contains('active');
     navSidebar.classList.remove('active');
     navBackdrop.classList.remove('active');
     document.body.classList.remove('nav-open');
     menuToggle.setAttribute('aria-expanded', 'false');
     navBackdrop.setAttribute('aria-hidden', 'true');
+    if (wasOpen && navSidebar.contains(document.activeElement)) menuToggle.focus();
 }
 
 function toggleNavMenu() {
@@ -69,9 +83,24 @@ document.querySelectorAll('.nav-sidebar .nav-item').forEach(function (link) {
     });
 });
 
+// Escape closes; Tab and Shift+Tab wrap inside the open drawer.
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && navSidebar.classList.contains('active')) {
+    if (!navSidebar || !navSidebar.classList.contains('active')) return;
+    if (e.key === 'Escape') {
         closeNavMenu();
+        return;
+    }
+    if (e.key !== 'Tab') return;
+    var items = navFocusables();
+    if (!items.length) return;
+    var first = items[0];
+    var last = items[items.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !navSidebar.contains(document.activeElement))) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !navSidebar.contains(document.activeElement))) {
+        e.preventDefault();
+        first.focus();
     }
 });
 

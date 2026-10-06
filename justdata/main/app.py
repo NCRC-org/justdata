@@ -74,15 +74,19 @@ def create_app():
             'user_type': get_user_type()
         }
 
-    # Context processor for the shared shell (nav sidebar, footer version).
-    # App-wide, so every blueprint's templates get visible_apps/platform_version --
+    # Context processor for the shared shell (nav drawer, footer, version).
+    # nav_groups/secondary_pages come from shared/web/registry.py. visible_apps
+    # is kept as-is, though no shipped template reads it any more.
+    # App-wide, so every blueprint's templates get the shell context --
     # including the ones still using the legacy shared_header.html include
     # directly rather than extending base_app.html (see the step 2 PR/L5 log
     # for why shared_header.html itself was kept rather than deleted).
     @app.context_processor
     def inject_shell():
         """Make the platform-shell nav list and version available to templates."""
+        from justdata.main.auth import ACCESS_MATRIX
         from justdata.shared.utils.versions import get_version
+        from justdata.shared.web.registry import SECONDARY_PAGES, resolve_registry
 
         shell_user_type = get_user_type()
         shell_app_order = [
@@ -109,6 +113,8 @@ def create_app():
 
         return {
             'visible_apps': visible_apps,
+            'nav_groups': resolve_registry(ACCESS_MATRIX, shell_user_type),
+            'secondary_pages': SECONDARY_PAGES,
             'platform_version': get_version('platform'),
         }
 
@@ -504,11 +510,14 @@ def create_app():
         env.globals['url_for'] = url_for
 
         template = env.get_template('admin-users.html')
+        # Raw Environment skips context processors, so pass the shell context
+        # (nav_groups, secondary_pages, platform_version) explicitly.
         return template.render(
             user_type=user_type,
             permissions=permissions,
             valid_user_types=VALID_USER_TYPES,
-            current_user=get_current_user()
+            current_user=get_current_user(),
+            **inject_shell()
         )
 
     return app

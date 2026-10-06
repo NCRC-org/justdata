@@ -1,19 +1,51 @@
-<!-- Shell footer. Variables: app_name (optional), platform_version (from inject_shell()). -->
+<!-- Shell footer. Variables (from inject_shell()): nav_groups, secondary_pages, platform_version.
+     Data sources: only datasets the apps query (see shared/web/registry.py). -->
 <footer class="shell-footer">
     <div class="shell-footer-inner">
-        <div class="shell-footer-col">
-            <p class="shell-footer-copyright">&copy; <span id="shellFooterYear"></span> National Community Reinvestment Coalition</p>
-            {% if platform_version %}<p class="shell-footer-version">{{ app_name|default('JustData') }} v{{ platform_version }}</p>{% endif %}
-            <p class="shell-footer-credits">Created by Jay Richardson &amp; Jad Edlebi</p>
+        <div class="shell-footer-grid">
+            <div class="shell-footer-col">
+                <p class="shell-footer-heading">JustData</p>
+                <p class="shell-footer-blurb">NCRC's research platform. Public federal lending, branch and merger records, made analyzable and citable.</p>
+                <img src="{{ url_for('static', filename='img/ncrc-logo-white.png') }}" alt="NCRC" class="shell-footer-logo" onerror="this.style.display='none';">
+            </div>
+            <div class="shell-footer-col">
+                <p class="shell-footer-heading">Apps</p>
+                <ul class="shell-footer-list">
+                    {% for group in nav_groups if group.label %}
+                        {% for item in group['items'] %}
+                        <li><a href="{{ item.url if item.state == 'available' else '/apps' }}">{{ item.name }}</a></li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="shell-footer-col">
+                <p class="shell-footer-heading">Platform</p>
+                <ul class="shell-footer-list">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/apps">All apps</a></li>
+                    {% for key, name, url in secondary_pages %}<li><a href="{{ url }}">{{ name }}</a></li>{% endfor %}
+                </ul>
+            </div>
+            <div class="shell-footer-col">
+                <p class="shell-footer-heading">Data sources</p>
+                <ul class="shell-footer-list">
+                    <li>HMDA (CFPB / FFIEC)</li>
+                    <li>FDIC Summary of Deposits</li>
+                    <li>FFIEC CRA small business</li>
+                    <li>US Census Bureau ACS</li>
+                </ul>
+                <p class="shell-footer-heading shell-footer-heading-spaced">Contact</p>
+                <ul class="shell-footer-list">
+                    <li><a href="mailto:research@ncrc.org">research@ncrc.org</a></li>
+                    <li><a href="tel:+12024644600">(202) 464-4600</a></li>
+                    <li><a href="https://ncrc.org" rel="noopener">ncrc.org</a></li>
+                </ul>
+            </div>
         </div>
-        <div class="shell-footer-col shell-footer-links">
-            <a href="mailto:research@ncrc.org">research@ncrc.org</a>
-            <a href="tel:+12024644600">(202) 464-4600</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-        </div>
-        <div class="shell-footer-col shell-footer-logo">
-            <img src="{{ url_for('static', filename='img/ncrc-logo-white.png') }}" alt="NCRC" onerror="this.style.display='none';">
+        <div class="shell-footer-bottom">
+            <p>&copy; <span id="shellFooterYear"></span> National Community Reinvestment Coalition</p>
+            {% if platform_version %}<p>JustData v{{ platform_version }}</p>{% endif %}
+            <p>Created by Jay Richardson and Jad Edlebi</p>
         </div>
     </div>
 </footer>
