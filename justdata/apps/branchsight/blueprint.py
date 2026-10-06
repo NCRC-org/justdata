@@ -3,7 +3,7 @@ BranchSight Blueprint for main JustData app.
 Converts the standalone BranchSight app into a blueprint for the unified platform.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory
+from flask import Blueprint, current_app, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
@@ -260,7 +260,11 @@ def report():
     )
     env.globals['url_for'] = url_for
     template = env.get_template('report_template.html')
-    return template.render(app_base_url=app_base_url, version=__version__)
+    # A raw Environment skips Flask's context processors, so run them here:
+    # shared_header.html's nav drawer needs nav_groups (main/app.py inject_shell()).
+    context = {}
+    current_app.update_template_context(context)
+    return template.render(**context, app_base_url=app_base_url, version=__version__)
 
 
 @branchsight_bp.route('/report-data')

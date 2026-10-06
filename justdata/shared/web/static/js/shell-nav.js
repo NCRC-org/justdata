@@ -1,3 +1,4 @@
+// Never load this file and shared_header.html's inline script on the same page: both declare top-level const menuToggle/navSidebar, and the second throws a redeclaration SyntaxError.
 /**
  * JustData platform shell: nav sidebar toggle + header user menu.
  *
