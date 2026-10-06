@@ -1,5 +1,13 @@
 <!-- Shared Header Component -->
 <!-- Variables: app_name, app_icon (optional), breadcrumb_items (optional list of {name, url} dicts) -->
+<!-- Legacy header, kept until spec 04 moves these pages onto base_app.html. The nav
+     drawer is the shared registry partial (partials/_nav.html), styled by
+     shell-nav.css on tokens.css, with Lucide for its icons. -->
+<!-- Same font link as partials/_head.html; keep the two in sync. -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shell-nav.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/lucide@1.47.0/dist/umd/lucide.min.js"></script>
 <style>
     /* ============================================
        HEADER STRUCTURE
@@ -239,115 +247,6 @@
     }
 
     /* ============================================
-       NAV BACKDROP (Semi-transparent overlay)
-       ============================================ */
-    .nav-backdrop {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh; /* Dynamic viewport height for mobile */
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .nav-backdrop.active {
-        display: block;
-        opacity: 1;
-    }
-
-    /* ============================================
-       NAV MENU SIDEBAR (Slides in from left)
-       ============================================ */
-    .nav-sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 280px;
-        height: 100vh;
-        height: 100dvh;
-        background: white;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        z-index: 1000;
-        overflow-y: auto;
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .nav-sidebar.active {
-        transform: translateX(0);
-    }
-
-    .nav-sidebar-header {
-        background: #1e3a5f;
-        color: white;
-        padding: 16px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .nav-sidebar-title {
-        font-family: Georgia, "Times New Roman", serif;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .nav-close-btn {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        padding: 4px 8px;
-        line-height: 1;
-        border-radius: 4px;
-        transition: background 0.2s;
-    }
-
-    .nav-close-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .nav-sidebar .nav-item {
-        display: flex;
-        align-items: center;
-        padding: 14px 20px;
-        color: #333;
-        text-decoration: none;
-        border-bottom: 1px solid #eee;
-        transition: background 0.15s;
-    }
-
-    .nav-sidebar .nav-item:hover {
-        background: #f5f5f5;
-    }
-
-    .nav-sidebar .nav-item i {
-        margin-right: 12px;
-        width: 20px;
-        text-align: center;
-        font-size: 16px;
-    }
-
-    .nav-sidebar .nav-item span {
-        font-size: 15px;
-        font-weight: 500;
-    }
-
-    /* Prevent body scroll when menu open */
-    body.nav-open {
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-    }
-
-    /* ============================================
        BREADCRUMB (Below header)
        ============================================ */
     .breadcrumb-bar {
@@ -438,33 +337,10 @@
         .app-branding .app-name {
             font-size: 1rem;
         }
-
-        .nav-sidebar {
-            width: 260px;
-        }
     }
 </style>
 
-<!-- Backdrop for mobile menu -->
-<div class="nav-backdrop" id="navBackdrop" aria-hidden="true"></div>
-
-<!-- Navigation Sidebar -->
-<nav class="nav-sidebar" id="navSidebar" aria-label="Main navigation" role="navigation">
-    <div class="nav-sidebar-header">
-        <h2 class="nav-sidebar-title">JustData</h2>
-        <button class="nav-close-btn" id="navCloseBtn" aria-label="Close navigation menu">&times;</button>
-    </div>
-    <a href="/" class="nav-item" data-app="home"><i class="fas fa-home" style="color: #1e3a5f;"></i><span>Home</span></a>
-    <a href="/lendsight" class="nav-item" data-app="lendsight"><i class="fas fa-chart-line" style="color: #2563eb;"></i><span>LendSight</span></a>
-    <a href="/bizsight" class="nav-item" data-app="bizsight"><i class="fas fa-briefcase" style="color: #059669;"></i><span>BizSight</span></a>
-    <a href="/branchsight" class="nav-item" data-app="branchsight"><i class="fas fa-building" style="color: #7c3aed;"></i><span>BranchSight</span></a>
-    <a href="/branchmapper" class="nav-item" data-app="branchmapper"><i class="fas fa-map-marked-alt" style="color: #0891b2;"></i><span>BranchMapper</span></a>
-    <a href="/mergermeter" class="nav-item" data-app="mergermeter"><i class="fas fa-exchange-alt" style="color: #dc2626;"></i><span>MergerMeter</span></a>
-    <a href="/dataexplorer" class="nav-item" data-app="dataexplorer"><i class="fas fa-search" style="color: #ca8a04;"></i><span>DataExplorer</span></a>
-    <a href="/analytics" class="nav-item" data-app="analytics"><i class="fas fa-chart-pie" style="color: #10b981;"></i><span>Analytics</span></a>
-    <a href="/redlining" class="nav-item" data-app="redlining"><i class="fas fa-balance-scale" style="color: #dc3545;"></i><span>Redlining</span></a>
-    <a href="/admin/users" class="nav-item" data-app="admin"><i class="fas fa-cog" style="color: #6b7280;"></i><span>Admin</span></a>
-</nav>
+{% include 'partials/_nav.html' %}
 
 <header class="app-header">
     <div class="header-container">
@@ -657,6 +533,7 @@
 </div>
 
 <script>
+// Never load this script and static/js/shell-nav.js on the same page: both declare top-level const menuToggle/navSidebar, and the second throws a redeclaration SyntaxError.
 // Nav Menu Elements
 const menuToggle = document.getElementById('menuToggle');
 const navSidebar = document.getElementById('navSidebar');
@@ -1052,97 +929,9 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkVerificationBannerOnLoad, 1500);
 });
 
-// App Access Configuration
-const sharedHeaderAppAccessConfig = {
-    'lendsight': { public_anonymous: 'locked', public_registered: 'limited', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'branchsight': { public_anonymous: 'locked', public_registered: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'branchmapper': { public_anonymous: 'locked', public_registered: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'bizsight': { public_anonymous: 'locked', public_registered: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'dataexplorer': { public_anonymous: 'locked', public_registered: 'locked', member: 'locked', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'mergermeter': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'analytics': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'admin': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'hidden', senior_executive: 'hidden', admin: 'full' },
-    'redlining': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'hidden', admin: 'full' }
-};
-
-// Filter nav menu by user access
-function filterNavMenuByAccess(userType) {
-    userType = userType || 'public_anonymous';
-    console.log('[NavMenu] Filtering for userType:', userType);
-
-    document.querySelectorAll('#navSidebar .nav-item').forEach(item => {
-        const appKey = item.getAttribute('data-app');
-        if (appKey === 'home') {
-            item.style.display = 'flex';
-            return;
-        }
-        const accessConfig = sharedHeaderAppAccessConfig[appKey];
-        if (!accessConfig) {
-            item.style.display = 'flex'; // Show if no config (default to visible)
-            return;
-        }
-        const accessLevel = accessConfig[userType];
-        // Show app if access level is NOT 'hidden' (show full, limited, and locked)
-        if (accessLevel === 'hidden') {
-            item.style.display = 'none';
-        } else {
-            item.style.display = 'flex';
-        }
-    });
-}
-
-// Initialize auth state listener
+// Render the drawer's Lucide icons (close, lock). The drawer is server-rendered
+// from the nav registry, so there is no client-side access filtering here.
 document.addEventListener('DOMContentLoaded', function() {
-    function getUserType(user) {
-        if (!user) return 'public_anonymous';
-
-        // Try different property names
-        let userType = user.userType || user.user_type || user.role || user.type;
-
-        // Check custom claims
-        if (!userType && user.customClaims) {
-            userType = user.customClaims.userType || user.customClaims.role;
-        }
-
-        // If Firebase user, get from token claims
-        if (!userType && user.getIdTokenResult) {
-            user.getIdTokenResult().then(function(idTokenResult) {
-                const claims = idTokenResult.claims;
-                const claimUserType = claims.userType || claims.user_type || claims.role || 'public_anonymous';
-                console.log('[NavMenu] Got userType from claims:', claimUserType);
-                filterNavMenuByAccess(claimUserType);
-            }).catch(function(err) {
-                console.error('[NavMenu] Error getting token claims:', err);
-            });
-            return null;
-        }
-
-        return userType || 'public_anonymous';
-    }
-
-    let _authRetryCount = 0;
-    const _authMaxRetries = 15;
-
-    function setupAuthListener() {
-        if (typeof JustDataAuth !== 'undefined' && JustDataAuth.onAuthStateChanged) {
-            console.log('[NavMenu] JustDataAuth found, setting up listener');
-            JustDataAuth.onAuthStateChanged(function(user) {
-                console.log('[NavMenu] Auth state changed, user:', user);
-                const userType = getUserType(user);
-                if (userType !== null) {
-                    filterNavMenuByAccess(userType);
-                }
-            });
-        } else if (_authRetryCount < _authMaxRetries) {
-            _authRetryCount++;
-            setTimeout(setupAuthListener, 500 * Math.min(_authRetryCount, 4));
-        } else {
-            console.log('[NavMenu] JustDataAuth not available after max retries, using public_anonymous');
-        }
-    }
-
-    // Start with public_anonymous, update when auth ready
-    filterNavMenuByAccess('public_anonymous');
-    setupAuthListener();
+    if (window.lucide) window.lucide.createIcons();
 });
 </script>
