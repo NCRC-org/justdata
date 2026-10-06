@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<title>{% block title %}{{ app_name }} - JustData{% endblock %}</title>
 {% include 'partials/_head.html' %}
+{% block extra_head %}{% endblock %}
+{% block extra_css %}{% endblock %}
 </head>
 <body class="has-sidebar">
     {% include 'partials/_banners.html' %}
