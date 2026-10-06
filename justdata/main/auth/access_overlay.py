@@ -21,8 +21,10 @@ import os
 
 TESTER_APPS = ("lendsight", "bizsight", "branchsight", "mergermeter")
 
-# Non-staff roles that get full MergerMeter access on the testing site.
-TESTER_ROLES = ("member", "member_premium")
+# Non-staff roles admitted as external testers. They get full MergerMeter
+# access on the testing site. non_member_org is included because not every
+# tester org (fair-lending orgs, researchers) is an NCRC member.
+TESTER_ROLES = ("member", "member_premium", "non_member_org")
 
 
 def is_testing_env() -> bool:
