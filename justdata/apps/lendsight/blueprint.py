@@ -150,9 +150,10 @@ def _page(job_id=None):
             {'name': 'HUD',
              'vintage': 'Low-Mod Summary Data based on 2020 ACS, for borrower income population shares'},
         ],
-        # The Methods section is inside the results, so there is no page to
-        # link to before a run (spec 04: help_url stays None until one exists).
+        # No help link before a run; after one, the toolbar links to the
+        # Methods section inside the results (Jad, 2026-10-07).
         help_url=None,
+        methods_anchor='methodsSection',
         exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
         # No exclusion_note: LendSight has no "matched with confidence"
         # exclusion; its scope filters are listed in Methods (decision 2).

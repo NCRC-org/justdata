@@ -64,10 +64,26 @@
     }).join('');
   }
 
-  function narrative(id, text) {
+  /**
+   * Fill one narrative slot. With text: the narrative and its "AI generated"
+   * caption. Without: an expected slot shows AppStates.NARRATIVE_MISSING
+   * (no caption, since nothing was generated); an optional slot stays hidden.
+   */
+  function narrative(id, text, expected) {
     var block = $(id);
-    if (!block || !text) return;
-    block.querySelector('[data-ls="text"]').innerHTML = formatNarrative(text);
+    if (!block) return;
+    var target = block.querySelector('[data-ls="text"]');
+    var caption = block.querySelector('.ls-ai-caption');
+    if (text) {
+      target.innerHTML = formatNarrative(text);
+      caption.hidden = false;
+    } else if (expected) {
+      target.innerHTML = '<p class="app-narrative-missing">' + esc(root.AppStates.NARRATIVE_MISSING) + '</p>';
+      caption.hidden = true;
+    } else {
+      block.hidden = true;
+      return;
+    }
     block.hidden = false;
   }
 
@@ -170,7 +186,7 @@
       if (!shown.length) shown = [rows[0]];
     }
     $('lsSection4').hidden = false;
-    narrative('lsConcentrationNarrative', (metadata.ai_insights || {}).market_concentration_discussion);
+    narrative('lsConcentrationNarrative', (metadata.ai_insights || {}).market_concentration_discussion, true);
     return root.LendSight.charts.hhi($('lsHhiChart'), shown, years);
   }
 
@@ -205,19 +221,15 @@
     intro(metadata, span, p);
     summary(data, span);
     tables(data, metadata, span);
-    if (ai.key_findings) {
-      $('lsKeyFindingsText').innerHTML = formatNarrative(ai.key_findings);
-      $('lsKeyFindings').hidden = false;
-    }
-    narrative('lsDemographicNarrative', ai.demographic_overview_discussion);
-    narrative('lsIncomeBorrowersNarrative', ai.income_borrowers_discussion);
-    narrative('lsIncomeTractsNarrative', ai.income_tracts_discussion);
-    narrative('lsMinorityTractsNarrative', ai.minority_tracts_discussion);
-    narrative('lsLendersNarrative', ai.top_lenders_detailed_discussion);
-    if (ai.income_neighborhood_discussion) {
-      $('lsNeighborhoodOverviewText').innerHTML = formatNarrative(ai.income_neighborhood_discussion);
-      $('lsNeighborhoodOverview').hidden = false;
-    }
+    // Expected slots are the ones core.run_analysis always asks for; the three
+    // per-table income narratives come only from its fallback path.
+    narrative('lsKeyFindings', ai.key_findings, true);
+    narrative('lsDemographicNarrative', ai.demographic_overview_discussion, true);
+    narrative('lsIncomeBorrowersNarrative', ai.income_borrowers_discussion, false);
+    narrative('lsIncomeTractsNarrative', ai.income_tracts_discussion, false);
+    narrative('lsMinorityTractsNarrative', ai.minority_tracts_discussion, false);
+    narrative('lsNeighborhoodOverview', ai.income_neighborhood_discussion, true);
+    narrative('lsLendersNarrative', ai.top_lenders_detailed_discussion, true);
     methods(metadata, p);
     var charts = [
       root.LendSight.charts.census($('lsCensusChart'), metadata.census_data).then(function (drawn) {

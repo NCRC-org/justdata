@@ -50,6 +50,7 @@ def test_exports_listed_are_the_ones_lendsight_has(client):
     html = _page(client)
     assert 'data-export="xlsx"' in html and 'data-export="pdf"' in html
     assert 'data-export="csv"' not in html
+    assert 'href="#methodsSection">Methods →</a>' in html
 
 
 def test_legacy_scripts_are_gone(client):
