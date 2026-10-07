@@ -4,6 +4,7 @@
   <h2 class="app-results-title" id="resultsTitle">Results</h2>
   <div class="app-results-actions" id="resultsActions" hidden>
     {% if 'csv' in exports %}<button type="button" class="btn btn-secondary btn-sm" data-export="csv">Download CSV</button>{% endif %}
+    {% if 'xlsx' in exports %}<button type="button" class="btn btn-secondary btn-sm" data-export="xlsx">Download Excel</button>{% endif %}
     {% if 'pdf' in exports %}<button type="button" class="btn btn-secondary btn-sm" data-export="pdf">Download report</button>{% endif %}
     <button type="button" class="btn btn-ghost btn-sm" data-action="copy-citation">Copy citation</button>
   </div>

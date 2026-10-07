@@ -79,6 +79,9 @@ def test_toolbar_renders_only_listed_exports(debug_app):
         csv_only = render_template("partials/app_results_toolbar.html", exports=("csv",))
     assert "data-export" not in none and "copy-citation" in none
     assert 'data-export="csv"' in csv_only and 'data-export="pdf"' not in csv_only
+    with debug_app.test_request_context("/"):
+        xlsx_pdf = render_template("partials/app_results_toolbar.html", exports=("xlsx", "pdf"))
+    assert 'data-export="xlsx">Download Excel' in xlsx_pdf and 'data-export="csv"' not in xlsx_pdf
 
 
 def test_error_state_hides_an_empty_reference(debug_app):

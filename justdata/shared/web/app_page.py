@@ -12,7 +12,7 @@ from justdata.shared.web.registry import NAV_GROUPS
 
 # Exports app_results_toolbar.html knows how to render. An app lists only the
 # ones it actually implements; the toolbar renders nothing else.
-KNOWN_EXPORTS = ("csv", "pdf")
+KNOWN_EXPORTS = ("csv", "xlsx", "pdf")
 
 
 def find_app(key: str):
