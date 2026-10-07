@@ -1475,13 +1475,7 @@ TABLE DATA:
             
             3. Census Alignment: This definition aligns with Census Bureau's "Two or More Races" category, which counts people who identify with two or more of the five main race categories, excluding Hispanic ethnicity.
             
-            4. Race Combination Mix: If multi-racial data is present, note the most common race combinations based on national HMDA data patterns. According to national HMDA data (2018-2024), the top 5 most common multi-racial combinations are:
-               - Asian/White: 38.01% of all multi-racial borrowers
-               - Native American/White: 21.80% of all multi-racial borrowers
-               - Black/White: 17.47% of all multi-racial borrowers
-               - HoPI/White: 4.84% of all multi-racial borrowers
-               - Native American/Black: 3.74% of all multi-racial borrowers
-               These top 5 combinations account for approximately 86% of all multi-racial borrowers nationally. If specific combination data is available in the table for this analysis, reference those local patterns instead.
+            4. Race Combination Mix: Describe race combinations among multi-racial borrowers only if combination data is present in the table for this analysis. Do not cite national combination shares.
             
             This explanation should be integrated naturally into your narrative, typically when first discussing borrower demographics or race/ethnicity breakdowns."""
             
