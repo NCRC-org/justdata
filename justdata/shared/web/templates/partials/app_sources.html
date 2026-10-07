@@ -1,8 +1,10 @@
 {# Spec 04 A4, required on every result. Expects sources (list of
-   {name, vintage, url}), caveats (list of str), shows_juxtaposition (bool).
+   {name, vintage, url}), caveats (list of str), shows_juxtaposition (bool),
+   and optionally exclusion_note: a sentence an app may add only when it can
+   point to the code that does the excluding (Jad, 2026-10-07).
    No methodology-page link until that page exists (Jad, 2026-10-07). #}
 <div class="app-sources" id="resultsSources">
-  <p><strong>Sources and methodology.</strong> Figures are computed from the public datasets below using the data sources, years and exclusions listed below. Records that cannot be matched with confidence are excluded.</p>
+  <p><strong>Sources and methodology.</strong> Figures are computed from the public datasets listed below, with the years and exclusions stated for each.{% if exclusion_note %} {{ exclusion_note }}{% endif %}</p>
   {% if sources %}
   <dl>
     {% for s in sources %}<dt>{{ s.name }}</dt><dd>{{ s.vintage }}{% if s.url %}, <a href="{{ s.url }}" rel="noopener">source</a>{% endif %}</dd>{% endfor %}

@@ -1,0 +1,14 @@
+{
+  "selection_type": "county",
+  "state_code": "Alabama",
+  "years": "2021,2022,2023,2024,2025",
+  "counties": "Lowndes County, Alabama",
+  "counties_data": [
+    {
+      "name": "Lowndes County, Alabama",
+      "geoid5": "01085",
+      "state_fips": "01",
+      "county_fips": "085"
+    }
+  ]
+}

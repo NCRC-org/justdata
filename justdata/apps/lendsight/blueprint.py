@@ -5,8 +5,7 @@ Converts the standalone LendSight app into a blueprint with cache integration.
 
 from flask import Blueprint, render_template, request, jsonify, session, make_response, send_file, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
-import os
-import tempfile
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,8 +21,9 @@ from justdata.shared.utils.analysis_cache import store_cached_result, get_analys
 # In-memory fallback for when BigQuery cache store fails
 _result_fallback = {}
 from justdata.shared.utils.bigquery_client import escape_sql_string
-from justdata.core.config.app_config import LendSightConfig
-from .core import run_analysis, parse_web_parameters
+from .core import analysis_years, run_analysis, parse_web_parameters
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
+from justdata.shared.web.app_page import app_page_context
 from .config import TEMPLATES_DIR, STATIC_DIR
 
 # Get shared templates directory
@@ -129,31 +129,54 @@ def configure_template_loader(state):
     ])
 
 
+def _page(job_id=None):
+    """The LendSight page (spec 04 standard). /report?job_id= renders the same
+    page; its script then loads that job's results into the results column."""
+    user_permissions = get_user_permissions()
+    years = analysis_years()
+    ctx = app_page_context(
+        'lendsight',
+        form_id='lsForm',
+        data_vintage=f'HMDA {years[0]} to {years[-1]}',
+        sources=[
+            {'name': 'HMDA',
+             'vintage': f'{years[0]} to {years[-1]}. Originations of owner-occupied, site-built, '
+                        '1-4 unit forward mortgages (CFPB)',
+             'url': 'https://www.consumerfinance.gov/data-research/hmda/'},
+            {'name': 'Census',
+             'vintage': '2010 and 2020 Decennial Census; American Community Survey 5-year '
+                        'estimates (the ACS year is stated in the report)',
+             'url': 'https://www.census.gov/data/developers/data-sets.html'},
+            {'name': 'HUD',
+             'vintage': 'Low-Mod Summary Data based on 2020 ACS, for borrower income population shares'},
+        ],
+        # The Methods section is inside the results, so there is no page to
+        # link to before a run (spec 04: help_url stays None until one exists).
+        help_url=None,
+        exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
+        # No exclusion_note: LendSight has no "matched with confidence"
+        # exclusion; its scope filters are listed in Methods (decision 2).
+        shows_juxtaposition=True,
+    )
+    response = make_response(render_template(
+        'lendsight_analysis.html',
+        **ctx,
+        is_staff=is_privileged_user(get_user_type()),
+        analysis_years=years,
+        app_base_url=url_for('lendsight.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'LendSight', 'url': '/lendsight'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
+
+
 @lendsight_bp.route('/')
 @login_required
 @require_access('lendsight', 'limited')
 def index():
     """Main page with the analysis form"""
-    user_permissions = get_user_permissions()
-    user_type = get_user_type()
-    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
-    is_staff = is_privileged_user(user_type)
-    cache_buster = int(time.time())  # Timestamp for cache-busting
-    # Set base URL for JavaScript API calls
-    app_base_url = url_for('lendsight.index').rstrip('/')
-    breadcrumb_items = [{'name': 'LendSight', 'url': '/lendsight'}]
-    response = make_response(render_template('lendsight_analysis.html',
-                                           permissions=user_permissions,
-                                           is_staff=is_staff,
-                                           cache_buster=cache_buster,
-                                           app_base_url=app_base_url,
-                                           app_name='LendSight',
-                                           breadcrumb_items=breadcrumb_items))
-    # Add cache-busting headers
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+    return _page()
 
 
 @lendsight_bp.route('/progress', methods=['GET'])
@@ -180,7 +203,7 @@ def progress_status():
             'percent': 0,
             'step': 'Error checking progress',
             'done': False,
-            'error': str(e)
+            'error': user_error(REQUEST_ERROR, exc=e, context='lendsight /progress')[0]
         }), 500
 
 
@@ -211,14 +234,14 @@ def analyze():
         if not counties_data:
             # Old format: parse county names from string
             counties_data = data.get('counties', [])
-        years = data.get('years', '').strip()
+        years = ','.join(map(str, analysis_years()))  # page-sent years are ignored
         state_code = data.get('state_code', None)
         loan_purpose = data.get('loan_purpose', ['purchase'])  # Default to purchase only
         
         caller = identify_caller()
         user_type = caller.user_type
         if not caller.user_id and not caller.user_email:
-            print(f"[WARN] LendSight analyze: No user identity captured despite @login_required")
+            print("[WARN] LendSight analyze: No user identity captured despite @login_required")
 
         # Parse counties - handle both new format (objects with FIPS) and old format (strings)
         counties_list = []
@@ -253,12 +276,13 @@ def analyze():
         # Convert counties list back to string format for parse_web_parameters
         counties_str = ';'.join(counties_list)
         
-        # Years will be automatically determined from last 5 years in parse_web_parameters
-        # For cache key, use 'auto' if years not provided (will be normalized)
-        years_str = data.get('years', '').strip() if 'years' in data else ''
+        # The analysis always runs the LendSight window (core.analysis_years());
+        # any years the page sends are ignored. The cache key uses the resolved
+        # years so results computed before a new HMDA year was enabled are not
+        # served after it (ticket 13229533844).
         cache_params = {
             'counties': counties_str,
-            'years': years_str if years_str else 'auto',  # Use 'auto' to indicate automatic selection
+            'years': ','.join(map(str, analysis_years())),
             'selection_type': selection_type,
             'state_code': state_code,
             'loan_purpose': loan_purpose
@@ -310,7 +334,8 @@ def analyze():
             traceback.print_exc()
             record_completion('lendsight', cache_params, caller, job_id,
                               start_time, request_id, error_message=str(e))
-            return jsonify({'success': False, 'error': f'Error parsing parameters: {str(e)}'}), 400
+            return jsonify({'success': False, 'error': user_error(
+                "We couldn't read the selected county.", exc=e, context='lendsight parse_web_parameters')[0]}), 400
 
         remember_in_session(job_id, ';'.join(counties_list) if counties_list else counties_str)
 
@@ -331,10 +356,14 @@ def analyze():
                 )
                 
                 if not result.get('success'):
-                    error_msg = result.get('error', 'Unknown error')
-                    progress_tracker.update_progress('error', message=error_msg)
+                    # result['error'] is written by core (safe to show); an
+                    # unexpected exception is logged under the same reference.
+                    error_msg = result.get('error') or GENERIC_ERROR
+                    exc = result.get('exception')
+                    progress_tracker.fail(error_msg, exc=exc)
                     record_completion('lendsight', cache_params, caller, job_id,
-                                      start_time, request_id, error_message=error_msg)
+                                      start_time, request_id,
+                                      error_message=str(exc) if exc else error_msg)
                     return
                 
                 # Store in BigQuery only (no in-memory storage)
@@ -373,10 +402,10 @@ def analyze():
                                   costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3})
 
             except Exception as e:
-                error_msg = str(e)
-                progress_tracker.complete(success=False, error=error_msg)
+                shown, _ref = user_error(GENERIC_ERROR, exc=e, context=f'lendsight job={job_id}')
+                progress_tracker.complete(success=False, error=shown)
                 record_completion('lendsight', cache_params, caller, job_id,
-                                  start_time, request_id, error_message=error_msg)
+                                  start_time, request_id, error_message=str(e))
 
         print(f"[DEBUG] Starting background thread for job {job_id}")
         run_in_background(run_job, job_id=job_id)
@@ -398,7 +427,7 @@ def analyze():
         )
         return jsonify({
             'success': False,
-            'error': f'An error occurred: {str(e)}'
+            'error': user_error(GENERIC_ERROR, exc=e, context='lendsight /analyze')[0]
         }), 500
 
 
@@ -406,19 +435,11 @@ def analyze():
 @login_required
 @require_access('lendsight', 'limited')
 def report():
-    """Report display page"""
-    app_base_url = url_for('lendsight.index').rstrip('/')
-    breadcrumb_items = [
-        {'name': 'LendSight', 'url': '/lendsight'},
-        {'name': 'Report', 'url': '/lendsight/report'}
-    ]
-    # Use Flask's render_template with unique template name to avoid conflicts
-    return render_template(
-        'lendsight_report.html',
-        app_base_url=app_base_url,
-        app_name='LendSight',
-        breadcrumb_items=breadcrumb_items
-    )
+    """Shareable report URL: the LendSight page with this job's results."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id=job_id)
 
 
 @lendsight_bp.route('/report-data', methods=['GET'])
@@ -505,7 +526,11 @@ def report_data():
             'success': True,
             'data': converted_report_data,
             'metadata': metadata_with_ai,
-            'ai_insights': ai_insights  # Also include at top level for backward compatibility
+            'ai_insights': ai_insights,  # Also include at top level for backward compatibility
+            # Stage timings of the run that produced this result (spec 04 A5).
+            # A cache hit returns the original run's stages.
+            'perf': metadata.get('perf'),
+            'ref': metadata.get('perf_ref'),
         })
         
     except Exception as e:
@@ -513,7 +538,7 @@ def report_data():
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': f'An error occurred while loading report data: {str(e)}'
+            'error': user_error(REQUEST_ERROR, exc=e, context='lendsight /report-data')[0]
         }), 500
 
 
@@ -551,7 +576,32 @@ def download():
                 'error': 'Export functionality is not available for your account type.'
             }), 403
         
-        if format_type in ('zip', 'excel'):
+        if format_type in ('excel', 'xlsx'):
+            # The workbook alone ("Download Excel"); format=zip bundles it with the PDF.
+            from .report_builder import save_mortgage_excel_report
+            import io
+            import os
+            import tempfile
+
+            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+            tmp_path = tmp_file.name
+            tmp_file.close()
+            try:
+                save_mortgage_excel_report(report_data, tmp_path, metadata=metadata)
+                with open(tmp_path, 'rb') as f:
+                    xlsx_buffer = io.BytesIO(f.read())
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+            return send_file(
+                xlsx_buffer,
+                as_attachment=True,
+                download_name=generate_export_filename(metadata, 'xlsx'),
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+        elif format_type == 'zip':
             from .report_builder import save_mortgage_excel_report
             from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
             import tempfile
@@ -614,14 +664,14 @@ def download():
                 mimetype='application/pdf'
             )
         else:
-            return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: zip, excel, pdf'}), 400
+            return jsonify({'error': 'Invalid format. Valid formats are: excel, pdf, zip.'}), 400
             
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': f'Download failed: {str(e)}'
+            'error': user_error(REQUEST_ERROR, exc=e, context='lendsight /download')[0]
         }), 500
 
 

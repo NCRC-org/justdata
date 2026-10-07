@@ -15,9 +15,9 @@
  *   Generated <YYYY-MM-DD>. <report URL>
  * Fields the analysis does not have are left out.
  *
- * Timeout: if no stage update arrives for 60 s, the run is aborted and the
- * error state is shown. The clock restarts on every stage(), so a slow run
- * that keeps reporting progress is not cut off.
+ * Timeouts (Jad, 2026-10-07): a run ends in the error state if no stage
+ * update arrives for 60 s, or after 10 minutes in total even while it keeps
+ * reporting progress. The stall clock restarts on every stage().
  */
 (function (root) {
   'use strict';
@@ -28,7 +28,19 @@
     [20, 'Building charts and narrative']
   ];
   var STALL_TIMEOUT_S = 60;
-  var TIMEOUT_MESSAGE = 'The analysis stopped reporting progress. Your filters are saved; try again in a moment.';
+  var MAX_RUN_S = 600;
+  var TIMEOUT_MESSAGES = {
+    stalled: 'The analysis stopped reporting progress. Your filters are saved; try again in a moment.',
+    max: 'The analysis did not finish within 10 minutes. Your filters are saved; try again in a moment.'
+  };
+
+  /** 'stalled', 'max' or null, for a run started at startedMs whose last
+   *  stage update was at lastUpdateMs. */
+  function timeoutReason(nowMs, startedMs, lastUpdateMs) {
+    if ((nowMs - startedMs) / 1000 >= MAX_RUN_S) return 'max';
+    if ((nowMs - lastUpdateMs) / 1000 >= STALL_TIMEOUT_S) return 'stalled';
+    return null;
+  }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -104,15 +116,17 @@
       var stageEl = document.getElementById('loadingStage');
       if (stageEl && stageEl.textContent !== text) stageEl.textContent = text;
     }
-    if ((now - run.lastUpdate) / 1000 >= STALL_TIMEOUT_S) {
+    var reason = timeoutReason(now, run.started, run.lastUpdate);
+    if (reason) {
       var ref = run.ref;
       run.controller.abort();
-      api.error(TIMEOUT_MESSAGE, ref);
+      api.error(TIMEOUT_MESSAGES[reason], ref);
     }
   }
 
   var api = {
     formatCitation: formatCitation,
+    timeoutReason: timeoutReason,
 
     on: function (name, fn) {
       (handlers[name] = handlers[name] || []).push(fn);

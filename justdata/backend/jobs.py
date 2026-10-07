@@ -15,6 +15,12 @@ from justdata.shared.utils.query_context import set_query_context
 # comment line to stop idle proxies closing the connection.
 _POLL_SECONDS = 0.5
 _KEEPALIVE_EVERY = 20
+# Sent every _KEEPALIVE_EVERY idle polls (10 s) while the progress values are
+# unchanged, e.g. during one long narrative call. A named event, so
+# EventSource.onmessage handlers never see it, while app_states.js listens for
+# it to keep its 60 s no-progress timer from ending a run that is still alive.
+# (An SSE comment would keep the connection open but is invisible to scripts.)
+_HEARTBEAT = "event: heartbeat\ndata: {}\n\n"
 
 # A read of the progress store can fail transiently. Ending the stream on the
 # first error drops a running analysis the client can no longer follow, so retry
@@ -88,7 +94,7 @@ def sse_response(job_id: str) -> Response:
 
                 idle_polls += 1
                 if idle_polls >= _KEEPALIVE_EVERY:
-                    yield ": keepalive\n\n"
+                    yield _HEARTBEAT
                     idle_polls = 0
 
                 time.sleep(_POLL_SECONDS)
@@ -106,7 +112,6 @@ def sse_response(job_id: str) -> Response:
         mimetype='text/event-stream',
         headers={
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
             'X-Accel-Buffering': 'no',
         },
     )

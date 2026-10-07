@@ -53,6 +53,13 @@ def default_hmda_years() -> List[int]:
     return list(range(start, end + 1))
 
 
+def recent_hmda_years(span: int) -> List[int]:
+    """The most recent ``span`` exposed years, ascending, clamped at
+    EARLIEST_HMDA_YEAR. LendSight's fixed five-year window uses this."""
+    start = max(EARLIEST_HMDA_YEAR, LATEST_HMDA_YEAR - span + 1)
+    return list(range(start, LATEST_HMDA_YEAR + 1))
+
+
 def is_valid_hmda_year(year: int) -> bool:
     """True if ``year`` is within the exposed HMDA range."""
     try:

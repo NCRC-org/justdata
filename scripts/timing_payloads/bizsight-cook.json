@@ -1,0 +1,12 @@
+{
+  "county_data": {
+    "county_fips": "031",
+    "county_name": "Cook County",
+    "geoid5": "17031",
+    "name": "Cook County, Illinois",
+    "state_fips": "17",
+    "state_name": "Illinois"
+  },
+  "startYear": 2020,
+  "endYear": 2024
+}

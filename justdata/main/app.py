@@ -13,6 +13,7 @@ from justdata.main.auth import (
 from justdata.main.auth.access_overlay import is_tester, testing_gate_admits
 from justdata.main.config import MainConfig
 import os
+import re
 
 
 # Paths that don't require privileged access
@@ -26,6 +27,11 @@ EXEMPT_PATHS = [
     '/mergermeter/api/generate',  # API key auth, not Firebase — used by codebot
     '/mergermeter/api/search-banks-ext',  # API key auth — used by codebot for entity resolution
 ]
+
+
+# Error references are 8 hex characters (shared/utils/error_ref.py); job ids
+# can also be passed. Anything else is ignored rather than echoed.
+CONTACT_REF_RE = re.compile(r'[A-Za-z0-9_-]{1,64}')
 
 
 def create_app():
@@ -300,9 +306,12 @@ def create_app():
     # Contact page route
     @app.route('/contact')
     def contact():
-        """Contact Us page."""
+        """Contact Us page. ?ref=<id> (from an app's "Report a problem" link)
+        is shown above the form and included in the email it builds."""
+        ref = (request.args.get('ref') or '').strip()
         return render_template(
             'contact.html',
+            error_ref=ref if CONTACT_REF_RE.fullmatch(ref) else None,
             app_description=(
                 'Contact JustData and the National Community Reinvestment Coalition '
                 'for questions, support, or partnership opportunities.'

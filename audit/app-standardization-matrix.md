@@ -71,6 +71,41 @@ the Timing method section.
 | LendSight loads shared `app.js` twice: verify in a browser, then fix | LendSight per-app PR | Pending |
 | Placeholder AI disclosures; joke and policy progress lines; jobs that never end on error; BizSight unbacked QA claims; raw exception text in BizSight and MergerMeter | Hygiene PR #208 | Merged 2026-10-07 |
 
+## Part B progress
+
+### Exclusion sentence (spec 04 decision 2, Jad 2026-10-07)
+
+The shared sources block no longer says "Records that cannot be matched with
+confidence are excluded". An app may add an exclusion sentence only when it
+can name the code that does the excluding.
+
+| App | Outcome | Basis |
+|---|---|---|
+| LendSight | Dropped | No matching-confidence exclusion in the code. `mortgage_report.sql` applies scope filters only (originations, owner-occupied, 1-4 units, site-built, not reverse), already listed in Methods. Methods' "Data Cleaning" claim (1st/99th percentile loan-amount trimming) had no code behind it and was removed from the web report and PDF. |
+| BizSight | Pending (BizSight PR) | |
+| BranchSight | Pending (BranchSight PR) | |
+| MergerMeter | Pending (MergerMeter PR) | |
+
+### LendSight (refactor/lendsight-standard)
+
+- On the standard: `lendsight_analysis.html` extends `app_page.html`; the
+  report renders in the results column; `/lendsight/report?job_id=` is the
+  shareable URL.
+- Ticket 13229533844 fixed: the analysis runs 2021 to 2025 from
+  `hmda_years` (it was hardcoded to 2020 to 2024); the Years step and the
+  header vintage show it.
+- Double `app.js` load resolved: the shared `app.js`, jQuery and Select2
+  are no longer loaded on the LendSight page.
+- `rg 'style="' justdata/apps/lendsight/templates` and `rg "fa-"
+  justdata/apps/lendsight` return nothing.
+- Raw exception text removed from `/report-data`, `/download`, `/progress`,
+  `/analyze` and from `run_analysis` failures.
+- Stage timings recorded (`bq:tiered_summary`, `bq:mortgage_report`,
+  `census_api`, `hud`, `build_report`, `narrative:*`) and returned by
+  `/report-data`.
+- Before/after timings on the testing site: after the PR deploys (see the
+  PR).
+
 ## Findings that matter before testers
 
 These were live on the testing site at audit time. Items 1 to 5 are fixed in

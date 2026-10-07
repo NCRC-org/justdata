@@ -1460,11 +1460,9 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         'properties (construction method = 1); Owner-occupied (occupancy type = 1); '
         'Forward loans (excludes reverse mortgages); 1\u20134 unit properties.',
         _METHODS_COMPACT))
-    meth_elements.append(Paragraph(
-        '<b>Data Cleaning:</b> Loan amounts below the 1st percentile and above the 99th '
-        'percentile within each county-year are excluded (&lt;1% of records). This outlier '
-        'removal prevents extreme values from distorting market share and HHI calculations.',
-        _METHODS_COMPACT))
+    # No "Data Cleaning" paragraph: it claimed loan amounts outside the 1st-99th
+    # percentile were excluded, but no query or report step does that (spec 04
+    # decision 2: keep an exclusion claim only if the code doing it can be named).
 
     # Definitions
     meth_elements.append(Paragraph('Definitions', _meth_h3))

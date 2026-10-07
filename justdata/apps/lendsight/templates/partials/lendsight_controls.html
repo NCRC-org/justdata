@@ -1,0 +1,52 @@
+{# LendSight controls (spec 04 Part B item 3): 1 Geography, 2 Years, 3 Options.
+   LendSight has no lender step. ls_page.js fills the state and county lists. #}
+<form id="{{ form_id }}" novalidate>
+  <fieldset class="app-step" id="lsStepGeography">
+    <legend><span class="app-step-n">1</span>Geography</legend>
+    <div class="app-field">
+      <label for="lsState">State</label>
+      <select id="lsState" name="state" required>
+        <option value="">Loading states…</option>
+      </select>
+    </div>
+    <div class="app-field">
+      <label for="lsCounty">County</label>
+      <select id="lsCounty" name="county" required disabled>
+        <option value="">Select a state first</option>
+      </select>
+      <p class="app-field-hint">One county per analysis.</p>
+    </div>
+  </fieldset>
+
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">2</span>Years</legend>
+    <p class="app-field-hint ls-years">{{ analysis_years[0] }} to {{ analysis_years[-1] }}, the five most recent years of HMDA data.</p>
+  </fieldset>
+
+  <fieldset class="app-step" id="lsStepOptions">
+    <legend><span class="app-step-n">3</span>Options</legend>
+    <div class="app-field" role="group" aria-labelledby="lsPurposeLabel">
+      <span class="app-field-label" id="lsPurposeLabel">Loan purpose</span>
+      <label class="app-check"><input type="checkbox" name="loan_purpose" value="purchase" checked>
+        <span>Home purchase<span class="app-check-hint">Primary residence purchases</span></span></label>
+      <label class="app-check"><input type="checkbox" name="loan_purpose" value="refinance">
+        <span>Refinance and cash-out<span class="app-check-hint">Refinancing and cash-out loans</span></span></label>
+      <label class="app-check"><input type="checkbox" name="loan_purpose" value="equity">
+        <span>Home equity<span class="app-check-hint">Home equity lines and loans</span></span></label>
+    </div>
+    <details class="app-details">
+      <summary>Filters applied to every analysis</summary>
+      <ul>
+        <li>Originations only (action taken = 1)</li>
+        <li>Site-built properties (construction method = 1)</li>
+        <li>Owner-occupied properties (occupancy type = 1)</li>
+        <li>Forward loans (excludes reverse mortgages)</li>
+        <li>1-4 unit properties</li>
+      </ul>
+    </details>
+    {% if is_staff %}
+    <label class="app-check ls-staff-refresh"><input type="checkbox" id="lsForceRefresh">
+      <span>Clear cache and regenerate<span class="app-check-hint">Staff only. Runs the queries and narrative again.</span></span></label>
+    {% endif %}
+  </fieldset>
+</form>

@@ -64,7 +64,9 @@ def test_app_css_loads_after_shell_css(debug_app):
 
 def test_sources_copy_and_juxtaposition_note(debug_app):
     html = _preview(debug_app)
-    assert "using the data sources, years and exclusions listed below" in html
+    assert ("Figures are computed from the public datasets listed below, "
+            "with the years and exclusions stated for each.") in html
+    assert "matched with confidence" not in html
     assert "NCRC's published methodology" not in html
     assert "How this analysis is built" not in html
     assert "Correlation is not causation." in html
@@ -77,6 +79,9 @@ def test_toolbar_renders_only_listed_exports(debug_app):
         csv_only = render_template("partials/app_results_toolbar.html", exports=("csv",))
     assert "data-export" not in none and "copy-citation" in none
     assert 'data-export="csv"' in csv_only and 'data-export="pdf"' not in csv_only
+    with debug_app.test_request_context("/"):
+        xlsx_pdf = render_template("partials/app_results_toolbar.html", exports=("xlsx", "pdf"))
+    assert 'data-export="xlsx">Download Excel' in xlsx_pdf and 'data-export="csv"' not in xlsx_pdf
 
 
 def test_error_state_hides_an_empty_reference(debug_app):
@@ -118,7 +123,10 @@ def test_app_css_is_scoped_to_app_classes():
     for s in selectors:
         # .shell-main.app-main applies only on app_page.html (main_class)
         assert s.startswith((".app-", ".shell-main.app-main")), s
-    assert ".report-prose" not in css and "--color-fg-accent" not in css
+    # .report-prose is defined in style.css; app.css may only add spacing
+    # inside results, never redefine the class itself.
+    assert not any(sel.startswith(".report-prose") for sel in selectors)
+    assert "--color-fg-accent" not in css
 
 
 def test_app_states_js_size():
@@ -143,3 +151,61 @@ def test_citation_format(citation, expected):
     )
     out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
     assert out.stdout == expected
+
+
+def _node(expr):
+    script = f"require({json.dumps(str(APP_STATES_JS))}); process.stdout.write(JSON.stringify({expr}));"
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("elapsed_s,since_update_s,expected", [
+    (30, 30, None),            # running, recent progress
+    (59, 59, None),            # just under the stall limit
+    (60, 60, "stalled"),       # no progress for 60 s
+    (300, 61, "stalled"),      # progress stopped mid-run
+    (599, 5, None),            # long run that keeps reporting progress
+    (600, 5, "max"),           # still reporting progress, but 10 minutes total
+    (900, 900, "max"),         # both limits passed: the absolute cap wins
+])
+def test_timeout_paths(elapsed_s, since_update_s, expected):
+    now = 10_000_000
+    started = now - elapsed_s * 1000
+    last_update = now - since_update_s * 1000
+    assert _node(f"AppStates.timeoutReason({now}, {started}, {last_update})") == expected
+
+
+def test_idle_text_default_and_override(debug_app):
+    from flask import render_template
+    with debug_app.test_request_context("/"):
+        default = render_template("partials/app_state_idle.html")
+        custom = render_template("partials/app_state_idle.html",
+                                 idle_message="Choose a geography and a lender, then run the analysis.")
+    assert 'Choose a geography<span class="app-wide-only"> on the left</span>, then run the analysis.' in default
+    assert "lender" not in default
+    assert "Choose a geography and a lender, then run the analysis." in custom
+    assert "app-wide-only" not in custom
+    assert ".app-wide-only { display: none; }" in APP_CSS.read_text()
+
+
+APP_PROGRESS_JS = WEB / "static" / "js" / "app_progress.js"
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("text,expected", [
+    ("We couldn't complete this analysis. Reference: ab12cd34",
+     {"message": "We couldn't complete this analysis.", "ref": "ab12cd34"}),
+    ("No data found for the specified parameters", {"message": "No data found for the specified parameters", "ref": None}),
+    ("", {"message": "", "ref": None}),
+])
+def test_progress_error_text_splits_message_and_reference(text, expected):
+    script = (f"require({json.dumps(str(APP_PROGRESS_JS))});"
+              f"process.stdout.write(JSON.stringify(AppProgress.splitRef({json.dumps(text)})));")
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    assert json.loads(out.stdout) == expected
+
+
+def test_app_page_loads_progress_module(debug_app):
+    html = _preview(debug_app)
+    assert html.index("js/app_states.js") < html.index("js/app_progress.js")
