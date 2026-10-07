@@ -155,6 +155,26 @@ name collision.
 `app.js`, `auth.js`, and a `components/` directory (currently
 `GoalsCalculator.js`).
 
+**Analysis-app page (spec 04)** — LendSight, BizSight and BranchSight
+extend `app_page.html`, rendered with `app_page_context(...)` from
+`justdata/shared/web/app_page.py`. The page loads four shared modules from
+`justdata/shared/web/static/js/`, in this order:
+
+- `app_states.js` (AppStates) owns the results column's states: idle,
+  loading, success, empty and error, plus the toolbar actions and citation
+  text.
+- `app_progress.js` (AppProgress) owns following a job's progress stream
+  and splitting an error's reference from its message.
+- `app_report.js` (AppReport) owns the report body helpers: escaping and
+  formatting AI narratives (including the missing-narrative line), Chart.js
+  loading and threshold lines, and sortable tables.
+- `app_run.js` (AppRun) owns the run itself: posting `/analyze`, following
+  progress, loading `/report-data`, exports, the shareable
+  `/<app>/report?job_id=` URL, and the state-then-county picker.
+
+Each app adds only its own controls and report body (for example
+`js/branchsight/br_page.js` and `br_report.js`).
+
 **Auth** — `justdata/main/auth/` provides `login_required`,
 `require_access`, `admin_required`, and `staff_required` decorators on top
 of Firebase. All blueprints import from there. `require_access(app, level)`
