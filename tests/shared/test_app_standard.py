@@ -145,3 +145,26 @@ def test_citation_format(citation, expected):
     )
     out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
     assert out.stdout == expected
+
+
+def _node(expr):
+    script = f"require({json.dumps(str(APP_STATES_JS))}); process.stdout.write(JSON.stringify({expr}));"
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("elapsed_s,since_update_s,expected", [
+    (30, 30, None),            # running, recent progress
+    (59, 59, None),            # just under the stall limit
+    (60, 60, "stalled"),       # no progress for 60 s
+    (300, 61, "stalled"),      # progress stopped mid-run
+    (599, 5, None),            # long run that keeps reporting progress
+    (600, 5, "max"),           # still reporting progress, but 10 minutes total
+    (900, 900, "max"),         # both limits passed: the absolute cap wins
+])
+def test_timeout_paths(elapsed_s, since_update_s, expected):
+    now = 10_000_000
+    started = now - elapsed_s * 1000
+    last_update = now - since_update_s * 1000
+    assert _node(f"AppStates.timeoutReason({now}, {started}, {last_update})") == expected
