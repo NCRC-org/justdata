@@ -1,18 +1,32 @@
-{% extends "base_app.html" %}
+{#
+  LendSight on the analysis-app standard (spec 04 Part B). The entry route
+  and /report?job_id= both render this page; with a job id the results
+  column loads that report. Context: app_page_context(...) plus is_staff,
+  analysis_years, app_base_url, job_id (see blueprint.py).
+#}
+{% extends "app_page.html" %}
 
-{# app_name and breadcrumb_items are passed from the route #}
-{% set app_description = "AI-powered mortgage market intelligence platform" %}
+{% block title %}LendSight - JustData{% endblock %}
 
-{% block title %}LendSight - AI-Powered Mortgage Insights{% endblock %}
-
-{% block extra_head %}
-{% include 'partials/_lendsight_analysis_extra_head.html' %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lendsight.css') }}">
 {% endblock %}
 
-{% block content %}
-{% include 'partials/_lendsight_analysis_content.html' %}
+{% block controls %}
+{% include "partials/lendsight_controls.html" %}
 {% endblock %}
 
-{% block extra_js %}
-{% include 'partials/_lendsight_analysis_extra_js.html' %}
+{% block app_js %}
+{% include "partials/lendsight_report_template.html" %}
+<script>
+  window.LENDSIGHT = {
+    baseUrl: {{ app_base_url|tojson }},
+    jobId: {{ job_id|tojson }},
+    years: {{ analysis_years|tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/lendsight/ls_charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lendsight/ls_tables.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lendsight/ls_report.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lendsight/ls_page.js') }}"></script>
 {% endblock %}

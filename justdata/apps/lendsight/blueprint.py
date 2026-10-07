@@ -5,6 +5,7 @@ Converts the standalone LendSight app into a blueprint with cache integration.
 
 from flask import Blueprint, render_template, request, jsonify, session, make_response, send_file, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,7 @@ _result_fallback = {}
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from .core import analysis_years, run_analysis, parse_web_parameters
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
+from justdata.shared.web.app_page import app_page_context
 from .config import TEMPLATES_DIR, STATIC_DIR
 
 # Get shared templates directory
@@ -127,31 +129,54 @@ def configure_template_loader(state):
     ])
 
 
+def _page(job_id=None):
+    """The LendSight page (spec 04 standard). /report?job_id= renders the same
+    page; its script then loads that job's results into the results column."""
+    user_permissions = get_user_permissions()
+    years = analysis_years()
+    ctx = app_page_context(
+        'lendsight',
+        form_id='lsForm',
+        data_vintage=f'HMDA {years[0]} to {years[-1]}',
+        sources=[
+            {'name': 'HMDA',
+             'vintage': f'{years[0]} to {years[-1]}. Originations of owner-occupied, site-built, '
+                        '1-4 unit forward mortgages (CFPB)',
+             'url': 'https://www.consumerfinance.gov/data-research/hmda/'},
+            {'name': 'Census',
+             'vintage': '2010 and 2020 Decennial Census; American Community Survey 5-year '
+                        'estimates (the ACS year is stated in the report)',
+             'url': 'https://www.census.gov/data/developers/data-sets.html'},
+            {'name': 'HUD',
+             'vintage': 'Low-Mod Summary Data based on 2020 ACS, for borrower income population shares'},
+        ],
+        # The Methods section is inside the results, so there is no page to
+        # link to before a run (spec 04: help_url stays None until one exists).
+        help_url=None,
+        exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
+        # No exclusion_note: LendSight has no "matched with confidence"
+        # exclusion; its scope filters are listed in Methods (decision 2).
+        shows_juxtaposition=True,
+    )
+    response = make_response(render_template(
+        'lendsight_analysis.html',
+        **ctx,
+        is_staff=is_privileged_user(get_user_type()),
+        analysis_years=years,
+        app_base_url=url_for('lendsight.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'LendSight', 'url': '/lendsight'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
+
+
 @lendsight_bp.route('/')
 @login_required
 @require_access('lendsight', 'limited')
 def index():
     """Main page with the analysis form"""
-    user_permissions = get_user_permissions()
-    user_type = get_user_type()
-    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
-    is_staff = is_privileged_user(user_type)
-    cache_buster = int(time.time())  # Timestamp for cache-busting
-    # Set base URL for JavaScript API calls
-    app_base_url = url_for('lendsight.index').rstrip('/')
-    breadcrumb_items = [{'name': 'LendSight', 'url': '/lendsight'}]
-    response = make_response(render_template('lendsight_analysis.html',
-                                           permissions=user_permissions,
-                                           is_staff=is_staff,
-                                           cache_buster=cache_buster,
-                                           app_base_url=app_base_url,
-                                           app_name='LendSight',
-                                           breadcrumb_items=breadcrumb_items))
-    # Add cache-busting headers
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+    return _page()
 
 
 @lendsight_bp.route('/progress', methods=['GET'])
@@ -410,19 +435,11 @@ def analyze():
 @login_required
 @require_access('lendsight', 'limited')
 def report():
-    """Report display page"""
-    app_base_url = url_for('lendsight.index').rstrip('/')
-    breadcrumb_items = [
-        {'name': 'LendSight', 'url': '/lendsight'},
-        {'name': 'Report', 'url': '/lendsight/report'}
-    ]
-    # Use Flask's render_template with unique template name to avoid conflicts
-    return render_template(
-        'lendsight_report.html',
-        app_base_url=app_base_url,
-        app_name='LendSight',
-        breadcrumb_items=breadcrumb_items
-    )
+    """Shareable report URL: the LendSight page with this job's results."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id=job_id)
 
 
 @lendsight_bp.route('/report-data', methods=['GET'])

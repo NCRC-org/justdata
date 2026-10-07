@@ -1,0 +1,114 @@
+{# LendSight Methods, carried over from the former /report page. The unbacked
+   "Data Cleaning" paragraph was removed (spec 04 decision 2). #}
+<section class="app-result-section ls-methods" id="methodsSection">
+  <h3>Methods</h3>
+  <div class="ls-methods-body">
+    <h4>Data Sources</h4>
+    <p><strong>HMDA Data:</strong> This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank" rel="noopener">CFPB HMDA website</a>.</p>
+    <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="lsLoanPurposeCoverage">The analysis includes home purchase loans (loan purpose = 1).</span> Reverse mortgages are excluded from the analysis.</p>
+    <p><strong>Census Data:</strong> <span id="lsCensusSourceText">Population demographic data is sourced from the U.S. Census Bureau, including the 2010 Decennial Census, 2020 Decennial Census, and American Community Survey (ACS) 5-year estimates.</span></p>
+    <p><strong>HUD Data:</strong> Income category population shares are sourced from the U.S. Department of Housing and Urban Development (HUD) Low-Mod Summary Data, which shows the percentage of county residents in each income bracket based on 2020 ACS data.</p>
+    <p><strong>Data Filters Applied:</strong> The following filters are automatically applied to all analyses:</p>
+    <ul>
+      <li>Originations only (action taken = 1)</li>
+      <li>Site-built properties (construction method = 1)</li>
+      <li>Owner-occupied properties (occupancy type = 1)</li>
+      <li>Forward loans (excludes reverse mortgages where reverse_mortgage = 1)</li>
+      <li>1-4 unit properties (total_units IN ('1','2','3','4'))</li>
+    </ul>
+
+    <h4>Definitions</h4>
+    <p><strong>Loan Originations:</strong> Completed mortgage loans where action taken = 1. This excludes applications, denials, and withdrawn/incomplete applications.</p>
+    <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers whose reported income is at or below 80% of Area Median Family Income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) where the property is located.</p>
+    <h5>Borrower Income Categories</h5>
+    <p>Borrower income is classified relative to AMFI:</p>
+    <ul>
+      <li><strong>Low Income Borrower:</strong> Income at or below 50% of AMFI</li>
+      <li><strong>Moderate Income Borrower:</strong> Income greater than 50% but at or below 80% of AMFI</li>
+      <li><strong>Middle Income Borrower:</strong> Income greater than 80% but at or below 120% of AMFI</li>
+      <li><strong>Upper Income Borrower:</strong> Income greater than 120% of AMFI</li>
+    </ul>
+    <h5>Census Tract Income Categories</h5>
+    <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+    <ul>
+      <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+      <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+      <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+      <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+      <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+    </ul>
+    <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population, as defined by the U.S. Census Bureau.</p>
+    <p><strong>Multi-Racial Borrowers:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category. Based on national HMDA data (2018-2024), the most common race combinations among multi-racial mortgage borrowers are:</p>
+    <ul>
+      <li>Asian and White: 38% of multi-racial borrowers</li>
+      <li>Native American and White: 22%</li>
+      <li>Black and White: 17%</li>
+      <li>Hawaiian/Pacific Islander and White: 5%</li>
+      <li>Native American and Black: 4%</li>
+    </ul>
+    <p>These five combinations account for approximately 86% of all multi-racial mortgage borrowers nationally.</p>
+    <p><strong>Population Share:</strong> The percentage of the population (for borrower income categories) or census tracts (for tract income and minority categories) in each category, based on Census Bureau and HUD data.</p>
+
+    <h4>Calculations</h4>
+    <p><strong>Race and Ethnicity Classification:</strong> Race and ethnicity are determined from HMDA applicant fields:</p>
+    <ul>
+      <li><strong>Hispanic:</strong> Classified if any ethnicity field indicates Hispanic (codes 1, 11, 12, 13, or 14), regardless of race codes.</li>
+      <li><strong>Non-Hispanic Race:</strong> For non-Hispanic borrowers, race is determined from the first valid race code (excluding codes 6, 7, 8):
+        <ul>
+          <li>Code 1: Native American</li>
+          <li>Code 2 or 21-27: Asian</li>
+          <li>Code 3: Black or African American</li>
+          <li>Code 4 or 41-44: Hawaiian/Pacific Islander</li>
+          <li>Code 5: White</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100. Loans without race/ethnicity data are excluded from the denominator. Income and neighborhood indicator percentages use total loans as the denominator. Only groups representing ≥1% of loans are displayed in tables.</p>
+    <p><strong>Change Over Time:</strong> For percentage shares, Change = Last Year Share − First Year Share, expressed in percentage points (pp). For total counts, Change = ((Last − First) / First) × 100, expressed as a percentage. Positive changes are displayed in blue; negative changes in red.</p>
+    <h5>Herfindahl-Hirschman Index (HHI)</h5>
+    <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
+    <p class="ls-formula">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+    <p>Market shares are based on total loan origination amounts (not count). The sum includes all lenders in the market. Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
+    <p><strong>Concentration Levels:</strong></p>
+    <ul>
+      <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+      <li>HHI 1,500-2,500: Moderate concentration</li>
+      <li>HHI &gt; 2,500: High concentration</li>
+    </ul>
+    <p><strong>Top Lenders:</strong> Lenders ranked by total loan originations in the most recent year. Race/ethnicity percentages use loans with demographic data as denominator; income and neighborhood indicators use total loans as denominator.</p>
+    <h5>Minority Population Quartile Calculation</h5>
+    <p>Census tracts are divided into quartiles based on the distribution of minority population percentages across all census tracts in the Core Based Statistical Area (CBSA). Quartile boundaries are calculated from the actual distribution in each CBSA:</p>
+    <ol>
+      <li><strong>Step 1:</strong> For each census tract in the CBSA, obtain the minority population percentage.</li>
+      <li><strong>Step 2:</strong> Calculate the 25th, 50th, and 75th percentiles across all tracts.</li>
+      <li><strong>Step 3:</strong> Classify each tract — ≤25th percentile = Low Minority, 25th–50th = Moderate, 50th–75th = Middle, &gt;75th = High.</li>
+      <li><strong>Step 4:</strong> For each year, calculate the share of originations in tracts within each category.</li>
+    </ol>
+    <p class="ls-quartiles" id="lsQuartiles" hidden></p>
+
+    <h4>Abbreviations</h4>
+    <ul>
+      <li><strong>ACS:</strong> American Community Survey</li>
+      <li><strong>AMFI:</strong> Area Median Family Income</li>
+      <li><strong>CBSA:</strong> Core Based Statistical Area</li>
+      <li><strong>CFPB:</strong> Consumer Financial Protection Bureau</li>
+      <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+      <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+      <li><strong>HMDA:</strong> Home Mortgage Disclosure Act</li>
+      <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
+      <li><strong>LMIB:</strong> Low-to-Moderate Income Borrower</li>
+      <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+      <li><strong>MD:</strong> Metropolitan Division</li>
+      <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
+      <li><strong>MSA:</strong> Metropolitan Statistical Area</li>
+      <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
+      <li><strong>pp:</strong> Percentage Points</li>
+    </ul>
+
+    {# AI disclosure: the placeholder block was removed 2026-10-07 (Workflow
+       item 11108736907). The approved disclosure text returns here once Legal
+       provides it; do not ship placeholder copy. #}
+
+    <p class="ls-version" id="lsVersion"></p>
+  </div>
+</section>

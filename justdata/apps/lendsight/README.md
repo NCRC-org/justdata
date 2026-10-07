@@ -36,7 +36,16 @@ the AI narrative.
 
 ## Templates
 
-`templates/`:
-- `lendsight_analysis.html`, `lendsight_report.html`,
-  `analysis_template.html`, `pdf_report_template.html`
-- `partials/` — `_lendsight_analysis_*.html` and report fragments
+`templates/` (spec 04 standard, see `shared/web/templates/app_page.html`):
+- `lendsight_analysis.html` — extends `app_page.html`; rendered by `/` and by
+  `/report?job_id=` (the shareable report URL), which loads that job's results
+  into the results column
+- `partials/lendsight_controls.html` — steps 1 Geography, 2 Years, 3 Options
+- `partials/lendsight_report_template.html`, `lendsight_methods.html`,
+  `lendsight_narrative.html` — the report body, cloned into the results column
+- `pdf_report_template.html`
+
+Page scripts live in `shared/web/static/js/lendsight/` (`ls_page.js`,
+`ls_report.js`, `ls_tables.js`, `ls_charts.js`) and styles in
+`shared/web/static/css/lendsight.css`, because the shared static folder is
+the one `url_for('static')` serves.

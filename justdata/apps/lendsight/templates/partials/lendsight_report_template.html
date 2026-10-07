@@ -1,0 +1,105 @@
+{# LendSight report body (spec 04 Part B item 5), cloned into #resultsBody by
+   ls_page.js and filled by ls_report.js. Static wording is carried over from
+   the former /report page; years are filled from the run's metadata. #}
+<template id="lsReportTemplate">
+<div class="ls-report">
+  <div class="app-summary" id="lsSummary" aria-label="Summary for the most recent year"></div>
+
+  <section class="app-result-section" id="lsOverview">
+    <h3>Overview</h3>
+    <div class="ls-split">
+      <div class="report-prose" id="lsIntro"></div>
+      <figure class="ls-figure">
+        <figcaption class="ls-figure-title">Population demographics</figcaption>
+        <div class="app-chart ls-chart"><canvas id="lsCensusChart" role="img" aria-label="Population by race and ethnicity in the 2010 Census, 2020 Census and the most recent American Community Survey"></canvas></div>
+        <p class="ls-empty" id="lsCensusEmpty" hidden>Census demographic data is not available for the selected geography.</p>
+      </figure>
+    </div>
+    <p class="app-note"><strong>Note:</strong> It is important to note that shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts.</p>
+    <p class="ls-caption" id="lsCensusCaption"><strong>Source:</strong> U.S. Census Bureau American Community Survey (ACS) 5-year estimates. Data represents the most recent available ACS 5-year period and is shown for reference years in the analysis. Groups representing less than 1% of the total population are excluded from this table.</p>
+  </section>
+
+  <section class="app-result-section" id="lsKeyFindings" hidden>
+    <h3>Key findings</h3>
+    <div class="report-prose ls-findings" id="lsKeyFindingsText"></div>
+    <p class="ls-ai-caption">Above text is AI generated from NCRC data and analysis</p>
+  </section>
+
+  <section class="app-result-section" id="lsSection1">
+    <h3>Section 1: Loans by Race and Ethnicity</h3>
+    <h4 class="ls-table-title">Table 1: Loans by Race and Ethnicity</h4>
+    <p class="ls-table-intro" id="lsDemographicIntro"></p>
+    <div class="app-table-wrap"><table class="app-table ls-table" id="lsDemographicTable"><thead></thead><tbody></tbody></table></div>
+    <p class="ls-legend"><span class="ls-swatch ls-swatch--population"></span> Population share <span class="ls-swatch ls-swatch--lending"></span> Lending share</p>
+    <p class="ls-caption" id="lsDemographicCaption"></p>
+    {% with id="lsDemographicNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="lsSection2">
+    <h3>Section 2: Income and Neighborhood Indicators</h3>
+
+    <h4 class="ls-table-title">Table 1: Lending to Income Borrowers</h4>
+    <p class="ls-table-intro">This table shows lending activity by borrower income level over the selected time period. Borrower income is classified relative to the area median family income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) in which the property is located. Income thresholds are determined using FFIEC median family income data. Population share refers to the percentage of the county residents that are in each income bracket as of 2020.</p>
+    <div class="app-table-wrap"><table class="app-table ls-table" id="lsIncomeBorrowersTable"><thead></thead><tbody></tbody></table></div>
+    {% with id="lsIncomeBorrowersNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
+
+    <h4 class="ls-table-title">Table 2: Lending to Census Tracts by Income Level</h4>
+    <p class="ls-table-intro">This table shows lending activity by census tract income level over the selected time period. Census tract income is classified relative to the area median family income, as defined by HUD. The table shows lending to Low to Moderate Income Census Tracts (≤80% of AMFI) and their breakdown by Low Income (≤50% of AMFI), Moderate Income (&gt;50% and ≤80% of AMFI), Middle Income (&gt;80% and ≤120% of AMFI), and Upper Income (&gt;120% of AMFI) census tracts. <strong>Note:</strong> Between 2021 and 2022, boundary changes substantially increased the number of tracts with higher minority populations.</p>
+    <div class="app-table-wrap"><table class="app-table ls-table" id="lsIncomeTractsTable"><thead></thead><tbody></tbody></table></div>
+    {% with id="lsIncomeTractsNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
+
+    <h4 class="ls-table-title">Table 3: Lending to Census Tracts by Minority Population</h4>
+    <p class="ls-table-intro">This table shows lending activity by census tract minority population. "Majority-Minority" tracts have more than 50% residents of color — this is a fixed national threshold. Because that single threshold tells very different stories in different geographies (nearly all tracts qualify in South Florida; almost none in rural Iowa), this table also divides tracts into four quartile groups based on the actual distribution of minority population percentages across all census tracts in the CBSA. Quartile boundaries are specific to this geography. <strong>Note:</strong> Between 2021 and 2022, shifting census boundaries resulted in a ~30% increase in majority-minority census tract designations nationally.</p>
+    <div class="app-table-wrap"><table class="app-table ls-table" id="lsMinorityTractsTable"><thead></thead><tbody></tbody></table></div>
+    {% with id="lsMinorityTractsNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
+
+    <p class="ls-caption"><strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Census tract income classifications from HUD. <strong>Methodology:</strong> Borrower income is compared to FFIEC median family income for the MSA/MD. Census tract income is compared to area median family income. Minority quartiles are calculated from the distribution of minority population percentages across all census tracts in the CBSA. <strong>Note:</strong> The Change column indicates the change over time since <span data-ls="first-year"></span> through <span data-ls="last-year"></span>. The Population Share (%) column shows the percentage of the population (for borrower income) or census tracts (for tract income and minority) in each category. <span id="lsAsteriskNote" hidden></span></p>
+
+    <div class="ls-overview" id="lsNeighborhoodOverview" hidden>
+      <h4 class="ls-table-title">Neighborhood overview</h4>
+      <div class="report-prose" id="lsNeighborhoodOverviewText"></div>
+      <p class="ls-ai-caption">Above text is AI generated from NCRC data and analysis</p>
+    </div>
+  </section>
+
+  <section class="app-result-section" id="lsSection3">
+    <h3>Section 3: Top Lenders by Total Loans</h3>
+    <h4 class="ls-table-title">Table 1: Top Lenders by Total Loans</h4>
+    <p class="ls-table-intro">This table ranks the largest mortgage lenders by total loan originations in the most recent year. Market share is calculated as each lender's originations divided by total market originations. Race/ethnicity percentages use loans with demographic data as the denominator; income and neighborhood indicators use each lender's total loans.</p>
+    <div class="ls-table-tools">
+      <div class="app-field ls-inline-field">
+        <label for="lsLenderType">Lender type</label>
+        <select id="lsLenderType">
+          <option value="all">All lenders</option>
+          <option value="Bank">Banks</option>
+          <option value="Mortgage">Mortgage companies</option>
+          <option value="Credit Union">Credit unions</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" id="lsLendersExpand" aria-expanded="false" hidden>Show all lenders</button>
+    </div>
+    <p class="ls-hint">Select a column header to sort. All data columns are percentages.</p>
+    <div class="app-table-wrap"><table class="app-table ls-table ls-lenders" id="lsLendersTable"><thead></thead><tbody></tbody></table></div>
+    <p class="ls-caption" id="lsLendersCaption"></p>
+    <p class="ls-hint">For the complete lender list, download the Excel export.</p>
+    {% with id="lsLendersNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="lsSection4" hidden>
+    <h3>Section 4: Market Concentration</h3>
+    <div class="ls-split">
+      <div class="report-prose">
+        <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+        <p>HHI for mortgage lending in the selected counties across the selected years:</p>
+      </div>
+      <figure class="ls-figure">
+        <div class="app-chart ls-chart"><canvas id="lsHhiChart" role="img" aria-label="Market concentration (HHI) by year"></canvas></div>
+      </figure>
+    </div>
+    <p class="ls-caption"><strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. HHI values range from 0 to 10,000. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
+    {% with id="lsConcentrationNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
+  </section>
+
+  {% include "partials/lendsight_methods.html" %}
+</div>
+</template>
