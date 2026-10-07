@@ -58,3 +58,28 @@ def test_failed_run_reports_generic_error_with_reference(client, monkeypatch):
     assert SECRET not in progress["error"]
     assert progress["error"].startswith("We couldn't complete this analysis.")
     assert REF.search(progress["error"])
+
+
+def test_exception_inside_run_analysis_is_not_shown(client, monkeypatch):
+    """run_analysis catches its own exceptions; their text must not reach the
+    progress stream either (it used to return "Analysis failed: <exception>")."""
+    import justdata.apps.lendsight.blueprint as bp
+    import justdata.apps.lendsight.core as core
+    from justdata.shared.utils.progress_tracker import get_progress
+
+    monkeypatch.setattr(bp, "run_in_background", lambda work, **kw: work())
+    monkeypatch.setattr(bp, "lookup_cached_analysis", lambda *a, **k: None)
+    monkeypatch.setattr(bp, "record_completion", lambda *a, **k: None)
+    monkeypatch.setattr(bp, "new_job_id", lambda: f"test-{uuid.uuid4().hex}")
+    monkeypatch.setattr(core, "parse_web_parameters", _boom)
+    monkeypatch.setattr(bp, "parse_web_parameters", lambda *a, **k: (["Cook County, Illinois"], [2025]))
+    monkeypatch.setattr(bp, "run_analysis", core.run_analysis)
+    resp = client.post("/lendsight/analyze", json={
+        "selection_type": "county", "state_code": "17", "loan_purpose": ["purchase"],
+        "counties": "Cook County, Illinois",
+    })
+    progress = get_progress(resp.get_json()["job_id"])
+    assert progress["done"] is True
+    assert SECRET not in progress["error"]
+    assert progress["error"].startswith("We couldn't complete this analysis.")
+    assert REF.search(progress["error"])

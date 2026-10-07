@@ -331,10 +331,14 @@ def analyze():
                 )
                 
                 if not result.get('success'):
-                    error_msg = result.get('error', 'Unknown error')
-                    progress_tracker.update_progress('error', message=error_msg)
+                    # result['error'] is written by core (safe to show); an
+                    # unexpected exception is logged under the same reference.
+                    error_msg = result.get('error') or GENERIC_ERROR
+                    exc = result.get('exception')
+                    progress_tracker.fail(error_msg, exc=exc)
                     record_completion('lendsight', cache_params, caller, job_id,
-                                      start_time, request_id, error_message=error_msg)
+                                      start_time, request_id,
+                                      error_message=str(exc) if exc else error_msg)
                     return
                 
                 # Store in BigQuery only (no in-memory storage)

@@ -19,6 +19,7 @@ from justdata.apps.lendsight.report_builder import build_mortgage_report
 from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 from justdata.apps.lendsight.version import __version__
 from justdata.shared.utils.perf import perf_stages, start_perf, timed
+from justdata.shared.utils.error_ref import GENERIC_ERROR
 
 
 # Number of years in LendSight's analysis window.
@@ -927,8 +928,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         }
         
     except Exception as e:
-        print(f"\nError: {str(e)}")
-        if progress_tracker:
-            progress_tracker.complete(success=False, error=str(e))
-        return {'success': False, 'error': f'Analysis failed: {str(e)}'}
+        # The caller ends the job with a safe message and logs this exception's
+        # traceback under the reference id the user sees (progress_tracker.fail).
+        return {'success': False, 'error': GENERIC_ERROR, 'exception': e}
 
