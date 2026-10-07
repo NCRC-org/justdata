@@ -1,0 +1,27 @@
+{# One registry group; expects group and group_index (set in apps.html's loop). #}
+{% set group_items = group['items'] %}
+<section class="apps-group" aria-labelledby="apps-g-{{ group_index }}">
+    <div class="home-container">
+        <div class="apps-group-head">
+            <h2 id="apps-g-{{ group_index }}" class="apps-group-label">{{ group.label }}</h2>
+            <span class="apps-group-count">{{ count_words(group_items|length) }} tool{{ 's' if group_items|length != 1 }}</span>
+        </div>
+        {% if group.note %}<p class="apps-group-note">{{ group.note }}</p>{% endif %}
+        {# Staff-only groups (staff tools, tools in consolidation) are compact rows,
+           not cards, so they are not presented as peer products. #}
+        {% if group.staff_only %}
+        <ul class="apps-rows">
+            {% for item in group_items %}
+            <li><a href="{{ item.url }}" class="apps-row" data-card="{{ item.key }}"><span class="apps-row-name">{{ item.name }}</span><span class="apps-row-purpose">{{ item.purpose }}</span><span class="apps-row-go">Open →</span></a></li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="apps-grid">
+            {% for item in group_items %}
+            {% set featured = loop.first %}
+            {% include "partials/apps_card.html" %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>

@@ -1,0 +1,29 @@
+{# One launcher card; expects item (registry entry) and featured. #}
+{% set locked = item.state != 'available' %}
+<article class="apps-card{% if featured %} is-featured{% endif %}{% if locked %} is-locked{% endif %}" data-card="{{ item.key }}">
+    {% if featured %}<div class="apps-card-inset" aria-hidden="true"></div>{% endif %}
+    <div class="apps-card-body">
+        <div class="apps-card-top">
+            <h3 class="apps-card-name">{{ item.name }}</h3>
+            {% if locked %}
+            <span class="home-chip home-chip--lock"><i data-lucide="lock" aria-hidden="true"></i> {{ item.tag or 'Locked' }}</span>
+            {% endif %}
+        </div>
+        <p class="apps-card-purpose">{{ item.purpose }}</p>
+        {% if app_descriptions.get(item.key) %}<p class="apps-card-desc">{{ app_descriptions[item.key] }}</p>{% endif %}
+        <div class="apps-card-meta">
+            {% for s in item.sources %}<span class="home-chip">{{ s }}</span>{% endfor %}
+            {% if analysis_years.get(item.key) %}<span class="apps-card-years">Analysis years: {{ analysis_years[item.key] }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="apps-card-foot">
+        {% if locked %}
+        <a href="#request-access" class="btn btn-secondary btn-sm">Request access</a>
+        {% else %}
+        <a href="{{ item.url }}" class="btn btn-primary btn-sm">Open {{ item.name }}</a>
+        {% endif %}
+        {# Spec 04 adds a per-app help_url; the "Guide →" (open cards) and
+           "What it does →" (locked cards) links return here then. No app has a
+           standalone guide or methodology page yet (spec 03 audit, 2026-10-07). #}
+    </div>
+</article>

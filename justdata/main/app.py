@@ -6,7 +6,7 @@ Serves as the central entry point with all sub-apps as blueprints.
 from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect
 from werkzeug.middleware.proxy_fix import ProxyFix
 from justdata.main.auth import (
-    get_user_type, set_user_type, get_app_access, get_user_permissions,
+    get_user_type, set_user_type, get_app_access, get_access_row, get_user_permissions,
     auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
     login_required, admin_required
 )
@@ -39,11 +39,12 @@ def create_app():
         static_folder=MainConfig.STATIC_DIR
     )
 
-    # Cloud Run terminates TLS and forwards plain HTTP with X-Forwarded-Proto
-    # and X-Forwarded-For set by its single proxy hop. Without this, Flask
-    # builds absolute URLs (e.g. the 308 from /analytics to /analytics/) as
-    # http://. Trust exactly one hop. Found during the spec 03 gate check.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+    # Cloud Run terminates TLS and forwards plain HTTP with X-Forwarded-Proto.
+    # Without this, Flask builds absolute URLs (e.g. the 308 from /analytics
+    # to /analytics/) as http://. Trust the scheme from exactly one hop. Only
+    # the scheme: x_for stays 0 so request.remote_addr (written to the usage
+    # log) is unchanged. Found during the spec 03 gate check.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
     
     # Configuration
     app.secret_key = MainConfig.SECRET_KEY
@@ -239,73 +240,48 @@ def create_app():
             count_words=count_words,
         )
 
-    # App launcher: the ACCESS_MATRIX-driven grid that used to live on '/'.
+    # App launcher (spec 03): grouped cards from the nav registry.
     @app.route('/apps')
     def apps_index():
-        """App launcher grid, grouped and gated by ACCESS_MATRIX.
+        """App launcher. Groups, order and each tool's state come from the nav
+        registry (nav_groups, resolved against ACCESS_MATRIX plus the testing
+        overlay), so the launcher, drawer and landing roster always agree.
 
-        app_groups is built here (not in inject_shell(), which serves the
-        nav sidebar's flat list) because this page needs per-app
-        descriptions and a fixed group/heading structure the nav doesn't
-        carry.
+        Staff-only registry groups (staff tools, tools in consolidation) render
+        as compact rows. access_level: "staff" (staff roles), "tester" (tester roles on the
+        testing deploy) or "free" (a signed-in public_registered user on the
+        testing deploy, who sees every tool locked plus the request panel).
         """
+        from justdata.main.auth.services.membership import member_request_status
+        from justdata.main.landing_content import count_words
+        from justdata.main.launcher_content import ANALYSIS_YEARS, APP_DESCRIPTIONS, HEADER_LINES
+        from justdata.shared.web.registry import resolve_registry
+
         user_type = get_user_type()
+        if is_privileged_user(user_type):
+            access_level = 'staff'
+        elif is_tester(user_type):
+            access_level = 'tester'
+        else:
+            access_level = 'free'
 
-        home_group_defs = [
-            ('Reports', [
-                ('lendsight', 'LendSight',
-                 'Mortgage lending analysis with AI-generated narratives identifying disparities and compliance concerns.',
-                 '/lendsight'),
-                ('bizsight', 'BizSight',
-                 'Small business lending patterns using CRA data with AI-powered gap analysis.',
-                 '/bizsight'),
-                ('branchsight', 'BranchSight',
-                 'Bank branch network analysis tracking openings, closings, and market concentration.',
-                 '/branchsight'),
-            ]),
-            ('Data tools', [
-                ('branchmapper', 'BranchMapper',
-                 'Interactive map of branch locations with demographic overlays and filters.',
-                 '/branchmapper'),
-                ('dataexplorer', 'DataExplorer',
-                 'Query the full HMDA dataset with custom filters. Export raw data for your own analysis.',
-                 '/dataexplorer'),
-                ('mergermeter', 'MergerMeter',
-                 'Bank merger impact analysis with CBA goal recommendations and peer comparisons.',
-                 '/mergermeter'),
-            ]),
-            ('Staff tools', [
-                ('analytics', 'Analytics',
-                 'Monitor platform usage, report generation, and feature adoption.',
-                 '/analytics'),
-                ('admin', 'Administration',
-                 'Manage user accounts, permissions, and system integrations.',
-                 '/admin/users'),
-            ]),
-        ]
-
-        app_groups = []
-        for heading, group_apps in home_group_defs:
-            visible = []
-            for key, name, description, url in group_apps:
-                access = get_app_access(key, user_type)
-                if access == 'hidden':
-                    continue
-                visible.append({
-                    'key': key,
-                    'name': name,
-                    'description': description,
-                    'url': url,
-                    'access': access,
-                })
-            if visible:
-                app_groups.append({'heading': heading, 'apps': visible})
+        groups = resolve_registry(get_access_row, user_type, is_staff=(access_level == 'staff'))
+        any_locked = any(item['state'] == 'locked' for g in groups for item in g['items'])
+        request_status = None
+        if any_locked:
+            user = get_current_user()
+            request_status, _ = member_request_status(user.get('uid') if user else None)
 
         return render_template(
             'apps.html',
             app_name='Apps',
-            app_description='Launch a JustData tool.',
-            app_groups=app_groups,
+            app_description='Open a JustData tool, or see what each one does.',
+            header_line=HEADER_LINES[access_level],
+            app_descriptions=APP_DESCRIPTIONS,
+            analysis_years=ANALYSIS_YEARS,
+            any_locked=any_locked,
+            request_pending=(request_status == 'pending'),
+            count_words=count_words,
         )
 
     # About page route
