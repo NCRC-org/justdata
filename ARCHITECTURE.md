@@ -157,7 +157,10 @@ name collision.
 
 **Auth** — `justdata/main/auth/` provides `login_required`,
 `require_access`, `admin_required`, and `staff_required` decorators on top
-of Firebase. All blueprints import from there.
+of Firebase. All blueprints import from there. `require_access(app, level)`
+levels are validated by `tests/shared/test_require_access_levels.py`; the
+only valid levels are `hidden`, `locked`, `limited` and `full` (an unknown
+level such as `partial` silently admits every role).
 
 **Environment** — `justdata/shared/utils/unified_env.py` exposes
 `get_unified_config()` for unified env loading across apps.
