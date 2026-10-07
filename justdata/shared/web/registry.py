@@ -7,11 +7,10 @@ get_access_row() (main/auth), passed in by inject_shell() in main/app.py.
 Do not add access rules to this file; change the matrix instead.
 
 Testing-site overlay: on JUSTDATA_ENV=testing, get_access_row() applies
-main/auth/access_overlay.py, which limits non-staff users to LendSight,
-BizSight, BranchSight and MergerMeter and opens MergerMeter to testers.
-That resolves D2 as "tester-facing" for the testing deploy only and is the
-one deliberate access change made with spec 01. This file does not
-special-case it; it just reads the overlaid rows.
+main/auth/access_overlay.py, which limits non-staff users to the three Sight
+apps (LendSight, BizSight, BranchSight). MergerMeter is staff-only on every
+deploy (D2, resolved 2026-10-07). This file does not special-case either;
+it just reads the overlaid rows.
 
 `sources` names only datasets the app's code actually queries (checked
 against each app's sql_templates/ and query builders, 2026-10-06).

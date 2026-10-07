@@ -115,7 +115,7 @@ def test_public_paths_match_exactly_not_as_prefixes(monkeypatch):
 @pytest.mark.parametrize("user_type", TESTER_ROLES)
 def test_testing_admits_tester_roles_past_the_global_gate(platform_app, monkeypatch, user_type):
     monkeypatch.setenv("JUSTDATA_ENV", "testing")
-    for path in ("/apps", "/lendsight/", "/bizsight/", "/branchsight/", "/mergermeter/"):
+    for path in ("/apps", "/lendsight/", "/bizsight/", "/branchsight/"):
         assert not _is_restricted(_get(platform_app, path, user_type), path), path
 
 

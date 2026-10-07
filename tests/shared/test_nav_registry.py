@@ -49,18 +49,30 @@ def testing_env(monkeypatch):
     monkeypatch.setenv("JUSTDATA_ENV", "testing")
 
 
+def test_tester_apps_are_exactly_the_three_sight_apps():
+    assert set(TESTER_APPS) == {"lendsight", "bizsight", "branchsight"}
+
+
 @pytest.mark.parametrize("user_type", NON_STAFF_ROLES)
-def test_testing_env_non_staff_see_exactly_the_four_tester_apps(testing_env, user_type):
+def test_testing_env_non_staff_see_exactly_the_three_tester_apps(testing_env, user_type):
     drawer = _drawer(user_type)
     assert set(drawer) == set(TESTER_APPS)
-    expected_mm = "available" if user_type in TESTER_ROLES else "locked"
-    assert drawer["mergermeter"] == expected_mm
+    expected = "available" if user_type in TESTER_ROLES else "locked"
+    assert set(drawer.values()) == {expected}
 
 
-@pytest.mark.parametrize("user_type", TESTER_ROLES)
-def test_testing_env_testers_can_open_mergermeter(testing_env, user_type):
-    assert _drawer(user_type)["mergermeter"] == "available"
-    assert get_app_access("mergermeter", user_type) == "full"
+@pytest.mark.parametrize("user_type", NON_STAFF_ROLES)
+def test_testing_env_no_other_app_is_available_or_locked_for_non_staff(testing_env, user_type):
+    for key in ACCESS_MATRIX:
+        if key not in TESTER_APPS:
+            assert get_app_access(key, user_type) == "hidden", key
+
+
+@pytest.mark.parametrize("user_type", NON_STAFF_ROLES)
+def test_mergermeter_is_staff_only_on_every_deploy(monkeypatch, user_type):
+    for env in ("testing", "staging", "production"):
+        monkeypatch.setenv("JUSTDATA_ENV", env)
+        assert get_app_access("mergermeter", user_type) == "hidden", env
 
 
 @pytest.mark.parametrize("user_type", NON_STAFF_ROLES)
