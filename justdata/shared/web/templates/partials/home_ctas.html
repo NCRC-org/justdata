@@ -1,0 +1,10 @@
+{# Landing page calls to action, shared by the hero and the closing band.
+   hero_cta comes from landing() in main/app.py: "apps", "request" or "signin". #}
+{% if hero_cta == 'apps' %}
+<a href="/apps" class="btn btn-accent btn-lg">Open the apps</a>
+{% elif hero_cta == 'request' %}
+<button type="button" class="btn btn-accent btn-lg" onclick="openMemberRequestModal()">Request member access</button>
+{% else %}
+<button type="button" class="btn btn-accent btn-lg" onclick="openLoginModal()">Sign in</button>
+<button type="button" class="btn btn-ghost-light btn-lg" onclick="openLoginModal('register')">Create an account</button>
+{% endif %}

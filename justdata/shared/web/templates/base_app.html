@@ -13,7 +13,7 @@
 
     {% block before_content %}{% endblock %}
 
-    <main id="main" class="shell-main">
+    <main id="main" class="shell-main{% block main_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 

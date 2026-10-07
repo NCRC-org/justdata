@@ -1,0 +1,12 @@
+{# Figures come from main/landing_content.py, each verified against code and BigQuery. #}
+<section class="home-band home-band--tight home-band--ruled" id="platformStats" aria-label="Platform at a glance">
+    <div class="home-container home-strip-grid">
+        {% for s in platform_stats %}
+        <div class="home-stat">
+            <p class="home-stat-figure">{{ s.figure }}</p>
+            <p class="home-stat-label">{{ s.label }}</p>
+            <p class="home-stat-source">{{ s.source }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>

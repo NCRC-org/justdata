@@ -1,0 +1,28 @@
+<section class="home-band home-band--blue home-hero" aria-labelledby="home-hero-h">
+    <div class="home-container home-grid">
+        <div class="home-hero-copy">
+            <p class="home-eyebrow">JustData, a research platform from NCRC</p>
+            <h1 id="home-hero-h" class="home-hero-h">See who lends, where and to whom.</h1>
+            <p class="home-lead">JustData turns federal mortgage, small business and branch records into analysis that holds up in a hearing, a newsroom or a negotiation.</p>
+            <div class="home-ctas">
+                {% include "partials/home_ctas.html" %}
+                <a href="#cited" class="home-link home-hero-tertiary">How the data is built →</a>
+            </div>
+        </div>
+        <div class="home-hero-visual">
+            <div class="home-tract-grid" role="img" aria-label="Abstract grid of census tracts"></div>
+            <div class="home-inventory">
+                <p class="home-inventory-h">What's inside</p>
+                <dl class="home-inventory-list">
+                    {% for row in data_inventory %}
+                    <div class="home-inventory-row">
+                        <dt>{{ row.name }}</dt>
+                        <dd>{{ row.vintage }}</dd>
+                    </div>
+                    {% endfor %}
+                </dl>
+                <a href="#roster" class="home-link">All apps →</a>
+            </div>
+        </div>
+    </div>
+</section>
