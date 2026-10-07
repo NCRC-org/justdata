@@ -247,3 +247,11 @@ def test_narrative_is_escaped_before_markdown(text, expected):
 
 def test_app_report_js_size():
     assert len(APP_REPORT_JS.read_text().splitlines()) < 300
+
+
+def test_shared_modules_load_in_order_and_stay_small(debug_app):
+    html = _preview(debug_app)
+    order = [html.index(f"js/{m}") for m in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js")]
+    assert order == sorted(order)
+    for m in ("app_report.js", "app_run.js"):
+        assert len((WEB / "static" / "js" / m).read_text().splitlines()) < 300, m

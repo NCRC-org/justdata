@@ -81,5 +81,5 @@ def test_lendsight_js_modules_stay_small():
         assert len(f.read_text().splitlines()) <= 500, f.name
     shared = ROOT / "justdata" / "shared" / "web" / "static" / "js"
     total = sum(f.stat().st_size for f in files) + sum(
-        (shared / name).stat().st_size for name in ("app_states.js", "app_progress.js", "app_report.js"))
+        (shared / name).stat().st_size for name in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js"))
     assert total <= 250 * 1024  # spec 04 A5 budget for the app's own JS
