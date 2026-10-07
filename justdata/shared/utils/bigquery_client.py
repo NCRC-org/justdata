@@ -169,6 +169,14 @@ def _get_credentials_from_env(app_name: Optional[str] = None) -> Optional[tuple]
 
 
 def get_bigquery_client(project_id: str = None, app_name: str = None):
+    """Return a cached BigQuery client whose queries carry the analysis
+    context: job labels and, for a staff force refresh, no BigQuery result
+    cache (see shared/utils/query_context.py)."""
+    from justdata.shared.utils.query_context import instrument_client
+    return instrument_client(_build_bigquery_client(project_id, app_name))
+
+
+def _build_bigquery_client(project_id: str = None, app_name: str = None):
     """Get BigQuery client using environment-based credentials.
     
     Supports per-app service account credentials for cost attribution.

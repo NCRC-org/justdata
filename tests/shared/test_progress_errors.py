@@ -64,7 +64,7 @@ def platform_app():
 ])
 def test_county_with_no_data_ends_the_job(platform_app, monkeypatch, app_key, payload):
     blueprint = __import__(f"justdata.apps.{app_key}.blueprint", fromlist=["x"])
-    monkeypatch.setattr(blueprint, "run_in_background", lambda work: work())
+    monkeypatch.setattr(blueprint, "run_in_background", lambda work, **kw: work())
     monkeypatch.setattr(blueprint, "lookup_cached_analysis", lambda *a, **k: None)
     monkeypatch.setattr(blueprint, "parse_web_parameters",
                         lambda *a, **k: (["Lowndes County, Alabama"], [2021, 2022, 2023, 2024, 2025]))

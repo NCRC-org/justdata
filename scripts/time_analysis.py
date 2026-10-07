@@ -9,11 +9,12 @@ is stored), every progress step with its timestamp, whether the run was a
 cache hit, and any error. Once the shared spec 04 PR adds a `perf` payload to
 /report-data, its stage timings are recorded too.
 
-Each run's UTC start/end window is written out so BigQuery bytes billed can be
-read afterwards from INFORMATION_SCHEMA.JOBS_BY_PROJECT (the `bytes`
-subcommand), filtered by the app's service account. The client sets no job
-labels yet, so concurrent traffic under the same service account in a window
-would be counted too; keep windows short and note it.
+BigQuery bytes billed are read afterwards from INFORMATION_SCHEMA.JOBS_BY_PROJECT
+(the `bytes` subcommand). Every analysis job is labelled job=<job_id>
+(shared/utils/query_context.py), so each run's bytes are matched exactly by
+that label. Runs recorded before the labels existed fall back to the app's
+service account and the run's UTC window, which would also count concurrent
+traffic.
 
 Credentials come only from the environment (TEST_EMAIL, TEST_PASSWORD) and
 are never printed or written. Uncached runs send force_refresh, which the
@@ -161,26 +162,36 @@ def cmd_bytes(args):
     """Sum BigQuery bytes billed per run window, from INFORMATION_SCHEMA."""
     from google.cloud import bigquery  # requires credentials with bigquery.jobs.listAll
     client = bigquery.Client(project=args.project)
+    # Match the run's own jobs by their job label; fall back to the service
+    # account and time window when the label is absent (older runs).
     sql = f"""
+        WITH jobs AS (
+          SELECT total_bytes_billed, total_bytes_processed, cache_hit,
+                 (SELECT value FROM UNNEST(labels) WHERE key = 'job') AS job_label
+          FROM `{args.project}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+          WHERE job_type = 'QUERY' AND creation_time BETWEEN @start AND @end
+            AND (user_email = @sa OR EXISTS (SELECT 1 FROM UNNEST(labels) WHERE key = 'job' AND value = @job))
+        )
         SELECT COUNT(*) AS jobs, SUM(total_bytes_billed) AS bytes_billed,
                SUM(total_bytes_processed) AS bytes_processed,
-               COUNTIF(cache_hit) AS bq_cache_hits
-        FROM `{args.project}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
-        WHERE job_type = 'QUERY' AND user_email = @sa
-          AND creation_time BETWEEN @start AND @end
+               COUNTIF(cache_hit) AS bq_cache_hits,
+               COUNTIF(job_label = @job) AS labelled_jobs
+        FROM jobs
+        WHERE job_label = @job OR NOT EXISTS (SELECT 1 FROM jobs WHERE job_label = @job)
     """
     with open(args.infile) as f:
         records = [json.loads(line) for line in f if line.strip()]
-    print("app\tlabel\trun\tmode\tjobs\tbytes_billed\tbytes_processed\tbq_cache_hits")
+    print("app\tlabel\trun\tmode\tjobs\tbytes_billed\tbytes_processed\tbq_cache_hits\tmatched_by")
     for r in records:
         params = [
             bigquery.ScalarQueryParameter("sa", "STRING", SERVICE_ACCOUNTS[r["app"]]),
             bigquery.ScalarQueryParameter("start", "TIMESTAMP", r["started_utc"]),
             bigquery.ScalarQueryParameter("end", "TIMESTAMP", r["ended_utc"]),
+            bigquery.ScalarQueryParameter("job", "STRING", (r.get("job_id") or "").lower()[:63]),
         ]
         row = list(client.query(sql, job_config=bigquery.QueryJobConfig(query_parameters=params)).result())[0]
         print(f"{r['app']}\t{r['label']}\t{r['run']}\t{r['mode']}\t{row.jobs}\t{row.bytes_billed}\t"
-              f"{row.bytes_processed}\t{row.bq_cache_hits}")
+              f"{row.bytes_processed}\t{row.bq_cache_hits}\t{'job label' if row.labelled_jobs else 'service account + window'}")
 
 
 def main():

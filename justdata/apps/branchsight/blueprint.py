@@ -230,7 +230,7 @@ def analyze():
                 error_msg = str(e)
                 progress_tracker.complete(success=False, error=error_msg)
 
-        run_in_background(run_job)
+        run_in_background(run_job, job_id=job_id)
 
         return jsonify({'success': True, 'job_id': job_id})
 

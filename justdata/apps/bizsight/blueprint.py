@@ -269,7 +269,7 @@ def analyze():
                 record_completion('bizsight', cache_params, caller, job_id,
                                   start_time, request_id, error_message=error_msg)
 
-        run_in_background(run_job)
+        run_in_background(run_job, job_id=job_id)
 
         return jsonify({'success': True, 'job_id': job_id})
         

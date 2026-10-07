@@ -379,7 +379,7 @@ def analyze():
                                   start_time, request_id, error_message=error_msg)
 
         print(f"[DEBUG] Starting background thread for job {job_id}")
-        run_in_background(run_job)
+        run_in_background(run_job, job_id=job_id)
 
         print(f"[DEBUG] Returning success response with job_id: {job_id}")
         return jsonify({'success': True, 'job_id': job_id})

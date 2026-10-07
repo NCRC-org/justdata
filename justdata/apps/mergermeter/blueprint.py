@@ -239,7 +239,7 @@ def analyze():
                 record_completion('mergermeter', cache_params, caller, job_id,
                                   start_time, request_id, error_message=error_msg)
 
-        run_in_background(run_analysis)
+        run_in_background(run_analysis, job_id=job_id)
         
         return jsonify({'success': True, 'job_id': job_id})
         

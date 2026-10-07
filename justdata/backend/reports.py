@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from flask import request, session
+from flask import g, has_app_context, request, session
 
 from justdata.main.auth import can_force_refresh, get_current_user, get_user_type
 from justdata.shared.utils.analysis_cache import (
@@ -66,7 +66,14 @@ def lookup_cached_analysis(app_name: str, params: Dict[str, Any], caller: Caller
     full BigQuery scan plus the AI narrative calls, so it stays staff-gated
     regardless of what the client sends.
     """
-    if force_refresh_requested and can_force_refresh(caller.user_type):
+    # Recorded for run_in_background(): the worker's BigQuery jobs are
+    # labelled with the app, and a honoured force refresh also skips
+    # BigQuery's own result cache (shared/utils/query_context.py).
+    forced = bool(force_refresh_requested and can_force_refresh(caller.user_type))
+    if has_app_context():
+        g.bq_app = app_name
+        g.bq_bypass_cache = forced
+    if forced:
         print(f"[INFO] {app_name}: force refresh requested, bypassing cache")
         return None
 
