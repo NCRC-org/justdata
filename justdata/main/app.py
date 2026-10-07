@@ -9,6 +9,7 @@ from justdata.main.auth import (
     auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
     login_required, admin_required
 )
+from justdata.main.auth.access_overlay import testing_gate_admits
 from justdata.main.config import MainConfig
 import os
 
@@ -143,12 +144,18 @@ def create_app():
         """
         Check if user has privileged access (staff, senior_executive, or admin).
         Non-privileged users see a restricted view with only header, footer, and NCRC logo.
+        On the testing deploy, tester roles and the exact public paths also pass.
         """
         # Skip check for exempt paths (static files, health check, auth routes)
         path = request.path
         for exempt in EXEMPT_PATHS:
             if path.startswith(exempt):
                 return None
+
+        # Testing deploy only: tester roles, and anyone on the exact public
+        # paths (/, /about, /contact). See main/auth/access_overlay.py.
+        if testing_gate_admits(path, get_user_type()):
+            return None
 
         # Check if user is privileged
         if not is_privileged_user():
