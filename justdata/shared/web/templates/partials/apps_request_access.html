@@ -1,0 +1,20 @@
+{# Rendered only when a visible tool is locked. Reuses the existing member-request
+   modal (shell-member.js); request_pending is read server-side with the same
+   lookup as /api/auth/member-request/status. #}
+<section id="request-access" class="home-band home-band--brand-soft home-band--tight" aria-labelledby="apps-request-h">
+    <div class="home-container apps-request">
+        <div>
+            <p class="home-eyebrow">Member access</p>
+            <h2 id="apps-request-h" class="home-h2">Open the full set of tools</h2>
+            <p class="home-lead">Request member access and we will confirm your organization's membership. Tools marked Members open once it is confirmed.</p>
+        </div>
+        <div class="apps-request-actions">
+            {% if request_pending %}
+            <p class="apps-request-pending">Your request is pending review.</p>
+            {% else %}
+            <button type="button" class="btn btn-primary btn-lg" onclick="openMemberRequestModal()">Request member access</button>
+            {% endif %}
+            <a href="https://ncrc.org/membership/" rel="noopener" class="home-link">About NCRC membership →</a>
+        </div>
+    </div>
+</section>

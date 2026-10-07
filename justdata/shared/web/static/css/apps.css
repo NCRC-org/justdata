@@ -1,70 +1,67 @@
-/* =========================================================
-   App launcher -- shared/web/templates/apps.html.
-   Tokens only. Card grid moved here from home.css when the home
-   page split into a landing page (home.html) and this launcher,
-   at Jad's request 2026-09-30. See L5 "JustData -- Frontend
-   buildout spec -- 2026-09-21" step-3b revision note.
-   ========================================================= */
+/* =====================================================
+   App launcher (/apps), spec 03. Loaded after home.css,
+   whose band, chip and link styles it reuses.
+   Tokens only: no hex, rgb() or literal font names.
+   Small text uses --color-fg-muted (fg-subtle is large-text only).
+   ===================================================== */
 
-.apps-group {
-    margin-bottom: var(--s-9);
+.apps-h1 { margin-bottom: var(--s-2); }
+.apps-lead { margin-bottom: 0; }
+
+.apps-group { padding: var(--s-8) 0 var(--s-6); background: var(--color-bg); }
+.apps-group + .apps-group { border-top: 1px solid var(--color-divider); }
+.apps-group-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--color-border-strong); padding-bottom: var(--s-2); margin-bottom: var(--s-5); }
+.apps-group-label { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-black); text-transform: uppercase; letter-spacing: var(--ls-tight); margin: 0; }
+.apps-group-count { font-size: var(--fs-caption); text-transform: uppercase; letter-spacing: var(--ls-wide); color: var(--color-fg-muted); }
+
+/* Cards */
+.apps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
+.apps-card { display: flex; flex-direction: column; border: 1px solid var(--color-border); background: var(--color-bg); transition: border-color var(--dur-fast) var(--ease); }
+.apps-card:hover { border-color: var(--ncrc-neutral-300); }
+.apps-card.is-featured { grid-column: span 2; display: grid; grid-template-columns: 200px 1fr; grid-template-rows: 1fr auto; }
+.apps-card.is-featured .apps-card-inset { grid-row: 1 / span 2; background: var(--color-bg-dark) url('../img/tract-grid.svg') center / 160% no-repeat; }
+.apps-card.is-featured .apps-card-body,
+.apps-card.is-featured .apps-card-foot { grid-column: 2; }
+.apps-card.is-locked { background: var(--color-bg-muted); }
+.apps-card.is-locked .apps-card-name { color: var(--color-fg-muted); }
+
+.apps-card-body { padding: var(--s-5); flex: 1; display: flex; flex-direction: column; gap: var(--s-2); }
+.apps-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); }
+.apps-card-name { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-black); text-transform: uppercase; letter-spacing: var(--ls-tight); line-height: var(--lh-tight); margin: 0; }
+.apps-card-purpose { font-size: var(--fs-body); font-weight: var(--fw-semibold); margin: 0; }
+.apps-card-desc { font-size: var(--fs-body-sm); color: var(--color-fg-muted); line-height: var(--lh-normal); margin: 0; flex: 1; }
+.apps-card-meta { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-2); align-items: center; margin-top: var(--s-2); }
+.apps-card-years { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--color-fg-muted); }
+.apps-card-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-5); border-top: 1px solid var(--color-divider); }
+
+/* The lock in the tier chip is the page's only icon (it states a status). */
+.home-chip [data-lucide] { width: 11px; height: 11px; vertical-align: -1px; }
+.home-chip--lock { display: inline-flex; align-items: center; gap: var(--s-1); }
+
+/* Staff group: compact rows */
+.apps-rows { list-style: none; margin: 0; padding: 0; border: 1px solid var(--color-border); }
+.apps-row { display: grid; grid-template-columns: 180px 1fr auto; gap: var(--s-4); align-items: center; padding: var(--s-3) var(--s-5); text-decoration: none; color: inherit; }
+.apps-rows li + li .apps-row { border-top: 1px solid var(--color-divider); }
+.apps-row:hover { background: var(--color-bg-brand-soft); }
+.apps-row-name { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-wide); }
+.apps-row-purpose { font-size: var(--fs-body-sm); color: var(--color-fg-muted); }
+.apps-row-go { font-weight: var(--fw-semibold); }
+
+/* Request access panel */
+.apps-request { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gutter); align-items: center; }
+.apps-request-actions { display: flex; flex-direction: column; gap: var(--s-3); align-items: flex-start; }
+.apps-request-pending { margin: 0; font-weight: var(--fw-semibold); }
+
+@media (max-width: 1000px) {
+    .apps-grid { grid-template-columns: repeat(2, 1fr); }
+    .apps-card.is-featured { grid-column: span 2; }
 }
-
-.apps-group h2 {
-    font-family: var(--font-display);
-    font-weight: var(--fw-bold);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-tight);
-    font-size: var(--fs-h2);
-    margin-bottom: var(--s-5);
-}
-
-.apps-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--s-6);
-}
-
-@media (max-width: 1024px) {
-    .apps-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
+@media (max-width: 800px) { .apps-request { grid-template-columns: 1fr; } }
 @media (max-width: 640px) {
-    .apps-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.app-card {
-    display: flex;
-    flex-direction: column;
-}
-
-.apps-card-title {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
-    font-family: var(--font-display);
-    font-weight: var(--fw-semibold);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-tight);
-    font-size: var(--fs-h4);
-    margin-bottom: var(--s-2);
-}
-
-.apps-card-description {
-    color: var(--color-fg-muted);
-    font-size: var(--fs-body-sm);
-    flex: 1;
-    margin-bottom: var(--s-5);
-}
-
-.apps-card-footer {
-    margin-top: auto;
-}
-
-.app-card.is-locked {
-    background: var(--color-bg-muted);
+    .apps-grid { grid-template-columns: 1fr; }
+    .apps-card.is-featured { grid-column: span 1; grid-template-columns: 1fr; grid-template-rows: auto; }
+    .apps-card.is-featured .apps-card-inset { grid-row: 1; height: 72px; }
+    .apps-card.is-featured .apps-card-body,
+    .apps-card.is-featured .apps-card-foot { grid-column: 1; }
+    .apps-row { grid-template-columns: 1fr; gap: var(--s-1); }
 }
