@@ -555,7 +555,32 @@ def download():
                 'error': 'Export functionality is not available for your account type.'
             }), 403
         
-        if format_type in ('zip', 'excel'):
+        if format_type in ('excel', 'xlsx'):
+            # The workbook alone ("Download Excel"); format=zip bundles it with the PDF.
+            from .report_builder import save_mortgage_excel_report
+            import io
+            import os
+            import tempfile
+
+            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+            tmp_path = tmp_file.name
+            tmp_file.close()
+            try:
+                save_mortgage_excel_report(report_data, tmp_path, metadata=metadata)
+                with open(tmp_path, 'rb') as f:
+                    xlsx_buffer = io.BytesIO(f.read())
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+            return send_file(
+                xlsx_buffer,
+                as_attachment=True,
+                download_name=generate_export_filename(metadata, 'xlsx'),
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+        elif format_type == 'zip':
             from .report_builder import save_mortgage_excel_report
             from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
             import tempfile
@@ -618,7 +643,7 @@ def download():
                 mimetype='application/pdf'
             )
         else:
-            return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: zip, excel, pdf'}), 400
+            return jsonify({'error': 'Invalid format. Valid formats are: excel, pdf, zip.'}), 400
             
     except Exception as e:
         import traceback
