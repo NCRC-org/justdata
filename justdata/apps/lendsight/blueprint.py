@@ -23,7 +23,7 @@ from justdata.shared.utils.analysis_cache import store_cached_result, get_analys
 _result_fallback = {}
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.core.config.app_config import LendSightConfig
-from .core import run_analysis, parse_web_parameters
+from .core import analysis_years, run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR
 
 # Get shared templates directory
@@ -211,7 +211,7 @@ def analyze():
         if not counties_data:
             # Old format: parse county names from string
             counties_data = data.get('counties', [])
-        years = data.get('years', '').strip()
+        years = ','.join(map(str, analysis_years()))  # page-sent years are ignored
         state_code = data.get('state_code', None)
         loan_purpose = data.get('loan_purpose', ['purchase'])  # Default to purchase only
         
@@ -253,12 +253,13 @@ def analyze():
         # Convert counties list back to string format for parse_web_parameters
         counties_str = ';'.join(counties_list)
         
-        # Years will be automatically determined from last 5 years in parse_web_parameters
-        # For cache key, use 'auto' if years not provided (will be normalized)
-        years_str = data.get('years', '').strip() if 'years' in data else ''
+        # The analysis always runs the LendSight window (core.analysis_years());
+        # any years the page sends are ignored. The cache key uses the resolved
+        # years so results computed before a new HMDA year was enabled are not
+        # served after it (ticket 13229533844).
         cache_params = {
             'counties': counties_str,
-            'years': years_str if years_str else 'auto',  # Use 'auto' to indicate automatic selection
+            'years': ','.join(map(str, analysis_years())),
             'selection_type': selection_type,
             'state_code': state_code,
             'loan_purpose': loan_purpose

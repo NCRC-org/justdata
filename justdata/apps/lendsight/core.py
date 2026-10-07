@@ -21,6 +21,16 @@ from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 from justdata.apps.lendsight.version import __version__
 
 
+# Number of years in LendSight's analysis window.
+ANALYSIS_SPAN = 5
+
+
+def analysis_years() -> list:
+    """LendSight's analysis window: the ANALYSIS_SPAN most recent HMDA years."""
+    from justdata.shared.core.hmda_years import recent_hmda_years
+    return recent_hmda_years(ANALYSIS_SPAN)
+
+
 def parse_web_parameters(counties_str: str, years_str: str, selection_type: str = 'county', 
                         state_code: str = None, metro_code: str = None) -> tuple:
     """Parse parameters from web interface.
@@ -37,17 +47,16 @@ def parse_web_parameters(counties_str: str, years_str: str, selection_type: str 
     """
     from justdata.apps.lendsight.data_utils import expand_state_to_counties, expand_metro_to_counties
     
-    # Parse years
-    # Handle empty string, "auto", or "auto (last 5)" - default to last 5 years
-    if not years_str or years_str.strip() == "" or years_str.lower().startswith("auto"):
-        years = list(range(2020, 2025))  # HMDA data 2020-2024 (last 5 years)
-    elif years_str.lower() == "all":
-        years = list(range(2020, 2025))  # HMDA data 2020-2024
+    # Parse years. Empty, "auto" or "all" mean the analysis window: the five
+    # most recent verified HMDA years (shared/core/hmda_years.py), so the app
+    # moves forward when LATEST_HMDA_YEAR does (ticket 13229533844).
+    if not years_str or years_str.strip() == "" or years_str.lower().startswith("auto") \
+            or years_str.lower() == "all":
+        years = analysis_years()
     else:
         years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
-        # If parsing failed, default to last 5 years
         if not years:
-            years = list(range(2020, 2025))
+            years = analysis_years()
     
     # Parse counties based on selection type
     if selection_type == 'state' and state_code:
