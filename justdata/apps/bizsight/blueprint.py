@@ -138,21 +138,11 @@ def analyze():
         end_year = data.get('endYear')
         
         if not start_year or not end_year:
-            # Automatically get last 5 years from SB disclosure data
-            from justdata.apps.bizsight.data_utils import get_last_5_years_sb
-            years_list = get_last_5_years_sb()
-            if years_list:
-                start_year = min(years_list)
-                end_year = max(years_list)
-                years = sorted(years_list)
-                years_str = ','.join(map(str, years))
-                print(f"✅ Automatically using last 5 SB disclosure years: {years}")
-            else:
-                # Fallback
-                years = list(range(2020, 2025))
-                start_year = 2020
-                end_year = 2024
-                years_str = ','.join(map(str, years))
+            # The analysis window from config (ticket 13229487819), not a
+            # BigQuery lookup on every request.
+            years = list(BizSightConfig.SB_YEARS)
+            start_year, end_year = years[0], years[-1]
+            years_str = ','.join(map(str, years))
         else:
             start_year = int(start_year)
             end_year = int(end_year)

@@ -56,9 +56,10 @@ def parse_web_parameters(county_data: dict, years_str: str) -> tuple:
     # Validate years are in range
     min_year = min(years)
     max_year = max(years)
-    # Limit to most recent 5 years (2020-2024)
-    if min_year < 2020 or max_year > 2024:
-        raise ValueError("Years must be between 2020 and 2024 (most recent 5 years)")
+    # Limit to the analysis window (config.SB_YEARS)
+    first_year, last_year = BizSightConfig.SB_YEARS[0], BizSightConfig.SB_YEARS[-1]
+    if min_year < first_year or max_year > last_year:
+        raise ValueError(f"Years must be between {first_year} and {last_year} (most recent 5 years)")
     
     return str(geoid5).zfill(5), sorted(years)
 
