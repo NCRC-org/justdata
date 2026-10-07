@@ -20,16 +20,51 @@ def _client(monkeypatch=None):
     return c
 
 
-def test_queries_and_narratives_are_timed():
+def test_queries_are_timed():
     tree = ast.parse(inspect.getsource(core.run_analysis))
     stages = {
         item.context_expr.args[0].value
         for node in ast.walk(tree) if isinstance(node, ast.With)
         for item in node.items
         if isinstance(item.context_expr, ast.Call) and getattr(item.context_expr.func, "id", "") == "timed"
+        and isinstance(item.context_expr.args[0], ast.Constant)
     }
-    assert {"bq:county_match", "bq:branch_report", "build_report", "narrative:key_findings",
-            "narrative:table1", "narrative:table2", "narrative:hhi_trends"} <= stages
+    assert {"bq:county_match", "bq:branch_report", "build_report", "narrative:all"} <= stages
+
+
+def test_narratives_run_in_parallel_and_each_is_timed(monkeypatch):
+    import threading
+    import time
+    import pandas as pd
+    import justdata.apps.branchsight.analysis as analysis
+
+    barrier = threading.Barrier(4, timeout=5)   # all four must be running at once
+
+    class FakeAnalyzer:
+        def generate_key_findings(self, data):
+            barrier.wait(); return "Key findings."
+        def generate_table_narrative(self, table, data):
+            barrier.wait()
+            if table == "table2":
+                raise RuntimeError("model error")
+            return f"{table} text."
+        def generate_hhi_trends_narrative(self, data):
+            barrier.wait(); time.sleep(0.01); return "HHI text."
+
+    monkeypatch.setattr(analysis, "BranchSightAnalyzer", FakeAnalyzer)
+    monkeypatch.setattr(core, "find_exact_county_match", lambda c: [c])
+    monkeypatch.setattr(core, "execute_branch_query", lambda *a: [{"year": "2025"}])
+    df = pd.DataFrame([{"x": 1}])
+    monkeypatch.setattr(core, "build_report", lambda *a: {
+        "summary": df, "by_bank": df, "by_county": pd.DataFrame(), "trends": pd.DataFrame(),
+        "raw_data": pd.DataFrame(), "hhi": {}, "hhi_by_year": [{"year": 2025, "hhi_value": 5000}]})
+    out = core.run_analysis("Lowndes County, Alabama", "all", "j", Tracker())
+    ai = out["ai_insights"]
+    assert ai["key_findings"] == "Key findings." and ai["hhi_trends_discussion"] == "HHI text."
+    assert ai["table_narratives"] == {"table1": "table1 text."}   # table2 failed: left out
+    stages = {p["stage"] for p in out["metadata"]["perf"]}
+    assert {"narrative:key_findings", "narrative:table1", "narrative:table2",
+            "narrative:hhi_trends", "narrative:all"} <= stages
 
 
 def test_progress_steps_are_ones_the_tracker_knows():

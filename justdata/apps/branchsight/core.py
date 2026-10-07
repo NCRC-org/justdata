@@ -4,7 +4,10 @@ BranchSight core analysis logic - FULLY FUNCTIONAL.
 Adapted from ncrc-test-apps branchsight.
 """
 
+import contextvars
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import pandas as pd
 from typing import Dict
 from datetime import datetime
@@ -221,106 +224,45 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # Note: Executive Summary is now generated in JavaScript, not via AI
             ai_insights = {}
 
-            # Generate Key Findings
-            print("Generating Key Findings...")
-            try:
-                if progress_tracker:
-                    progress_tracker.update_ai_progress(1, 4, 'Key Findings')
-                with timed('narrative:key_findings'):
-                    ai_insights['key_findings'] = analyzer.generate_key_findings(ai_data)
-                print("  [OK] Key Findings generated successfully")
-            except Exception as key_findings_error:
-                print(f"  [ERROR] Error generating Key Findings: {key_findings_error}")
-                import traceback
-                traceback.print_exc()
-                # Don't raise - allow report to continue without key findings
-                print("  [WARNING] Continuing without Key Findings due to error")
-
-            # Generate table-specific narratives
-            print("Generating table narratives...")
-            table_narratives = {}
-
-            # Generate table1 narrative
+            # The narratives are independent calls, so they run in parallel.
+            # Each runs in a copy of this context, so its timed() stage lands in
+            # this run's perf list. A failed narrative is left out; the page
+            # shows the missing-narrative line in its place.
+            tasks = {'key_findings': lambda: analyzer.generate_key_findings(ai_data)}
             if not report_data.get('summary', pd.DataFrame()).empty:
-                try:
-                    if progress_tracker:
-                        progress_tracker.update_ai_progress(2, 4, 'Yearly Breakdown Analysis')
-                    print("  Generating table1 narrative (Yearly Breakdown Analysis)...")
-                    with timed('narrative:table1'):
-                        narrative1 = analyzer.generate_table_narrative('table1', ai_data)
-                    if narrative1 and narrative1.strip():
-                        table_narratives['table1'] = narrative1
-                        print(f"  [OK] table1 narrative generated ({len(narrative1)} chars)")
-                    else:
-                        print("  [WARNING] table1 narrative is empty or None")
-                except Exception as e:
-                    print(f"  [ERROR] Failed to generate table1 narrative: {e}")
-                    import traceback
-                    traceback.print_exc()
-
-            # Generate table2 narrative
+                tasks['table1'] = lambda: analyzer.generate_table_narrative('table1', ai_data)
             if not report_data.get('by_bank', pd.DataFrame()).empty:
-                try:
-                    if progress_tracker:
-                        progress_tracker.update_ai_progress(3, 4, 'Analysis by Bank')
-                    print("  Generating table2 narrative (Analysis by Bank)...")
-                    with timed('narrative:table2'):
-                        narrative2 = analyzer.generate_table_narrative('table2', ai_data)
-                    if narrative2 and narrative2.strip():
-                        table_narratives['table2'] = narrative2
-                        print(f"  [OK] table2 narrative generated ({len(narrative2)} chars)")
-                    else:
-                        print("  [WARNING] table2 narrative is empty or None")
-                except Exception as e:
-                    print(f"  [ERROR] Failed to generate table2 narrative: {e}")
-                    import traceback
-                    traceback.print_exc()
-
-            # Generate table3 narrative
+                tasks['table2'] = lambda: analyzer.generate_table_narrative('table2', ai_data)
             if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
-                try:
+                tasks['table3'] = lambda: analyzer.generate_table_narrative('table3', ai_data)
+            if report_data.get('hhi_by_year'):
+                tasks['hhi_trends'] = lambda: analyzer.generate_hhi_trends_narrative(ai_data)
+
+            def run_narrative(name, fn):
+                with timed(f'narrative:{name}'):
+                    return fn()
+
+            texts = {}
+            with timed('narrative:all'), ThreadPoolExecutor(max_workers=len(tasks)) as pool:
+                futures = {pool.submit(contextvars.copy_context().run, run_narrative, name, fn): name
+                           for name, fn in tasks.items()}
+                for done_count, future in enumerate(as_completed(futures), 1):
+                    name = futures[future]
+                    try:
+                        text = future.result()
+                        if text and text.strip():
+                            texts[name] = text
+                        else:
+                            print(f"  [WARNING] {name} narrative is empty")
+                    except Exception as e:
+                        print(f"  [ERROR] {name} narrative failed: {e}")
                     if progress_tracker:
-                        progress_tracker.update_ai_progress(4, 4, 'County by County Analysis')
-                    print("  Generating table3 narrative (County by County Analysis)...")
-                    with timed('narrative:table3'):
-                        narrative3 = analyzer.generate_table_narrative('table3', ai_data)
-                    if narrative3 and narrative3.strip():
-                        table_narratives['table3'] = narrative3
-                        print(f"  [OK] table3 narrative generated ({len(narrative3)} chars)")
-                    else:
-                        print("  [WARNING] table3 narrative is empty or None")
-                except Exception as e:
-                    print(f"  [ERROR] Failed to generate table3 narrative: {e}")
-                    import traceback
-                    traceback.print_exc()
+                        progress_tracker.update_ai_progress(done_count, len(tasks), 'Writing the narrative')
 
-            ai_insights['table_narratives'] = table_narratives
-
-            # Generate HHI trends narrative if hhi_by_year data is available
-            if report_data.get('hhi_by_year') and len(report_data.get('hhi_by_year', [])) > 0:
-                try:
-                    if progress_tracker:
-                        progress_tracker.update_ai_progress(4, 5, 'Market Concentration Trends Analysis')
-                    print("  Generating HHI trends narrative (Market Concentration Trends)...")
-                    with timed('narrative:hhi_trends'):
-                        hhi_narrative = analyzer.generate_hhi_trends_narrative(ai_data)
-                    if hhi_narrative and hhi_narrative.strip():
-                        ai_insights['hhi_trends_discussion'] = hhi_narrative
-                        print(f"  [OK] HHI trends narrative generated ({len(hhi_narrative)} chars)")
-                    else:
-                        print("  [WARNING] HHI trends narrative is empty or None")
-                except Exception as e:
-                    print(f"  [ERROR] Failed to generate HHI trends narrative: {e}")
-                    import traceback
-                    traceback.print_exc()
-
-            # Debug: Print what we're storing
-            print(f"Stored table_narratives keys: {list(table_narratives.keys())}")
-            for key, value in table_narratives.items():
-                if value:
-                    print(f"  {key}: {len(value)} characters")
-                else:
-                    print(f"  {key}: EMPTY or None")
+            ai_insights['key_findings'] = texts.get('key_findings')
+            ai_insights['table_narratives'] = {k: texts[k] for k in ('table1', 'table2', 'table3') if k in texts}
+            if 'hhi_trends' in texts:
+                ai_insights['hhi_trends_discussion'] = texts['hhi_trends']
 
             # Methods section is hardcoded in the template (not AI-generated)
             print("AI insights generated successfully")
