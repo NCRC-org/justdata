@@ -18,4 +18,16 @@ def test_several_text_blocks_join():
 
 def test_no_text_is_an_error():
     with pytest.raises(Exception, match="no text"):
-        response_text(NS(content=[NS(type="thinking", thinking="...")], stop_reason="max_tokens"))
+        response_text(NS(content=[NS(type="thinking", thinking="...")], stop_reason="end_turn"))
+
+
+def test_cut_off_reply_is_an_error_not_half_a_sentence():
+    with pytest.raises(Exception, match="cut off"):
+        response_text(NS(content=[NS(type="text", text="Branches serving both LMI and MMCT")], stop_reason="max_tokens"))
+
+
+def test_calls_disable_thinking():
+    import inspect
+    import justdata.shared.analysis.ai_provider as ap
+    src = inspect.getsource(ap)
+    assert src.count("thinking=NO_THINKING") == 2 and ap.NO_THINKING == {"type": "disabled"}

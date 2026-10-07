@@ -27,15 +27,25 @@ _ai_usage_buffer = []
 _last_flush_time = None
 
 
+# The narrative prompts and their max_tokens were written for replies without
+# thinking. With thinking on (the model's default for harder prompts) a
+# thinking block used part of max_tokens and table narratives were cut off
+# mid-sentence.
+NO_THINKING = {"type": "disabled"}
+
+
 def response_text(response) -> str:
-    """The reply's text. A reply can open with a thinking block, so join the
-    text blocks rather than reading content[0] (which failed with
-    "'ThinkingBlock' object has no attribute 'text'"). A reply with no text
-    raises, so the caller treats it as a failed narrative."""
+    """The reply's text. Joins the text blocks rather than reading content[0],
+    which failed when a reply opened with a thinking block. A reply with no
+    text, or one cut off at max_tokens, raises, so the caller treats it as a
+    failed narrative and the page never shows half a sentence."""
+    stop = getattr(response, "stop_reason", None)
+    if stop == "max_tokens":
+        raise Exception("reply was cut off at max_tokens")
     text = "".join(getattr(b, "text", "") for b in (response.content or [])
                    if getattr(b, "type", None) == "text")
     if not text.strip():
-        raise Exception(f"reply had no text (stop_reason={getattr(response, 'stop_reason', None)})")
+        raise Exception(f"reply had no text (stop_reason={stop})")
     return text
 
 
@@ -388,7 +398,8 @@ def ask_ai(
         response = client.messages.create(
             model=model,
             max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            thinking=NO_THINKING,
         )
 
         # Log usage
@@ -475,7 +486,8 @@ class AIAnalyzer:
             response = client.messages.create(
                 model=call_model,
                 max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                thinking=NO_THINKING,
             )
 
             # Log usage
