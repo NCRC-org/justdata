@@ -181,3 +181,25 @@ def test_idle_text_default_and_override(debug_app):
     assert "Choose a geography and a lender, then run the analysis." in custom
     assert "app-wide-only" not in custom
     assert ".app-wide-only { display: none; }" in APP_CSS.read_text()
+
+
+APP_PROGRESS_JS = WEB / "static" / "js" / "app_progress.js"
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("text,expected", [
+    ("We couldn't complete this analysis. Reference: ab12cd34",
+     {"message": "We couldn't complete this analysis.", "ref": "ab12cd34"}),
+    ("No data found for the specified parameters", {"message": "No data found for the specified parameters", "ref": None}),
+    ("", {"message": "", "ref": None}),
+])
+def test_progress_error_text_splits_message_and_reference(text, expected):
+    script = (f"require({json.dumps(str(APP_PROGRESS_JS))});"
+              f"process.stdout.write(JSON.stringify(AppProgress.splitRef({json.dumps(text)})));")
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    assert json.loads(out.stdout) == expected
+
+
+def test_app_page_loads_progress_module(debug_app):
+    html = _preview(debug_app)
+    assert html.index("js/app_states.js") < html.index("js/app_progress.js")
