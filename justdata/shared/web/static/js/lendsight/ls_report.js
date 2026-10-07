@@ -2,13 +2,14 @@
  * LendSight report body (spec 04 Part B items 5 to 7): fills the cloned
  * #lsReportTemplate from /report-data. Ported from the former report page;
  * wording is unchanged except where noted in the PR. AI narrative is escaped
- * before its light markdown (bold, links, bullets) is turned into HTML.
+ * before its light markdown is turned into HTML (AppReport.formatNarrative).
  */
 (function (root) {
   'use strict';
 
   var T = root.LendSight.tables;
-  var esc = T.esc;
+  var esc = root.AppReport.esc;
+  var formatNarrative = root.AppReport.formatNarrative;
 
   var PURPOSE_NAMES = {
     purchase: 'home purchase loans',
@@ -42,33 +43,8 @@
     return { first: ys[0], last: ys[ys.length - 1], text: ys.length > 1 ? ys[0] + ' to ' + ys[ys.length - 1] : String(ys[0] || '') };
   }
 
-  /** "**bold**", "[text](url)" and "•" bullets; everything else is text. */
-  function formatNarrative(content) {
-    return String(content || '').split('\n\n').map(function (para) {
-      var lines = para.split('\n').filter(function (l) { return l.trim() && l.trim().indexOf('##') !== 0; });
-      if (!lines.length) return '';
-      var html = '', inList = false;
-      lines.forEach(function (line) {
-        var t = esc(line.trim())
-          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-        if (t.charAt(0) === '•') {
-          if (!inList) { html += '<ul>'; inList = true; }
-          html += '<li>' + t.slice(1).trim() + '</li>';
-        } else {
-          if (inList) { html += '</ul>'; inList = false; }
-          html += '<p>' + t + '</p>';
-        }
-      });
-      return html + (inList ? '</ul>' : '');
-    }).join('');
-  }
-
-  function narrative(id, text) {
-    var block = $(id);
-    if (!block || !text) return;
-    block.querySelector('[data-ls="text"]').innerHTML = formatNarrative(text);
-    block.hidden = false;
+  function narrative(id, text, expected) {
+    root.AppReport.narrative($(id), text, expected);
   }
 
   function intro(metadata, span, p) {
@@ -170,7 +146,7 @@
       if (!shown.length) shown = [rows[0]];
     }
     $('lsSection4').hidden = false;
-    narrative('lsConcentrationNarrative', (metadata.ai_insights || {}).market_concentration_discussion);
+    narrative('lsConcentrationNarrative', (metadata.ai_insights || {}).market_concentration_discussion, true);
     return root.LendSight.charts.hhi($('lsHhiChart'), shown, years);
   }
 
@@ -205,19 +181,15 @@
     intro(metadata, span, p);
     summary(data, span);
     tables(data, metadata, span);
-    if (ai.key_findings) {
-      $('lsKeyFindingsText').innerHTML = formatNarrative(ai.key_findings);
-      $('lsKeyFindings').hidden = false;
-    }
-    narrative('lsDemographicNarrative', ai.demographic_overview_discussion);
-    narrative('lsIncomeBorrowersNarrative', ai.income_borrowers_discussion);
-    narrative('lsIncomeTractsNarrative', ai.income_tracts_discussion);
-    narrative('lsMinorityTractsNarrative', ai.minority_tracts_discussion);
-    narrative('lsLendersNarrative', ai.top_lenders_detailed_discussion);
-    if (ai.income_neighborhood_discussion) {
-      $('lsNeighborhoodOverviewText').innerHTML = formatNarrative(ai.income_neighborhood_discussion);
-      $('lsNeighborhoodOverview').hidden = false;
-    }
+    // Expected slots are the ones core.run_analysis always asks for; the three
+    // per-table income narratives come only from its fallback path.
+    narrative('lsKeyFindings', ai.key_findings, true);
+    narrative('lsDemographicNarrative', ai.demographic_overview_discussion, true);
+    narrative('lsIncomeBorrowersNarrative', ai.income_borrowers_discussion, false);
+    narrative('lsIncomeTractsNarrative', ai.income_tracts_discussion, false);
+    narrative('lsMinorityTractsNarrative', ai.minority_tracts_discussion, false);
+    narrative('lsNeighborhoodOverview', ai.income_neighborhood_discussion, true);
+    narrative('lsLendersNarrative', ai.top_lenders_detailed_discussion, true);
     methods(metadata, p);
     var charts = [
       root.LendSight.charts.census($('lsCensusChart'), metadata.census_data).then(function (drawn) {

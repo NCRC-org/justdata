@@ -101,7 +101,17 @@ class BizSightConfig:
     HOST = os.getenv('HOST', '0.0.0.0')
     
     # Analysis Configuration
-    DEFAULT_YEARS = list(range(2019, 2024))  # 2019-2023 (typical SB data range)
+    # CRA small business disclosure years (ticket 13229487819). SB_LATEST_YEAR is
+    # the most recent year loaded in bizsight.sb_county_summary (2024 as of
+    # 2026-10-07; 2025 is not loaded). The analysis window is the five most
+    # recent years. core.py, report_builder.py and ai_analysis.py still name
+    # 2020 and 2024 directly; tests/apps/bizsight/test_bizsight_years.py fails
+    # if this moves without them (see the platform-wide dynamic-year ticket
+    # 11535494229).
+    SB_LATEST_YEAR = 2024
+    SB_ANALYSIS_SPAN = 5
+    SB_YEARS = list(range(SB_LATEST_YEAR - SB_ANALYSIS_SPAN + 1, SB_LATEST_YEAR + 1))
+    DEFAULT_YEARS = SB_YEARS  # was 2019-2023, which matched nothing the app ran
     MAX_COUNTIES = 3
     MIN_YEARS = 3
     

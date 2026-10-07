@@ -2,7 +2,7 @@
    "Data Cleaning" paragraph was removed (spec 04 decision 2). #}
 <section class="app-result-section ls-methods" id="methodsSection">
   <h3>Methods</h3>
-  <div class="ls-methods-body">
+  <div class="app-methods-body">
     <h4>Data Sources</h4>
     <p><strong>HMDA Data:</strong> This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank" rel="noopener">CFPB HMDA website</a>.</p>
     <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="lsLoanPurposeCoverage">The analysis includes home purchase loans (loan purpose = 1).</span> Reverse mortgages are excluded from the analysis.</p>
@@ -38,15 +38,10 @@
       <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
     </ul>
     <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population, as defined by the U.S. Census Bureau.</p>
-    <p><strong>Multi-Racial Borrowers:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category. Based on national HMDA data (2018-2024), the most common race combinations among multi-racial mortgage borrowers are:</p>
-    <ul>
-      <li>Asian and White: 38% of multi-racial borrowers</li>
-      <li>Native American and White: 22%</li>
-      <li>Black and White: 17%</li>
-      <li>Hawaiian/Pacific Islander and White: 5%</li>
-      <li>Native American and Black: 4%</li>
-    </ul>
-    <p>These five combinations account for approximately 86% of all multi-racial mortgage borrowers nationally.</p>
+    <p><strong>Multi-Racial Borrowers:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category.</p>
+    {# National race-combination shares for multi-racial borrowers are held out
+       until verified against their source and year (Jad, 2026-10-07). Do not
+       reinstate figures from memory. #}
     <p><strong>Population Share:</strong> The percentage of the population (for borrower income categories) or census tracts (for tract income and minority categories) in each category, based on Census Bureau and HUD data.</p>
 
     <h4>Calculations</h4>
@@ -67,7 +62,7 @@
     <p><strong>Change Over Time:</strong> For percentage shares, Change = Last Year Share − First Year Share, expressed in percentage points (pp). For total counts, Change = ((Last − First) / First) × 100, expressed as a percentage. Positive changes are displayed in blue; negative changes in red.</p>
     <h5>Herfindahl-Hirschman Index (HHI)</h5>
     <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
-    <p class="ls-formula">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+    <p class="app-formula">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
     <p>Market shares are based on total loan origination amounts (not count). The sum includes all lenders in the market. Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
     <p><strong>Concentration Levels:</strong></p>
     <ul>

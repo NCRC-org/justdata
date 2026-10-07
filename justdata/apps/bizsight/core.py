@@ -4,11 +4,10 @@ BizSight Core Analysis Logic
 Single-county small business lending analysis with map visualization.
 """
 
-import os
 import sys
 import json
 import pandas as pd
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from datetime import datetime
 from pathlib import Path
 
@@ -22,6 +21,7 @@ from justdata.shared.utils.progress_tracker import ProgressTracker
 from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
 from justdata.shared.utils.error_ref import GENERIC_ERROR, user_error
+from justdata.shared.utils.perf import perf_stages, start_perf, timed
 
 
 def parse_web_parameters(county_data: dict, years_str: str) -> tuple:
@@ -56,9 +56,10 @@ def parse_web_parameters(county_data: dict, years_str: str) -> tuple:
     # Validate years are in range
     min_year = min(years)
     max_year = max(years)
-    # Limit to most recent 5 years (2020-2024)
-    if min_year < 2020 or max_year > 2024:
-        raise ValueError("Years must be between 2020 and 2024 (most recent 5 years)")
+    # Limit to the analysis window (config.SB_YEARS)
+    first_year, last_year = BizSightConfig.SB_YEARS[0], BizSightConfig.SB_YEARS[-1]
+    if min_year < first_year or max_year > last_year:
+        raise ValueError(f"Years must be between {first_year} and {last_year} (most recent 5 years)")
     
     return str(geoid5).zfill(5), sorted(years)
 
@@ -77,6 +78,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
     Returns:
         Dictionary with success status and results
     """
+    perf_ref = start_perf('bizsight')
     try:
         # Initialize progress
         if progress_tracker:
@@ -100,14 +102,15 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
 
         # Fetch aggregate data with census demographics
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 30,
+            progress_tracker.update_progress('querying_data', 30,
                 'Querying federal records')
 
         print(f"DEBUG: Starting BigQuery aggregate query for GEOID5: {geoid5}, years: {years}")
         try:
-            aggregate_query = bq_client.get_aggregate_data_with_census(geoid5, years)
-            print(f"DEBUG: Aggregate query completed, converting to DataFrame...")
-            aggregate_df = aggregate_query.to_dataframe()
+            with timed('bq:aggregate'):
+                aggregate_query = bq_client.get_aggregate_data_with_census(geoid5, years)
+                print("DEBUG: Aggregate query completed, converting to DataFrame...")
+                aggregate_df = aggregate_query.to_dataframe()
             print(f"DEBUG: Aggregate DataFrame created: {len(aggregate_df)} rows")
         except Exception as e:
             error_str = str(e)
@@ -134,14 +137,15 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Fetch disclosure data for top lenders table (2024) and HHI by year (all years)
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 40, 
+            progress_tracker.update_progress('querying_data', 40, 
                 'Querying federal records')
         
         print(f"DEBUG: Starting BigQuery disclosure query for GEOID5: {geoid5}, year: 2024, is_planning_region: {is_planning_region}")
         try:
-            disclosure_query_2024 = bq_client.get_disclosure_data(geoid5, [2024], is_planning_region=is_planning_region)
-            print(f"DEBUG: Disclosure query completed, converting to DataFrame...")
-            disclosure_df = disclosure_query_2024.to_dataframe()
+            with timed('bq:disclosure_latest'):
+                disclosure_query_2024 = bq_client.get_disclosure_data(geoid5, [2024], is_planning_region=is_planning_region)
+                print("DEBUG: Disclosure query completed, converting to DataFrame...")
+                disclosure_df = disclosure_query_2024.to_dataframe()
             print(f"DEBUG: Disclosure DataFrame created: {len(disclosure_df)} rows")
         except Exception as e:
             print(f"ERROR: BigQuery disclosure query failed: {e}")
@@ -154,16 +158,17 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             if len(unique_years) > 1 or (len(unique_years) == 1 and unique_years[0] != 2024):
                 print(f"DEBUG: WARNING - disclosure_df contains years {unique_years}, expected only 2024")
             else:
-                print(f"DEBUG: Verified disclosure_df contains only 2024 data")
+                print("DEBUG: Verified disclosure_df contains only 2024 data")
         else:
-            print(f"DEBUG: WARNING - disclosure_df has no 'year' column, cannot verify year filtering")
+            print("DEBUG: WARNING - disclosure_df has no 'year' column, cannot verify year filtering")
         
         # Also fetch disclosure data for all years for HHI by year calculation
         print(f"DEBUG: Starting BigQuery disclosure query for all years: {years}, is_planning_region: {is_planning_region}")
         try:
-            disclosure_query_all = bq_client.get_disclosure_data(geoid5, years, is_planning_region=is_planning_region)
-            print(f"DEBUG: Disclosure query for all years completed, converting to DataFrame...")
-            disclosure_df_all_years = disclosure_query_all.to_dataframe()
+            with timed('bq:disclosure_all_years'):
+                disclosure_query_all = bq_client.get_disclosure_data(geoid5, years, is_planning_region=is_planning_region)
+                print("DEBUG: Disclosure query for all years completed, converting to DataFrame...")
+                disclosure_df_all_years = disclosure_query_all.to_dataframe()
             print(f"DEBUG: Disclosure DataFrame for all years created: {len(disclosure_df_all_years)} rows")
         except Exception as e:
             print(f"ERROR: BigQuery disclosure all-years query failed: {e}")
@@ -189,7 +194,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Fetch state and national benchmarks for comparison table (Section 3)
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 45, 
+            progress_tracker.update_progress('querying_data', 45, 
                 'Querying federal records')
         
         # Handle District of Columbia special case (GEOID5 starts with 11, but DC is both county and state)
@@ -311,8 +316,9 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             if not state_benchmarks:
                 try:
                     print(f"DEBUG: Fetching state benchmarks from BigQuery for state FIPS: {state_fips}")
-                    state_query = bq_client.get_state_benchmarks(state_fips, year=2024)
-                    state_df = state_query.to_dataframe()
+                    with timed('bq:state_benchmarks'):
+                        state_query = bq_client.get_state_benchmarks(state_fips, year=2024)
+                        state_df = state_query.to_dataframe()
                     if not state_df.empty:
                         row = state_df.iloc[0]
                         state_total = safe_int(row.get('total_loans', 0))
@@ -365,9 +371,10 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             
             if not national_benchmarks:
                 try:
-                    print(f"DEBUG: Fetching national benchmarks from BigQuery")
-                    national_query = bq_client.get_national_benchmarks(year=2024)
-                    national_df = national_query.to_dataframe()
+                    print("DEBUG: Fetching national benchmarks from BigQuery")
+                    with timed('bq:national_benchmarks'):
+                        national_query = bq_client.get_national_benchmarks(year=2024)
+                        national_df = national_query.to_dataframe()
                     if not national_df.empty:
                         row = national_df.iloc[0]
                         national_total = safe_int(row.get('total_loans', 0))
@@ -500,7 +507,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 }
                 print(f"DEBUG: County 2020 data calculated: total_loans={county_2020_total_loans}, total_amount={county_2020_total_amount}")
             else:
-                print(f"DEBUG: County 2020 data: county_2020_df is empty")
+                print("DEBUG: County 2020 data: county_2020_df is empty")
         except Exception as e:
             print(f"Warning: Failed to calculate county 2020 data: {e}")
             import traceback
@@ -508,11 +515,11 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Build comparison table (Section 3) - County, State, National Comparison
         if progress_tracker:
-            progress_tracker.update_progress('section_3', 70, 
+            progress_tracker.update_progress('building_report', 70, 
                 'Aggregating results')
         comparison_df = pd.DataFrame()
         if not aggregate_df.empty:
-            print(f"DEBUG: Creating comparison table")
+            print("DEBUG: Creating comparison table")
             print(f"DEBUG: State benchmarks available: {bool(state_benchmarks)}, keys: {list(state_benchmarks.keys()) if state_benchmarks else 'None'}")
             print(f"DEBUG: National benchmarks available: {bool(national_benchmarks)}, keys: {list(national_benchmarks.keys()) if national_benchmarks else 'None'}")
             print(f"DEBUG: County 2020 data available: {bool(county_2020_data)}")
@@ -524,7 +531,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     print(f"DEBUG: Comparison table first row: {comparison_df.iloc[0].to_dict()}")
                     print(f"DEBUG: Comparison table sample: {comparison_df.head(3).to_dict('records')}")
                 else:
-                    print(f"DEBUG: WARNING - Comparison table is EMPTY!")
+                    print("DEBUG: WARNING - Comparison table is EMPTY!")
             except Exception as e:
                 print(f"DEBUG: ERROR creating comparison table: {e}")
                 import traceback
@@ -532,7 +539,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Build top lenders table (Section 4) - 2024 only
         if progress_tracker:
-            progress_tracker.update_progress('section_4', 75, 
+            progress_tracker.update_progress('building_report', 75, 
                 'Aggregating results')
         top_lenders_df = pd.DataFrame()
         hhi_value = None
@@ -636,7 +643,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                             lender_amounts[lender_name] = float(amt_total)
                 print(f"DEBUG: Found {len(lender_amounts)} lenders with amounts from top_lenders_df")
             else:
-                print(f"DEBUG: WARNING - No amount column found in top_lenders_df for HHI calculation")
+                print("DEBUG: WARNING - No amount column found in top_lenders_df for HHI calculation")
             
             if lender_amounts:
                 total_amount = sum(lender_amounts.values())
@@ -688,7 +695,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         elif not top_lenders_df.empty:
             # Fallback: Calculate HHI by year from top_lenders_df if available
             # Note: top_lenders_df only has 2024 data, so we can only calculate for 2024
-            print(f"DEBUG: Calculating HHI by year from top_lenders_df (2024 only)")
+            print("DEBUG: Calculating HHI by year from top_lenders_df (2024 only)")
             # Use the HHI already calculated above if available
             if hhi_value is not None:
                 hhi_by_year.append({
@@ -703,11 +710,12 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Fetch county summary statistics for 2024 only (for the summary table next to map)
         if progress_tracker:
-            progress_tracker.update_progress('section_1', 55, 
+            progress_tracker.update_progress('building_report', 55, 
                 'Aggregating results')
         
-        summary_query = bq_client.get_county_summary_stats(geoid5, [2024])  # 2024 only for summary table
-        summary_df = summary_query.to_dataframe()
+        with timed('bq:county_summary'):
+            summary_query = bq_client.get_county_summary_stats(geoid5, [2024])  # 2024 only for summary table
+            summary_df = summary_query.to_dataframe()
         
         # Get county minority threshold for race layers - calculate from aggregate data
         # Use median minority percentage from tracts in the county
@@ -720,7 +728,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Prepare tract data for map
         if progress_tracker:
-            progress_tracker.update_progress('section_1', 60, 
+            progress_tracker.update_progress('building_report', 60, 
                 'Aggregating results')
         
         # Aggregate tract data across years
@@ -856,7 +864,6 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             tract_summary['loan_amount_quartile'] = 'Q1'
         
         # Prepare summary table data
-        summary_row = summary_df.iloc[0] if not summary_df.empty else {}
         # Calculate income category percentages for summary statistics (2024 only)
         # Filter to 2024 data (handle both string and int year values)
         if 'year' in aggregate_df.columns:
@@ -1038,12 +1045,12 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         claude_api_key = config.get('CLAUDE_API_KEY')
         
         if not claude_api_key:
-            print(f"[WARNING] CLAUDE_API_KEY not set - AI insights will not be generated")
+            print("[WARNING] CLAUDE_API_KEY not set - AI insights will not be generated")
             if is_local_development():
-                print(f"[INFO] To enable AI insights locally, add CLAUDE_API_KEY to your .env file")
+                print("[INFO] To enable AI insights locally, add CLAUDE_API_KEY to your .env file")
             else:
-                print(f"[INFO] To enable AI insights, set CLAUDE_API_KEY environment variable in Render dashboard")
-            print(f"[INFO] Skipping AI analysis and continuing with report generation...")
+                print("[INFO] To enable AI insights, set CLAUDE_API_KEY environment variable in Render dashboard")
+            print("[INFO] Skipping AI analysis and continuing with report generation...")
             ai_insights_enabled = False
         else:
             # Update environment variable with cleaned key
@@ -1073,7 +1080,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             }
 
             # Debug: Log data being passed to AI
-            print(f"DEBUG: AI data being prepared:", flush=True)
+            print("DEBUG: AI data being prepared:", flush=True)
             print(f"DEBUG:   county_name: {ai_data['county_name']}", flush=True)
             print(f"DEBUG:   years: {ai_data['years']}", flush=True)
             print(f"DEBUG:   county_summary_table length: {len(ai_data['county_summary_table'])}", flush=True)
@@ -1172,22 +1179,23 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             lenders_amount_thread = threading.Thread(target=generate_lenders_amount, daemon=True)
             hhi_trends_thread = threading.Thread(target=generate_hhi_trends, daemon=True)
 
-            county_number_thread.start()
-            county_amount_thread.start()
-            comparison_number_thread.start()
-            comparison_amount_thread.start()
-            lenders_number_thread.start()
-            lenders_amount_thread.start()
-            hhi_trends_thread.start()
+            with timed('narrative:all_sections'):
+                county_number_thread.start()
+                county_amount_thread.start()
+                comparison_number_thread.start()
+                comparison_amount_thread.start()
+                lenders_number_thread.start()
+                lenders_amount_thread.start()
+                hhi_trends_thread.start()
 
-            # Wait for all with 30 second timeout each
-            county_number_thread.join(timeout=30)
-            county_amount_thread.join(timeout=30)
-            comparison_number_thread.join(timeout=30)
-            comparison_amount_thread.join(timeout=30)
-            lenders_number_thread.join(timeout=30)
-            lenders_amount_thread.join(timeout=30)
-            hhi_trends_thread.join(timeout=30)
+                # Wait for all with 30 second timeout each
+                county_number_thread.join(timeout=30)
+                county_amount_thread.join(timeout=30)
+                comparison_number_thread.join(timeout=30)
+                comparison_amount_thread.join(timeout=30)
+                lenders_number_thread.join(timeout=30)
+                lenders_amount_thread.join(timeout=30)
+                hhi_trends_thread.join(timeout=30)
             
             # Collect results
             while not result_queue.empty():
@@ -1263,7 +1271,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             }
             print(f"DEBUG: HHI data included in result: {hhi_data}")
         else:
-            print(f"DEBUG: WARNING - HHI value is None, not including in result")
+            print("DEBUG: WARNING - HHI value is None, not including in result")
             print(f"DEBUG: disclosure_df empty: {disclosure_df.empty}, top_lenders_df empty: {top_lenders_df.empty}")
             if not top_lenders_df.empty:
                 print(f"DEBUG: top_lenders_df columns: {top_lenders_df.columns.tolist()}")
@@ -1281,13 +1289,17 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             'hhi_by_year': hhi_by_year,
             'ai_insights': ai_insights
         }
+        # Stage timings for this run (spec 04 A5); served by /report-data
+        if isinstance(result.get('metadata'), dict):
+            result['metadata']['perf'] = perf_stages()
+            result['metadata']['perf_ref'] = perf_ref
         
         # Debug: Log final AI insights in result
         print(f"[DEBUG] Final result ai_insights keys: {list(result.get('ai_insights', {}).keys())}", flush=True)
         print(f"[DEBUG] Final result metadata ai_insights_enabled: {result.get('metadata', {}).get('ai_insights_enabled')}", flush=True)
         
         print(f"\n{'='*80}")
-        print(f"DEBUG: ========== FINAL RESULT SUMMARY ==========")
+        print("DEBUG: ========== FINAL RESULT SUMMARY ==========")
         print(f"{'='*80}")
         print(f"DEBUG: Final result keys: {list(result.keys())}")
         print(f"DEBUG: county_summary_table length: {len(result['county_summary_table'])}")
@@ -1311,7 +1323,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # The blueprint.py will call progress_tracker.complete() AFTER storing results to BigQuery
         if progress_tracker:
-            progress_tracker.update_progress('saving', 95, 'Aggregating results')
+            progress_tracker.update_progress('finalizing', 95, 'Aggregating results')
 
         return result
         

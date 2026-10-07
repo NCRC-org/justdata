@@ -186,8 +186,9 @@ def validate_year_range(start_year: int, end_year: int) -> tuple[bool, Optional[
     Returns:
         Tuple of (is_valid, error_message)
     """
-    if start_year < 2018 or end_year > 2024:
-        return False, "Years must be between 2018 and 2024"
+    from justdata.apps.bizsight.config import BizSightConfig
+    if start_year < 2018 or end_year > BizSightConfig.SB_LATEST_YEAR:
+        return False, f"Years must be between 2018 and {BizSightConfig.SB_LATEST_YEAR}"
     
     if start_year > end_year:
         return False, "Start year must be before or equal to end year"

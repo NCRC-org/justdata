@@ -5,7 +5,9 @@ Converts the standalone BizSight app into a blueprint.
 
 from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
+import io
 import os
+import re
 import time
 from pathlib import Path
 from datetime import datetime
@@ -22,6 +24,7 @@ from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
 from justdata.shared.utils.progress_tracker import create_progress_tracker, get_progress
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
+from justdata.shared.web.app_page import app_page_context
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
@@ -61,38 +64,47 @@ def configure_template_loader(state):
     ])
 
 
+def _page(job_id=None):
+    """The BizSight page (spec 04 standard). /report?job_id= renders the same
+    page; its script then loads that job's results into the results column."""
+    user_permissions = get_user_permissions()
+    years = list(BizSightConfig.SB_YEARS)
+    ctx = app_page_context(
+        'bizsight',
+        form_id='bsForm',
+        data_vintage=f'CRA small business {years[0]} to {years[-1]}',
+        sources=[
+            {'name': 'CRA small business',
+             'vintage': f'{years[0]} to {years[-1]}. FFIEC CRA disclosure data: loans of $1 million or '
+                        'less reported by covered banks; state and national comparisons from the same data',
+             'url': 'https://www.ffiec.gov/cra/craproducts.htm'},
+        ],
+        help_url=None,
+        methods_anchor='section6',
+        exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
+        # No exclusion_note: no "matched with confidence" exclusion in BizSight's
+        # code (spec 04 decision 2; outcome recorded in the matrix).
+        shows_juxtaposition=True,
+    )
+    response = make_response(render_template(
+        'bizsight_analysis.html',
+        **ctx,
+        is_staff=is_privileged_user(get_user_type()),
+        analysis_years=years,
+        app_base_url=url_for('bizsight.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'BizSight', 'url': '/bizsight'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
+
+
 @bizsight_bp.route('/')
 @login_required
 @require_access('bizsight', 'limited')
 def index():
-    """Main page with the US map for county selection."""
-    user_permissions = get_user_permissions()
-    user_type = get_user_type()
-    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
-    is_staff = is_privileged_user(user_type)
-    app_base_url = url_for('bizsight.index').rstrip('/')
-
-    # Breadcrumb for main page
-    breadcrumb_items = [{'name': 'BizSight', 'url': '/bizsight'}]
-
-    # Force template reload by clearing cache before rendering
-    response = make_response(render_template(
-        'bizsight_analysis.html',
-        version=BizSightConfig.APP_VERSION,
-        permissions=user_permissions,
-        is_staff=is_staff,
-        app_base_url=app_base_url,
-        app_name='BizSight',
-        breadcrumb_items=breadcrumb_items
-    ))
-    # Add aggressive cache-busting headers
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    import time
-    response.headers['ETag'] = f'"{int(time.time())}"'
-    response.headers['Last-Modified'] = datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT')
-    return response
+    """Main page with the analysis form."""
+    return _page()
 
 
 @bizsight_bp.route('/progress/<job_id>')
@@ -138,21 +150,11 @@ def analyze():
         end_year = data.get('endYear')
         
         if not start_year or not end_year:
-            # Automatically get last 5 years from SB disclosure data
-            from justdata.apps.bizsight.data_utils import get_last_5_years_sb
-            years_list = get_last_5_years_sb()
-            if years_list:
-                start_year = min(years_list)
-                end_year = max(years_list)
-                years = sorted(years_list)
-                years_str = ','.join(map(str, years))
-                print(f"✅ Automatically using last 5 SB disclosure years: {years}")
-            else:
-                # Fallback
-                years = list(range(2020, 2025))
-                start_year = 2020
-                end_year = 2024
-                years_str = ','.join(map(str, years))
+            # The analysis window from config (ticket 13229487819), not a
+            # BigQuery lookup on every request.
+            years = list(BizSightConfig.SB_YEARS)
+            start_year, end_year = years[0], years[-1]
+            years_str = ','.join(map(str, years))
         else:
             start_year = int(start_year)
             end_year = int(end_year)
@@ -170,7 +172,7 @@ def analyze():
         caller = identify_caller()
         user_type = caller.user_type
         if not caller.user_id and not caller.user_email:
-            print(f"[WARN] BizSight analyze: No user identity captured despite @login_required")
+            print("[WARN] BizSight analyze: No user identity captured despite @login_required")
 
         # Prepare parameters for cache lookup
         cache_params = {
@@ -500,27 +502,11 @@ def get_tract_boundaries_endpoint(geoid5):
 @login_required
 @require_access('bizsight', 'limited')
 def report():
-    """Report display page."""
-    job_id = request.args.get('job_id')
-    if not job_id:
-        return jsonify({'error': 'Job ID required'}), 400
-
-    # Pass app_base_url so template can correctly construct API URLs
-    app_base_url = url_for('bizsight.index').rstrip('/')
-
-    # Breadcrumb for report page
-    breadcrumb_items = [
-        {'name': 'BizSight', 'url': '/bizsight'},
-        {'name': 'Report', 'url': '/bizsight/report'}
-    ]
-
-    return render_template(
-        'bizsight_report.html',
-        job_id=job_id,
-        app_base_url=app_base_url,
-        app_name='BizSight',
-        breadcrumb_items=breadcrumb_items
-    )
+    """Shareable report URL: the BizSight page with this job's results."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id=job_id)
 
 
 @bizsight_bp.route('/report-data', methods=['GET'])
@@ -598,6 +584,10 @@ def report_data():
 
         # Ensure success flag is present
         cleaned_result['success'] = True
+        # Stage timings of the run that produced this result (spec 04 A5)
+        stored_meta = cleaned_result.get('metadata') or {}
+        cleaned_result['perf'] = stored_meta.get('perf')
+        cleaned_result['ref'] = stored_meta.get('perf_ref')
 
         # Return with cache-control headers to prevent browser caching
         response = jsonify(cleaned_result)
@@ -613,6 +603,22 @@ def report_data():
             'success': False,
             'error': user_error(REQUEST_ERROR, exc=e, context='bizsight /report-data')[0]
         }), 500
+
+
+def _export_metadata(result, job_id):
+    """Metadata for the Excel and PDF builders, read from the stored result
+    rather than the session (which is empty for a shared report URL and was
+    missing county_name, so workbooks said "Unknown County")."""
+    stored = result.get('metadata') or {}
+    counties = stored.get('counties') or []
+    county_data = counties[0] if counties else session.get('county_data') or {}
+    return {
+        'county_data': county_data,
+        'county_name': stored.get('county_name') or (county_data.get('name') if isinstance(county_data, dict) else None),
+        'state_name': stored.get('state_name', ''),
+        'years': stored.get('years') or list(BizSightConfig.SB_YEARS),
+        'job_id': job_id,
+    }
 
 
 @bizsight_bp.route('/download', methods=['GET'])
@@ -643,83 +649,65 @@ def download():
                 'error': f'Export format "{format_type}" is not available for your account type.'
             }), 403
 
-        progress = get_progress(job_id)
-        if not progress.get('done'):
-            return jsonify({'error': 'Analysis not complete'}), 400
-
-        # Retrieve from BigQuery only (no in-memory storage)
-        result = get_analysis_result_by_job_id(job_id)
+        # The stored result is the source of truth: the progress record lives in
+        # one instance's memory, so a cached report opened later or served by
+        # another instance has none.
+        result = get_analysis_result_by_job_id(job_id) or _result_fallback.get(job_id)
         if not result:
-            return jsonify({'error': 'Result not found'}), 404
+            return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 404
 
-        # Get metadata
-        metadata = {
-            'county_data': session.get('county_data'),
-            'years': session.get('years'),
-            'job_id': job_id
-        }
+        metadata = _export_metadata(result, job_id)
+        county_name = metadata.get('county_name') or 'County'
+        safe_name = re.sub(r'[^\w\s-]', '', county_name).replace(' ', '_')[:50]
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-        # Download based on format
-        if format_type in ('zip', 'excel'):
+        if format_type in ('excel', 'xlsx', 'zip'):
             from justdata.apps.bizsight.excel_export import save_bizsight_excel_report
-            from justdata.apps.bizsight.pdf_report import generate_bizsight_pdf
             import tempfile
-            import zipfile
-            import io
-            import re
 
-            # Generate Excel
             tmp_fd, tmp_path = tempfile.mkstemp(suffix='.xlsx')
             os.close(tmp_fd)
-            save_bizsight_excel_report(result, tmp_path, metadata=metadata)
-
-            # Generate PDF
-            pdf_buf = generate_bizsight_pdf(result, metadata)
-
-            # Build filenames
-            county_data = metadata.get('county_data', {})
-            county_name = county_data.get('name', 'County') if isinstance(county_data, dict) else str(county_data) if county_data else 'County'
-            safe_name = re.sub(r'[^\w\s-]', '', county_name).replace(' ', '_')[:50]
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            try:
+                save_bizsight_excel_report(result, tmp_path, metadata=metadata)
+                with open(tmp_path, 'rb') as f:
+                    xlsx_bytes = f.read()
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
             xlsx_filename = f'BizSight_{safe_name}_{timestamp}.xlsx'
-            pdf_filename = f'BizSight_{safe_name}_{timestamp}.pdf'
-            zip_filename = f'BizSight_{safe_name}_{timestamp}.zip'
 
-            # Bundle into ZIP
+            if format_type != 'zip':
+                # "Download Excel": the workbook alone.
+                return send_file(
+                    io.BytesIO(xlsx_bytes), as_attachment=True, download_name=xlsx_filename,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+            from justdata.apps.bizsight.pdf_report import generate_bizsight_pdf
+            import zipfile
+            pdf_buf = generate_bizsight_pdf(result, metadata)
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-                zf.write(tmp_path, xlsx_filename)
-                zf.writestr(pdf_filename, pdf_buf.getvalue())
+                zf.writestr(xlsx_filename, xlsx_bytes)
+                zf.writestr(f'BizSight_{safe_name}_{timestamp}.pdf', pdf_buf.getvalue())
             zip_buffer.seek(0)
-
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
-
-            return send_file(
-                zip_buffer,
-                as_attachment=True,
-                download_name=zip_filename,
-                mimetype='application/zip'
-            )
+            return send_file(zip_buffer, as_attachment=True,
+                             download_name=f'BizSight_{safe_name}_{timestamp}.zip',
+                             mimetype='application/zip')
         elif format_type == 'pdf':
             from justdata.apps.bizsight.pdf_report import generate_bizsight_pdf
             pdf_buf = generate_bizsight_pdf(result, metadata)
-            county_data = metadata.get('county_data', {})
-            county_name = county_data.get('name', 'County') if isinstance(county_data, dict) else str(county_data) if county_data else 'County'
-            safe_name = county_name.replace(',', '').replace(' ', '_')[:50]
-            filename = f'BizSight_{safe_name}.pdf'
             return Response(
                 pdf_buf.getvalue(),
                 mimetype='application/pdf',
-                headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+                headers={'Content-Disposition': f'attachment; filename="BizSight_{safe_name}.pdf"'}
             )
         elif format_type == 'powerpoint':
             # PowerPoint export would go here
             return jsonify({'error': 'PowerPoint export not yet implemented'}), 501
         else:
-            return jsonify({'error': f'Unknown format: {format_type}'}), 400
+            return jsonify({'error': 'Invalid format. Valid formats are: excel, pdf, zip.'}), 400
             
     except Exception as e:
         import traceback

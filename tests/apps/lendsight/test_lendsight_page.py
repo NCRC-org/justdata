@@ -50,6 +50,7 @@ def test_exports_listed_are_the_ones_lendsight_has(client):
     html = _page(client)
     assert 'data-export="xlsx"' in html and 'data-export="pdf"' in html
     assert 'data-export="csv"' not in html
+    assert 'href="#methodsSection">Methods →</a>' in html
 
 
 def test_legacy_scripts_are_gone(client):
@@ -79,6 +80,6 @@ def test_lendsight_js_modules_stay_small():
     for f in files:
         assert len(f.read_text().splitlines()) <= 500, f.name
     shared = ROOT / "justdata" / "shared" / "web" / "static" / "js"
-    total = sum(f.stat().st_size for f in files) + (shared / "app_states.js").stat().st_size \
-        + (shared / "app_progress.js").stat().st_size
+    total = sum(f.stat().st_size for f in files) + sum(
+        (shared / name).stat().st_size for name in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js"))
     assert total <= 250 * 1024  # spec 04 A5 budget for the app's own JS

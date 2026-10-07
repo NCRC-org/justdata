@@ -1,0 +1,110 @@
+{# BizSight Methods (Section 6), carried over from the former /report page.
+   The Suggested Citation had "[County Name], [State]" placeholders; it is now
+   the run's citation in the platform format (bs_report.js). #}
+<section class="app-result-section" id="section6">
+  <h3>Section 6: Methods, Definitions, and AI Disclosure</h3>
+  <div class="app-methods-body">
+    <h4>Data Sources</h4>
+    <p><strong>CRA Small Business Lending Data:</strong> This report uses data collected under the Community Reinvestment Act (CRA), which requires depository institutions to report information about small business loans. The data is collected by the Federal Financial Institutions Examination Council (FFIEC) and includes lending activity from banks regulated by the Office of the Comptroller of the Currency (OCC), Federal Reserve, and Federal Deposit Insurance Corporation (FDIC). For more information, visit the <a href="https://www.ffiec.gov/cra/craproducts.htm" target="_blank" rel="noopener">FFIEC CRA website</a>.</p>
+
+    <p><strong>Data Coverage:</strong> CRA small business lending data includes loans with original amounts of $1 million or less for commercial and industrial purposes. The data is reported at the county level and includes information about loan size categories, loans to businesses with revenues under $1 million, and lending in census tracts of different income levels.</p>
+
+    <p><strong>NCRC Data Processing:</strong> The data used in this report is sourced from NCRC's curated small business lending databases, compiled and maintained by NCRC Research staff. State and national benchmark data is aggregated from the same FFIEC source data to enable geographic comparisons.</p>
+
+    <p><strong>Important Data Notes:</strong></p>
+        <ul>
+            <li><strong>PPP Impact (2020-2021):</strong> Small business lending volumes in 2020 and 2021 were significantly influenced by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years.</li>
+            <li><strong>Section 1071 Limitation:</strong> Section 1071 of the Dodd-Frank Act, which will require demographic data on small business loan applicants, has not yet been fully implemented. This report does not include borrower demographic information such as race, ethnicity, or gender of business owners.</li>
+        </ul>
+
+    <h4>Definitions</h4>
+
+    <p><strong>Small Business Loan:</strong> A loan with an original amount of $1 million or less made for commercial or industrial purposes to businesses.</p>
+
+    <p><strong>Small Business (Revenue Under $1M):</strong> Businesses with gross annual revenues of less than $1 million. CRA regulations require lenders to report the portion of small business loans made to these smaller enterprises.</p>
+
+    <h5>Loan Size Categories</h5>
+    <ul>
+        <li><strong>Under $100K:</strong> Loans with original amounts less than $100,000</li>
+        <li><strong>$100K-$250K:</strong> Loans with original amounts from $100,000 to $250,000</li>
+        <li><strong>$250K-$1M:</strong> Loans with original amounts from $250,000 to $1,000,000</li>
+    </ul>
+
+    <h5>Census Tract Income Categories</h5>
+    <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+    <ul>
+        <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+        <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+        <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+        <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+        <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+    </ul>
+
+    <h5>Income Tract Data Encoding</h5>
+    <p>The FFIEC CRA disclosure data reports lending by census tract income category using three different encoding formats, depending on the reporting institution and data year:</p>
+    <ul>
+        <li><strong>Summary codes:</strong> A single row per income category (Low, Moderate, Middle, Upper, Unknown)</li>
+        <li><strong>Subcategory codes:</strong> Granular rows representing 10-percentage-point bands of area median income (e.g., 0&ndash;10%, 10&ndash;20%, through 120%+), which map to the standard income categories above</li>
+        <li><strong>Legacy codes:</strong> Simplified single-digit identifiers used by some institutions in earlier reporting years</li>
+    </ul>
+    <p>A given institution, county, and year combination uses only one encoding format. NCRC maps all three formats to the consistent income categories listed above.</p>
+
+    <h5>Table Column Definitions</h5>
+    <ul>
+        <li><strong>Total:</strong> Total number or amount of small business loans</li>
+        <li><strong>&lt;100K / 100-250K / 250K-1M:</strong> Percentage of loans in each size category</li>
+        <li><strong>Sm Biz:</strong> Percentage of loans to businesses with annual revenues under $1 million</li>
+        <li><strong>Low / Mod / Mid / Upper:</strong> Percentage of loans in census tracts of each income level</li>
+        <li><strong>$000s:</strong> Dollar amounts expressed in thousands</li>
+    </ul>
+
+    <h4>Calculations</h4>
+
+    <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) &times; 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) &times; 100.</p>
+
+    <p><strong>Income Tract Percentage Calculations:</strong> For percentages by census tract income category (Low, Moderate, Middle, Upper, and LMI), the denominator excludes loans where the tract income classification is unknown or unavailable. Some census tracts lack income classifications due to data suppression, boundary changes, or other Census Bureau limitations. Including these unclassified loans in the denominator would artificially deflate all income category percentages. The formula used is: (income category loans / total loans with known tract income classification) &times; 100. Total loan counts and dollar amounts reported elsewhere in this report include all loans regardless of tract income classification.</p>
+
+    <p><strong>Change Over Time:</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). Positive changes are displayed in blue; negative changes in red.</p>
+
+    <p><strong>Dollar Amount Aggregation:</strong> Loan amounts are aggregated from individual lender reports. All dollar figures in tables are expressed in thousands ($000s) or millions ($M) as noted.</p>
+
+    <h5>Herfindahl-Hirschman Index (HHI)</h5>
+    <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
+    <p class="app-formula">HHI = &Sigma;(market share<sub>i</sub>)<sup>2</sup></p>
+    <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
+    <p><strong>Concentration Levels:</strong></p>
+    <ul>
+        <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+        <li>HHI 1,500-2,500: Moderate concentration</li>
+        <li>HHI &gt; 2,500: High concentration</li>
+    </ul>
+    <p><strong>Note on HHI Calculation:</strong> In this report, HHI is calculated using the dollar amount of small business loans from all lenders that reported CRA data for the county, not just the top lenders shown in the tables.</p>
+
+    <h4>Abbreviations</h4>
+    <ul>
+        <li><strong>AMFI:</strong> Area Median Family Income</li>
+        <li><strong>CRA:</strong> Community Reinvestment Act</li>
+        <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
+        <li><strong>FFIEC:</strong> Federal Financial Institutions Examination Council</li>
+        <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+        <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+        <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+        <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+        <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
+        <li><strong>OCC:</strong> Office of the Comptroller of the Currency</li>
+        <li><strong>pp:</strong> Percentage Points</li>
+        <li><strong>PPP:</strong> Paycheck Protection Program</li>
+        <li><strong>Sm Biz:</strong> Small Business (revenue under $1M)</li>
+    </ul>
+
+    <h4>Data Quality and AI Disclosure</h4>
+    <p><strong>Data Validation:</strong> Income tract classifications are validated against FFIEC Census tract income level designations.</p>
+
+    <p><strong>AI-Generated Narrative Content:</strong> The analytical narratives in Sections 2 through 5 of this report are generated using artificial intelligence (Claude, developed by Anthropic) based on the underlying data tables and calculations. The data tables, calculations, and statistical measures presented in this report are computed directly from FFIEC CRA disclosure data and are not AI-generated.</p>
+
+    <p><strong>Limitations:</strong> CRA data reflects lending reported by covered depository institutions and may not capture all small business lending activity in a market. Lending by non-bank lenders, credit unions below the reporting threshold, and fintech companies is generally not included. Market share calculations and HHI values should be interpreted in this context.</p>
+
+    <p><strong>Suggested Citation:</strong> <span id="bsCitation"></span></p>
+    <p class="bs-copyright">&copy; 2026 National Community Reinvestment Coalition</p>
+  </div>
+</section>

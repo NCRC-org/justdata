@@ -1,5 +1,8 @@
 {# Spec 04 A4. Renders only the exports the app lists in `exports`
-   (app_page_context); a button that opens nothing is never shipped. #}
+   (app_page_context); a button that opens nothing is never shipped.
+   methods_anchor: id of the Methods section inside the rendered results. The
+   link sits in #resultsActions, which is shown only after a successful run,
+   so it never points at a section that is not on the page (Jad, 2026-10-07). #}
 <div class="app-results-toolbar">
   <h2 class="app-results-title" id="resultsTitle">Results</h2>
   <div class="app-results-actions" id="resultsActions" hidden>
@@ -7,5 +10,6 @@
     {% if 'xlsx' in exports %}<button type="button" class="btn btn-secondary btn-sm" data-export="xlsx">Download Excel</button>{% endif %}
     {% if 'pdf' in exports %}<button type="button" class="btn btn-secondary btn-sm" data-export="pdf">Download report</button>{% endif %}
     <button type="button" class="btn btn-ghost btn-sm" data-action="copy-citation">Copy citation</button>
+    {% if methods_anchor %}<a class="btn btn-ghost btn-sm" href="#{{ methods_anchor }}">Methods →</a>{% endif %}
   </div>
 </div>

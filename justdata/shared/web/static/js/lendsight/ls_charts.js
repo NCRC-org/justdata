@@ -1,7 +1,6 @@
 /**
- * LendSight charts (spec 04 Part B item 5). Chart.js is loaded only when a
- * report renders, so it does not count against the entry page's time to
- * interactive.
+ * LendSight charts (spec 04 Part B item 5), drawn with AppReport.charts
+ * (Chart.js loads only when a report renders).
  *
  * Colours come from tokens.css:
  *   series 1 --ncrc-blue-500, series 2 --ncrc-cyan-500,
@@ -16,38 +15,10 @@
 (function (root) {
   'use strict';
 
-  var CHART_JS = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-  var ANNOTATION_JS = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js';
-  var loading = null;
-
-  function token(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
-
-  function addScript(src) {
-    return new Promise(function (resolve, reject) {
-      var s = document.createElement('script');
-      s.src = src;
-      s.onload = resolve;
-      s.onerror = function () { reject(new Error('Could not load ' + src)); };
-      document.head.appendChild(s);
-    });
-  }
-
-  /** Resolves once Chart.js and the annotation plugin are available. */
-  function ready() {
-    if (root.Chart) return Promise.resolve(root.Chart);
-    if (!loading) {
-      loading = addScript(CHART_JS).then(function () { return addScript(ANNOTATION_JS); })
-        .then(function () {
-          if (root.chartjsPluginAnnotation) root.Chart.register(root.chartjsPluginAnnotation);
-          root.Chart.defaults.font.family = token('--font-body') || undefined;
-          root.Chart.defaults.color = token('--color-fg-muted') || undefined;
-          return root.Chart;
-        });
-    }
-    return loading;
-  }
+  var C = root.AppReport.charts;
+  var token = C.token;
+  var ready = C.ready;
+  var draw = C.draw;
 
   var RACE_GROUPS = [
     { key: 'white_percentage', label: 'White', color: '--ncrc-blue-500' },
@@ -65,14 +36,6 @@
     'Refinance': '--ncrc-cyan-500',
     'Home Equity': '--ncrc-gold'
   };
-
-  var instances = {};
-
-  function draw(canvas, config) {
-    if (instances[canvas.id]) instances[canvas.id].destroy();
-    instances[canvas.id] = new root.Chart(canvas, config);
-    return instances[canvas.id];
-  }
 
   /**
    * Population by race for the 2010 Census, 2020 Census and latest ACS of
@@ -152,15 +115,6 @@
       });
       return { label: purpose, data: values, backgroundColor: color, borderColor: color, borderWidth: 1 };
     });
-    var gold = token('--ncrc-gold');
-    var red = token('--ncrc-red');
-    function line(value, color, text) {
-      return {
-        type: 'line', yMin: value, yMax: value, borderColor: color, borderWidth: 2, borderDash: [5, 5],
-        label: { content: text, display: true, position: 'end', backgroundColor: color,
-                 color: token('--ncrc-black'), font: { size: 11, weight: 'bold' }, padding: 4 }
-      };
-    }
     return ready().then(function () {
       draw(canvas, {
         type: 'bar',
@@ -176,10 +130,10 @@
             tooltip: { callbacks: { label: function (ctx) {
               return (rows.length > 1 ? ctx.dataset.label + ': ' : '') + 'HHI: ' + Math.round(ctx.parsed.y).toLocaleString();
             } } },
-            annotation: { annotations: {
-              moderate: line(1500, gold, 'Moderate (1,500)'),
-              high: line(2500, red, 'High (2,500)')
-            } }
+            annotation: C.thresholds([
+              { value: 1500, label: 'Moderate (1,500)', color: token('--ncrc-gold') },
+              { value: 2500, label: 'High (2,500)', color: token('--ncrc-red') }
+            ])
           },
           scales: {
             y: { beginAtZero: true, max: Math.min(Math.max(maxHHI * 1.15, 3000), 10000),

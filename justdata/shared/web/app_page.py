@@ -28,6 +28,7 @@ def app_page_context(app_key: str, *, form_id: str,
                      sources: Sequence[dict] = (),
                      data_vintage: Optional[str] = None,
                      help_url: Optional[str] = None,
+                     methods_anchor: Optional[str] = None,
                      exports: Iterable[str] = (),
                      caveats: Sequence[str] = (),
                      shows_juxtaposition: bool = True,
@@ -39,7 +40,9 @@ def app_page_context(app_key: str, *, form_id: str,
         result actually draws on, shown in app_sources.html.
     data_vintage: a string such as "HMDA 2018 to 2024", or None to hide it.
         Read it from the data, never hardcode a guessed year.
-    help_url: leave None until a guide or in-report methodology anchor exists.
+    help_url: leave None until a guide page exists (shown before a run).
+    methods_anchor: id of the in-report Methods section; the toolbar shows
+        "Methods →" after a successful run.
     shows_juxtaposition: True for any result that puts lending or branch data
         next to race, ethnicity or income (platform rule, spec 04 A4).
     exclusion_note: a sentence on records the analysis drops, only when the
@@ -60,6 +63,7 @@ def app_page_context(app_key: str, *, form_id: str,
         "sources": list(sources),
         "data_vintage": data_vintage,
         "help_url": help_url,
+        "methods_anchor": methods_anchor,
         "exports": exports,
         "caveats": list(caveats),
         "shows_juxtaposition": shows_juxtaposition,

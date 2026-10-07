@@ -82,7 +82,7 @@ can name the code that does the excluding.
 | App | Outcome | Basis |
 |---|---|---|
 | LendSight | Dropped | No matching-confidence exclusion in the code. `mortgage_report.sql` applies scope filters only (originations, owner-occupied, 1-4 units, site-built, not reverse), already listed in Methods. Methods' "Data Cleaning" claim (1st/99th percentile loan-amount trimming) had no code behind it and was removed from the web report and PDF. |
-| BizSight | Pending (BizSight PR) | |
+| BizSight | Dropped | No matching-confidence exclusion in the code. Related finding for Jad (not changed): Methods says tract-income percentages exclude loans with no tract income classification. That holds for the state and national benchmarks (`generate_benchmarks.py:58`, known-income denominators) but not for the county column (`report_builder.py:292`, `core.py:954`, total-loan denominators), so Section 3 compares county figures against state and national figures built on different denominators. |
 | BranchSight | Pending (BranchSight PR) | |
 | MergerMeter | Pending (MergerMeter PR) | |
 
@@ -105,6 +105,26 @@ can name the code that does the excluding.
   `/report-data`.
 - Before/after timings on the testing site: after the PR deploys (see the
   PR).
+
+### BizSight (refactor/bizsight-standard)
+
+- On the standard: `bizsight_analysis.html` extends `app_page.html`; the
+  report renders in the results column; `/bizsight/report?job_id=` is the
+  shareable URL. Built on the shared AppRun and AppReport modules, which
+  LendSight now also uses.
+- Ticket 13229487819: `config.SB_YEARS` (2020 to 2024) is the single
+  source for the page, header vintage, default request and validation;
+  2024 is the latest year loaded (2025 is not). About 300 year literals
+  remain in core.py, report_builder.py and ai_analysis.py (platform ticket
+  11535494229); a test pins them to SB_LATEST_YEAR.
+- Fixed: /download failed for cached or cross-instance reports (it required
+  the in-process progress record) and wrote "Unknown County" into
+  workbooks; the summary's LMI change was an estimate; Methods' Suggested
+  Citation had "[County Name], [State]" placeholders; five progress step
+  names were silently dropped by the tracker.
+- `rg 'style="' justdata/apps/bizsight/templates` and `rg "fa-"
+  justdata/apps/bizsight` return nothing.
+- Stage timings recorded and returned by `/report-data`.
 
 ## Findings that matter before testers
 
