@@ -2601,6 +2601,21 @@ body.menu-open .header {
     gap: 0.5rem;
 }
 
+.form-message[hidden] {
+    display: none;
+}
+
+/* Error reference from an app's "Report a problem" link (/contact?ref=) */
+.contact-ref {
+    font-family: var(--font-mono);
+    font-size: var(--fs-body-sm);
+    color: var(--color-fg);
+    background: var(--color-bg-muted);
+    border-left: 3px solid var(--color-danger);
+    padding: var(--s-2) var(--s-3);
+    margin: 0 0 var(--s-4);
+}
+
 .form-message.success {
     background: #d4edda;
     color: #155724;
