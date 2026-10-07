@@ -4,8 +4,8 @@ BranchSight-specific data utilities for BigQuery and county reference.
 Adapted from ncrc-test-apps branchsight.
 """
 
-from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-from typing import List, Optional, Dict
+from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string
+from typing import List, Dict
 from .config import PROJECT_ID
 
 # App name for per-app credential support
@@ -363,41 +363,27 @@ def get_available_metro_areas() -> List[Dict[str, str]]:
         return []
 
 
-def execute_branch_query(sql_template: str, county: str, year: int) -> List[dict]:
+def execute_branch_query(sql_template: str, county: str, years: List[int]) -> List[dict]:
     """
-    Execute a BigQuery SQL query for branch data with parameter substitution.
+    Run the branch query for one county and all its years in one BigQuery job.
 
     Args:
-        sql_template: SQL query template with @county and @year parameters
-        county: County name in "County, State" format
-        year: Year as integer
+        sql_template: SQL with @county (STRING) and @years (ARRAY<STRING>)
+                      query parameters
+        county: Exact county_state, as resolved by find_exact_county_match
+        years: Years to include
 
     Returns:
         List of dictionaries containing query results
     """
-    try:
-        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
-
-        # Find the exact county match from the database
-        county_matches = find_exact_county_match(county)
-
-        if not county_matches:
-            raise Exception(f"No matching counties found for: {county}")
-
-        # Use the first match
-        exact_county = county_matches[0]
-
-        # Escape apostrophes in county name for SQL safety
-        escaped_county = escape_sql_string(exact_county)
-
-        # Substitute parameters in SQL template
-        sql = sql_template.replace('@county', f"'{escaped_county}'").replace('@year', f"'{year}'")
-
-        # Execute query
-        return execute_query(client, sql)
-
-    except Exception as e:
-        raise Exception(f"Error executing BigQuery query for {county} {year}: {e}")
+    from google.cloud.bigquery import ArrayQueryParameter, QueryJobConfig, ScalarQueryParameter
+    client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
+    job_config = QueryJobConfig(query_parameters=[
+        ScalarQueryParameter('county', 'STRING', county),
+        ArrayQueryParameter('years', 'STRING', [str(y) for y in years]),
+    ])
+    rows = client.query(sql_template, job_config=job_config).result(timeout=120)
+    return [dict(row.items()) for row in rows]
 
 
 def get_available_years() -> List[int]:

@@ -6,12 +6,13 @@ Adapted from ncrc-test-apps branchsight.
 
 import os
 import pandas as pd
-from typing import Dict, List
+from typing import Dict
 from datetime import datetime
-from .config import OUTPUT_DIR, PROJECT_ID, SOD_YEARS
+from .config import SOD_YEARS
 from .data_utils import find_exact_county_match, execute_branch_query
-from .analysis import BranchSightAnalyzer
-from justdata.shared.reporting.report_builder import build_report, save_excel_report
+from justdata.shared.reporting.report_builder import build_report
+from justdata.shared.utils.error_ref import GENERIC_ERROR
+from justdata.shared.utils.perf import perf_stages, start_perf, timed
 
 
 def parse_web_parameters(counties_str: str, years_str: str, selection_type: str = 'county',
@@ -85,6 +86,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
     Returns:
         Dictionary with success status and results
     """
+    perf_ref = start_perf('branchsight')
     try:
         # Initialize progress
         if progress_tracker:
@@ -102,78 +104,37 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         if not years:
             return {'success': False, 'error': 'No years provided'}
 
-        # Clarify county selections
+        # Resolve each picked county to its exact county_state once.
         if progress_tracker:
             progress_tracker.update_progress('preparing_data')
 
         clarified_counties = []
-        total_counties = len(counties)
-        for idx, county in enumerate(counties, 1):
-            try:
-                if progress_tracker:
-                    progress_tracker.update_progress('preparing_data',
-                        int(15 + (idx / total_counties) * 5),
-                        f'Querying federal records ({idx}/{total_counties})')
-
-                print(f"Matching county {idx}/{total_counties}: {county}")
+        with timed('bq:county_match'):
+            for county in counties:
                 matches = find_exact_county_match(county)
                 if not matches:
-                    # This shouldn't happen with the fallback, but handle it anyway
-                    print(f"Warning: No matches found for {county}, using input as-is")
-                    clarified_counties.append(county)
-                else:
-                    clarified_counties.append(matches[0])
-                    print(f"Using county: {matches[0]}")
-            except Exception as e:
-                print(f"Error matching county {county}: {e}, using input as-is")
-                clarified_counties.append(county)
-
-        # Load SQL template
-        if progress_tracker:
-            progress_tracker.update_progress('connecting_db')
+                    return {'success': False, 'error': 'No data found for the specified parameters'}
+                clarified_counties.extend(matches)
 
         sql_template = load_sql_template()
 
-        # Execute BigQuery queries
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 30, 'Querying federal records')
+            progress_tracker.update_progress('querying_data', 30, 'Querying federal records')
 
+        # One job per county covers every year (branchsight.sod for the latest
+        # year, sod_legacy before it).
         all_results = []
-        total_queries = len(clarified_counties) * len(years)
-        query_index = 0
-        query_errors = []  # Track errors to surface meaningful messages
-
-        for county in clarified_counties:
-            for year in years:
-                try:
-                    print(f"  Querying {county} for year {year}...")
-                    results = execute_branch_query(sql_template, county, year)
-                    all_results.extend(results)
-                    print(f"    Found {len(results)} records")
-
-                    # Update progress
-                    query_index += 1
+        try:
+            with timed('bq:branch_report'):
+                for idx, county in enumerate(clarified_counties, 1):
+                    all_results.extend(execute_branch_query(sql_template, county, years))
                     if progress_tracker:
-                        progress_tracker.update_query_progress(query_index, total_queries)
+                        progress_tracker.update_query_progress(idx, len(clarified_counties))
+        except Exception as e:
+            print(f"Branch query failed for {clarified_counties}: {e}")
+            return {'success': False, 'error': GENERIC_ERROR, 'exception': e}
 
-                except Exception as e:
-                    error_str = str(e)
-                    print(f"    Error querying {county} {year}: {error_str}")
-                    query_errors.append(error_str)
-                    query_index += 1
-                    continue
-
-        # If all queries failed, surface the error instead of "no data found"
         if not all_results:
-            # Check for permission errors (403)
-            if query_errors:
-                if any('403' in err or 'Access Denied' in err for err in query_errors):
-                    return {'success': False, 'error': 'Data access temporarily unavailable. Please try again later or contact support.'}
-                # Return the first unique error
-                unique_errors = list(set(query_errors))
-                if len(unique_errors) == 1:
-                    return {'success': False, 'error': f'Query error: {unique_errors[0]}'}
-                return {'success': False, 'error': f'Multiple query errors occurred. First error: {query_errors[0]}'}
             return {'success': False, 'error': 'No data found for the specified parameters'}
 
         # Build report
@@ -181,22 +142,12 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             progress_tracker.update_progress('processing_data')
 
         print(f"\nBuilding report with {len(all_results)} records...")
-        report_data = build_report(all_results, clarified_counties, years)
+        with timed('build_report'):
+            report_data = build_report(all_results, clarified_counties, years)
 
-        # Save Excel report
+        # The workbook is built on download from the stored result.
         if progress_tracker:
             progress_tracker.update_progress('building_report', message='Aggregating results')
-
-        excel_path = os.path.join(OUTPUT_DIR, 'fdic_branch_analysis.xlsx')
-        # Prepare metadata for Notes sheet
-        excel_metadata = {
-            'counties': clarified_counties,
-            'years': years,
-            'total_records': len(all_results),
-            'generated_at': datetime.now().isoformat()
-        }
-        save_excel_report(report_data, excel_path, metadata=excel_metadata)
-        print(f"Excel report saved: {excel_path}")
 
         # Generate AI insights (optional if API key is configured)
         ai_insights = {}
@@ -252,7 +203,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 progress_tracker.update_progress('generating_ai')
 
             # Initialize analyzer - this may raise an exception if API key is missing
-            print(f"Initializing AI analyzer...")
+            print("Initializing AI analyzer...")
             print(f"Counties for AI: {clarified_counties}")
             print(f"Years for AI: {years}")
             print(f"Final year branch count: {final_year_branch_count}")
@@ -275,8 +226,9 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             try:
                 if progress_tracker:
                     progress_tracker.update_ai_progress(1, 4, 'Key Findings')
-                ai_insights['key_findings'] = analyzer.generate_key_findings(ai_data)
-                print(f"  [OK] Key Findings generated successfully")
+                with timed('narrative:key_findings'):
+                    ai_insights['key_findings'] = analyzer.generate_key_findings(ai_data)
+                print("  [OK] Key Findings generated successfully")
             except Exception as key_findings_error:
                 print(f"  [ERROR] Error generating Key Findings: {key_findings_error}")
                 import traceback
@@ -294,7 +246,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     if progress_tracker:
                         progress_tracker.update_ai_progress(2, 4, 'Yearly Breakdown Analysis')
                     print("  Generating table1 narrative (Yearly Breakdown Analysis)...")
-                    narrative1 = analyzer.generate_table_narrative('table1', ai_data)
+                    with timed('narrative:table1'):
+                        narrative1 = analyzer.generate_table_narrative('table1', ai_data)
                     if narrative1 and narrative1.strip():
                         table_narratives['table1'] = narrative1
                         print(f"  [OK] table1 narrative generated ({len(narrative1)} chars)")
@@ -311,7 +264,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     if progress_tracker:
                         progress_tracker.update_ai_progress(3, 4, 'Analysis by Bank')
                     print("  Generating table2 narrative (Analysis by Bank)...")
-                    narrative2 = analyzer.generate_table_narrative('table2', ai_data)
+                    with timed('narrative:table2'):
+                        narrative2 = analyzer.generate_table_narrative('table2', ai_data)
                     if narrative2 and narrative2.strip():
                         table_narratives['table2'] = narrative2
                         print(f"  [OK] table2 narrative generated ({len(narrative2)} chars)")
@@ -328,7 +282,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     if progress_tracker:
                         progress_tracker.update_ai_progress(4, 4, 'County by County Analysis')
                     print("  Generating table3 narrative (County by County Analysis)...")
-                    narrative3 = analyzer.generate_table_narrative('table3', ai_data)
+                    with timed('narrative:table3'):
+                        narrative3 = analyzer.generate_table_narrative('table3', ai_data)
                     if narrative3 and narrative3.strip():
                         table_narratives['table3'] = narrative3
                         print(f"  [OK] table3 narrative generated ({len(narrative3)} chars)")
@@ -347,7 +302,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     if progress_tracker:
                         progress_tracker.update_ai_progress(4, 5, 'Market Concentration Trends Analysis')
                     print("  Generating HHI trends narrative (Market Concentration Trends)...")
-                    hhi_narrative = analyzer.generate_hhi_trends_narrative(ai_data)
+                    with timed('narrative:hhi_trends'):
+                        hhi_narrative = analyzer.generate_hhi_trends_narrative(ai_data)
                     if hhi_narrative and hhi_narrative.strip():
                         ai_insights['hhi_trends_discussion'] = hhi_narrative
                         print(f"  [OK] HHI trends narrative generated ({len(hhi_narrative)} chars)")
@@ -382,14 +338,6 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             print("Full traceback:")
             traceback.print_exc()  # Print full traceback for debugging
 
-            # More specific error message based on error type
-            if "API key" in error_message or "No API key" in error_message:
-                error_msg = "AI analysis not available - API key not configured or service unavailable."
-            elif "No counties" in error_message or "No years" in error_message:
-                error_msg = f"AI analysis not available - {error_message}"
-            else:
-                error_msg = f"AI analysis not available - Error: {error_type}: {error_message}"
-
             ai_insights = {
                 'key_findings': None,
                 'table_narratives': {}
@@ -399,9 +347,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             progress_tracker.update_progress('finalizing', 98, 'Aggregating results')
         print("Analysis completed successfully!")
 
-        # Mark as completed (this will call complete() which sends the final message)
-        if progress_tracker:
-            progress_tracker.complete(success=True)
+        # The blueprint marks the job complete after the result is stored, so
+        # "done" never reaches the page before /report-data can serve it.
 
         return {
             'success': True,
@@ -411,17 +358,16 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'counties': clarified_counties,
                 'years': years,
                 'total_records': len(all_results),
-                'generated_at': datetime.now().isoformat()
+                'generated_at': datetime.now().isoformat(),
+                'perf': perf_stages(),
+                'perf_ref': perf_ref,
             },
             'message': f'Analysis completed successfully. Generated reports for {len(clarified_counties)} counties and {len(years)} years.',
             'counties': clarified_counties,
             'years': years,
             'records': len(all_results),
-            'excel_file': excel_path
         }
 
     except Exception as e:
-        print(f"\nError: {str(e)}")
-        if progress_tracker:
-            progress_tracker.complete(success=False, error=str(e))
-        return {'success': False, 'error': f'Analysis failed: {str(e)}'}
+        # The blueprint logs the exception under a reference; users see GENERIC_ERROR.
+        return {'success': False, 'error': GENERIC_ERROR, 'exception': e}

@@ -24,7 +24,7 @@ FROM branchsight.sod s
 LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
-    AND s.year = @year
+    AND s.year IN UNNEST(@years)
 GROUP BY 1,2,3,4,5
 UNION ALL
 SELECT
@@ -53,6 +53,6 @@ FROM branchsight.sod_legacy s
 LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
-    AND s.year = @year
+    AND s.year IN UNNEST(@years)
 GROUP BY 1,2,3,4,5
-ORDER BY bank_name, county_state, year
+ORDER BY year, bank_name, county_state

@@ -31,6 +31,7 @@ from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID, SOD_YEARS
 from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
 from .version import __version__
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
 def sanitize_for_json(obj):
     """Recursively replace Infinity and NaN with None in nested dicts/lists.
@@ -153,7 +154,8 @@ def analyze():
                 counties_str, years, selection_type, state_code, metro_code
             )
         except Exception as e:
-            return jsonify({'error': f'Error parsing parameters: {str(e)}'}), 400
+            return jsonify({'success': False, 'error': user_error(
+                "We couldn't read the selected county.", exc=e, context='branchsight parse_web_parameters')[0]}), 400
 
         def remember_in_session(active_job_id):
             session['counties'] = ';'.join(counties_list) if counties_list else counties_str
@@ -192,8 +194,13 @@ def analyze():
                                        selection_type, state_code, metro_code)
 
                 if not result.get('success'):
-                    error_msg = result.get('error', 'Unknown error')
-                    progress_tracker.update_progress('error', message=error_msg)
+                    # result['error'] is written by core (safe to show); an
+                    # unexpected exception is logged under the same reference.
+                    exc = result.get('exception')
+                    progress_tracker.fail(result.get('error') or GENERIC_ERROR, exc=exc)
+                    record_completion('branchsight', cache_params, caller, job_id,
+                                      start_time, request_id,
+                                      error_message=str(exc) if exc else result.get('error'))
                     return
 
                 # Store in BigQuery cache (survives across Cloud Run instances)
@@ -226,18 +233,14 @@ def analyze():
                                   start_time, request_id)
 
             except Exception as e:
-                error_msg = str(e)
-                progress_tracker.complete(success=False, error=error_msg)
+                progress_tracker.fail(GENERIC_ERROR, exc=e)
 
         run_in_background(run_job, job_id=job_id)
 
         return jsonify({'success': True, 'job_id': job_id})
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'An error occurred: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /analyze')[0]}), 500
 
 
 @branchsight_bp.route('/report')
@@ -316,15 +319,19 @@ def report_data():
                 serialized_data[key] = val
 
         ai_insights = analysis_result.get('ai_insights', {})
+        stored_meta = analysis_result.get('metadata') or {}
 
         # Sanitize all data to prevent Infinity/NaN from reaching JSON serialization
         response_data = sanitize_for_json({
             'success': True,
             'data': serialized_data,
             'metadata': {
-                **analysis_result.get('metadata', {}),
+                **stored_meta,
                 'ai_insights': ai_insights
-            }
+            },
+            # Stage timings of the run that produced this result (spec 04 A5)
+            'perf': stored_meta.get('perf'),
+            'ref': stored_meta.get('perf_ref'),
         })
 
         response = jsonify(response_data)
@@ -332,12 +339,7 @@ def report_data():
         return response
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': f'Failed to retrieve report data: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /report-data')[0]}), 500
 
 
 @branchsight_bp.route('/download')
@@ -778,10 +780,8 @@ def counties_by_state(state_code):
         return jsonify(counties)
     except Exception as e:
         import traceback
-        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
-        print(f"[ERROR] branchsight/counties-by-state error: {error_msg}")
         traceback.print_exc()
-        return jsonify({'error': error_msg}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /counties-by-state')[0]}), 500
 
 
 @branchsight_bp.route('/health')
