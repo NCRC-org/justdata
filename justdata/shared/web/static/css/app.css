@@ -1,0 +1,111 @@
+/* ==========================================================================
+   JustData analysis-app standard (spec 04 Part A2)
+
+   Loaded by base_app.html after shell.css. Every selector is scoped under
+   .app-* so apps that have not migrated to app_page.html see no change; do
+   not add rules for .container or other legacy classes here.
+
+   Departures from the spec's CSS block, for contrast (WCAG AA, 4.5:1 for
+   text under 18px):
+   - .app-eyebrow on the blue band uses --ncrc-cyan-100 (6.1:1), not
+     --ncrc-cyan-300 (4.2:1).
+   - Small text (hints, step labels, notes, elapsed time) uses
+     --color-fg-muted (6.2:1), not --color-fg-subtle (3.8:1, large text only).
+   - .report-prose is not redefined; it lives in style.css.
+   ========================================================================== */
+
+.app-container { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-pad); }
+
+/* app_page.html sets main_class "app-main" so the header band runs full
+   width; .app-container restores the content width (same as home.css). */
+.shell-main.app-main { max-width: none; padding: 0; }
+
+/* [hidden] must win over the display rules below */
+.app-header [hidden], .app-workbench [hidden] { display: none !important; }
+
+/* Header band */
+.app-header { background: var(--color-bg-dark); color: var(--color-fg-on-dark); padding: var(--s-7) 0; }
+.app-header-inner { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s-6); flex-wrap: wrap; }
+.app-eyebrow { font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wider); text-transform: uppercase; color: var(--ncrc-cyan-100); margin: 0 0 var(--s-1); }
+.app-title { font-family: var(--font-display); font-size: var(--fs-h1); font-weight: var(--fw-black); text-transform: uppercase; letter-spacing: var(--ls-tight); line-height: var(--lh-tight); margin: 0 0 var(--s-2); color: inherit; }
+.app-purpose { font-size: var(--fs-body-lg); color: var(--color-fg-on-dark-muted); margin: 0; max-width: 60ch; }
+.app-header-meta { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
+.app-chip { font-size: 11px; font-weight: var(--fw-semibold); letter-spacing: var(--ls-wide); text-transform: uppercase; border: 1px solid var(--color-overlay-border-strong); padding: 2px 8px; border-radius: var(--r-pill); }
+.app-vintage { font-family: var(--font-mono); font-size: 12px; color: var(--color-fg-on-dark-muted); }
+.app-header-link { color: var(--color-fg-on-dark); font-weight: var(--fw-semibold); text-decoration: none; border-bottom: 1px solid currentColor; margin-left: var(--s-2); }
+.app-header-link:focus-visible { outline: 2px solid var(--color-fg-on-dark); outline-offset: 2px; }
+
+/* Workbench */
+.app-workbench { display: grid; grid-template-columns: 360px 1fr; gap: var(--gutter); padding-top: var(--s-7); padding-bottom: var(--s-9); align-items: start; }
+@media (max-width: 1100px) { .app-workbench { grid-template-columns: 1fr; } }
+.app-controls { position: sticky; top: calc(var(--header-h) + var(--s-4)); background: var(--color-bg); border: 1px solid var(--color-border); }
+@media (max-width: 1100px) { .app-controls { position: static; } }
+.app-controls-head, .app-controls-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); padding: var(--s-4) var(--s-5); }
+.app-controls-head { border-bottom: 1px solid var(--color-divider); }
+.app-controls-foot { border-top: 1px solid var(--color-divider); flex-direction: column; align-items: stretch; }
+.app-controls-foot .btn { width: 100%; }
+.app-controls-hint { margin: 0; font-size: var(--fs-caption); color: var(--color-fg-muted); min-height: 1.2em; }
+.app-section-h { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-wide); margin: 0; }
+
+/* Controls: fieldsets are steps */
+.app-step { padding: var(--s-4) var(--s-5); border: 0; border-bottom: 1px solid var(--color-divider); margin: 0; min-width: 0; }
+.app-step:last-of-type { border-bottom: 0; }
+/* A legend straddles the fieldset's top edge; floating it puts it inside the padding */
+.app-step > legend { float: left; width: 100%; }
+.app-step > legend + * { clear: both; }
+.app-step legend, .app-step-label { font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wider); text-transform: uppercase; color: var(--color-fg-muted); margin: 0 0 var(--s-3); padding: 0; display: flex; gap: var(--s-2); align-items: center; }
+.app-step-n { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; background: var(--color-bg-dark); color: var(--color-fg-on-dark); font-weight: var(--fw-bold); font-size: 11px; }
+.app-step.is-complete .app-step-n { background: var(--color-bg-accent); color: var(--color-fg-on-accent); }
+.app-field { margin-bottom: var(--s-3); }
+.app-field label { display: block; font-size: var(--fs-body-sm); font-weight: var(--fw-semibold); margin-bottom: var(--s-1); }
+.app-field input, .app-field select { width: 100%; padding: var(--s-2) var(--s-3); border: 1px solid var(--ncrc-neutral-300); border-radius: var(--r-md); font: inherit; font-size: var(--fs-body); background: var(--color-bg); }
+.app-field input:focus-visible, .app-field select:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; border-color: var(--color-bg-accent); }
+.app-field-hint { font-size: var(--fs-caption); color: var(--color-fg-muted); margin: var(--s-1) 0 0; }
+.app-field.is-invalid input, .app-field.is-invalid select { border-color: var(--color-danger); }
+.app-field-error { font-size: var(--fs-caption); color: var(--color-danger-text); margin: var(--s-1) 0 0; }
+
+/* Results */
+.app-results { min-height: 480px; border: 1px solid var(--color-border); background: var(--color-bg); display: flex; flex-direction: column; min-width: 0; }
+.app-results-toolbar { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--color-divider); background: var(--color-bg-muted); flex-wrap: wrap; }
+.app-results-title { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-wide); margin: 0; }
+.app-results-actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.app-results-body { padding: var(--s-5); flex: 1; }
+
+/* Summary strip inside results */
+.app-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--s-4); padding-bottom: var(--s-5); border-bottom: 2px solid var(--color-border-strong); margin-bottom: var(--s-5); }
+.app-summary-figure { font-family: var(--font-display); font-size: var(--fs-h2); font-weight: var(--fw-black); line-height: 1; margin: 0 0 var(--s-1); }
+.app-summary-label { font-size: var(--fs-body-sm); font-weight: var(--fw-semibold); margin: 0; }
+.app-summary-note { font-size: var(--fs-caption); color: var(--color-fg-muted); margin: 2px 0 0; }
+
+/* Result sections */
+.app-result-section { padding: var(--s-5) 0; border-top: 1px solid var(--color-divider); }
+.app-result-section:first-of-type { border-top: 0; padding-top: 0; }
+.app-result-section h3 { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-tight); margin: 0 0 var(--s-3); }
+.app-chart { width: 100%; min-height: 280px; }
+.app-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); }
+.app-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body-sm); }
+.app-table th { text-align: left; font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wide); text-transform: uppercase; background: var(--color-bg-muted); padding: var(--s-2) var(--s-3); border-bottom: 2px solid var(--color-border-strong); white-space: nowrap; }
+.app-table td { padding: var(--s-2) var(--s-3); border-bottom: 1px solid var(--color-divider); }
+.app-table td.num, .app-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.app-table tr:hover td { background: var(--color-bg-brand-soft); }
+
+/* Disclaimer and sources */
+.app-note { border-left: 3px solid var(--color-bg-accent); background: var(--color-bg-accent-soft); padding: var(--s-3) var(--s-4); font-size: var(--fs-body-sm); color: var(--color-fg); margin: var(--s-4) 0 0; }
+.app-note--caution { border-left-color: var(--color-warning); background: var(--color-warning-bg); color: var(--color-warning-text); }
+.app-sources { padding: var(--s-4) var(--s-5); border-top: 1px solid var(--color-divider); background: var(--color-bg-muted); font-size: var(--fs-caption); color: var(--color-fg-muted); }
+.app-sources p { margin: 0; }
+.app-sources dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--s-1) var(--s-4); margin: var(--s-2) 0 0; }
+.app-sources dt { font-weight: var(--fw-semibold); }
+.app-sources dd { margin: 0; }
+
+/* States */
+.app-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 360px; padding: var(--s-7); gap: var(--s-3); }
+.app-state h3 { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold); text-transform: uppercase; margin: 0; }
+.app-state p { margin: 0; color: var(--color-fg-muted); max-width: 48ch; }
+.app-progress { width: 100%; max-width: 420px; height: 4px; background: var(--color-bg-alt); position: relative; overflow: hidden; }
+.app-progress::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--color-bg-accent); animation: app-progress 1.4s var(--ease) infinite; }
+@keyframes app-progress { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .app-progress::after { animation: none; width: 100%; opacity: .5; } }
+.app-state-elapsed { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--color-fg-muted); }
+.app-state--error { border-left: 4px solid var(--color-danger); align-items: flex-start; text-align: left; }
+.app-state--error h3 { color: var(--color-danger-text); }

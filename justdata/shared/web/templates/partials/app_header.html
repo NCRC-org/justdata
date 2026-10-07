@@ -1,0 +1,16 @@
+{# Spec 04 A1 app header band. Expects app (registry AppEntry), group_label,
+   data_vintage (str or None), help_url (str or None); see shared/web/app_page.py. #}
+<section class="app-header">
+  <div class="app-container app-header-inner">
+    <div>
+      {% if group_label %}<p class="app-eyebrow">{{ group_label }}</p>{% endif %}
+      <h1 class="app-title">{{ app.name }}</h1>
+      <p class="app-purpose">{{ app.purpose }}</p>
+    </div>
+    <div class="app-header-meta">
+      {% for s in app.sources %}<span class="app-chip">{{ s }}</span>{% endfor %}
+      {% if data_vintage %}<span class="app-vintage">{{ data_vintage }}</span>{% endif %}
+      {% if help_url %}<a href="{{ help_url }}" class="app-header-link">How to use {{ app.name }} →</a>{% endif %}
+    </div>
+  </div>
+</section>

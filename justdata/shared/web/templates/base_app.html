@@ -3,6 +3,7 @@
 <head>
 <title>{% block title %}{{ app_name }} - JustData{% endblock %}</title>
 {% include 'partials/_head.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 {% block extra_head %}{% endblock %}
 {% block extra_css %}{% endblock %}
 </head>

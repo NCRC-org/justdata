@@ -1,0 +1,15 @@
+{# Spec 04 A4, required on every result. Expects sources (list of
+   {name, vintage, url}), caveats (list of str), shows_juxtaposition (bool).
+   No methodology-page link until that page exists (Jad, 2026-10-07). #}
+<div class="app-sources" id="resultsSources">
+  <p><strong>Sources and methodology.</strong> Figures are computed from the public datasets below using the data sources, years and exclusions listed below. Records that cannot be matched with confidence are excluded.</p>
+  {% if sources %}
+  <dl>
+    {% for s in sources %}<dt>{{ s.name }}</dt><dd>{{ s.vintage }}{% if s.url %}, <a href="{{ s.url }}" rel="noopener">source</a>{% endif %}</dd>{% endfor %}
+  </dl>
+  {% endif %}
+  {% if shows_juxtaposition %}
+  <p class="app-note app-note--caution">Correlation is not causation. This view places lending or branch data alongside neighborhood characteristics. It documents patterns; it does not by itself establish why they occur.</p>
+  {% endif %}
+  {% for c in caveats %}<p class="app-note">{{ c }}</p>{% endfor %}
+</div>

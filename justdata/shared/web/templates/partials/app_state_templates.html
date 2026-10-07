@@ -1,0 +1,5 @@
+{# Client-side copies of the state partials, cloned by app_states.js. #}
+<template id="appStateIdle">{% include "partials/app_state_idle.html" %}</template>
+<template id="appStateLoading">{% include "partials/app_state_loading.html" %}</template>
+<template id="appStateEmpty">{% with reason=None %}{% include "partials/app_state_empty.html" %}{% endwith %}</template>
+<template id="appStateError">{% with message=None, error_ref=None %}{% include "partials/app_state_error.html" %}{% endwith %}</template>

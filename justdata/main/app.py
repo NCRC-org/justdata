@@ -328,6 +328,10 @@ def create_app():
     # Register dashboard routes (after landing route to avoid conflicts)
     from justdata.shared.web.dashboard_routes import register_dashboard_routes
     register_dashboard_routes(app)
+
+    # /dev/app-states (spec 04): registered only when debug is on
+    from justdata.shared.web.dev_routes import register_dev_routes
+    register_dev_routes(app)
     
     # API endpoint to set user type (for testing/demo)
     @app.route('/api/set-user-type', methods=['POST'])
