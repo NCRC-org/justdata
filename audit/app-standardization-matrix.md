@@ -64,17 +64,17 @@ the Timing method section.
 
 | Fix | Where | Status |
 |---|---|---|
-| BigQuery job labels per app and run (app, environment, job id) so bytes billed attribute exactly | Shared PR (A5 performance) | Pending |
-| Disable BigQuery's result cache (`use_query_cache=False`) for the duration of an uncached (force-refresh) run, so uncached timings and bytes are real | Shared PR (A5) | Pending |
-| MergerMeter writes to the analysis cache: `_perform_analysis` must return its result | Shared PR | Pending |
+| BigQuery job labels per app and run (app, environment, job id) so bytes billed attribute exactly | Shared PR (A5 performance) | Done in the shared PR (a71a843) |
+| Disable BigQuery's result cache (`use_query_cache=False`) for the duration of an uncached (force-refresh) run, so uncached timings and bytes are real | Shared PR (A5) | Done in the shared PR (a71a843); live once it deploys to testing |
+| MergerMeter writes to the analysis cache: `_perform_analysis` must return its result | Shared PR | Done in the shared PR (803dc35); the workbook is also stored in GCS so a cache hit on another instance can serve it |
 | MergerMeter AI narrative | none | Out of scope until Jad says otherwise |
 | LendSight loads shared `app.js` twice: verify in a browser, then fix | LendSight per-app PR | Pending |
-| Placeholder AI disclosures; joke and policy progress lines; jobs that never end on error; BizSight unbacked QA claims; raw exception text in BizSight and MergerMeter | Hygiene PR #208 | Open, awaiting merge |
+| Placeholder AI disclosures; joke and policy progress lines; jobs that never end on error; BizSight unbacked QA claims; raw exception text in BizSight and MergerMeter | Hygiene PR #208 | Merged 2026-10-07 |
 
 ## Findings that matter before testers
 
 These were live on the testing site at audit time. Items 1 to 5 are fixed in
-the hygiene PR #208 (open); the rest are tracked above or in the defect list.
+the hygiene PR #208 (merged 2026-10-07); the rest are tracked above or in the defect list.
 
 1. **Placeholder text in reports testers can open.** The web AI Disclosure in LendSight is lorem ipsum plus "[This disclosure text will be provided by Rose/Legal]". In BranchSight it is "[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]" plus lorem ipsum.
 2. **Joke progress messages.** BranchSight picks one at random while building, from a list that includes "Russell hates this.", "Support the CFPB.", "Beep boop beep." and "I know it's awesome, right?". "Support the CFPB" is a policy statement. LendSight and BizSight progress text is emoji-laden throughout.
@@ -98,7 +98,7 @@ the hygiene PR #208 (open); the rest are tracked above or in the defect list.
   - `/download` ignores the in-memory fallback, so export returns 404 when the cache write failed.
   - Map code is dead.
 - **MergerMeter:**
-  - It never writes results to the analysis cache, because `_perform_analysis` returns None.
+  - It never writes results to the analysis cache, because `_perform_analysis` returns None. Fixed in the shared PR (803dc35).
   - `single_bank_mode` is sent by the UI but dropped by the blueprint.
   - The assessment-area template link is missing the `/mergermeter` prefix.
   - The upload help text says "PDF or Text" but only JSON/CSV is accepted.
