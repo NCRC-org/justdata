@@ -198,23 +198,36 @@ def create_app():
     # Main landing page route
     @app.route('/')
     def landing():
-        """Main landing page: what JustData is, for anyone landing on it.
+        """Public landing page (spec 02): what JustData is, what is in it,
+        who it is for and where to go next. Facts come from
+        main/landing_content.py; the roster renders from nav_groups.
 
-        No app list here -- that's /apps (apps_index() below). Split at
-        Jad's direct request 2026-09-30: the home page originally combined
-        a marketing pitch and the app launcher on one page and read as too
-        plain/functional for a tester-facing platform; Jad asked for a real
-        landing page here with the launcher moved to its own page. See L5
-        "JustData -- Frontend buildout spec -- 2026-09-21" Part C step 3
-        and its step-3b revision note.
+        hero_cta picks the call to action:
+          "apps"    staff, and tester roles on the testing deploy (can open /apps)
+          "request" signed in but without app access (public_registered)
+          "signin"  signed out
         """
-        from justdata.shared.utils.versions import get_version
+        from justdata.main.landing_content import DATA_INVENTORY, PLATFORM_STATS, count_words
+
+        user_type = get_user_type()
+        if is_privileged_user(user_type) or testing_gate_admits('/apps', user_type):
+            hero_cta = 'apps'
+        elif is_authenticated():
+            hero_cta = 'request'
+        else:
+            hero_cta = 'signin'
 
         return render_template(
             'home.html',
             app_name='JustData',
-            app_description='Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.',
-            platform_version=get_version('platform'),
+            app_description=(
+                'JustData turns federal mortgage, small business and branch records '
+                'into analysis that holds up in a hearing, a newsroom or a negotiation.'
+            ),
+            data_inventory=DATA_INVENTORY,
+            platform_stats=PLATFORM_STATS,
+            hero_cta=hero_cta,
+            count_words=count_words,
         )
 
     # App launcher: the ACCESS_MATRIX-driven grid that used to live on '/'.

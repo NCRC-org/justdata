@@ -28,6 +28,9 @@ class AppEntry:
     url: str            # matches the blueprint url_prefix in main/app.py
     purpose: str        # one line, <= 90 chars
     sources: tuple = field(default_factory=tuple)  # dataset chips
+    # Landing page "What you can ask" question, worded to match what the app
+    # actually computes (spec 02 audit, 2026-10-07). Empty = not shown.
+    question: str = ""
 
 
 @dataclass(frozen=True)
@@ -44,15 +47,19 @@ NAV_GROUPS = (
     NavGroup("Analyze lending", (
         AppEntry("lendsight", "LendSight", "/lendsight",
                  "Mortgage lending by lender, geography and borrower.",
-                 ("HMDA", "Census ACS")),
+                 ("HMDA", "Census ACS"),
+                 "Which lenders are making home loans to Black and Latino borrowers in my county?"),
         AppEntry("bizsight", "BizSight", "/bizsight",
                  "Small business lending under CRA.",
-                 ("CRA small business", "Census ACS")),
+                 ("CRA small business", "Census ACS"),
+                 "How much small business credit reaches low- and moderate-income neighborhoods in a county?"),
     )),
     NavGroup("Analyze branches", (
         AppEntry("branchsight", "BranchSight", "/branchsight",
                  "Branch openings, closures and deposit share over time.",
-                 ("FDIC SOD", "Census ACS")),
+                 ("FDIC SOD", "Census ACS"),
+                 "Where are banks opening and closing branches, and how many serve "
+                 "low- and moderate-income and majority-minority neighborhoods?"),
         AppEntry("branchmapper", "BranchMapper", "/branchmapper",
                  "Map a bank's branch network against neighborhood data.",
                  ("FDIC SOD", "Census")),
@@ -60,7 +67,8 @@ NAV_GROUPS = (
     NavGroup("Investigate", (
         AppEntry("mergermeter", "MergerMeter", "/mergermeter",
                  "What a proposed merger means for the markets it touches.",
-                 ("HMDA", "CRA small business", "FDIC SOD")),
+                 ("HMDA", "CRA small business", "FDIC SOD"),
+                 "What does a proposed merger mean for lending and branches in the communities it touches?"),
         AppEntry("dataexplorer", "DataExplorer", "/dataexplorer",
                  "Build your own query across platform datasets.",
                  ("HMDA", "CRA small business", "FDIC SOD", "Census ACS")),

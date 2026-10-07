@@ -1,0 +1,31 @@
+{# Every app the viewer can see, from the nav registry (nav_groups), so the
+   landing page, drawer, footer and launcher always agree. #}
+{% set roster_count = namespace(n=0) %}
+{% for group in nav_groups if group.label %}{% set roster_count.n = roster_count.n + group['items']|length %}{% endfor %}
+<section id="roster" class="home-band home-band--muted" aria-labelledby="home-roster-h">
+    <div class="home-container home-grid">
+        <div class="home-roster-intro">
+            <p class="home-eyebrow">Inside the platform</p>
+            <h2 id="home-roster-h" class="home-h2">{{ count_words(roster_count.n)|capitalize }} tools, one set of public records</h2>
+            <p class="home-lead">Each tool answers a different question from the same federal datasets.</p>
+            {% if hero_cta == 'apps' %}<a href="/apps" class="btn btn-primary">Go to the launcher</a>{% endif %}
+        </div>
+        <div class="home-roster">
+            {% for group in nav_groups if group.label %}
+            <div class="home-roster-group">
+                <p class="home-roster-group-label">{{ group.label }}</p>
+                {% for item in group['items'] %}
+                <a href="{{ item.url }}" class="home-roster-row">
+                    <span class="home-roster-name">{{ item.name }}</span>
+                    <span class="home-roster-purpose">{{ item.purpose }}</span>
+                    <span class="home-roster-meta">
+                        {% for s in item.sources %}<span class="home-chip">{{ s }}</span>{% endfor %}
+                        {% if item.state == 'locked' %}<span class="home-chip home-chip--lock">{{ item.tag or 'Locked' }}</span>{% endif %}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

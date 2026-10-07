@@ -543,7 +543,7 @@ def test_step3_surfaces_render():
 # SHELL_PARTIALS / SHELL_ENTRY_TEMPLATES / SHELL_JS define "converted" for
 # every item below: the base layout, its partials, the five step-3 entry
 # templates, and the buildout's own JS files (shell-nav/auth/member.js,
-# home.js). auth.js and analytics-events.js are do-not-touch per Part A2 and
+# home.js until spec 02 removed it). auth.js and analytics-events.js are do-not-touch per Part A2 and
 # were never part of this buildout's icon/token conversion, so they're
 # excluded from every check here, same as they're excluded from editing.
 # ---------------------------------------------------------------------------
@@ -572,7 +572,6 @@ SHELL_JS = [
     "justdata/shared/web/static/js/shell-nav.js",
     "justdata/shared/web/static/js/shell-auth.js",
     "justdata/shared/web/static/js/shell-member.js",
-    "justdata/shared/web/static/js/home.js",
 ]
 
 

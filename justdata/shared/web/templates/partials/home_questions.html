@@ -1,0 +1,16 @@
+{# Questions live on the registry entries (shared/web/registry.py, `question`),
+   so a question disappears with its app when the viewer cannot see that app. #}
+<section class="home-band" aria-labelledby="home-q-h">
+    <div class="home-container">
+        <p class="home-eyebrow">Start with a question</p>
+        <h2 id="home-q-h" class="home-h2">What you can ask</h2>
+        <div class="home-q-grid">
+            {% for group in nav_groups %}{% for item in group['items'] if item.question %}
+            <article class="home-q">
+                <p class="home-q-text">{{ item.question }}</p>
+                <a class="home-link" href="{{ item.url }}">{{ item.name }} →</a>
+            </article>
+            {% endfor %}{% endfor %}
+        </div>
+    </div>
+</section>

@@ -6,52 +6,15 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 {% endblock %}
 
+{% block main_class %} home-main{% endblock %}
+
 {% block content %}
-<section class="home-hero">
-    <div class="home-hero-mark" aria-hidden="true">
-        <img src="{{ url_for('static', filename='img/ncrc-logo-mark.png') }}" alt="">
-    </div>
-    <div class="home-hero-content">
-        <p class="eyebrow">{% if is_authenticated %}Welcome back{% else %}NCRC{% endif %}</p>
-        <h1 class="display-2">JustData</h1>
-        <p class="home-hero-lead">Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.</p>
-        <div class="home-hero-actions">
-            {% if not is_authenticated %}
-            <button type="button" class="btn btn-accent btn-lg" onclick="openLoginModal()">Sign in</button>
-            <a href="/apps" class="btn btn-ghost btn-lg home-hero-ghost">View apps</a>
-            {% else %}
-            <a href="/apps" class="btn btn-accent btn-lg">View apps</a>
-            {% endif %}
-        </div>
-    </div>
-</section>
-
-<section class="stats-bar" id="platformStats">
-    <div class="stat-tile">
-        <div class="stat-tile-value" id="mortgageRecords">--</div>
-        <div class="stat-tile-label">Mortgage Records Analyzed</div>
-    </div>
-    <div class="stat-tile">
-        <div class="stat-tile-value" id="lendersTracked">--</div>
-        <div class="stat-tile-label">Lenders Tracked</div>
-    </div>
-    <div class="stat-tile">
-        <div class="stat-tile-value" id="reportsGenerated">--</div>
-        <div class="stat-tile-label">Reports Generated</div>
-    </div>
-    <div class="stat-tile">
-        <div class="stat-tile-value" id="activeResearchers">--</div>
-        <div class="stat-tile-label">Active Researchers</div>
-    </div>
-</section>
-
-<section class="home-mission">
-    <p class="home-mission-lead">JustData is a comprehensive data analysis platform developed by the National Community Reinvestment Coalition (NCRC) to provide powerful insights into banking, mortgage lending, small business lending, and community development. Our mission is to make complex financial data accessible and actionable for advocates, researchers, and community organizations working to promote fair and equitable access to financial services.</p>
-    <p class="home-mission-lead">We envision a future where data transparency drives meaningful change in financial services. By combining cutting-edge AI analysis with comprehensive federal data sources, JustData empowers users to identify patterns, uncover disparities, and advocate for fair lending practices that benefit all communities.</p>
-    <a href="/apps" class="btn btn-primary btn-lg">View apps</a>
-</section>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% include "partials/home_hero.html" %}
+{% include "partials/home_scale_strip.html" %}
+{% include "partials/home_questions.html" %}
+{% include "partials/home_roster.html" %}
+{% include "partials/home_cited.html" %}
+{% include "partials/home_how.html" %}
+{% include "partials/home_audiences.html" %}
+{% include "partials/home_closing.html" %}
 {% endblock %}
