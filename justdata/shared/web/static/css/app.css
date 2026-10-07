@@ -65,6 +65,16 @@
 .app-field-hint { font-size: var(--fs-caption); color: var(--color-fg-muted); margin: var(--s-1) 0 0; }
 .app-field.is-invalid input, .app-field.is-invalid select { border-color: var(--color-danger); }
 .app-field-error { font-size: var(--fs-caption); color: var(--color-danger-text); margin: var(--s-1) 0 0; }
+.app-field-label { display: block; font-size: var(--fs-body-sm); font-weight: var(--fw-semibold); margin-bottom: var(--s-1); }
+/* Checkbox and radio rows: <label class="app-check"><input type="checkbox"> Text <span class="app-check-hint">…</span></label> */
+.app-check { display: flex; gap: var(--s-2); align-items: flex-start; font-size: var(--fs-body-sm); font-weight: var(--fw-regular); margin: 0 0 var(--s-2); cursor: pointer; }
+.app-field .app-check input, .app-check input { width: auto; margin: 3px 0 0; accent-color: var(--color-bg-dark); flex-shrink: 0; }
+.app-check-hint { display: block; font-size: var(--fs-caption); color: var(--color-fg-muted); }
+/* Disclosure for secondary information in the controls */
+.app-details { font-size: var(--fs-body-sm); margin: var(--s-2) 0 0; }
+.app-details summary { cursor: pointer; font-weight: var(--fw-semibold); color: var(--color-fg); }
+.app-details summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.app-details ul { margin: var(--s-2) 0 0; padding-left: var(--s-5); color: var(--color-fg-muted); }
 
 /* Results */
 .app-results { min-height: 480px; border: 1px solid var(--color-border); background: var(--color-bg); display: flex; flex-direction: column; min-width: 0; }
