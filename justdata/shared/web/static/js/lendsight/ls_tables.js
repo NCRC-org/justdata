@@ -1,18 +1,14 @@
 /**
  * LendSight tables (spec 04 Part B item 5): the year-by-year "unified"
- * tables (Section 1 and 2) and the sortable top-lenders table (Section 3).
- * Ported from the former report page. All values are escaped; dynamic sizes
+ * tables (Section 1 and 2) and the top-lenders table (Section 3, on
+ * AppReport.sortableTable). All values are escaped; dynamic sizes
  * (share-bar widths, heat-map strength) are CSS custom properties, styled in
  * lendsight.css.
  */
 (function (root) {
   'use strict';
 
-  function esc(v) {
-    return String(v === null || v === undefined ? '' : v)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
+  var esc = root.AppReport.esc;
 
   function pct(v) {
     if (v === null || v === undefined || v === '') return NaN;
@@ -152,66 +148,24 @@
 
   function loans(row) { return parseInt(String(row['Total Loans']).replace(/,/g, ''), 10) || 0; }
 
-  /** Top lenders: sortable headers, lender-type filter, show all / top 10. */
+  /** Top lenders: AppReport.sortableTable with a lender-type filter and top 10. */
   function lenders(table, data, controls) {
     if (!table || !data || !data.length) return;
     var base = ['Lender Name', 'Lender Type', 'Total Loans'];
     var rest = Object.keys(data[0]).filter(function (c) { return base.indexOf(c) < 0; });
     var cols = ordered(rest, RACE_ORDER, function (c) { return /Hispanic|Black|White|Asian|Native American|Hawaiian/.test(c); })
       .concat(ordered(rest, INDICATOR_ORDER, function (c) { return /LMIB|LMICT|MMCT/.test(c); }));
-    var columns = [{ key: 'Lender Name', label: 'Lender', type: 'text' },
-                   { key: 'Lender Type', label: 'Type', type: 'text' },
-                   { key: 'Total Loans', label: 'Total', type: 'number' }]
-      .concat(cols.map(function (c) { return { key: c, label: shortCol(c), type: 'number' }; }));
-    var state = { rows: data.slice(), sortKey: null, dir: 1, expanded: false };
-
-    table.tHead.innerHTML = '<tr>' + columns.map(function (c, i) {
-      return '<th scope="col" class="' + (c.type === 'number' ? 'num' : '') + '" aria-sort="none">' +
-        '<button type="button" class="ls-sort" data-col="' + i + '">' + esc(c.label) + '</button></th>';
-    }).join('') + '</tr>';
-
-    function value(row, c) {
-      var v = row[c.key];
-      return c.type === 'number' ? (parseFloat(String(v).replace(/[%,]/g, '')) || 0) : String(v || '').toLowerCase();
-    }
-
-    function render() {
-      var type = controls.type ? controls.type.value : 'all';
-      var rows = state.rows.filter(function (r) { return type === 'all' || r['Lender Type'] === type; });
-      if (state.sortKey) {
-        var col = columns[state.sortKey];
-        rows.sort(function (a, b) { var x = value(a, col), y = value(b, col); return x < y ? -state.dir : x > y ? state.dir : 0; });
-      } else {
-        rows.sort(function (a, b) { return loans(b) - loans(a); });
-      }
-      var shown = state.expanded ? rows : rows.slice(0, LENDERS_SHOWN);
-      table.tBodies[0].innerHTML = shown.map(function (row) {
-        return '<tr>' + columns.map(function (c, i) {
-          var v = esc(row[c.key]);
-          return i === 0 ? '<th scope="row">' + v + '</th>' : '<td class="' + (c.type === 'number' ? 'num' : '') + '">' + v + '</td>';
-        }).join('') + '</tr>';
-      }).join('');
-      if (controls.expand) {
-        controls.expand.hidden = rows.length <= LENDERS_SHOWN;
-        controls.expand.textContent = state.expanded ? 'Show top 10 only' : 'Show all lenders';
-        controls.expand.setAttribute('aria-expanded', state.expanded ? 'true' : 'false');
-      }
-    }
-
-    table.tHead.addEventListener('click', function (e) {
-      var btn = e.target.closest('.ls-sort');
-      if (!btn) return;
-      var idx = Number(btn.getAttribute('data-col'));
-      state.dir = state.sortKey === idx ? -state.dir : 1;
-      state.sortKey = idx;
-      Array.prototype.forEach.call(table.tHead.querySelectorAll('th'), function (th, i) {
-        th.setAttribute('aria-sort', i === idx ? (state.dir === 1 ? 'ascending' : 'descending') : 'none');
-      });
-      render();
+    var columns = [{ key: 'Lender Name', label: 'Lender' },
+                   { key: 'Lender Type', label: 'Type' },
+                   { key: 'Total Loans', label: 'Total', numeric: true }]
+      .concat(cols.map(function (c) { return { key: c, label: shortCol(c), numeric: true }; }));
+    var view = root.AppReport.sortableTable(table, data, columns, {
+      topN: LENDERS_SHOWN,
+      expandButton: controls.expand,
+      filter: function (r) { var t = controls.type ? controls.type.value : 'all'; return t === 'all' || r['Lender Type'] === t; },
+      defaultSort: function (a, b) { return loans(b) - loans(a); }
     });
-    if (controls.type) controls.type.addEventListener('change', function () { state.sortKey = null; render(); });
-    if (controls.expand) controls.expand.addEventListener('click', function () { state.expanded = !state.expanded; render(); });
-    render();
+    if (controls.type) controls.type.addEventListener('change', view.render);
   }
 
   root.LendSight = root.LendSight || {};

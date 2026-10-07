@@ -2,13 +2,14 @@
  * LendSight report body (spec 04 Part B items 5 to 7): fills the cloned
  * #lsReportTemplate from /report-data. Ported from the former report page;
  * wording is unchanged except where noted in the PR. AI narrative is escaped
- * before its light markdown (bold, links, bullets) is turned into HTML.
+ * before its light markdown is turned into HTML (AppReport.formatNarrative).
  */
 (function (root) {
   'use strict';
 
   var T = root.LendSight.tables;
-  var esc = T.esc;
+  var esc = root.AppReport.esc;
+  var formatNarrative = root.AppReport.formatNarrative;
 
   var PURPOSE_NAMES = {
     purchase: 'home purchase loans',
@@ -42,49 +43,8 @@
     return { first: ys[0], last: ys[ys.length - 1], text: ys.length > 1 ? ys[0] + ' to ' + ys[ys.length - 1] : String(ys[0] || '') };
   }
 
-  /** "**bold**", "[text](url)" and "•" bullets; everything else is text. */
-  function formatNarrative(content) {
-    return String(content || '').split('\n\n').map(function (para) {
-      var lines = para.split('\n').filter(function (l) { return l.trim() && l.trim().indexOf('##') !== 0; });
-      if (!lines.length) return '';
-      var html = '', inList = false;
-      lines.forEach(function (line) {
-        var t = esc(line.trim())
-          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-        if (t.charAt(0) === '•') {
-          if (!inList) { html += '<ul>'; inList = true; }
-          html += '<li>' + t.slice(1).trim() + '</li>';
-        } else {
-          if (inList) { html += '</ul>'; inList = false; }
-          html += '<p>' + t + '</p>';
-        }
-      });
-      return html + (inList ? '</ul>' : '');
-    }).join('');
-  }
-
-  /**
-   * Fill one narrative slot. With text: the narrative and its "AI generated"
-   * caption. Without: an expected slot shows AppStates.NARRATIVE_MISSING
-   * (no caption, since nothing was generated); an optional slot stays hidden.
-   */
   function narrative(id, text, expected) {
-    var block = $(id);
-    if (!block) return;
-    var target = block.querySelector('[data-ls="text"]');
-    var caption = block.querySelector('.ls-ai-caption');
-    if (text) {
-      target.innerHTML = formatNarrative(text);
-      caption.hidden = false;
-    } else if (expected) {
-      target.innerHTML = '<p class="app-narrative-missing">' + esc(root.AppStates.NARRATIVE_MISSING) + '</p>';
-      caption.hidden = true;
-    } else {
-      block.hidden = true;
-      return;
-    }
-    block.hidden = false;
+    root.AppReport.narrative($(id), text, expected);
   }
 
   function intro(metadata, span, p) {

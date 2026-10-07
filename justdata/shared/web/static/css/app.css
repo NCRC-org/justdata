@@ -98,6 +98,14 @@
 .app-results .report-prose p { margin: 0 0 1em; }
 .app-results .report-prose p:last-child { margin-bottom: 0; }
 .app-narrative-missing { font-size: var(--fs-body-sm); font-style: italic; color: var(--color-fg-muted); margin: 0; }
+.app-narrative { margin-top: var(--s-4); }
+.app-ai-caption { font-size: var(--fs-caption); font-style: italic; color: var(--color-fg-muted); margin: var(--s-2) 0 0; }
+/* Row headers and sortable column headers in result tables (AppReport.sortableTable) */
+.app-table th[scope="row"] { text-align: left; font-family: var(--font-body); font-size: inherit; letter-spacing: 0; text-transform: none; font-weight: var(--fw-semibold); background: transparent; border-bottom: 1px solid var(--color-divider); white-space: nowrap; }
+.app-sort { all: unset; cursor: pointer; display: inline-flex; gap: var(--s-1); align-items: center; }
+.app-sort:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.app-table th[aria-sort="ascending"] .app-sort::after { content: "\25B2"; font-size: 9px; }
+.app-table th[aria-sort="descending"] .app-sort::after { content: "\25BC"; font-size: 9px; }
 .app-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); }
 .app-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body-sm); }
 .app-table th { text-align: left; font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wide); text-transform: uppercase; background: var(--color-bg-muted); padding: var(--s-2) var(--s-3); border-bottom: 2px solid var(--color-border-strong); white-space: nowrap; }
