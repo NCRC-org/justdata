@@ -225,3 +225,25 @@ def test_methods_link_only_inside_the_results_actions(debug_app):
 def test_missing_narrative_line_is_defined_once():
     assert _node("AppStates.NARRATIVE_MISSING") == "A written summary was not generated for this run."
     assert ".app-narrative-missing" in APP_CSS.read_text()
+
+
+APP_REPORT_JS = WEB / "static" / "js" / "app_report.js"
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("text,expected", [
+    ("**Total:** fell <script>x</script>", "<p><strong>Total:</strong> fell &lt;script&gt;x&lt;/script&gt;</p>"),
+    ("• one\n• two", "<ul><li>one</li><li>two</li></ul>"),
+    ("See [NCRC](https://ncrc.org).", '<p>See <a href="https://ncrc.org" target="_blank" rel="noopener">NCRC</a>.</p>'),
+    ("[bad](javascript:alert(1))", "<p>[bad](javascript:alert(1))</p>"),
+    ("## Heading\nBody", "<p>Body</p>"),
+])
+def test_narrative_is_escaped_before_markdown(text, expected):
+    script = (f"require({json.dumps(str(APP_REPORT_JS))});"
+              f"process.stdout.write(AppReport.formatNarrative({json.dumps(text)}));")
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    assert out.stdout == expected
+
+
+def test_app_report_js_size():
+    assert len(APP_REPORT_JS.read_text().splitlines()) < 300
