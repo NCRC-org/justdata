@@ -12,6 +12,18 @@ from .config import PROJECT_ID
 APP_NAME = 'BRANCHSIGHT'
 
 
+def exact_county_matches(client, county_input: str) -> List[str]:
+    """county_state values equal to county_input, ignoring case."""
+    from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
+    job_config = QueryJobConfig(query_parameters=[
+        ScalarQueryParameter('county', 'STRING', county_input.strip())])
+    rows = client.query(
+        "SELECT DISTINCT county_state FROM shared.cbsa_to_county "
+        "WHERE LOWER(county_state) = LOWER(@county) ORDER BY county_state",
+        job_config=job_config).result()
+    return [row.county_state for row in rows]
+
+
 def find_exact_county_match(county_input: str) -> list:
     """
     Find all possible county matches from the database.
@@ -58,6 +70,15 @@ def find_exact_county_match(county_input: str) -> list:
         # For non-Connecticut counties, use BigQuery lookup
         client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
 
+        # The picker sends the exact county_state, so match it exactly first.
+        # A substring match is wrong for 35 counties: "Kansas" is inside
+        # "Arkansas" and "Smith County" inside "Deaf Smith County", and the
+        # first sorted match was used (Johnson County, Kansas ran as Johnson
+        # County, Arkansas).
+        exact = exact_county_matches(client, county_input)
+        if exact:
+            return exact[:1]
+
         # Parse county and state
         if ',' in county_input:
             county_name, state = county_input.split(',', 1)
@@ -96,7 +117,8 @@ def find_exact_county_match(county_input: str) -> list:
         county_job = client.query(county_query)
         county_results = list(county_job.result())
         matches = [row.county_state for row in county_results]
-        return matches
+        # Free-text input only: an ambiguous substring match is not a match.
+        return matches if len(matches) == 1 else []
     except Exception as e:
         print(f"Error finding county match for {county_input}: {e}")
         import traceback
