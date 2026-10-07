@@ -12,9 +12,10 @@ are never printed, logged or written anywhere, and neither is the ID token.
 
     TEST_EMAIL=... TEST_PASSWORD=... python scripts/check_tester_gate.py
     python scripts/check_tester_gate.py --role member   # tester account
+    python scripts/check_tester_gate.py --role non_member_org
     python scripts/check_tester_gate.py --role staff    # staff account
 
---role changes only the expected table, so spec 05 can run it once per tier
+--role (public_registered, member, non_member_org, staff) changes only the expected table, so spec 05 can run it once per tier
 with a different account each time. The account's actual role, as reported by
 /api/auth/login, must match --role or the run fails.
 """
@@ -46,6 +47,8 @@ EXPECTED = {
     "signed_out": _PUBLIC,
     "public_registered": _PUBLIC,
     "member": {**_PUBLIC, "/apps": "open", "/lendsight/": "open"},
+    # Most external testers will hold this role; same table as member on testing.
+    "non_member_org": {**_PUBLIC, "/apps": "open", "/lendsight/": "open"},
     "staff": {**_PUBLIC, "/apps": "open", "/lendsight/": "open", "/status": "open",
               "/branchmapper/": "open"},
 }
