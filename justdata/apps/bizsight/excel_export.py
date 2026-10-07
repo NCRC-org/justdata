@@ -171,7 +171,6 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', 'The AI-generated content provides contextual analysis and interpretation of data patterns.'))
         notes_content.append(('', 'All data and statistics are sourced from the databases described above.'))
         notes_content.append(('', 'AI Model: Narratives generated using Claude AI (Anthropic).'))
-        notes_content.append(('', 'Human Review: AI-generated content has been reviewed for accuracy and appropriateness.'))
         notes_content.append(('', ''))
         
         notes_content.append(('Data Quality Assurance', ''))
@@ -385,6 +384,5 @@ def download_excel(analysis_result, metadata):
             mimetype='application/zip'
         )
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Excel export failed: {str(e)}'}), 500
+        from justdata.shared.utils.error_ref import user_error
+        return jsonify({'error': user_error("We couldn't create the Excel export.", exc=e, context='bizsight excel export')[0]}), 500

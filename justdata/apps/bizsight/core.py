@@ -21,6 +21,7 @@ from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
 from justdata.shared.utils.progress_tracker import ProgressTracker
 from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
+from justdata.shared.utils.error_ref import GENERIC_ERROR, user_error
 
 
 def parse_web_parameters(county_data: dict, years_str: str) -> tuple:
@@ -79,7 +80,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
     try:
         # Initialize progress
         if progress_tracker:
-            progress_tracker.update_progress('initializing', 0, 'Initializing analysis... Let\'s do this! 🚀')
+            progress_tracker.update_progress('initializing', 0, 'Querying federal records')
         
         # Parse parameters
         geoid5, years = parse_web_parameters(county_data, years_str)
@@ -88,11 +89,11 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         if progress_tracker:
             progress_tracker.update_progress('preparing_data', 5, 
-                f'Preparing data for {county_name}... Unpacking the data puzzle! 🧩')
+                'Querying federal records')
         
         # Initialize BigQuery client
         if progress_tracker:
-            progress_tracker.update_progress('connecting_db', 20, 'Connecting to BigQuery... Time to tap into that data goldmine! 💎')
+            progress_tracker.update_progress('connecting_db', 20, 'Querying federal records')
         
         bq_client = BigQueryClient()
         query_errors = []  # Track errors to surface meaningful messages
@@ -100,7 +101,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Fetch aggregate data with census demographics
         if progress_tracker:
             progress_tracker.update_progress('fetching_data', 30,
-                'Fetching tract-level lending data with census demographics... Digging deep for insights! ⛏️')
+                'Querying federal records')
 
         print(f"DEBUG: Starting BigQuery aggregate query for GEOID5: {geoid5}, years: {years}")
         try:
@@ -124,7 +125,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     }
                 return {
                     'success': False,
-                    'error': f'Query error: {query_errors[0]}'
+                    'error': user_error(GENERIC_ERROR, context=f'bizsight query error: {query_errors[0][:500]}')[0]
                 }
             return {
                 'success': False,
@@ -134,7 +135,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Fetch disclosure data for top lenders table (2024) and HHI by year (all years)
         if progress_tracker:
             progress_tracker.update_progress('fetching_data', 40, 
-                'Fetching lender-level disclosure data... Who\'s lending where? Let\'s find out! 🏦')
+                'Querying federal records')
         
         print(f"DEBUG: Starting BigQuery disclosure query for GEOID5: {geoid5}, year: 2024, is_planning_region: {is_planning_region}")
         try:
@@ -172,7 +173,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Build county summary table (Section 2) - most recent 5 years
         if progress_tracker:
             progress_tracker.update_progress('building_report', 50, 
-                'Section 2: Creating county summary table... Organizing the data! 📋')
+                'Aggregating results')
         county_summary_df = pd.DataFrame()
         if not aggregate_df.empty:
             print(f"DEBUG: Creating county summary table from {len(aggregate_df)} aggregate rows")
@@ -189,7 +190,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Fetch state and national benchmarks for comparison table (Section 3)
         if progress_tracker:
             progress_tracker.update_progress('fetching_data', 45, 
-                'Loading state and national benchmarks... Setting the bar for comparison! 📈')
+                'Querying federal records')
         
         # Handle District of Columbia special case (GEOID5 starts with 11, but DC is both county and state)
         # For DC, state_fips should be "11" (DC's state FIPS code)
@@ -508,7 +509,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Build comparison table (Section 3) - County, State, National Comparison
         if progress_tracker:
             progress_tracker.update_progress('section_3', 70, 
-                'Section 3: Creating comparison table... See how we stack up! 📊')
+                'Aggregating results')
         comparison_df = pd.DataFrame()
         if not aggregate_df.empty:
             print(f"DEBUG: Creating comparison table")
@@ -532,7 +533,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Build top lenders table (Section 4) - 2024 only
         if progress_tracker:
             progress_tracker.update_progress('section_4', 75, 
-                'Section 4: Creating top lenders table... Who are the big players? 🏆')
+                'Aggregating results')
         top_lenders_df = pd.DataFrame()
         hhi_value = None
         hhi_concentration = None
@@ -703,7 +704,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Fetch county summary statistics for 2024 only (for the summary table next to map)
         if progress_tracker:
             progress_tracker.update_progress('section_1', 55, 
-                'Section 1: Preparing geographic overview... Mapping it out! 🗺️')
+                'Aggregating results')
         
         summary_query = bq_client.get_county_summary_stats(geoid5, [2024])  # 2024 only for summary table
         summary_df = summary_query.to_dataframe()
@@ -720,7 +721,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Prepare tract data for map
         if progress_tracker:
             progress_tracker.update_progress('section_1', 60, 
-                'Section 1: Preparing map data and visualizations... Making it look pretty! 🎨')
+                'Aggregating results')
         
         # Aggregate tract data across years
         # Use census_tract_geoid (from SQL alias) or fallback to tract_geoid if it exists
@@ -1013,7 +1014,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Generate AI narratives
         if progress_tracker:
-            progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives... Let the AI work its magic! ✨')
+            progress_tracker.update_progress('generating_ai', 90, 'Building charts and narrative')
         
         # Initialize all AI insights keys with empty strings (ensures keys exist even if threads fail)
         ai_insights = {
@@ -1246,7 +1247,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 print(f"[DEBUG] AI insight '{key}': empty", flush=True)
         
         if progress_tracker:
-            progress_tracker.update_progress('completed', 95, 'Finalizing report... Dotting the i\'s and crossing the t\'s! [OK]')
+            progress_tracker.update_progress('completed', 95, 'Aggregating results')
         
         # Add AI insights enabled flag to metadata
         metadata['ai_insights_enabled'] = ai_insights_enabled
@@ -1310,12 +1311,12 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # The blueprint.py will call progress_tracker.complete() AFTER storing results to BigQuery
         if progress_tracker:
-            progress_tracker.update_progress('saving', 95, 'Saving results...')
+            progress_tracker.update_progress('saving', 95, 'Aggregating results')
 
         return result
         
     except Exception as e:
-        error_msg = str(e)
+        error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'bizsight run_analysis job={job_id}')
         if progress_tracker:
             progress_tracker.complete(success=False, error=error_msg)
         return {

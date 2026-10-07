@@ -22,6 +22,7 @@ from justdata.backend import (
 )
 from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
 from .version import __version__
 # Import functions from mergermeter modules
@@ -100,7 +101,7 @@ def report():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/goals-calculator')
@@ -114,7 +115,7 @@ def goals_calculator():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/progress/<job_id>')
@@ -233,9 +234,7 @@ def analyze():
                                   costs={'bigquery': 3.0, 'ai': 0.5, 'total': 3.5})
 
             except Exception as e:
-                import traceback
-                error_msg = str(e)
-                traceback.print_exc()
+                error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'mergermeter job={job_id}')
                 update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
                 record_completion('mergermeter', cache_params, caller, job_id,
                                   start_time, request_id, error_message=error_msg)
@@ -255,7 +254,7 @@ def analyze():
             job_id if 'job_id' in locals() else new_job_id(),
             start_time, request_id, error_message=str(e),
         )
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/excel-data')
@@ -281,7 +280,7 @@ def excel_data():
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/download')
@@ -327,7 +326,7 @@ def download():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/load-bank-names', methods=['POST'])
@@ -402,7 +401,7 @@ def api_load_bank_names():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/generate-assessment-areas-from-branches', methods=['POST'])
@@ -443,7 +442,7 @@ def api_generate_assessment_areas():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': f'Error: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/download-assessment-area-template', methods=['GET'])
@@ -533,7 +532,7 @@ def api_upload_assessment_areas():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/generate-ai-summary', methods=['POST'])
@@ -547,7 +546,7 @@ def api_generate_ai_summary():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/report-data')
@@ -561,7 +560,7 @@ def report_data():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/search-banks', methods=['GET'])
@@ -646,7 +645,7 @@ def api_search_banks():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/export-goals', methods=['POST'])
@@ -659,7 +658,7 @@ def api_export_goals():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/search-banks-ext', methods=['GET'])
@@ -743,7 +742,7 @@ def api_search_banks_ext():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/api/generate', methods=['POST'])
@@ -944,7 +943,7 @@ def api_generate():
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @mergermeter_bp.route('/health')
