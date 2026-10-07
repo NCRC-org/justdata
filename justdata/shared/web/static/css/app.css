@@ -97,6 +97,7 @@
 /* Narrative paragraphs inside results (font and measure come from .report-prose in style.css) */
 .app-results .report-prose p { margin: 0 0 1em; }
 .app-results .report-prose p:last-child { margin-bottom: 0; }
+.app-narrative-missing { font-size: var(--fs-body-sm); font-style: italic; color: var(--color-fg-muted); margin: 0; }
 .app-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); }
 .app-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body-sm); }
 .app-table th { text-align: left; font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wide); text-transform: uppercase; background: var(--color-bg-muted); padding: var(--s-2) var(--s-3); border-bottom: 2px solid var(--color-border-strong); white-space: nowrap; }

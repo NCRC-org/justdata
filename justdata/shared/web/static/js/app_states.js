@@ -125,6 +125,9 @@
   }
 
   var api = {
+    // Shown in a narrative slot when the run produced no written summary for
+    // it (Jad, 2026-10-07): one neutral line, nothing about keys or refreshing.
+    NARRATIVE_MISSING: 'A written summary was not generated for this run.',
     formatCitation: formatCitation,
     timeoutReason: timeoutReason,
 

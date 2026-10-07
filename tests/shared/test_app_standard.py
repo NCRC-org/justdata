@@ -209,3 +209,19 @@ def test_progress_error_text_splits_message_and_reference(text, expected):
 def test_app_page_loads_progress_module(debug_app):
     html = _preview(debug_app)
     assert html.index("js/app_states.js") < html.index("js/app_progress.js")
+
+
+def test_methods_link_only_inside_the_results_actions(debug_app):
+    from flask import render_template
+    with debug_app.test_request_context("/"):
+        without = render_template("partials/app_results_toolbar.html", exports=())
+        with_link = render_template("partials/app_results_toolbar.html", exports=(), methods_anchor="methodsSection")
+    assert "Methods" not in without
+    actions = with_link[with_link.index('id="resultsActions" hidden'):]
+    assert '<a class="btn btn-ghost btn-sm" href="#methodsSection">Methods →</a>' in actions
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+def test_missing_narrative_line_is_defined_once():
+    assert _node("AppStates.NARRATIVE_MISSING") == "A written summary was not generated for this run."
+    assert ".app-narrative-missing" in APP_CSS.read_text()
