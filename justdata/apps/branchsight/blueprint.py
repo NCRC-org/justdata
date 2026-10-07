@@ -6,6 +6,7 @@ Converts the standalone BranchSight app into a blueprint for the unified platfor
 from flask import Blueprint, current_app, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
+import re
 import tempfile
 import time
 import json
@@ -29,7 +30,7 @@ from justdata.shared.utils.analysis_cache import store_cached_result, get_analys
 _result_fallback = {}
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID, SOD_YEARS
-from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
+from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties, tract_context
 from .version import __version__
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
@@ -789,6 +790,20 @@ def counties_by_state(state_code):
         import traceback
         traceback.print_exc()
         return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /counties-by-state')[0]}), 500
+
+
+@branchsight_bp.route('/geography-context/<geoid5>')
+@login_required
+@require_access('branchsight', 'limited')
+def geography_context(geoid5):
+    """Census tract context for the report's Geography Context table. The
+    Census API requires a key, so the page asks the server."""
+    if not re.fullmatch(r'\d{5}', geoid5 or ''):
+        return jsonify({'error': 'Invalid county.'}), 400
+    try:
+        return jsonify(tract_context(geoid5))
+    except Exception as e:
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /geography-context')[0]}), 502
 
 
 @branchsight_bp.route('/health')

@@ -5,6 +5,7 @@ Adapted from ncrc-test-apps branchsight.
 """
 
 from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string
+from functools import lru_cache
 from typing import List, Dict
 from .config import PROJECT_ID
 
@@ -410,3 +411,50 @@ def get_available_years() -> List[int]:
         print(f"BigQuery not available for years: {e}")
         # Return fallback years
         return list(range(2025, 2016, -1))  # 2025 down to 2017
+
+
+# ACS 5-year vintage for the Geography Context table (the page states it).
+TRACT_CONTEXT_ACS_YEAR = 2022
+
+
+@lru_cache(maxsize=512)
+def tract_context(geoid5: str) -> Dict:
+    """Census tract counts and population for one county, by LMI and
+    majority-minority status (ACS 5-year, TRACT_CONTEXT_ACS_YEAR).
+
+    LMI: tract median family income at or below 80% of the county median.
+    Majority-minority: people other than non-Hispanic white residents are
+    more than 50% of the tract population. Tracts with no population are
+    left out. The Census API requires a key, so this runs on the server.
+    """
+    import requests
+    from justdata.shared.utils.census_historical_utils import _get_census_api_key as get_census_api_key
+
+    key = get_census_api_key()
+    if not key:
+        raise RuntimeError('CENSUS_API_KEY is not set')
+    st, co = geoid5[:2], geoid5[2:]
+    base = f'https://api.census.gov/data/{TRACT_CONTEXT_ACS_YEAR}/acs/acs5'
+    tracts = requests.get(base, timeout=20, params={
+        'get': 'B01003_001E,B19113_001E,B03002_001E,B03002_003E',
+        'for': 'tract:*', 'in': f'state:{st} county:{co}', 'key': key}).json()
+    county = requests.get(base, timeout=20, params={
+        'get': 'B19113_001E', 'for': f'county:{co}', 'in': f'state:{st}', 'key': key}).json()
+    median = float(county[1][0] or 0)
+    threshold = median * 0.8
+    groups = {k: {'tracts': 0, 'population': 0} for k in ('all', 'lmi_only', 'mmct_only', 'both')}
+    for row in tracts[1:]:
+        pop = float(row[0] or 0)
+        if pop <= 0:
+            continue
+        income = float(row[1] or 0)
+        race_total, white = float(row[2] or 0), float(row[3] or 0)
+        is_lmi = 0 < income <= threshold
+        is_mmct = race_total > 0 and (race_total - white) / race_total * 100 > 50
+        key_ = 'both' if is_lmi and is_mmct else 'lmi_only' if is_lmi else 'mmct_only' if is_mmct else None
+        for k in ('all', key_):
+            if k:
+                groups[k]['tracts'] += 1
+                groups[k]['population'] += int(pop)
+    return {'acs_year': TRACT_CONTEXT_ACS_YEAR, 'county_median_family_income': median,
+            'lmi_threshold': threshold, 'groups': groups}
