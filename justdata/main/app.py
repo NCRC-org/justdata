@@ -4,6 +4,7 @@ Serves as the central entry point with all sub-apps as blueprints.
 """
 
 from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect
+from werkzeug.middleware.proxy_fix import ProxyFix
 from justdata.main.auth import (
     get_user_type, set_user_type, get_app_access, get_user_permissions,
     auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
@@ -37,6 +38,12 @@ def create_app():
         template_folder=MainConfig.TEMPLATES_DIR,  # Shared templates folder
         static_folder=MainConfig.STATIC_DIR
     )
+
+    # Cloud Run terminates TLS and forwards plain HTTP with X-Forwarded-Proto
+    # and X-Forwarded-For set by its single proxy hop. Without this, Flask
+    # builds absolute URLs (e.g. the 308 from /analytics to /analytics/) as
+    # http://. Trust exactly one hop. Found during the spec 03 gate check.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
     
     # Configuration
     app.secret_key = MainConfig.SECRET_KEY
