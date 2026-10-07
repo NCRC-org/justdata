@@ -27,6 +27,18 @@ _ai_usage_buffer = []
 _last_flush_time = None
 
 
+def response_text(response) -> str:
+    """The reply's text. A reply can open with a thinking block, so join the
+    text blocks rather than reading content[0] (which failed with
+    "'ThinkingBlock' object has no attribute 'text'"). A reply with no text
+    raises, so the caller treats it as a failed narrative."""
+    text = "".join(getattr(b, "text", "") for b in (response.content or [])
+                   if getattr(b, "type", None) == "text")
+    if not text.strip():
+        raise Exception(f"reply had no text (stop_reason={getattr(response, 'stop_reason', None)})")
+    return text
+
+
 def log_ai_usage(
     provider: str,
     model: str,
@@ -390,7 +402,7 @@ def ask_ai(
                 report_type=report_type
             )
 
-        return response.content[0].text
+        return response_text(response)
     except Exception as e:
         raise Exception(f"Error calling {ai_provider.upper()} API: {e}")
 
@@ -477,7 +489,7 @@ class AIAnalyzer:
                     report_type=report_type
                 )
 
-            return response.content[0].text.strip()
+            return response_text(response).strip()
         except Exception as e:
             error_msg = f"Error calling {self.provider} API: {e}"
             print(error_msg)

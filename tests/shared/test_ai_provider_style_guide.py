@@ -27,6 +27,7 @@ def captured_prompt(monkeypatch):
             sent["model"] = model
             sent["max_tokens"] = max_tokens
             block = MagicMock()
+            block.type = "text"  # real replies type each block (thinking, text)
             block.text = "narrative"
             response = MagicMock()
             response.content = [block]
