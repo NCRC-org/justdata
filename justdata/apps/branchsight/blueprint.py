@@ -194,7 +194,7 @@ def analyze():
 
                 if not result.get('success'):
                     error_msg = result.get('error', 'Unknown error')
-                    progress_tracker.update_progress('error', error_msg)
+                    progress_tracker.update_progress('error', message=error_msg)
                     return
 
                 # Store in BigQuery cache (survives across Cloud Run instances)

@@ -38,7 +38,17 @@ class ProgressTracker:
         }
     
     def update_progress(self, step: str, percent: Optional[int] = None, message: Optional[str] = None):
-        """Update progress for a specific step."""
+        """Update progress for a specific step.
+
+        'error' is terminal: the job ends (done) with the message plus a
+        reference id, so the client leaves the loading state instead of
+        waiting forever. The message must be safe to show.
+        """
+        if step == 'error':
+            # Older callers pass the message positionally (in `percent`).
+            text = message or (percent if isinstance(percent, str) else None)
+            self.fail(text)
+            return
         if step in self.steps:
             step_info = self.steps[step]
             self.current_step = message or step_info['name']
@@ -80,6 +90,13 @@ class ProgressTracker:
         message = f"{section_name} ({current_section}/{total_sections})"
         self.update_progress('building_report', int(section_percent), message)
     
+    def fail(self, message: Optional[str] = None, exc: Optional[BaseException] = None):
+        """End the job in the spec 04 error state: a safe message plus a
+        reference id, with the real error and traceback in the server log."""
+        from justdata.shared.utils.error_ref import user_error
+        text, _ref = user_error(message, exc=exc, context=f"job={self.job_id}")
+        self.complete(success=False, error=text)
+
     def complete(self, success: bool = True, error: Optional[str] = None):
         """Mark the analysis as completed."""
         if success:
