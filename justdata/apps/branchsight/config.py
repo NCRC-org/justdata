@@ -46,7 +46,12 @@ DATASET_ID = "branchsight"
 TABLE_ID = "sod"
 
 # Report Configuration
-DEFAULT_YEARS = list(range(2021, 2026))  # 2021-2025 (most recent 5 years)
+# FDIC Summary of Deposits years the analysis runs. 2025 is the latest year
+# loaded (branchsight.sod); 2017 to 2024 are in branchsight.sod_legacy.
+# The page, header vintage, request and cache key all read SOD_YEARS.
+SOD_LATEST_YEAR = 2025
+SOD_YEARS = list(range(SOD_LATEST_YEAR - 4, SOD_LATEST_YEAR + 1))
+DEFAULT_YEARS = SOD_YEARS
 MAX_BANKS_DISPLAY = 10
 
 # API Keys

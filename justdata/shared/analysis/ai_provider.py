@@ -27,6 +27,28 @@ _ai_usage_buffer = []
 _last_flush_time = None
 
 
+# The narrative prompts and their max_tokens were written for replies without
+# thinking. With thinking on (the model's default for harder prompts) a
+# thinking block used part of max_tokens and table narratives were cut off
+# mid-sentence.
+NO_THINKING = {"type": "disabled"}
+
+
+def response_text(response) -> str:
+    """The reply's text. Joins the text blocks rather than reading content[0],
+    which failed when a reply opened with a thinking block. A reply with no
+    text, or one cut off at max_tokens, raises, so the caller treats it as a
+    failed narrative and the page never shows half a sentence."""
+    stop = getattr(response, "stop_reason", None)
+    if stop == "max_tokens":
+        raise Exception("reply was cut off at max_tokens")
+    text = "".join(getattr(b, "text", "") for b in (response.content or [])
+                   if getattr(b, "type", None) == "text")
+    if not text.strip():
+        raise Exception(f"reply had no text (stop_reason={stop})")
+    return text
+
+
 def log_ai_usage(
     provider: str,
     model: str,
@@ -376,7 +398,8 @@ def ask_ai(
         response = client.messages.create(
             model=model,
             max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            thinking=NO_THINKING,
         )
 
         # Log usage
@@ -390,7 +413,7 @@ def ask_ai(
                 report_type=report_type
             )
 
-        return response.content[0].text
+        return response_text(response)
     except Exception as e:
         raise Exception(f"Error calling {ai_provider.upper()} API: {e}")
 
@@ -463,7 +486,8 @@ class AIAnalyzer:
             response = client.messages.create(
                 model=call_model,
                 max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                thinking=NO_THINKING,
             )
 
             # Log usage
@@ -477,7 +501,7 @@ class AIAnalyzer:
                     report_type=report_type
                 )
 
-            return response.content[0].text.strip()
+            return response_text(response).strip()
         except Exception as e:
             error_msg = f"Error calling {self.provider} API: {e}"
             print(error_msg)

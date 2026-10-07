@@ -806,7 +806,9 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
                 'app_name': summary.get('app_name', ''),
                 'total_records': summary.get('total_records', 0),
                 'loan_purpose': summary.get('loan_purpose', ['purchase']),
-                'census_data': census_data_final
+                'census_data': census_data_final,
+                'perf': summary.get('perf'),
+                'perf_ref': summary.get('perf_ref'),
             }
         else:
             # Default metadata if result_summary is missing
@@ -996,7 +998,11 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
         'app_name': app_name,
         'total_records': metadata.get('total_records', 0) if metadata else 0,
         'loan_purpose': metadata.get('loan_purpose', ['purchase']) if metadata else ['purchase'],
-        'census_data': census_data_to_store
+        'census_data': census_data_to_store,
+        # Stage timings of the run (spec 04 A5). Apps put them in the result's
+        # own metadata; not every app stores that as a section, so keep them here.
+        'perf': (result_data.get('metadata') or {}).get('perf'),
+        'perf_ref': (result_data.get('metadata') or {}).get('perf_ref'),
     }
     
     # Prepare sections summary (quick reference)
