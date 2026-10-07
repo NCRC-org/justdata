@@ -94,6 +94,22 @@
 .app-result-section:first-of-type { border-top: 0; padding-top: 0; }
 .app-result-section h3 { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-tight); margin: 0 0 var(--s-3); }
 .app-chart { width: 100%; min-height: 280px; }
+/* Report-body typography shared by every app's results (promoted from LendSight) */
+.app-figure { margin: 0; min-width: 0; }
+.app-figure-title { font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wider); text-transform: uppercase; color: var(--color-fg-muted); margin: 0 0 var(--s-2); }
+.app-chart { position: relative; height: 360px; }
+.app-empty { color: var(--color-fg-muted); font-size: var(--fs-body-sm); margin: var(--s-4) 0; }
+.app-table-title { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); text-transform: uppercase; margin: var(--s-6) 0 var(--s-2); }
+.app-table-intro { font-size: var(--fs-body-sm); color: var(--color-fg); margin: 0 0 var(--s-3); max-width: 80ch; }
+.app-caption, .app-hint { font-size: var(--fs-caption); color: var(--color-fg-muted); margin: var(--s-2) 0 0; }
+.app-table-tools { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-2); }
+.app-inline-field { margin-bottom: 0; min-width: 220px; }
+.app-methods-body { font-size: var(--fs-body-sm); max-width: 80ch; }
+.app-methods-body h4 { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-wide); margin: var(--s-5) 0 var(--s-2); }
+.app-methods-body h4:first-child { margin-top: 0; }
+.app-methods-body h5 { font-size: var(--fs-body); font-weight: var(--fw-semibold); margin: var(--s-4) 0 var(--s-1); }
+.app-methods-body ul, .app-methods-body ol { padding-left: var(--s-5); }
+.app-formula { font-family: var(--font-mono); text-align: center; margin: var(--s-3) 0; }
 /* Narrative paragraphs inside results (font and measure come from .report-prose in style.css) */
 .app-results .report-prose p { margin: 0 0 1em; }
 .app-results .report-prose p:last-child { margin-bottom: 0; }

@@ -13,17 +13,10 @@
 /* Text then chart. The former report put them side by side; in the results
    column (about 780px at 1440) that left the prose a 230px strip. */
 .ls-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
-.ls-figure { margin: 0; min-width: 0; }
-.ls-figure-title { font-family: var(--font-display); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-wider); text-transform: uppercase; color: var(--color-fg-muted); margin: 0 0 var(--s-2); }
-.ls-chart { position: relative; height: 360px; }
-.ls-empty { color: var(--color-fg-muted); font-size: var(--fs-body-sm); margin: var(--s-4) 0; }
 
-.ls-table-title { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); text-transform: uppercase; margin: var(--s-6) 0 var(--s-2); }
-.ls-table-intro { font-size: var(--fs-body-sm); color: var(--color-fg); margin: 0 0 var(--s-3); max-width: 80ch; }
-.ls-caption, .ls-hint { font-size: var(--fs-caption); color: var(--color-fg-muted); margin: var(--s-2) 0 0; }
 .ls-overview { margin-top: var(--s-4); }
 .ls-overview { border-left: 3px solid var(--color-bg-accent); background: var(--color-bg-muted); padding: var(--s-4); }
-.ls-overview .ls-table-title { margin-top: 0; }
+.ls-overview .app-table-title { margin-top: 0; }
 .ls-findings ul { padding-left: var(--s-5); }
 .ls-findings li { margin-bottom: var(--s-3); }
 
@@ -66,17 +59,9 @@
 }
 
 /* Top lenders */
-.ls-table-tools { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-2); }
-.ls-inline-field { margin-bottom: 0; min-width: 220px; }
 .ls-lenders th[scope="row"] { font-weight: var(--fw-semibold); }
 
 /* Methods */
-.ls-methods-body { font-size: var(--fs-body-sm); max-width: 80ch; }
-.ls-methods-body h4 { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-wide); margin: var(--s-5) 0 var(--s-2); }
-.ls-methods-body h4:first-child { margin-top: 0; }
-.ls-methods-body h5 { font-size: var(--fs-body); font-weight: var(--fw-semibold); margin: var(--s-4) 0 var(--s-1); }
-.ls-methods-body ul, .ls-methods-body ol { padding-left: var(--s-5); }
-.ls-formula { font-family: var(--font-mono); text-align: center; margin: var(--s-3) 0; }
 .ls-quartiles { background: var(--color-bg-muted); padding: var(--s-2) var(--s-3); }
 .ls-version { text-align: right; color: var(--color-fg-muted); font-size: var(--fs-caption); }
 
