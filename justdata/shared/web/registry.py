@@ -7,11 +7,10 @@ get_access_row() (main/auth), passed in by inject_shell() in main/app.py.
 Do not add access rules to this file; change the matrix instead.
 
 Testing-site overlay: on JUSTDATA_ENV=testing, get_access_row() applies
-main/auth/access_overlay.py, which limits non-staff users to LendSight,
-BizSight, BranchSight and MergerMeter and opens MergerMeter to testers.
-That resolves D2 as "tester-facing" for the testing deploy only and is the
-one deliberate access change made with spec 01. This file does not
-special-case it; it just reads the overlaid rows.
+main/auth/access_overlay.py, which limits non-staff users to the three Sight
+apps (LendSight, BizSight, BranchSight). MergerMeter is staff-only on every
+deploy (D2, resolved 2026-10-07). This file does not special-case either;
+it just reads the overlaid rows.
 
 `sources` names only datasets the app's code actually queries (checked
 against each app's sql_templates/ and query builders, 2026-10-06).
@@ -37,6 +36,10 @@ class AppEntry:
 class NavGroup:
     label: Optional[str]  # None renders no group heading
     items: tuple
+    # Presentation only: the group renders for staff roles alone. What anyone
+    # can open is still decided by ACCESS_MATRIX (plus the testing overlay).
+    staff_only: bool = False
+    note: Optional[str] = None  # one line shown under the group heading on /apps
 
 
 NAV_GROUPS = (
@@ -60,28 +63,33 @@ NAV_GROUPS = (
                  ("FDIC SOD", "Census ACS"),
                  "Where are banks opening and closing branches, and how many serve "
                  "low- and moderate-income and majority-minority neighborhoods?"),
-        AppEntry("branchmapper", "BranchMapper", "/branchmapper",
-                 "Map a bank's branch network against neighborhood data.",
-                 ("FDIC SOD", "Census")),
     )),
-    NavGroup("Investigate", (
+    # MergerMeter is staff-only on every deploy (D2, resolved 2026-10-07).
+    NavGroup("Staff tools", (
         AppEntry("mergermeter", "MergerMeter", "/mergermeter",
                  "What a proposed merger means for the markets it touches.",
                  ("HMDA", "CRA small business", "FDIC SOD"),
                  "What does a proposed merger mean for lending and branches in the communities it touches?"),
-        AppEntry("dataexplorer", "DataExplorer", "/dataexplorer",
-                 "Build your own query across platform datasets.",
-                 ("HMDA", "CRA small business", "FDIC SOD", "Census ACS")),
-    )),
-    NavGroup("Staff", (
-        AppEntry("dotlender", "DotLender", "/dotlender",
-                 "HMDA dot-density lending map with PDF export.",
-                 ("HMDA",)),
         AppEntry("analytics", "Analytics", "/analytics",
                  "Platform usage and performance."),
         AppEntry("admin", "Administration", "/admin/users",
                  "Users, access and configuration."),
-    )),
+    ), staff_only=True),
+    # Being consolidated into one application named BranchMapper (L5 "JustData --
+    # App portfolio and consolidation"). Usable by staff meanwhile, but not
+    # presented as peer products.
+    NavGroup("In consolidation", (
+        AppEntry("branchmapper", "BranchMapper", "/branchmapper",
+                 "Map a bank's branch network against neighborhood data.",
+                 ("FDIC SOD", "Census")),
+        AppEntry("dotlender", "DotLender", "/dotlender",
+                 "HMDA dot-density lending map with PDF export.",
+                 ("HMDA",)),
+        AppEntry("dataexplorer", "DataExplorer", "/dataexplorer",
+                 "Build your own query across platform datasets.",
+                 ("HMDA", "CRA small business", "FDIC SOD", "Census ACS")),
+    ), staff_only=True,
+        note="Being merged into a single branch and lending map tool. Available to staff in the meantime."),
 )
 
 # /privacy and /terms are left out until their content exists (they 404).
@@ -132,17 +140,19 @@ def locked_tag(matrix_row):
     return None
 
 
-def resolve_registry(get_access_row, user_type):
+def resolve_registry(get_access_row, user_type, is_staff=False):
     """Return NAV_GROUPS as plain dicts with per-item `state` and `tag`.
 
     `get_access_row(key)` is main.auth.get_access_row: the item's matrix row
     with any environment overlay applied, the same row get_app_access()
     reads (default "hidden"). Hidden items are dropped, and so is any group
-    left with no items, which is how the Staff group disappears for
-    non-staff users.
+    left with no items. `staff_only` groups are skipped unless `is_staff`
+    (the caller passes is_privileged_user(user_type)).
     """
     groups = []
     for group in NAV_GROUPS:
+        if group.staff_only and not is_staff:
+            continue
         items = []
         for entry in group.items:
             row = {} if entry.key in ALWAYS_AVAILABLE else get_access_row(entry.key)
@@ -155,5 +165,6 @@ def resolve_registry(get_access_row, user_type):
             tag = locked_tag(row) if state == "locked" else None
             items.append({**asdict(entry), "state": state, "tag": tag})
         if items:
-            groups.append({"label": group.label, "items": items})
+            groups.append({"label": group.label, "items": items,
+                           "staff_only": group.staff_only, "note": group.note})
     return groups

@@ -416,9 +416,9 @@ APPS_PAGE_APPS = [
 # user gets instead -- see main/app.py's check_privileged_access.
 HOME_PAGE_MARKER = b'id="platformStats"'
 
-# Marker only ever present on the real /apps page (its page-header h1),
-# never on access_restricted.html.
-APPS_PAGE_MARKER = b"<h1>Apps</h1>"
+# Marker only ever present on the real /apps page (the launcher wrapper,
+# spec 03), never on access_restricted.html.
+APPS_PAGE_MARKER = b'id="appsLauncher"'
 
 
 def test_apps_page_gating():
@@ -459,20 +459,18 @@ def test_apps_page_gating():
 
         for key in APPS_PAGE_APPS:
             access = get_app_access(key, user_type)
-            marker = f'data-app="{key}"'.encode()
+            # Launcher cards carry data-card (the nav drawer uses data-app).
+            marker = f'data-card="{key}"'.encode()
             if access == "hidden":
                 assert marker not in body, f"{user_type}/{key}: expected hidden, but card is present"
-            else:
-                assert marker in body, f"{user_type}/{key}: expected visible ({access}), but card is missing"
-                if access == "locked":
-                    locked_marker = f'data-app="{key}"'.encode()
-                    idx = body.find(locked_marker)
-                    # the card div carries "is-locked" on the same element as data-app
-                    line_start = body.rfind(b"<div", 0, idx)
-                    line_end = body.find(b">", idx)
-                    assert b"is-locked" in body[line_start:line_end], (
-                        f"{user_type}/{key}: locked app card missing is-locked class"
-                    )
+                continue
+            assert marker in body, f"{user_type}/{key}: expected visible ({access}), but card is missing"
+            if access == "locked":
+                idx = body.find(marker)
+                tag_start = body.rfind(b"<", 0, idx)
+                assert b"is-locked" in body[tag_start:idx], (
+                    f"{user_type}/{key}: locked app card missing is-locked class"
+                )
 
 
 # ---------------------------------------------------------------------------

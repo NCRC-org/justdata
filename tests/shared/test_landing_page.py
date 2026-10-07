@@ -64,8 +64,9 @@ def test_landing_renders_verified_facts_only(platform_app, monkeypatch):
 def test_landing_roster_counts_what_the_viewer_can_see(platform_app, monkeypatch):
     monkeypatch.setenv("JUSTDATA_ENV", "testing")
     html = _home(platform_app, "public_anonymous", signed_in=False)
-    assert "Four tools, one set of public records" in html
-    assert html.count('class="home-q"') == 4
+    assert "Three tools, one set of public records" in html
+    assert html.count('class="home-q"') == 3
+    assert "MergerMeter" not in html[html.index('id="home-q-h"'):html.index('id="roster"')]
 
 
 def test_landing_has_no_icons_and_small_partials():

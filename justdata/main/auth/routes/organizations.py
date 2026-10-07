@@ -10,6 +10,7 @@ Routes:
 
 from flask import Blueprint, request, jsonify
 
+from justdata.main.auth.services.membership import member_request_status
 from justdata.main.auth.services.firebase_client import (
     get_firestore_client,
     get_user_doc,
@@ -119,54 +120,23 @@ def get_member_request_status():
             'membershipStatus': None
         })
 
-    uid = user.get('uid')
-    db = get_firestore_client()
-    if not db:
+    status, user_doc = member_request_status(user.get('uid'))
+    if user_doc is None:
         return jsonify({
             'memberRequestStatus': 'unknown',
             'hasSeenMemberPrompt': True,
             'membershipStatus': None
         })
 
-    try:
-        user_doc = get_user_doc(uid)
-        if not user_doc:
-            return jsonify({
-                'memberRequestStatus': 'unknown',
-                'hasSeenMemberPrompt': True,
-                'membershipStatus': None
-            })
+    membership_status = user_doc.get('hubspot_membership_status') or None
+    if membership_status and isinstance(membership_status, str):
+        membership_status = membership_status.strip() or None
 
-        user_type = user_doc.get('userType') or ''
-        member_types = ['member', 'member_premium', 'non_member_org', 'staff', 'senior_executive', 'admin']
-        is_member = user_type in member_types
-        hubspot_status = (user_doc.get('hubspot_membership_status') or '').strip().upper()
-        has_seen = user_doc.get('hasSeenMemberPrompt', True)
-
-        if is_member:
-            member_request_status = 'member'
-        elif hubspot_status == 'PENDING':
-            member_request_status = 'pending'
-        elif hubspot_status in ('DENIED', 'EXPIRED'):
-            member_request_status = 'denied'
-        else:
-            member_request_status = 'unknown'
-
-        membership_status = user_doc.get('hubspot_membership_status') or None
-        if membership_status and isinstance(membership_status, str):
-            membership_status = membership_status.strip() or None
-
-        return jsonify({
-            'memberRequestStatus': member_request_status,
-            'hasSeenMemberPrompt': bool(has_seen),
-            'membershipStatus': membership_status
-        })
-    except Exception as e:
-        return jsonify({
-            'memberRequestStatus': 'unknown',
-            'hasSeenMemberPrompt': True,
-            'membershipStatus': None
-        })
+    return jsonify({
+        'memberRequestStatus': status,
+        'hasSeenMemberPrompt': bool(user_doc.get('hasSeenMemberPrompt', True)),
+        'membershipStatus': membership_status
+    })
 
 
 @organizations_bp.route('/member-request/dismiss-prompt', methods=['POST'])

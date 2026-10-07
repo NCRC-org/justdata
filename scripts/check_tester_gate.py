@@ -33,19 +33,22 @@ FIREBASE_SIGN_IN = "https://identitytoolkit.googleapis.com/v1/accounts:signInWit
 RESTRICTED_MARKER = 'alt="NCRC - National Community Reinvestment Coalition"'
 TIMEOUT = 30
 
-ROUTES = ("/", "/about", "/contact", "/apps", "/lendsight/", "/status", "/branchmapper/", "/analytics")
+# App roots use their trailing-slash form: Flask answers "/analytics" with a
+# 308 to "/analytics/", which would test the redirect instead of the page.
+ROUTES = ("/", "/about", "/contact", "/apps", "/lendsight/", "/status", "/branchmapper/", "/analytics/")
 
 # Expected outcome per route on the testing deploy (JUSTDATA_ENV=testing):
 # "open" = the real page; "blocked" = restricted page, redirect away, 401 or 403.
-# Mirrors main/auth/access_overlay.py: public roles reach only the exact public
-# paths; tester roles also reach /apps and the four apps; staff follow the
+# Mirrors main/auth/access_overlay.py: signed out reaches only the exact public
+# paths; public_registered also reaches /apps; tester roles also reach the apps; staff follow the
 # matrix (Analytics is hidden from the plain staff role).
 _PUBLIC = {"/": "open", "/about": "open", "/contact": "open", "/apps": "blocked",
            "/lendsight/": "blocked", "/status": "blocked", "/branchmapper/": "blocked",
-           "/analytics": "blocked"}
+           "/analytics/": "blocked"}
 EXPECTED = {
     "signed_out": _PUBLIC,
-    "public_registered": _PUBLIC,
+    # A signed-in public_registered user may open /apps (all tools locked) on testing.
+    "public_registered": {**_PUBLIC, "/apps": "open"},
     "member": {**_PUBLIC, "/apps": "open", "/lendsight/": "open"},
     # Most external testers will hold this role; same table as member on testing.
     "non_member_org": {**_PUBLIC, "/apps": "open", "/lendsight/": "open"},
@@ -99,10 +102,20 @@ def signed_in_session(base_url, email, password):
     return session, body.get("user_type")
 
 
+def fetch(session, base_url, path):
+    """GET without following redirects, except one redirect that only adds a
+    trailing slash to the same path, which is followed once."""
+    resp = session.get(base_url + path, timeout=TIMEOUT, allow_redirects=False)
+    location = resp.headers.get("Location", "")
+    if resp.status_code in (301, 308) and location.split("?")[0].endswith(path + "/"):
+        resp = session.get(base_url + path + "/", timeout=TIMEOUT, allow_redirects=False)
+    return resp
+
+
 def run(label, session, base_url, expected):
     rows, failures = [], 0
     for path in ROUTES:
-        outcome, detail = classify(session.get(base_url + path, timeout=TIMEOUT, allow_redirects=False))
+        outcome, detail = classify(fetch(session, base_url, path))
         ok = outcome == expected[path]
         failures += not ok
         rows.append((label, path, expected[path], outcome, detail, "PASS" if ok else "FAIL"))
