@@ -123,7 +123,10 @@ def test_app_css_is_scoped_to_app_classes():
     for s in selectors:
         # .shell-main.app-main applies only on app_page.html (main_class)
         assert s.startswith((".app-", ".shell-main.app-main")), s
-    assert ".report-prose" not in css and "--color-fg-accent" not in css
+    # .report-prose is defined in style.css; app.css may only add spacing
+    # inside results, never redefine the class itself.
+    assert not any(sel.startswith(".report-prose") for sel in selectors)
+    assert "--color-fg-accent" not in css
 
 
 def test_app_states_js_size():
