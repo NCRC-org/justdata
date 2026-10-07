@@ -64,7 +64,9 @@ def test_app_css_loads_after_shell_css(debug_app):
 
 def test_sources_copy_and_juxtaposition_note(debug_app):
     html = _preview(debug_app)
-    assert "using the data sources, years and exclusions listed below" in html
+    assert ("Figures are computed from the public datasets listed below, "
+            "with the years and exclusions stated for each.") in html
+    assert "matched with confidence" not in html
     assert "NCRC's published methodology" not in html
     assert "How this analysis is built" not in html
     assert "Correlation is not causation." in html
