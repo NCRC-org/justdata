@@ -164,13 +164,13 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # =================================================================
             print(f"\n[DEBUG] Using TIERED QUERIES (cost-optimized) from {SUMMARY_PROJECT_ID}")
             if progress_tracker:
-                progress_tracker.update_progress('fetching_data', 20, 'Querying federal records')
+                progress_tracker.update_progress('querying_data', 20, 'Querying federal records')
             
             total_counties = len(clarified_counties)
             for idx, county in enumerate(clarified_counties, 1):
                 try:
                     if progress_tracker:
-                        progress_tracker.update_progress('fetching_data', 
+                        progress_tracker.update_progress('querying_data', 
                             20 + int((idx / total_counties) * 25),
                             f'Querying federal records ({idx}/{total_counties})')
                     
@@ -225,7 +225,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             sql_template = load_sql_template()
             
             if progress_tracker:
-                progress_tracker.update_progress('fetching_data', 20, 'Querying federal records')
+                progress_tracker.update_progress('querying_data', 20, 'Querying federal records')
             
             total_queries = len(clarified_counties) * len(years)
             query_index = 0
@@ -237,7 +237,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     try:
                         print(f"  [DEBUG] Querying {county} for year {year} with loan_purpose={loan_purpose}...")
                         if progress_tracker:
-                            progress_tracker.update_progress('fetching_data', 
+                            progress_tracker.update_progress('querying_data', 
                                 20 + int((query_index / total_queries) * 25),
                                 f'Querying federal records ({query_index}/{total_queries})')
                         
@@ -269,7 +269,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Fetch Census data FIRST (before building report) so it can be used in AI analysis
         if progress_tracker:
             print("[DEBUG] Updating progress to fetching_data", flush=True)
-            progress_tracker.update_progress('fetching_data', 45, 'Querying federal records')
+            progress_tracker.update_progress('querying_data', 45, 'Querying federal records')
         
         census_data = {}
         try:
@@ -304,7 +304,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             print("[DEBUG] This may take 30-60 seconds as it makes multiple API calls per county...", flush=True)
             sys.stdout.flush()
             if progress_tracker:
-                progress_tracker.update_progress('fetching_data', 50, 'Querying federal records')
+                progress_tracker.update_progress('querying_data', 50, 'Querying federal records')
             
             # Use FIPS codes if provided, otherwise look them up
             if counties_with_fips and len(counties_with_fips) > 0:
