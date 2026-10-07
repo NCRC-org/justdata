@@ -281,12 +281,10 @@ class LendSightAnalyzer(AIAnalyzer):
     
     def generate_lender_strategies_analysis(self, data: Dict[str, Any]) -> str:
         """Analyze lender market concentration patterns with HHI analysis."""
-        json_data = convert_numpy_types(data)
         counties = data.get('counties', [])
         years = data.get('years', [])
         hhi_data = data.get('hhi', {})
         trends_data = data.get('trends_data', [])
-        summary_data = data.get('summary_data', [])
         
         # Prepare trends information
         trends_text = ""
@@ -380,7 +378,6 @@ Top Lenders by Loan Volume:
     
     def generate_community_impact_analysis(self, data: Dict[str, Any]) -> str:
         """Analyze community lending patterns."""
-        json_data = convert_numpy_types(data)
         counties = data.get('counties', [])
         years = data.get('years', [])
         
@@ -416,7 +413,6 @@ Top Lenders by Loan Volume:
     
     def generate_county_comparison_analysis(self, data: Dict[str, Any]) -> str:
         """Analyze differences between counties in origination distribution."""
-        json_data = convert_numpy_types(data)
         counties = data.get('counties', [])
         county_data = data.get('county_data', [])
         
@@ -649,9 +645,6 @@ The reader can see all the percentages in the table above. Your job is to EDUCAT
         """Generate at least 2 sentences leading into the income and neighborhood indicators tables."""
         counties = data.get('counties', [])
         years = data.get('years', [])
-        income_borrowers_data = data.get('income_borrowers', [])
-        income_tracts_data = data.get('income_tracts', [])
-        minority_tracts_data = data.get('minority_tracts', [])
 
         if len(years) > 1:
             year_range = f"{min(years)} to {max(years)}"
@@ -1185,7 +1178,7 @@ TABLE DATA:
             print(f"[DEBUG] Raw AI response preview (first 500 chars): {response[:500]}")
             print(f"[DEBUG] Raw AI response preview (last 500 chars): {response[-500:] if len(response) > 500 else response}")
         else:
-            print(f"[ERROR] AI returned empty response!")
+            print("[ERROR] AI returned empty response!")
             return {
                 'demographic_overview_discussion': '',
                 'income_neighborhood_discussion': '',
@@ -1210,7 +1203,7 @@ TABLE DATA:
                     response = json_match.group(0)
                     print(f"[DEBUG] Extracted JSON from response, length: {len(response)}")
                 else:
-                    print(f"[ERROR] No JSON object found in AI response")
+                    print("[ERROR] No JSON object found in AI response")
                     print(f"[ERROR] Full response: {response}")
                     return {
                         'demographic_overview_discussion': '',
@@ -1355,7 +1348,6 @@ TABLE DATA:
     
     def generate_table_introduction(self, table_id: str, data: Dict[str, Any]) -> str:
         """Generate a 2-sentence introduction for a specific table (hardcoded templates)."""
-        counties = data.get('counties', [])
         years = data.get('years', [])
         latest_year = max(years) if years else ""
         first_year = min(years) if years else ""
@@ -1386,7 +1378,6 @@ TABLE DATA:
     
     def generate_table_narrative(self, table_id: str, data: Dict[str, Any]) -> str:
         """Generate narrative analysis for a specific table."""
-        json_data = convert_numpy_types(data)
         counties = data.get('counties', [])
         years = data.get('years', [])
         
@@ -1397,7 +1388,6 @@ TABLE DATA:
             
             # Check if multi-racial borrowers are present in the data
             has_multi_racial = False
-            multi_racial_count = 0
             
             # First check summary_data structure
             if summary_data:
@@ -1415,7 +1405,6 @@ TABLE DATA:
                                     count = 0
                                 if count > 0:
                                     has_multi_racial = True
-                                    multi_racial_count = count
                                     break
                         if has_multi_racial:
                             break
@@ -1658,7 +1647,6 @@ TABLE DATA:
     
     def generate_conclusion(self, data: Dict[str, Any]) -> str:
         """Generate a conclusion."""
-        json_data = convert_numpy_types(data)
         counties = data.get('counties', [])
         years = data.get('years', [])
         
