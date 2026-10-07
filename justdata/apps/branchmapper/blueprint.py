@@ -68,7 +68,7 @@ def configure_template_loader(state):
 
 @branchmapper_bp.route('/')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def index():
     """Main page with the interactive map"""
     user_permissions = get_user_permissions()
@@ -92,7 +92,7 @@ def index():
 
 @branchmapper_bp.route('/counties')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def counties():
     """Return a list of all available counties"""
     try:
@@ -106,7 +106,7 @@ def counties():
 
 @branchmapper_bp.route('/states')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def states():
     """Return a list of all available states"""
     try:
@@ -120,7 +120,7 @@ def states():
 
 @branchmapper_bp.route('/counties-by-state/<state_code>')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def counties_by_state(state_code):
     """Return a list of counties for a specific state"""
     try:
@@ -134,7 +134,7 @@ def counties_by_state(state_code):
 
 @branchmapper_bp.route('/api/census-tracts/<county>')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_census_tracts(county):
     """Return census tract boundaries with income and/or minority data for a county"""
     try:
@@ -468,7 +468,7 @@ def api_census_tracts(county):
 
 @branchmapper_bp.route('/api/census-tracts-by-state/<state_fips>')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_census_tracts_by_state(state_fips):
     """Return census tract boundaries with income and/or minority data for an entire state"""
     try:
@@ -764,7 +764,7 @@ def api_census_tracts_by_state(state_fips):
 
 @branchmapper_bp.route('/api/branches')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_branches():
     """Return branch data with coordinates for map display"""
     try:
@@ -846,7 +846,7 @@ def api_branches():
 
 @branchmapper_bp.route('/api/oscr-events')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_oscr_events():
     """Return FDIC OSCR branch events for a county and date range."""
     import requests as http_requests
@@ -917,7 +917,7 @@ def api_oscr_events():
 
 @branchmapper_bp.route('/api/bank-list')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_bank_list():
     """Return list of all bank names for search dropdown."""
     try:
@@ -929,7 +929,7 @@ def api_bank_list():
 
 @branchmapper_bp.route('/api/branches-by-bank')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_branches_by_bank():
     """Return all branches for a specific bank nationwide."""
     try:
@@ -981,7 +981,7 @@ def api_branches_by_bank():
 
 @branchmapper_bp.route('/api/branches-in-bounds')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_branches_in_bounds():
     """Return all branches within a geographic bounding box."""
     try:
@@ -1036,7 +1036,7 @@ def api_branches_in_bounds():
 
 @branchmapper_bp.route('/api/counties-in-bounds')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_counties_in_bounds():
     """Return counties with branches in a bounding box."""
     try:
@@ -1056,7 +1056,7 @@ def api_counties_in_bounds():
 
 @branchmapper_bp.route('/api/oscr-events-by-bank')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_oscr_events_by_bank():
     """Return FDIC OSCR events for a specific bank (nationwide)."""
     import requests as http_requests
@@ -1118,7 +1118,7 @@ def api_oscr_events_by_bank():
 
 @branchmapper_bp.route('/api/oscr-events-in-bounds')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def api_oscr_events_in_bounds():
     """Return FDIC OSCR events within a geographic bounding box."""
     import requests as http_requests
@@ -1206,7 +1206,7 @@ def api_oscr_events_in_bounds():
 
 @branchmapper_bp.route('/export/methods-pdf')
 @login_required
-@require_access('branchmapper', 'partial')
+@require_access('branchmapper', 'limited')
 def export_methods_pdf():
     """Generate and return the BranchMapper Methods & Definitions PDF."""
     geography = request.args.get('geography', 'Selected area')
