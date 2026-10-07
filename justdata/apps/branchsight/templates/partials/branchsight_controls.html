@@ -1,0 +1,33 @@
+{# BranchSight controls (spec 04 Part B item 3): 1 Geography, 2 Years, and for
+   staff 3 Options. BranchSight has no lender step. br_page.js fills the lists. #}
+<form id="{{ form_id }}" novalidate>
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">1</span>Geography</legend>
+    <div class="app-field">
+      <label for="brState">State</label>
+      <select id="brState" name="state" required>
+        <option value="">Loading states…</option>
+      </select>
+    </div>
+    <div class="app-field">
+      <label for="brCounty">County</label>
+      <select id="brCounty" name="county" required disabled>
+        <option value="">Select a state first</option>
+      </select>
+      <p class="app-field-hint">One county per analysis.</p>
+    </div>
+  </fieldset>
+
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">2</span>Years</legend>
+    <p class="app-field-hint">{{ analysis_years[0] }} to {{ analysis_years[-1] }}, the five most recent years of FDIC Summary of Deposits data.</p>
+  </fieldset>
+
+  {% if is_staff %}
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">3</span>Options</legend>
+    <label class="app-check"><input type="checkbox" id="brForceRefresh">
+      <span>Clear cache and regenerate<span class="app-check-hint">Staff only. Runs the queries and narrative again.</span></span></label>
+  </fieldset>
+  {% endif %}
+</form>

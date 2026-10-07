@@ -3,7 +3,7 @@ BranchSight Blueprint for main JustData app.
 Converts the standalone BranchSight app into a blueprint for the unified platform.
 """
 
-from flask import Blueprint, current_app, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import re
@@ -23,15 +23,16 @@ from justdata.backend import (
     new_job_id, run_in_background, sse_response,
     identify_caller, lookup_cached_analysis, record_cache_hit, record_completion,
 )
-from justdata.shared.utils.progress_tracker import get_progress, create_progress_tracker, store_analysis_result, get_analysis_result
+from justdata.shared.utils.progress_tracker import get_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID, SOD_YEARS
-from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties, tract_context
+from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, tract_context, TRACT_CONTEXT_ACS_YEAR
 from .version import __version__
+from justdata.shared.web.app_page import app_page_context
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
 def sanitize_for_json(obj):
@@ -69,7 +70,7 @@ def configure_template_loader(state):
     """Configure Jinja2 to search blueprint templates first, then shared templates.
 
     IMPORTANT: Blueprint templates must come FIRST in the ChoiceLoader so that
-    app-specific templates (like report_template.html) are found before shared
+    app-specific templates are found before shared
     templates or other blueprints' templates with the same name.
     """
     app = state.app
@@ -77,32 +78,56 @@ def configure_template_loader(state):
     shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
     app.jinja_loader = ChoiceLoader([
         blueprint_loader,  # Blueprint templates first (highest priority)
-        shared_loader,     # Shared templates (for report_interstitial.html, etc.)
+        shared_loader,     # Shared templates (app_page.html and its partials)
         app.jinja_loader   # Main app loader (fallback)
     ])
+
+
+def _page(job_id=None):
+    """The BranchSight page (spec 04 standard). /report?job_id= renders the same
+    page; its script then loads that job's results into the results column."""
+    user_permissions = get_user_permissions()
+    years = list(SOD_YEARS)
+    ctx = app_page_context(
+        'branchsight',
+        form_id='brForm',
+        data_vintage=f'FDIC Summary of Deposits {years[0]} to {years[-1]}',
+        sources=[
+            {'name': 'FDIC Summary of Deposits',
+             'vintage': f'{years[0]} to {years[-1]}. Branch offices of FDIC-insured institutions, '
+                        'as of June 30 each year'},
+            {'name': 'Census',
+             'vintage': f'{TRACT_CONTEXT_ACS_YEAR - 4}-{TRACT_CONTEXT_ACS_YEAR} American Community '
+                        'Survey 5-year estimates, for the Geography Context table',
+             'url': 'https://www.census.gov/data/developers/data-sets/acs-5year.html'},
+        ],
+        # No help link before a run; after one, the toolbar links to Methods.
+        help_url=None,
+        methods_anchor='methodsSection',
+        exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
+        # No exclusion_note: BranchSight has no "matched with confidence"
+        # exclusion (spec 04 decision 2; outcome recorded in the matrix).
+        shows_juxtaposition=True,
+    )
+    response = make_response(render_template(
+        'branchsight_analysis.html',
+        **ctx,
+        is_staff=is_privileged_user(get_user_type()),
+        analysis_years=years,
+        app_base_url=url_for('branchsight.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'BranchSight', 'url': '/branchsight'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
 
 
 @branchsight_bp.route('/')
 @login_required
 @require_access('branchsight', 'limited')
 def index():
-    """Main page with the analysis form"""
-    user_permissions = get_user_permissions()
-    user_type = get_user_type()
-    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
-    is_staff = is_privileged_user(user_type)
-    cache_buster = int(time.time())
-    app_base_url = url_for('branchsight.index').rstrip('/')
-    response = make_response(render_template('branchsight_analysis.html',
-                                           permissions=user_permissions,
-                                           is_staff=is_staff,
-                                           cache_buster=cache_buster,
-                                           app_base_url=app_base_url,
-                                           version=__version__))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+    """Main page with the analysis form."""
+    return _page()
 
 
 @branchsight_bp.route('/progress/<job_id>')
@@ -248,26 +273,11 @@ def analyze():
 @login_required
 @require_access('branchsight', 'limited')
 def report():
-    """Report display page"""
-    from jinja2 import Environment, ChoiceLoader, FileSystemLoader, select_autoescape
-    app_base_url = url_for('branchsight.index').rstrip('/')
-    # Create a custom Environment that searches branchsight templates FIRST,
-    # then shared templates. This prevents loading wrong template when multiple
-    # blueprints have templates with the same name (e.g., report_template.html)
-    env = Environment(
-        loader=ChoiceLoader([
-            FileSystemLoader(str(TEMPLATES_DIR_PATH)),  # BranchSight templates first
-            FileSystemLoader(str(SHARED_TEMPLATES_DIR))  # Shared templates (for shared_header.html)
-        ]),
-        autoescape=select_autoescape(['html', 'xml'])
-    )
-    env.globals['url_for'] = url_for
-    template = env.get_template('report_template.html')
-    # A raw Environment skips Flask's context processors, so run them here:
-    # shared_header.html's nav drawer needs nav_groups (main/app.py inject_shell()).
-    context = {}
-    current_app.update_template_context(context)
-    return template.render(**context, app_base_url=app_base_url, version=__version__)
+    """Shareable report URL: the same page, which loads ?job_id= into the results."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id)
 
 
 @branchsight_bp.route('/report-data')
@@ -305,7 +315,6 @@ def report_data():
         # Data from BigQuery is already serialized (no DataFrames)
         # Data from in-memory fallback may have DataFrames
         import numpy as np
-        import pandas as pd
 
         report_data = analysis_result.get('report_data', {})
         serialized_data = {}
