@@ -28,7 +28,7 @@ from justdata.shared.utils.analysis_cache import store_cached_result, get_analys
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
 from .core import run_analysis, parse_web_parameters
-from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
+from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID, SOD_YEARS
 from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
 from .version import __version__
 
@@ -122,7 +122,9 @@ def analyze():
         data = request.get_json()
         selection_type = data.get('selection_type', 'county')
         counties_str = data.get('counties', '').strip()
-        years = data.get('years', '').strip()
+        # The analysis always runs config.SOD_YEARS; years the page sends are
+        # ignored, and the cache key uses the resolved years.
+        years = ','.join(map(str, SOD_YEARS))
         state_code = data.get('state_code', None)
         metro_code = data.get('metro_code', None)
         job_id = new_job_id()
@@ -144,9 +146,6 @@ def analyze():
             return jsonify({'error': 'Please select a state'}), 400
         elif selection_type == 'metro' and not metro_code:
             return jsonify({'error': 'Please select a metro area'}), 400
-
-        if not years:
-            return jsonify({'error': 'Please provide years'}), 400
 
         # Parse parameters
         try:

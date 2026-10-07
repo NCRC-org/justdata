@@ -8,7 +8,7 @@ import os
 import pandas as pd
 from typing import Dict, List
 from datetime import datetime
-from .config import OUTPUT_DIR, PROJECT_ID
+from .config import OUTPUT_DIR, PROJECT_ID, SOD_YEARS
 from .data_utils import find_exact_county_match, execute_branch_query
 from .analysis import BranchSightAnalyzer
 from justdata.shared.reporting.report_builder import build_report, save_excel_report
@@ -32,7 +32,7 @@ def parse_web_parameters(counties_str: str, years_str: str, selection_type: str 
 
     # Parse years
     if years_str.lower() == "all":
-        years = list(range(2021, 2026))  # 2021-2025 (5 years)
+        years = list(SOD_YEARS)
     else:
         years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
 
