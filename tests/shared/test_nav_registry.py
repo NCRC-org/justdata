@@ -23,21 +23,33 @@ REGISTRY_APP_KEYS = [
 ]
 
 
+def test_staff_only_groups_hold_the_consolidation_and_staff_tools():
+    groups = {g.label: [e.key for e in g.items] for g in NAV_GROUPS if g.staff_only}
+    assert groups == {
+        "Staff tools": ["mergermeter", "analytics", "admin"],
+        "In consolidation": ["branchmapper", "dotlender", "dataexplorer"],
+    }
+
+
 def _drawer(user_type):
     """{key: state} for every app item the drawer renders."""
     return {
         item["key"]: item["state"]
-        for group in resolve_registry(get_access_row, user_type)
+        for group in resolve_registry(get_access_row, user_type, is_staff=user_type in PRIVILEGED_ROLES)
         for item in group["items"]
         if item["key"] not in ("home", "apps")
     }
 
 
 def _expected_from_matrix(user_type):
-    """What the drawer shows with no overlay: straight from ACCESS_MATRIX."""
+    """What the drawer shows with no overlay: straight from ACCESS_MATRIX,
+    minus staff_only groups for non-staff roles (presentation only)."""
     states = {"full": "available", "limited": "available", "locked": "locked"}
+    staff = user_type in PRIVILEGED_ROLES
+    keys = [e.key for g in NAV_GROUPS if staff or not g.staff_only
+            for e in g.items if e.key not in ("home", "apps")]
     out = {}
-    for key in REGISTRY_APP_KEYS:
+    for key in keys:
         level = ACCESS_MATRIX.get(key, {}).get(user_type, "hidden")
         if level in states:
             out[key] = states[level]

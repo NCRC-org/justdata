@@ -121,7 +121,8 @@ def create_app():
 
         return {
             'visible_apps': visible_apps,
-            'nav_groups': resolve_registry(get_access_row, shell_user_type),
+            'nav_groups': resolve_registry(get_access_row, shell_user_type,
+                                           is_staff=is_privileged_user(shell_user_type)),
             'secondary_pages': SECONDARY_PAGES,
             'platform_version': get_version('platform'),
         }
