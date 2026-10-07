@@ -21,6 +21,7 @@ from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
 from justdata.shared.utils.progress_tracker import ProgressTracker
 from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
+from justdata.shared.utils.error_ref import GENERIC_ERROR, user_error
 
 
 def parse_web_parameters(county_data: dict, years_str: str) -> tuple:
@@ -124,7 +125,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     }
                 return {
                     'success': False,
-                    'error': f'Query error: {query_errors[0]}'
+                    'error': user_error(GENERIC_ERROR, context=f'bizsight query error: {query_errors[0][:500]}')[0]
                 }
             return {
                 'success': False,
@@ -1315,7 +1316,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         return result
         
     except Exception as e:
-        error_msg = str(e)
+        error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'bizsight run_analysis job={job_id}')
         if progress_tracker:
             progress_tracker.complete(success=False, error=error_msg)
         return {

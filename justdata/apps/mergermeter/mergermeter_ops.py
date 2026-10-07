@@ -31,6 +31,7 @@ from justdata.apps.mergermeter.version import __version__
 
 # GCS storage for persistent file storage across Cloud Run instances
 from justdata.shared.utils.gcs_storage import upload_json, download_json
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
 # Load unified environment configuration (primary method - works for both local and Render)
 ensure_unified_env_loaded(verbose=True)
@@ -272,9 +273,7 @@ def analyze():
                 try:
                     _perform_analysis(job_id, form_data)
                 except Exception as e:
-                    import traceback
-                    error_msg = str(e)
-                    traceback.print_exc()
+                    error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'mergermeter job={job_id}')
                     update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
         
         thread = threading.Thread(target=run_analysis, daemon=True)
@@ -288,12 +287,9 @@ def analyze():
         })
         
     except Exception as e:
-        import traceback
-        error_msg = str(e)
-        traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': error_msg
+            'error': user_error(GENERIC_ERROR, exc=e, context='mergermeter /analyze')[0]
         }), 500
 
 
@@ -601,7 +597,8 @@ def _perform_analysis(job_id, form_data):
                     'percent': 0,
                     'step': 'Error loading national data',
                     'done': True,
-                    'error': f'Failed to load national counties: {str(e)}'
+                    'error': user_error("We couldn't load the national county list.", exc=e,
+                                        context=f'mergermeter job={job_id}')[0]
                 })
                 return
         else:
@@ -1476,10 +1473,8 @@ def _perform_analysis(job_id, form_data):
         })
         
     except Exception as e:
-        import traceback
-        error_msg = str(e)
-        traceback.print_exc()
-        
+        error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'mergermeter job={job_id}')
+
         # Update progress with error
         update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
 
@@ -1550,7 +1545,7 @@ def load_bank_names():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 def clean_bank_name(bank_name: str) -> str:
@@ -1757,7 +1752,7 @@ def generate_assessment_areas_from_branches():
         import traceback
         error_details = traceback.format_exc()
         print(f"Error generating assessment areas from branches: {error_details}")
-        return jsonify({'success': False, 'error': f'Error: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @app.route('/api/download-assessment-area-template', methods=['GET'])
@@ -1944,7 +1939,7 @@ def upload_assessment_areas():
                 import traceback
                 error_details = traceback.format_exc()
                 print(f"Error parsing CSV file: {error_details}")
-                return jsonify({'success': False, 'error': f'Error parsing CSV file: {str(e)}'}), 500
+                return jsonify({'success': False, 'error': user_error("We couldn't read that CSV file.", exc=e, context='mergermeter upload')[0]}), 500
         
         elif is_json:
             # Parse JSON file
@@ -2075,17 +2070,16 @@ def upload_assessment_areas():
                             'counties': counties
                         })
             except json.JSONDecodeError as e:
-                error_msg = f'Invalid JSON format: {str(e)}'
-                if hasattr(e, 'lineno') and hasattr(e, 'colno'):
-                    error_msg += f' (Line {e.lineno}, Column {e.colno})'
-                return jsonify({'success': False, 'error': error_msg}), 500
+                where = f' (line {e.lineno}, column {e.colno})' if hasattr(e, 'lineno') and hasattr(e, 'colno') else ''
+                message = f"We couldn't read that JSON file: the format is invalid{where}."
+                return jsonify({'success': False, 'error': user_error(message, exc=e, context='mergermeter upload')[0]}), 500
             except UnicodeDecodeError as e:
-                return jsonify({'success': False, 'error': f'File encoding error: {str(e)}. Please ensure the file is UTF-8 encoded.'}), 500
+                return jsonify({'success': False, 'error': user_error("We couldn't read that file. Please make sure it is UTF-8 encoded.", exc=e, context='mergermeter upload')[0]}), 500
             except Exception as e:
                 import traceback
                 error_details = traceback.format_exc()
                 print(f"Error parsing JSON file: {error_details}")
-                return jsonify({'success': False, 'error': f'Error parsing JSON file: {str(e)}'}), 500
+                return jsonify({'success': False, 'error': user_error("We couldn't read that JSON file.", exc=e, context='mergermeter upload')[0]}), 500
         
         if not assessment_areas:
             return jsonify({'success': False, 'error': 'No assessment areas found in JSON file. Please check the file format.'}), 400
@@ -2101,7 +2095,7 @@ def upload_assessment_areas():
         import traceback
         error_details = traceback.format_exc()
         print(f"Error in upload_assessment_areas: {error_details}")
-        return jsonify({'success': False, 'error': f'Upload error: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter upload')[0]}), 500
 
 
 def get_counties_by_msa_codes(msa_codes: List[str]) -> Dict[str, List[str]]:
@@ -2522,18 +2516,10 @@ def generate_ai_summary():
             analyzer = AIAnalyzer(ai_provider="claude", style_guide=NCRC_STYLE_GUIDE,
                                   app_name='mergermeter')
         except Exception as e:
-            error_msg = str(e)
-            if "No API key found" in error_msg or "API key" in error_msg:
-                return jsonify({
-                    'success': False, 
-                    'error': 'Claude API key not configured. Please set CLAUDE_API_KEY or ANTHROPIC_API_KEY environment variable.',
-                    'details': error_msg
-                }), 500
-            else:
-                return jsonify({
-                    'success': False,
-                    'error': f'Failed to initialize AI analyzer: {error_msg}'
-                }), 500
+            return jsonify({
+                'success': False,
+                'error': user_error("We couldn't start the AI summary.", exc=e, context='mergermeter ai summary')[0]
+            }), 500
         
         # Get data summaries for all categories - use raw data if available, otherwise use report_data
         mortgage_data_summary = ""
@@ -2758,8 +2744,7 @@ IMPORTANT:
             print(f"  [AI Summary] Error calling AI API: {error_msg}")
             return jsonify({
                 'success': False,
-                'error': f'Failed to generate AI summary: {error_msg}',
-                'details': 'This may be due to missing API key, API rate limits, or network issues.'
+                'error': user_error("We couldn't generate the AI summary.", exc=e, context='mergermeter ai summary')[0],
             }), 500
         
         # Convert numpy types to JSON-serializable Python types
@@ -2778,7 +2763,7 @@ IMPORTANT:
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @app.route('/report-data')
@@ -3109,7 +3094,7 @@ def report_data():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 def get_excel_filename(job_id: str) -> str:
@@ -3217,7 +3202,7 @@ def download():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 # Register standard routes
@@ -4006,7 +3991,7 @@ def export_goals():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
 @app.route('/api/save-goals-config', methods=['POST'])
@@ -4037,7 +4022,7 @@ def save_goals_config():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 # Debug: Verify route is registered
 print(f"[DEBUG] Checking if /api/generate-assessment-areas-from-branches is registered...")

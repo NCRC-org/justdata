@@ -21,6 +21,7 @@ from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STA
 from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
 from justdata.shared.utils.progress_tracker import create_progress_tracker, get_progress
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
@@ -215,8 +216,11 @@ def analyze():
                 )
                 
                 if not result.get('success'):
-                    error_msg = result.get('error', 'Unknown error')
-                    progress_tracker.complete(success=False, error=error_msg)
+                    error_msg = result.get('error') or GENERIC_ERROR
+                    if 'Reference:' in error_msg:
+                        progress_tracker.complete(success=False, error=error_msg)
+                    else:
+                        progress_tracker.fail(error_msg)
                     record_completion('bizsight', cache_params, caller, job_id,
                                       start_time, request_id, error_message=error_msg)
                     return
@@ -260,7 +264,7 @@ def analyze():
                                   costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3})
 
             except Exception as e:
-                error_msg = str(e)
+                error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'bizsight job={job_id}')
                 progress_tracker.complete(success=False, error=error_msg)
                 record_completion('bizsight', cache_params, caller, job_id,
                                   start_time, request_id, error_message=error_msg)
@@ -280,7 +284,7 @@ def analyze():
         )
         return jsonify({
             'success': False,
-            'error': f'An error occurred: {str(e)}'
+            'error': user_error(GENERIC_ERROR, exc=e, context='bizsight /analyze')[0]
         }), 500
 
 
@@ -298,7 +302,7 @@ def data():
             'years': years
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='bizsight')[0]}), 500
 
 
 @bizsight_bp.route('/api/states', methods=['GET'])
@@ -313,7 +317,7 @@ def get_states():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='bizsight')[0]}), 500
 
 
 @bizsight_bp.route('/api/planning-regions', methods=['GET'])
@@ -442,9 +446,7 @@ def get_counties_by_state(state_code):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
-        print(f"[ERROR] bizsight/api/counties-by-state error: {error_msg}")
-        return jsonify({'error': error_msg}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='bizsight counties-by-state')[0]}), 500
 
 
 @bizsight_bp.route('/api/county-boundaries', methods=['GET'])
@@ -460,7 +462,7 @@ def get_county_boundaries():
         boundaries = get_county_boundaries(geoid5)
         return jsonify(boundaries)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='bizsight')[0]}), 500
 
 
 @bizsight_bp.route('/api/state-boundaries', methods=['GET'])
@@ -476,7 +478,7 @@ def get_state_boundaries():
         boundaries = get_state_boundaries(state_code)
         return jsonify(boundaries)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='bizsight')[0]}), 500
 
 
 @bizsight_bp.route('/api/tract-boundaries/<geoid5>', methods=['GET'])
@@ -491,7 +493,7 @@ def get_tract_boundaries_endpoint(geoid5):
             return jsonify({'success': False, 'error': 'No tract boundaries found', 'geojson': None}), 404
         return jsonify({'success': True, 'geojson': boundaries})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e), 'geojson': None}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='bizsight tract boundaries')[0], 'geojson': None}), 500
 
 
 @bizsight_bp.route('/report', methods=['GET'])
@@ -609,7 +611,7 @@ def report_data():
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': f'An error occurred while loading report data: {str(e)}'
+            'error': user_error(REQUEST_ERROR, exc=e, context='bizsight /report-data')[0]
         }), 500
 
 
@@ -722,7 +724,7 @@ def download():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='bizsight')[0]}), 500
 
 
 @bizsight_bp.route('/health')

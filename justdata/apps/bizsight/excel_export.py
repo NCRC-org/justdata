@@ -384,6 +384,5 @@ def download_excel(analysis_result, metadata):
             mimetype='application/zip'
         )
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Excel export failed: {str(e)}'}), 500
+        from justdata.shared.utils.error_ref import user_error
+        return jsonify({'error': user_error("We couldn't create the Excel export.", exc=e, context='bizsight excel export')[0]}), 500

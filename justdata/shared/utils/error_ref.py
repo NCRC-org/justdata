@@ -10,6 +10,7 @@ import uuid
 from typing import Optional, Tuple
 
 GENERIC_ERROR = "We couldn't complete this analysis."
+REQUEST_ERROR = "We couldn't complete this request."
 
 
 def new_ref() -> str:
