@@ -1,0 +1,40 @@
+{#
+  Analysis-app page skeleton (spec 04 A1). An app's entry template extends
+  this and fills:
+    {% block controls %}  .app-step fieldsets inside <form id="{{ form_id }}">
+    {% block app_js %}    the app's own scripts (AppStates is already loaded)
+  Render with **app_page_context(...) from shared/web/app_page.py.
+  Apps that still extend base_app.html directly are unaffected.
+#}
+{% extends "base_app.html" %}
+
+{% block main_class %} app-main{% endblock %}
+
+{% block content %}
+{% include "partials/app_header.html" %}
+<div class="app-container app-workbench">
+  <aside class="app-controls" aria-label="Analysis controls">
+    <div class="app-controls-head">
+      <h2 class="app-section-h">Set up your analysis</h2>
+      <button type="button" class="btn btn-ghost btn-sm" data-action="reset">Reset</button>
+    </div>
+    {% block controls %}{% endblock %}
+    <div class="app-controls-foot">
+      <button type="submit" form="{{ form_id }}" class="btn btn-primary" id="runBtn">Run analysis</button>
+      <p class="app-controls-hint" id="runHint"></p>
+    </div>
+  </aside>
+  <section class="app-results" aria-live="polite" aria-busy="false" id="results"
+           data-app-name="{{ app.name }}" data-form="{{ form_id }}">
+    {% include "partials/app_results_toolbar.html" %}
+    <div class="app-results-body" id="resultsBody">
+      {% include "partials/app_state_idle.html" %}
+    </div>
+    {% include "partials/app_sources.html" %}
+  </section>
+</div>
+{% include "partials/app_state_templates.html" %}
+<script src="{{ url_for('static', filename='js/app_states.js') }}"></script>
+{% endblock %}
+
+{% block extra_js %}{% block app_js %}{% endblock %}{% endblock %}

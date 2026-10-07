@@ -239,7 +239,7 @@ def analyze():
                 record_completion('mergermeter', cache_params, caller, job_id,
                                   start_time, request_id, error_message=error_msg)
 
-        run_in_background(run_analysis)
+        run_in_background(run_analysis, job_id=job_id)
         
         return jsonify({'success': True, 'job_id': job_id})
         
@@ -263,15 +263,14 @@ def analyze():
 def excel_data():
     """Serve the generated Excel file inline (for SheetJS preview rendering)"""
     try:
-        from .mergermeter_ops import get_excel_filename
+        from .mergermeter_ops import ensure_local_excel
 
         job_id = request.args.get('job_id') or session.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
 
-        excel_filename = get_excel_filename(job_id)
-        excel_file = OUTPUT_DIR / excel_filename
-        if not excel_file.exists():
+        excel_file = ensure_local_excel(job_id)
+        if excel_file is None:
             return jsonify({'error': 'Report file not found.'}), 404
 
         return send_file(
@@ -289,15 +288,14 @@ def excel_data():
 def download():
     """Download the generated Excel file"""
     try:
-        from .mergermeter_ops import get_excel_filename, generate_filename
+        from .mergermeter_ops import ensure_local_excel, generate_filename
         
         job_id = request.args.get('job_id') or session.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
         
-        excel_filename = get_excel_filename(job_id)
-        excel_file = OUTPUT_DIR / excel_filename
-        if not excel_file.exists():
+        excel_file = ensure_local_excel(job_id)
+        if excel_file is None:
             return jsonify({'error': 'Report file not found. The analysis may not have completed yet.'}), 404
         
         # Try to load metadata for filename generation

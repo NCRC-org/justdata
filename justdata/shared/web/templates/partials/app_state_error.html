@@ -1,0 +1,11 @@
+{# Spec 04 A3. Never put a raw exception in `message`; error_ref is the id
+   written to the server log with the traceback (shared/utils/error_ref.py). #}
+<div class="app-state app-state--error" data-state="error" role="alert">
+  <h3>We couldn't complete this analysis</h3>
+  <p id="errorMessage">{{ message or "The data source didn't respond in time. Your filters are saved; try again in a moment." }}</p>
+  <p class="app-state-elapsed" id="errorRefLine"{% if not error_ref %} hidden{% endif %}>Reference: <span id="errorRef">{{ error_ref }}</span></p>
+  <div class="app-results-actions">
+    <button type="button" class="btn btn-primary btn-sm" data-action="retry">Try again</button>
+    <a class="btn btn-secondary btn-sm" id="errorReport" href="/contact{% if error_ref %}?ref={{ error_ref }}{% endif %}">Report a problem</a>
+  </div>
+</div>

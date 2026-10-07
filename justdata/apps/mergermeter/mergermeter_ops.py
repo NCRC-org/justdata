@@ -30,7 +30,7 @@ from justdata.apps.mergermeter.config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_D
 from justdata.apps.mergermeter.version import __version__
 
 # GCS storage for persistent file storage across Cloud Run instances
-from justdata.shared.utils.gcs_storage import upload_json, download_json
+from justdata.shared.utils.gcs_storage import download_file, download_json, upload_file, upload_json
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
 # Load unified environment configuration (primary method - works for both local and Render)
@@ -600,7 +600,7 @@ def _perform_analysis(job_id, form_data):
                     'error': user_error("We couldn't load the national county list.", exc=e,
                                         context=f'mergermeter job={job_id}')[0]
                 })
-                return
+                return {'success': False, 'error': 'national county list unavailable'}
         else:
             acquirer_geoids, acquirer_unmapped = map_counties_to_geoids(acquirer_counties)
             target_geoids, target_unmapped = map_counties_to_geoids(target_counties)
@@ -626,7 +626,7 @@ def _perform_analysis(job_id, form_data):
                 'done': True,
                 'error': 'No valid counties found in assessment areas. Please check your county names.'
             })
-            return
+            return {'success': False, 'error': 'no valid counties'}
         
         update_progress(job_id, {'percent': 15, 'step': 'Querying HMDA data for Bank A...', 'done': False, 'error': None})
         
@@ -1455,6 +1455,9 @@ def _perform_analysis(job_id, form_data):
         try:
             upload_json(f'mergermeter/merger_metadata_{job_id}.json', metadata)
             upload_json(f'mergermeter/merger_raw_data_{job_id}.json', raw_data)
+            # The workbook too, so a cached result can be previewed and
+            # downloaded from any Cloud Run instance, not only the one that ran it.
+            upload_file(f'mergermeter/{excel_file.name}', str(excel_file))
             print(f"[GCS] Uploaded analysis files for job {job_id}")
         except Exception as e:
             print(f"[GCS] Warning: Failed to upload to GCS: {e}")
@@ -1471,12 +1474,16 @@ def _perform_analysis(job_id, form_data):
             'error': None,
             'validation_warnings': [w['issue'] for w in validation_warnings] if validation_warnings else []
         })
-        
+
+        # Returned so the blueprint stores this run in the analysis cache.
+        return {'success': True, 'job_id': job_id, 'excel_filename': excel_file.name}
+
     except Exception as e:
         error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'mergermeter job={job_id}')
 
         # Update progress with error
         update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
+        return {'success': False, 'error': error_msg}
 
 
 @app.route('/api/load-bank-names', methods=['POST'])
@@ -3095,6 +3102,17 @@ def report_data():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
+
+
+def ensure_local_excel(job_id: str):
+    """Path to the job's workbook in OUTPUT_DIR, fetched from GCS if this
+    instance did not run the analysis (for example on a cache hit). None if it
+    exists in neither place."""
+    excel_file = OUTPUT_DIR / get_excel_filename(job_id)
+    if not excel_file.exists():
+        excel_file.parent.mkdir(parents=True, exist_ok=True)
+        download_file(f'mergermeter/{excel_file.name}', str(excel_file))
+    return excel_file if excel_file.exists() else None
 
 
 def get_excel_filename(job_id: str) -> str:

@@ -1,0 +1,8 @@
+{# Spec 04 A3. app_states.js drives the stage text and the elapsed counter. #}
+<div class="app-state" data-state="loading" role="status">
+  <div class="app-progress" aria-hidden="true"></div>
+  <h3>Running your analysis</h3>
+  <p id="loadingStage">Querying federal records</p>
+  <p class="app-state-elapsed"><span id="loadingElapsed">0</span>s elapsed</p>
+  <button type="button" class="btn btn-ghost btn-sm" data-action="cancel">Cancel</button>
+</div>

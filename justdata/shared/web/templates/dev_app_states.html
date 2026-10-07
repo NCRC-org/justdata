@@ -1,0 +1,62 @@
+{# Debug-only preview of the spec 04 states; see shared/web/dev_routes.py. #}
+{% extends "app_page.html" %}
+{% block title %}App states preview - JustData{% endblock %}
+
+{% block controls %}
+<form id="{{ form_id }}">
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">1</span>Geography</legend>
+    <div class="app-field">
+      <label for="devGeo">County</label>
+      <select id="devGeo"><option>Example county</option></select>
+      <p class="app-field-hint">Preview only. Nothing is queried.</p>
+    </div>
+  </fieldset>
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">2</span>Preview a state</legend>
+    <div class="app-results-actions">
+      <button type="button" class="btn btn-secondary btn-sm" data-preview="stage">Server stage</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-preview="success">Success</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-preview="empty">Empty</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-preview="error">Error</button>
+    </div>
+  </fieldset>
+</form>
+{% endblock %}
+
+{% block app_js %}
+<template id="devSuccess">
+  <div>
+    <div class="app-summary">
+      <div><p class="app-summary-figure">—</p><p class="app-summary-label">Summary figure</p><p class="app-summary-note">Note under a figure</p></div>
+      <div><p class="app-summary-figure">—</p><p class="app-summary-label">Summary figure</p></div>
+    </div>
+    <section class="app-result-section">
+      <h3>Result section</h3>
+      <div class="app-table-wrap"><table class="app-table">
+        <thead><tr><th>Column</th><th class="num">Number</th></tr></thead>
+        <tbody><tr><td>Row</td><td class="num">—</td></tr></tbody>
+      </table></div>
+    </section>
+    <section class="app-result-section report-prose"><p>Narrative text renders in the report-prose style.</p></section>
+  </div>
+</template>
+<script>
+(function () {
+  document.getElementById('{{ form_id }}').addEventListener('submit', function (e) {
+    e.preventDefault();
+    AppStates.loading({ ref: 'devref01' });
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-preview]');
+    if (!b) return;
+    var kind = b.getAttribute('data-preview');
+    if (kind === 'stage') { AppStates.loading(); AppStates.stage('Stage text sent by the server'); }
+    if (kind === 'success') AppStates.success(document.getElementById('devSuccess').content.firstElementChild.cloneNode(true),
+      { citation: { dataset: 'HMDA', years: '2018 to 2024', geography: 'Example County, ST', lenders: ['Example Bank'], url: location.href } });
+    if (kind === 'empty') AppStates.empty();
+    if (kind === 'error') AppStates.error(null, 'devref01');
+  });
+})();
+</script>
+{% endblock %}
