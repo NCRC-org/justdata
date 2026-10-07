@@ -66,3 +66,13 @@ def test_report_url_renders_the_page_with_the_job(client):
 def test_bizsight_js_modules_stay_small():
     for f in BS_JS.glob("*.js"):
         assert len(f.read_text().splitlines()) <= 500, f.name
+
+
+def test_section1_opens_with_one_paragraph_not_two(client):
+    """Jad, 2026-10-07: keep the first paragraph, fold in the second's unique
+    fact (the loan definition), drop the second."""
+    html = _page(client)
+    js = (BS_JS / "bs_report.js").read_text()
+    definition = "Small business loans are defined as loans with original amounts of $1 million or less"
+    assert (html + js).count(definition) == 1 and definition in html
+    assert "This report analyzes small business lending" not in js

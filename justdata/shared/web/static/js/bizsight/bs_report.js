@@ -87,10 +87,10 @@
   function intro(md, years) {
     var place = (md.county_name || 'the selected county') + (md.state_name && (md.county_name || '').indexOf(md.state_name) < 0 ? ', ' + md.state_name : '');
     Array.prototype.forEach.call(document.querySelectorAll('[data-bs="place"]'), function (el) { el.textContent = place; });
+    // Section 1 opens with the template's paragraph (Jad, 2026-10-07: it keeps
+    // the small business loan definition; the generated paragraph that
+    // repeated it was dropped).
     $('bsIntro').innerHTML = [
-      'This report analyzes small business lending in ' + place + ' from ' + years[0] + ' to ' + years[years.length - 1] + '. ' +
-        'The data is collected under the Community Reinvestment Act (CRA), which requires financial institutions to report information about small business loans. ' +
-        'Small business loans are defined as loans with original amounts of $1 million or less for commercial and industrial purposes.',
       'The analysis examines lending patterns by loan size, revenue category of borrowers, and neighborhood income levels. ' +
         'Low- and Moderate-Income (LMI) tracts are census tracts where the median family income is less than 80% of the area median income. ' +
         'Loans to businesses with revenues under $1 million are considered lending to small businesses.'
