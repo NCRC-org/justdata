@@ -590,6 +590,10 @@ def report_data():
 
         # Ensure success flag is present
         cleaned_result['success'] = True
+        # Stage timings of the run that produced this result (spec 04 A5)
+        stored_meta = cleaned_result.get('metadata') or {}
+        cleaned_result['perf'] = stored_meta.get('perf')
+        cleaned_result['ref'] = stored_meta.get('perf_ref')
 
         # Return with cache-control headers to prevent browser caching
         response = jsonify(cleaned_result)
