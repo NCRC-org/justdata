@@ -65,10 +65,17 @@ def follow_progress(session, base_url, app, job_id, t0, timeout):
     url = f"{base_url}/{app}/progress/{job_id}"
     try:
         with session.get(url, stream=True, timeout=(30, timeout)) as resp:
+            named = False
             for raw in resp.iter_lines(decode_unicode=True):
                 if time.monotonic() - t0 > timeout:
                     break
-                if not raw or not raw.startswith("data:"):
+                if not raw:
+                    named = False   # blank line ends an SSE block
+                    continue
+                if raw.startswith("event:"):
+                    named = True    # e.g. the 10 s heartbeat; not a progress event
+                    continue
+                if named or not raw.startswith("data:"):
                     continue
                 event = json.loads(raw[5:].strip())
                 event["t"] = round(time.monotonic() - t0, 3)

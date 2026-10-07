@@ -77,6 +77,18 @@ class TestProgressStream:
         body = self._stream(app, [{"percent": 0, "step": "Starting...", "done": True}])
         assert body.startswith(": connected")
 
+    def test_long_unchanged_step_sends_named_heartbeats(self, app):
+        """A long narrative call leaves progress unchanged for many polls. The
+        stream sends a named heartbeat event so a client can tell the run is
+        alive; onmessage handlers (unnamed events) never receive it."""
+        same = {"percent": 88, "step": "Building charts and narrative", "done": False}
+        body = self._stream(app, [same] * 45 + [{"percent": 100, "step": "Complete", "done": True}])
+        assert body.count("event: heartbeat\ndata: {}\n\n") == 2
+        blocks = [b for b in body.split("\n\n") if b.strip()]
+        unnamed = [json.loads(b.split("data: ", 1)[1]) for b in blocks
+                   if b.startswith("data: ")]
+        assert [e["percent"] for e in unnamed] == [88, 100]
+
     def test_survives_a_transient_read_failure(self, app):
         """A blip reading the progress store must not drop a running analysis."""
         body = self._stream(app, [
