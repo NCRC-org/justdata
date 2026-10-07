@@ -113,7 +113,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 if progress_tracker:
                     progress_tracker.update_progress('preparing_data',
                         int(15 + (idx / total_counties) * 5),
-                        f'Preparing data... Matching county {idx}/{total_counties}: {county}')
+                        f'Querying federal records ({idx}/{total_counties})')
 
                 print(f"Matching county {idx}/{total_counties}: {county}")
                 matches = find_exact_county_match(county)
@@ -136,7 +136,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
 
         # Execute BigQuery queries
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 30, 'Fetching branch data from database...')
+            progress_tracker.update_progress('fetching_data', 30, 'Querying federal records')
 
         all_results = []
         total_queries = len(clarified_counties) * len(years)
@@ -185,23 +185,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
 
         # Save Excel report
         if progress_tracker:
-            import random
-            building_messages = [
-                "Assembling your comprehensive report...",
-                "Putting all the pieces together...",
-                "Creating visualizations that tell a story...",
-                "Organizing insights for clarity...",
-                "Crafting the perfect data narrative...",
-                "Almost there, polishing the details...",
-                "Doing something cool.",
-                "I know it's awesome, right?",
-                "Isn't data great?",
-                "Russell hates this.",
-                "Public data should be public.",
-                "Support the CFPB.",
-                "Beep boop beep."
-            ]
-            progress_tracker.update_progress('building_report', message=random.choice(building_messages))
+            progress_tracker.update_progress('building_report', message='Aggregating results')
 
         excel_path = os.path.join(OUTPUT_DIR, 'fdic_branch_analysis.xlsx')
         # Prepare metadata for Notes sheet
@@ -411,11 +395,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'table_narratives': {}
             }
 
-        # "Doing something cool" step before completion
         if progress_tracker:
-            progress_tracker.update_progress('doing_something_cool', 98, 'Doing something cool...')
-
-        print("\nDoing something cool...")
+            progress_tracker.update_progress('finalizing', 98, 'Aggregating results')
         print("Analysis completed successfully!")
 
         # Mark as completed (this will call complete() which sends the final message)

@@ -102,13 +102,13 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
     try:
         # Initialize progress
         if progress_tracker:
-            progress_tracker.update_progress('initializing', 0, 'Initializing analysis... Getting ready to crunch some numbers! 🚀')
+            progress_tracker.update_progress('initializing', 0, 'Querying federal records')
         
         # Parse parameters with selection context
         counties, years = parse_web_parameters(counties_str, years_str, selection_type, state_code, metro_code)
         
         if progress_tracker:
-            progress_tracker.update_progress('preparing_data', 5, f'Preparing data for {len(counties)} counties... Unpacking the data puzzle! 🧩')
+            progress_tracker.update_progress('preparing_data', 5, 'Querying federal records')
         
         if not counties:
             return {'success': False, 'error': 'No counties provided'}
@@ -118,7 +118,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         
         # Clarify county selections
         if progress_tracker:
-            progress_tracker.update_progress('preparing_data', 10, 'Matching counties... Making sure we have the right places! 📍')
+            progress_tracker.update_progress('preparing_data', 10, 'Querying federal records')
         
         clarified_counties = []
         total_counties = len(counties)
@@ -127,7 +127,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 if progress_tracker:
                     progress_tracker.update_progress('preparing_data', 
                         int(10 + (idx / total_counties) * 5),
-                        f'Matching county {idx}/{total_counties}: {county}... Almost there! 📍')
+                        f'Querying federal records ({idx}/{total_counties})')
                 
                 print(f"Matching county {idx}/{total_counties}: {county}")
                 matches = find_exact_county_match(county)
@@ -143,7 +143,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         
         # Execute BigQuery queries - choose between tiered (cost-optimized) or raw queries
         if progress_tracker:
-            progress_tracker.update_progress('connecting_db', 15, 'Connecting to BigQuery... Time to tap into that data goldmine! 💎')
+            progress_tracker.update_progress('connecting_db', 15, 'Querying federal records')
         
         all_results = []
         
@@ -153,7 +153,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # =================================================================
             print(f"\n[DEBUG] Using TIERED QUERIES (cost-optimized) from {SUMMARY_PROJECT_ID}")
             if progress_tracker:
-                progress_tracker.update_progress('fetching_data', 20, 'Fetching from optimized summary tables... Lightning fast! ⚡')
+                progress_tracker.update_progress('fetching_data', 20, 'Querying federal records')
             
             total_counties = len(clarified_counties)
             for idx, county in enumerate(clarified_counties, 1):
@@ -161,7 +161,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     if progress_tracker:
                         progress_tracker.update_progress('fetching_data', 
                             20 + int((idx / total_counties) * 25),
-                            f'Fetching data: {county}... ⚡ Using optimized tables!')
+                            f'Querying federal records ({idx}/{total_counties})')
                     
                     print(f"  [TIERED] Querying {county} for years {years}...")
                     tiered_data = execute_tiered_queries(county, years, loan_purpose)
@@ -213,7 +213,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             sql_template = load_sql_template()
             
             if progress_tracker:
-                progress_tracker.update_progress('fetching_data', 20, 'Fetching mortgage data... Digging deep for insights! ⛏️')
+                progress_tracker.update_progress('fetching_data', 20, 'Querying federal records')
             
             total_queries = len(clarified_counties) * len(years)
             query_index = 0
@@ -227,7 +227,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                         if progress_tracker:
                             progress_tracker.update_progress('fetching_data', 
                                 20 + int((query_index / total_queries) * 25),
-                                f'Fetching data: {county} ({year})... Who\'s lending where? Let\'s find out! 🏦')
+                                f'Querying federal records ({query_index}/{total_queries})')
                         
                         results = execute_mortgage_query(sql_template, county, year, loan_purpose)
                         all_results.extend(results)
@@ -256,7 +256,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Fetch Census data FIRST (before building report) so it can be used in AI analysis
         if progress_tracker:
             print(f"[DEBUG] Updating progress to fetching_data", flush=True)
-            progress_tracker.update_progress('fetching_data', 45, 'Fetching Census demographic data... Getting the full picture! 📊')
+            progress_tracker.update_progress('fetching_data', 45, 'Querying federal records')
         
         census_data = {}
         try:
@@ -291,7 +291,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             print(f"[DEBUG] This may take 30-60 seconds as it makes multiple API calls per county...", flush=True)
             sys.stdout.flush()
             if progress_tracker:
-                progress_tracker.update_progress('fetching_data', 50, f'Fetching Census data for {len(clarified_counties)} counties... This may take a minute, but it\'s worth it! ⏳')
+                progress_tracker.update_progress('fetching_data', 50, 'Querying federal records')
             
             # Use FIPS codes if provided, otherwise look them up
             if counties_with_fips and len(counties_with_fips) > 0:
@@ -408,11 +408,11 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Build report (pass census_data so it can be included in tables)
         if progress_tracker:
             print(f"[DEBUG] Updating progress to building_report", flush=True)
-            progress_tracker.update_progress('building_report', 60, 'Processing data and building report... Making it look pretty! 🎨')
+            progress_tracker.update_progress('building_report', 60, 'Aggregating results')
         
         # Load HUD data for income distribution
         if progress_tracker:
-            progress_tracker.update_progress('building_report', 62, 'Loading HUD income distribution data... Setting the bar for comparison! 📈')
+            progress_tracker.update_progress('building_report', 62, 'Aggregating results')
 
         # Extract unique GEOIDs from either counties_with_fips or BigQuery results
         geoids = []
@@ -443,7 +443,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         
         print(f"\n[DEBUG] Building report with {len(all_results)} records...", flush=True)
         if progress_tracker:
-            progress_tracker.update_progress('building_report', 65, f'Processing {len(all_results):,} records... This may take a moment for large datasets! ⏳')
+            progress_tracker.update_progress('building_report', 65, 'Aggregating results')
         report_data = build_mortgage_report(all_results, clarified_counties, years, census_data=census_data, hud_data=hud_data, progress_tracker=progress_tracker)
         print(f"[DEBUG] Report building complete")
         
@@ -475,7 +475,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # Note: Converting DataFrames to dicts can be slow for large datasets
             # We optimize by only converting what's needed and using efficient methods
             if progress_tracker:
-                progress_tracker.update_progress('generating_ai', 88, 'Preparing data for AI analysis... Almost there! 🤖')
+                progress_tracker.update_progress('generating_ai', 88, 'Building charts and narrative')
             
             by_lender_df = report_data.get('by_lender', pd.DataFrame())
             by_lender_data = convert_numpy_types(by_lender_df.to_dict('records') if not by_lender_df.empty else [])
@@ -560,7 +560,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 print(f"[WARNING] top_lenders_detailed is empty - AI may return empty discussion")
             
             if progress_tracker:
-                progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives... Let the AI work its magic! ✨')
+                progress_tracker.update_progress('generating_ai', 90, 'Building charts and narrative')
             
             # Initialize analyzer
             print(f"Initializing AI analyzer...")
@@ -827,7 +827,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Finalize - but don't mark as complete yet!
         # The blueprint.py will call progress_tracker.complete() AFTER storing results to BigQuery
         if progress_tracker:
-            progress_tracker.update_progress('saving', 95, 'Saving results... Almost done! 💾')
+            progress_tracker.update_progress('saving', 95, 'Aggregating results')
 
         print("Analysis completed successfully!")
         
