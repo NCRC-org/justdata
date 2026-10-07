@@ -16,9 +16,15 @@ and anyone on the exact TESTING_PUBLIC_PATHS.
 
 On the testing deploy, for every non-staff role:
   - apps outside TESTER_APPS resolve to "hidden" (not shown, not even locked)
-  - mergermeter resolves to "full" for TESTER_ROLES and "locked" for the
-    other non-staff roles, so they see the same four apps as testers
+  - mergermeter resolves to "full" for TESTER_ROLES
+  - for the public roles (not TESTER_ROLES), all four TESTER_APPS resolve to
+    "locked": the global gate never lets them open an app, so the drawer,
+    launcher and landing roster must not show one as open (LendSight is
+    'limited' for public_registered in the matrix)
 Staff roles (PRIVILEGED_ROLES) are never touched.
+
+A signed-in public_registered user may also open /apps itself on the testing
+deploy (TESTING_REGISTERED_PATHS), to see the locked tools and request access.
 """
 
 import os
@@ -35,6 +41,11 @@ TESTER_ROLES = ("member", "member_premium", "non_member_org")
 # prefix: "/" as a prefix would exempt every route). The landing page and the
 # two pages it and the footer link to.
 TESTING_PUBLIC_PATHS = frozenset({"/", "/about", "/contact"})
+
+# Extra exact paths for a signed-in public_registered user on the testing
+# deploy: the launcher, where every tool shows locked with the request-access
+# panel. Signed-out visitors stay blocked. Decided by Jad 2026-10-07.
+TESTING_REGISTERED_PATHS = frozenset({"/apps"})
 
 
 def is_testing_env() -> bool:
@@ -55,18 +66,28 @@ def overlay_row(app_name: str, row: dict, staff_roles) -> dict:
             continue
         if app_name not in TESTER_APPS:
             out[role] = "hidden"
+        elif role not in TESTER_ROLES:
+            out[role] = "locked"
         elif app_name == "mergermeter":
-            out[role] = "full" if role in TESTER_ROLES else "locked"
+            out[role] = "full"
     return out
 
 
-def testing_gate_admits(path: str, user_type: str) -> bool:
+def testing_gate_admits(path: str, user_type: str, signed_in: bool = False) -> bool:
     """True if the global staff-only gate should let this request through
-    because of the testing deploy: a tester role (TESTER_ROLES), or an exact
-    TESTING_PUBLIC_PATHS match for anyone. Always False off the testing deploy,
-    so staging and production keep the staff-only gate unchanged. Routes still
-    apply their own require_access checks after this.
+    because of the testing deploy: a tester role (TESTER_ROLES), an exact
+    TESTING_PUBLIC_PATHS match for anyone, or an exact TESTING_REGISTERED_PATHS
+    match for a signed-in public_registered user. Always False off the testing
+    deploy, so staging and production keep the staff-only gate unchanged.
+    Routes still apply their own require_access checks after this.
     """
     if not is_testing_env():
         return False
-    return path in TESTING_PUBLIC_PATHS or user_type in TESTER_ROLES
+    if path in TESTING_PUBLIC_PATHS or user_type in TESTER_ROLES:
+        return True
+    return signed_in and user_type == "public_registered" and path in TESTING_REGISTERED_PATHS
+
+
+def is_tester(user_type: str) -> bool:
+    """A tester role on the testing deploy (can open the four tester apps)."""
+    return is_testing_env() and user_type in TESTER_ROLES

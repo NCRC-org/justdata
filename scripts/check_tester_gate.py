@@ -37,15 +37,16 @@ ROUTES = ("/", "/about", "/contact", "/apps", "/lendsight/", "/status", "/branch
 
 # Expected outcome per route on the testing deploy (JUSTDATA_ENV=testing):
 # "open" = the real page; "blocked" = restricted page, redirect away, 401 or 403.
-# Mirrors main/auth/access_overlay.py: public roles reach only the exact public
-# paths; tester roles also reach /apps and the four apps; staff follow the
+# Mirrors main/auth/access_overlay.py: signed out reaches only the exact public
+# paths; public_registered also reaches /apps; tester roles also reach the apps; staff follow the
 # matrix (Analytics is hidden from the plain staff role).
 _PUBLIC = {"/": "open", "/about": "open", "/contact": "open", "/apps": "blocked",
            "/lendsight/": "blocked", "/status": "blocked", "/branchmapper/": "blocked",
            "/analytics": "blocked"}
 EXPECTED = {
     "signed_out": _PUBLIC,
-    "public_registered": _PUBLIC,
+    # A signed-in public_registered user may open /apps (all tools locked) on testing.
+    "public_registered": {**_PUBLIC, "/apps": "open"},
     "member": {**_PUBLIC, "/apps": "open", "/lendsight/": "open"},
     # Most external testers will hold this role; same table as member on testing.
     "non_member_org": {**_PUBLIC, "/apps": "open", "/lendsight/": "open"},

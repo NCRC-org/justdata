@@ -9,7 +9,7 @@ from justdata.main.auth import (
     auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
     login_required, admin_required
 )
-from justdata.main.auth.access_overlay import testing_gate_admits
+from justdata.main.auth.access_overlay import is_tester, testing_gate_admits
 from justdata.main.config import MainConfig
 import os
 
@@ -152,9 +152,10 @@ def create_app():
             if path.startswith(exempt):
                 return None
 
-        # Testing deploy only: tester roles, and anyone on the exact public
-        # paths (/, /about, /contact). See main/auth/access_overlay.py.
-        if testing_gate_admits(path, get_user_type()):
+        # Testing deploy only: tester roles, anyone on the exact public paths
+        # (/, /about, /contact), and a signed-in public_registered user on
+        # /apps. See main/auth/access_overlay.py.
+        if testing_gate_admits(path, get_user_type(), signed_in=is_authenticated()):
             return None
 
         # Check if user is privileged
@@ -203,14 +204,14 @@ def create_app():
         main/landing_content.py; the roster renders from nav_groups.
 
         hero_cta picks the call to action:
-          "apps"    staff, and tester roles on the testing deploy (can open /apps)
+          "apps"    staff, and tester roles on the testing deploy (can open apps)
           "request" signed in but without app access (public_registered)
           "signin"  signed out
         """
         from justdata.main.landing_content import DATA_INVENTORY, PLATFORM_STATS, count_words
 
         user_type = get_user_type()
-        if is_privileged_user(user_type) or testing_gate_admits('/apps', user_type):
+        if is_privileged_user(user_type) or is_tester(user_type):
             hero_cta = 'apps'
         elif is_authenticated():
             hero_cta = 'request'
