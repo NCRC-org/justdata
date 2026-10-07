@@ -5,8 +5,6 @@ Converts the standalone LendSight app into a blueprint with cache integration.
 
 from flask import Blueprint, render_template, request, jsonify, session, make_response, send_file, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
-import os
-import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,8 +20,8 @@ from justdata.shared.utils.analysis_cache import store_cached_result, get_analys
 # In-memory fallback for when BigQuery cache store fails
 _result_fallback = {}
 from justdata.shared.utils.bigquery_client import escape_sql_string
-from justdata.core.config.app_config import LendSightConfig
 from .core import analysis_years, run_analysis, parse_web_parameters
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 from .config import TEMPLATES_DIR, STATIC_DIR
 
 # Get shared templates directory
@@ -180,7 +178,7 @@ def progress_status():
             'percent': 0,
             'step': 'Error checking progress',
             'done': False,
-            'error': str(e)
+            'error': user_error(REQUEST_ERROR, exc=e, context='lendsight /progress')[0]
         }), 500
 
 
@@ -218,7 +216,7 @@ def analyze():
         caller = identify_caller()
         user_type = caller.user_type
         if not caller.user_id and not caller.user_email:
-            print(f"[WARN] LendSight analyze: No user identity captured despite @login_required")
+            print("[WARN] LendSight analyze: No user identity captured despite @login_required")
 
         # Parse counties - handle both new format (objects with FIPS) and old format (strings)
         counties_list = []
@@ -311,7 +309,8 @@ def analyze():
             traceback.print_exc()
             record_completion('lendsight', cache_params, caller, job_id,
                               start_time, request_id, error_message=str(e))
-            return jsonify({'success': False, 'error': f'Error parsing parameters: {str(e)}'}), 400
+            return jsonify({'success': False, 'error': user_error(
+                "We couldn't read the selected county.", exc=e, context='lendsight parse_web_parameters')[0]}), 400
 
         remember_in_session(job_id, ';'.join(counties_list) if counties_list else counties_str)
 
@@ -374,10 +373,10 @@ def analyze():
                                   costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3})
 
             except Exception as e:
-                error_msg = str(e)
-                progress_tracker.complete(success=False, error=error_msg)
+                shown, _ref = user_error(GENERIC_ERROR, exc=e, context=f'lendsight job={job_id}')
+                progress_tracker.complete(success=False, error=shown)
                 record_completion('lendsight', cache_params, caller, job_id,
-                                  start_time, request_id, error_message=error_msg)
+                                  start_time, request_id, error_message=str(e))
 
         print(f"[DEBUG] Starting background thread for job {job_id}")
         run_in_background(run_job, job_id=job_id)
@@ -399,7 +398,7 @@ def analyze():
         )
         return jsonify({
             'success': False,
-            'error': f'An error occurred: {str(e)}'
+            'error': user_error(GENERIC_ERROR, exc=e, context='lendsight /analyze')[0]
         }), 500
 
 
@@ -514,7 +513,7 @@ def report_data():
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': f'An error occurred while loading report data: {str(e)}'
+            'error': user_error(REQUEST_ERROR, exc=e, context='lendsight /report-data')[0]
         }), 500
 
 
@@ -622,7 +621,7 @@ def download():
         traceback.print_exc()
         return jsonify({
             'success': False,
-            'error': f'Download failed: {str(e)}'
+            'error': user_error(REQUEST_ERROR, exc=e, context='lendsight /download')[0]
         }), 500
 
 
