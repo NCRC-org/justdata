@@ -505,7 +505,11 @@ def report_data():
             'success': True,
             'data': converted_report_data,
             'metadata': metadata_with_ai,
-            'ai_insights': ai_insights  # Also include at top level for backward compatibility
+            'ai_insights': ai_insights,  # Also include at top level for backward compatibility
+            # Stage timings of the run that produced this result (spec 04 A5).
+            # A cache hit returns the original run's stages.
+            'perf': metadata.get('perf'),
+            'ref': metadata.get('perf_ref'),
         })
         
     except Exception as e:
