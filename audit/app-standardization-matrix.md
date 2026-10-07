@@ -34,14 +34,47 @@ Paths are relative to `justdata/`.
 | BigQuery path | Shared client. Multi-line SQL f-strings (one interpolates an unescaped state code). Analysis cache + bypass (`force_refresh`, staff) | App wrapper calling `client.query` directly (no shared timeout). SQL f-strings. Cache + bypass (staff) | Shared client; SQL via string `.replace()` not query parameters. Cache + bypass (staff) | Shared client (120 s timeout). SQL f-strings in `query_builders.py`. **Never writes to the analysis cache** (`_perform_analysis` returns None). Bypass shown only to senior_executive/admin | Code (Claude) |
 | Analysis years actually run | 2020 to 2024 fixed (`core.py:43`); client's years ignored but used in cache key. Ticket 13229533844 | 2020 to 2024 trends; summary, comparison, top lenders and HHI pinned to 2024. Ticket 13229487819 | 2021 to 2025 fixed (`branchsight.sod_legacy` + `sod`) | HMDA 2018 to 2025 selectable (default 2023-2025); SB 2018 to 2024 selectable (default 2023-2024) | Code (Claude) |
 | In-report methodology anchor (`help_url`) | `/lendsight/report#methodsSection` | `/bizsight/report#section6` | `/branchsight/report#methodsSection` | none (`help_url` = None) | Code (Claude) |
-| Timing: entry TTFB, cached analysis | | | | | Timing, member (Claude): **pending** the credentials file and reference geographies |
-| Timing: uncached analysis (2 runs × 2 geographies), BigQuery bytes billed | | | | | Timing, staff (Jad): **pending** reference geographies |
-| Lighthouse (entry page, desktop) | | | | | Timing, member (Claude): **pending** the credentials file (MergerMeter by Jad as staff) |
-| Known bugs (Workflow board 18397384545) | 13229533844 (2024 HMDA only) + audit findings below | 13229487819 (year range) + audit findings below | 13229522646 (ACS vintage) + audit findings below | audit findings below | Code (Claude); board read **pending** |
+| Timing: entry TTFB | | | | | Timing, member (Claude): see "Measurements" below |
+| Timing: cached analysis (3 runs × 2 geographies) | | | | | Timing, member (Claude): **pending** Jad's uncached runs, which populate the cache |
+| Timing: uncached analysis (2 runs × 2 geographies), BigQuery bytes billed | | | | | Timing, staff (Jad): **pending** the shared PR's query-cache switch (see Timing method) |
+| Lighthouse (entry page, desktop) | | | | | Timing, member (Claude): see "Measurements" below; MergerMeter by Jad as staff |
+| Known bugs (Workflow board 18397384545, all Open) | 13229533844 stuck on 2024 HMDA (High) | 13229487819 year range (Medium) | none on the board (see audit findings) | 11534922159 CBA tool fails on parameter changes (Bug, High); 11535049086 SheetJS preview too narrow (Styling); 11535803754 Total column placement (Styling) | Workflow board, read by Claude 2026-10-07. Platform-wide: 11535494229 dynamic year detection (Critical); 13229522646 ACS vintage; 11223018140 version numbers inconsistent (Bug); 11108736907 final disclaimer language from Rose (Critical, Legal); 11108742102 mobile/tablet responsiveness |
+
+Reference geographies (Jad, 2026-10-07): **Cook County, IL (17031)** as the
+large metro and **Lowndes County, AL (01085)** as the rural county.
+MergerMeter acquirer/target pair and assessment-area mode: **pending Jad**.
+
+## Measurements (testing site, member account, 2026-10-07)
+
+Produced by Claude (Timing, member). Desktop Lighthouse 12, signed in, entry
+page only. TTFB is 10 requests per app, time to the first body byte.
+MergerMeter is staff-only, so its rows are Jad's.
+
+| App | TTFB median / p95 (budget p95 <= 600 ms) | Lighthouse performance (budget >= 85) | Accessibility (>= 95) | Time to interactive (budget <= 1.5 s) | LCP / TBT / CLS |
+|---|---|---|---|---|---|
+| LendSight | 230 / 388 ms | 94 | 96 | 1.3 s | 1.3 s / 0 ms / 0.001 |
+| BizSight | 174 / 178 ms | 96 | 96 | 1.2 s | 1.2 s / 0 ms / 0.001 |
+| BranchSight | 191 / 239 ms | 89 | 96 | **2.1 s (over budget)** | 2.1 s / 0 ms / 0.001 |
+| MergerMeter | pending (Jad, staff) | pending | pending | pending | pending |
+
+The analysis timings (cached runs by Claude, uncached by Jad) are pending; see
+the Timing method section.
+
+## Pending fixes (scope for the shared PR or the named per-app PR)
+
+| Fix | Where | Status |
+|---|---|---|
+| BigQuery job labels per app and run (app, environment, job id) so bytes billed attribute exactly | Shared PR (A5 performance) | Pending |
+| Disable BigQuery's result cache (`use_query_cache=False`) for the duration of an uncached (force-refresh) run, so uncached timings and bytes are real | Shared PR (A5) | Pending |
+| MergerMeter writes to the analysis cache: `_perform_analysis` must return its result | Shared PR | Pending |
+| MergerMeter AI narrative | none | Out of scope until Jad says otherwise |
+| LendSight loads shared `app.js` twice: verify in a browser, then fix | LendSight per-app PR | Pending |
+| Placeholder AI disclosures; joke and policy progress lines; jobs that never end on error; BizSight unbacked QA claims; raw exception text in BizSight and MergerMeter | Hygiene PR #208 | Open, awaiting merge |
 
 ## Findings that matter before testers
 
-These are live on the testing site today. None is fixed by this matrix; each needs a decision or a ticket.
+These were live on the testing site at audit time. Items 1 to 5 are fixed in
+the hygiene PR #208 (open); the rest are tracked above or in the defect list.
 
 1. **Placeholder text in reports testers can open.** The web AI Disclosure in LendSight is lorem ipsum plus "[This disclosure text will be provided by Rose/Legal]". In BranchSight it is "[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]" plus lorem ipsum.
 2. **Joke progress messages.** BranchSight picks one at random while building, from a list that includes "Russell hates this.", "Support the CFPB.", "Beep boop beep." and "I know it's awesome, right?". "Support the CFPB" is a policy statement. LendSight and BizSight progress text is emoji-laden throughout.
@@ -77,6 +110,7 @@ These are live on the testing site today. None is fixed by this matrix; each nee
 ## Timing method (`scripts/time_analysis.py`)
 
 - **What it records:** the time to the first progress event, to `done`, and to `/report-data` returning 200. It also records every progress step with its time, whether the run was a cache hit, any error, and each run's UTC window. Once the shared PR adds a `perf` payload, the per-stage timings come from that.
+- **Uncached runs:** these run with BigQuery's result cache disabled for the duration of the run, via the shared PR's switch above. Until that lands, uncached timings and bytes would be understated, so Jad's uncached runs wait for it.
 - **Bytes billed:** the `bytes` subcommand sums `total_bytes_billed` from `region-us.INFORMATION_SCHEMA.JOBS_BY_PROJECT` for the app's service account (`<app>@justdata-ncrc`) inside each run window.
   - The client sets no job labels, so concurrent traffic under the same service account would also be counted. The shared PR should add job labels (app, environment, job id) so bytes can be attributed exactly.
   - The client sets `use_query_cache=True`. A second "uncached" app run within 24 hours can still hit BigQuery's own result cache and bill 0 bytes. The `bq_cache_hits` column shows this.
