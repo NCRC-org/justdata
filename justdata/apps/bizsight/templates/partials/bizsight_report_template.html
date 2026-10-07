@@ -1,0 +1,90 @@
+{# BizSight report body (spec 04 Part B item 5), cloned into #resultsBody by
+   bs_page.js and filled by bs_report.js. Static wording is carried over from
+   the former /report page; years come from the run (data-bs spans). #}
+<template id="bsReportTemplate">
+<div class="bs-report">
+  <div class="app-summary" id="bsSummary" aria-label="Summary for the most recent year"></div>
+
+  <section class="app-result-section" id="section1">
+    <h3>Section 1: Introduction</h3>
+    <div class="report-prose">
+      <p>This report provides a comprehensive analysis of small business lending activity in <span data-bs="place">the selected county</span> for the most recent five years (<span data-bs="first-year"></span>-<span data-bs="last-year"></span>). The analysis is based on data collected under the <a href="https://ncrc.org/communityreinvestmentact" target="_blank" rel="noopener">Community Reinvestment Act</a> (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
+      <div id="bsIntro"></div>
+    </div>
+    <ul class="bs-notes">
+      <li class="app-note"><strong>Data Coverage.</strong> This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories, lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts.</li>
+      <li class="app-note app-note--caution"><strong>PPP Impact.</strong> In 2020 and 2021, the Paycheck Protection Program (PPP) significantly impacted small business lending patterns. Loan counts and amounts may be elevated during these years.</li>
+      <li class="app-note"><strong>Section 1071.</strong> Section 1071 of the Dodd-Frank Act has still not been implemented. This report does not include borrower demographics.</li>
+    </ul>
+  </section>
+
+  <section class="app-result-section" id="section2">
+    <h3>Section 2: County Summary (<span data-bs="first-year"></span>-<span data-bs="last-year"></span>)</h3>
+    <h4 class="app-table-title">Table 1: County Summary - Number of Loans (<span data-bs="first-year"></span>-<span data-bs="last-year"></span>)</h4>
+    <p class="app-table-intro" id="bsCountyNumberIntro"></p>
+    <div class="app-table-wrap"><table class="app-table bs-table" id="bsCountyNumberTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption">Source: FFIEC CRA Small Business Lending Data, compiled by NCRC.</p>
+    {% with id="bsCountyNumberNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+
+    <h4 class="app-table-title">Table 2: County Summary - Amount of Loans (<span data-bs="first-year"></span>-<span data-bs="last-year"></span>)</h4>
+    <p class="app-table-intro" id="bsCountyAmountIntro"></p>
+    <div class="app-table-wrap"><table class="app-table bs-table" id="bsCountyAmountTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption">Source: FFIEC CRA Small Business Lending Data, compiled by NCRC. Amounts in thousands of dollars.</p>
+    {% with id="bsCountyAmountNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="section3">
+    <h3>Section 3: County, State, and National Comparison (<span data-bs="latest-year"></span>)</h3>
+    <h4 class="app-table-title">Table 1: Geographic Comparison - Number of Loans (<span data-bs="latest-year"></span>)</h4>
+    <p class="app-table-intro" id="bsComparisonNumberIntro"></p>
+    <div class="app-table-wrap"><table class="app-table bs-table" id="bsComparisonNumberTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption">Source: FFIEC CRA Small Business Lending Data, compiled by NCRC.</p>
+    {% with id="bsComparisonNumberNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+
+    <h4 class="app-table-title">Table 2: Geographic Comparison - Amount of Loans (<span data-bs="latest-year"></span>)</h4>
+    <p class="app-table-intro" id="bsComparisonAmountIntro"></p>
+    <div class="app-table-wrap"><table class="app-table bs-table" id="bsComparisonAmountTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption">Source: FFIEC CRA Small Business Lending Data, compiled by NCRC. Amounts in thousands of dollars.</p>
+    {% with id="bsComparisonAmountNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="section4">
+    <h3>Section 4: Top Lenders (<span data-bs="latest-year"></span>)</h3>
+    <h4 class="app-table-title">Table 1: Top Lenders - Number of Loans (<span data-bs="latest-year"></span>)</h4>
+    <p class="app-table-intro" id="bsLendersNumberIntro"></p>
+    <div class="app-table-tools">
+      <p class="app-hint">Select a column header to sort.</p>
+      <button type="button" class="btn btn-ghost btn-sm" id="bsLendersNumberExpand" aria-expanded="false" hidden>Show all lenders</button>
+    </div>
+    <div class="app-table-wrap"><table class="app-table bs-table" id="bsLendersNumberTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption">Source: FFIEC CRA Small Business Lending Data. Column key: &lt;100K/100-250K/250K-1M = loan size categories; Sm Biz = loans to businesses with &lt;$1M revenue; Low/Mod/Mid/Upper = census tract income levels.</p>
+    {% with id="bsLendersNumberNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+
+    <h4 class="app-table-title">Table 2: Top Lenders - Amount of Loans (<span data-bs="latest-year"></span>)</h4>
+    <p class="app-table-intro" id="bsLendersAmountIntro"></p>
+    <div class="app-table-tools">
+      <p class="app-hint">Select a column header to sort.</p>
+      <button type="button" class="btn btn-ghost btn-sm" id="bsLendersAmountExpand" aria-expanded="false" hidden>Show all lenders</button>
+    </div>
+    <div class="app-table-wrap"><table class="app-table bs-table" id="bsLendersAmountTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption">Source: FFIEC CRA Small Business Lending Data. $000s = amounts in thousands. Column key: &lt;100K/100-250K/250K-1M = loan size categories; Sm Biz = loans to businesses with &lt;$1M revenue; Low/Mod/Mid/Upper = census tract income levels.</p>
+    {% with id="bsLendersAmountNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="section5" hidden>
+    <h3>Section 5: Market Concentration</h3>
+    <div class="report-prose">
+      <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+      <p>HHI for small business lending in the selected counties across the selected years:</p>
+    </div>
+    <figure class="app-figure">
+      <figcaption class="app-figure-title">Figure 1: Market Concentration (HHI) by Year</figcaption>
+      <div class="app-chart"><canvas id="bsHhiChart" role="img" aria-label="Market concentration (HHI) of small business lending by year"></canvas></div>
+    </figure>
+    <p class="app-caption"><strong>Source:</strong> FFIEC CRA Small Business Lending data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. HHI values range from 0 to 10,000. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
+    {% with id="bsHhiNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
+  </section>
+
+  {% include "partials/bizsight_methods.html" %}
+</div>
+</template>

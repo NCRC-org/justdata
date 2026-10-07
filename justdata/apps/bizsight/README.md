@@ -1,6 +1,7 @@
 # BizSight
 
-Small Business (Section 1071) lending analysis. Generates county-level
+Small business lending analysis from FFIEC CRA small business disclosure data
+(not Section 1071, which is not yet in force). Generates county-level
 analyses with AI narrative, web report, and PDF/Excel exports.
 
 ## Blueprint
@@ -26,13 +27,20 @@ multi-section report. Excel export via `excel_export.py`; PDF via
 
 ## Templates
 
-`templates/`:
-- `bizsight_analysis.html`, `bizsight_report.html`,
-  `analysis_template.html`, `pdf_report_template.html`
-- `partials/` — `_bizsight_report_head.html`, `_bizsight_report_main.html`,
-  `_bizsight_report_scripts.html`, `_bizsight_report_scripts_footer.html`
+`templates/` (spec 04 standard, see `shared/web/templates/app_page.html`):
+- `bizsight_analysis.html` — extends `app_page.html`; rendered by `/` and by
+  `/report?job_id=` (the shareable report URL), which loads that job's results
+  into the results column
+- `partials/bizsight_controls.html` — steps 1 Geography, 2 Years, 3 Options (staff)
+- `partials/bizsight_report_template.html`, `bizsight_methods.html`,
+  `bizsight_narrative.html` — the report body, cloned into the results column
+- `pdf_report_template.html`
+
+Page scripts live in `shared/web/static/js/bizsight/` (`bs_page.js`,
+`bs_report.js`) on the shared AppRun and AppReport modules, and styles in
+`shared/web/static/css/bizsight.css`.
 
 ## Notes
 
-- Static assets under `static/`, served at `/bizsight/static`.
+- Analysis years: `config.SB_YEARS` (2020 to 2024; ticket 13229487819).
 - Benchmarks regenerated via `generate_benchmarks.py`.

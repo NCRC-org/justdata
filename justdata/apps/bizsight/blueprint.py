@@ -24,6 +24,7 @@ from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
 from justdata.shared.utils.progress_tracker import create_progress_tracker, get_progress
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
+from justdata.shared.web.app_page import app_page_context
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
@@ -63,38 +64,47 @@ def configure_template_loader(state):
     ])
 
 
+def _page(job_id=None):
+    """The BizSight page (spec 04 standard). /report?job_id= renders the same
+    page; its script then loads that job's results into the results column."""
+    user_permissions = get_user_permissions()
+    years = list(BizSightConfig.SB_YEARS)
+    ctx = app_page_context(
+        'bizsight',
+        form_id='bsForm',
+        data_vintage=f'CRA small business {years[0]} to {years[-1]}',
+        sources=[
+            {'name': 'CRA small business',
+             'vintage': f'{years[0]} to {years[-1]}. FFIEC CRA disclosure data: loans of $1 million or '
+                        'less reported by covered banks; state and national comparisons from the same data',
+             'url': 'https://www.ffiec.gov/cra/craproducts.htm'},
+        ],
+        help_url=None,
+        methods_anchor='section6',
+        exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
+        # No exclusion_note: no "matched with confidence" exclusion in BizSight's
+        # code (spec 04 decision 2; outcome recorded in the matrix).
+        shows_juxtaposition=True,
+    )
+    response = make_response(render_template(
+        'bizsight_analysis.html',
+        **ctx,
+        is_staff=is_privileged_user(get_user_type()),
+        analysis_years=years,
+        app_base_url=url_for('bizsight.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'BizSight', 'url': '/bizsight'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
+
+
 @bizsight_bp.route('/')
 @login_required
 @require_access('bizsight', 'limited')
 def index():
-    """Main page with the US map for county selection."""
-    user_permissions = get_user_permissions()
-    user_type = get_user_type()
-    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
-    is_staff = is_privileged_user(user_type)
-    app_base_url = url_for('bizsight.index').rstrip('/')
-
-    # Breadcrumb for main page
-    breadcrumb_items = [{'name': 'BizSight', 'url': '/bizsight'}]
-
-    # Force template reload by clearing cache before rendering
-    response = make_response(render_template(
-        'bizsight_analysis.html',
-        version=BizSightConfig.APP_VERSION,
-        permissions=user_permissions,
-        is_staff=is_staff,
-        app_base_url=app_base_url,
-        app_name='BizSight',
-        breadcrumb_items=breadcrumb_items
-    ))
-    # Add aggressive cache-busting headers
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    import time
-    response.headers['ETag'] = f'"{int(time.time())}"'
-    response.headers['Last-Modified'] = datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT')
-    return response
+    """Main page with the analysis form."""
+    return _page()
 
 
 @bizsight_bp.route('/progress/<job_id>')
@@ -492,27 +502,11 @@ def get_tract_boundaries_endpoint(geoid5):
 @login_required
 @require_access('bizsight', 'limited')
 def report():
-    """Report display page."""
-    job_id = request.args.get('job_id')
-    if not job_id:
-        return jsonify({'error': 'Job ID required'}), 400
-
-    # Pass app_base_url so template can correctly construct API URLs
-    app_base_url = url_for('bizsight.index').rstrip('/')
-
-    # Breadcrumb for report page
-    breadcrumb_items = [
-        {'name': 'BizSight', 'url': '/bizsight'},
-        {'name': 'Report', 'url': '/bizsight/report'}
-    ]
-
-    return render_template(
-        'bizsight_report.html',
-        job_id=job_id,
-        app_base_url=app_base_url,
-        app_name='BizSight',
-        breadcrumb_items=breadcrumb_items
-    )
+    """Shareable report URL: the BizSight page with this job's results."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id=job_id)
 
 
 @bizsight_bp.route('/report-data', methods=['GET'])

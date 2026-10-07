@@ -1,0 +1,9 @@
+/* BizSight report body (spec 04 Part B): only what app.css does not cover.
+   Tokens only; every selector is prefixed .bs-. */
+.bs-notes { list-style: none; padding: 0; margin: var(--s-4) 0 0; display: grid; gap: var(--s-2); }
+.bs-notes .app-note { margin: 0; }
+.bs-table { font-size: 13px; }
+.bs-table th, .bs-table td { padding: 6px; white-space: nowrap; }
+.bs-copyright { text-align: center; color: var(--color-fg-muted); margin-top: var(--s-5); }
+/* Long variable names ("Amount to Businesses Under $1M Revenue (% of Total)") wrap */
+.bs-table th[scope="row"] { white-space: normal; min-width: 11em; max-width: 17em; line-height: 1.3; }
