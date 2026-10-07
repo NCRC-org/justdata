@@ -89,6 +89,15 @@ class TestProgressStream:
                    if b.startswith("data: ")]
         assert [e["percent"] for e in unnamed] == [88, 100]
 
+    def test_no_hop_by_hop_connection_header(self, app):
+        """PEP 3333 forbids apps from setting Connection. Under the local
+        werkzeug server it made Chrome reuse the finished stream's socket and
+        strand the next request (the report fetch) indefinitely."""
+        with app.test_request_context():
+            resp = sse_response("job-1")
+        assert "Connection" not in resp.headers
+        assert resp.headers["Cache-Control"] == "no-cache"
+
     def test_survives_a_transient_read_failure(self, app):
         """A blip reading the progress store must not drop a running analysis."""
         body = self._stream(app, [
