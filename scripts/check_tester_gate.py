@@ -4,8 +4,11 @@
 Signs in with a real account, exchanges the Firebase ID token for an app
 session the same way auth.js does (POST /api/auth/login), then requests a
 fixed set of routes and checks each one is open or blocked as expected for
-that account's role. It also runs the same routes signed out. One command,
-both checks; exits nonzero on any failure.
+that account's role. It also runs the same routes signed out. Signed in, a
+"redirect scheme" row requests /analytics without following the redirect and
+passes only if the Location is https:// (SKIP for public_registered, whom the
+gate stops before the redirect). One command, both checks; exits nonzero on
+any failure.
 
 Credentials come only from the environment (TEST_EMAIL, TEST_PASSWORD). They
 are never printed, logged or written anywhere, and neither is the ID token.
@@ -122,6 +125,25 @@ def run(label, session, base_url, expected):
     return rows, failures
 
 
+# Roles the global gate stops before Flask's trailing-slash redirect runs:
+# they get the restricted page (200, no Location), so the row cannot apply.
+REDIRECT_SCHEME_NOT_APPLICABLE = ("public_registered",)
+
+
+def redirect_scheme_row(label, session, base_url):
+    """Request /analytics (no slash) without following; Flask answers with a
+    redirect to /analytics/. PASS only if its Location is https://, which
+    proves ProxyFix is honoring Cloud Run's X-Forwarded-Proto."""
+    if label in REDIRECT_SCHEME_NOT_APPLICABLE:
+        return (label, "redirect scheme", "https", "n/a",
+                "gate answers before the redirect; run with --role member", "SKIP"), False
+    resp = session.get(base_url + "/analytics", timeout=TIMEOUT, allow_redirects=False)
+    location = resp.headers.get("Location", "")
+    ok = resp.status_code in (301, 302, 303, 307, 308) and location.startswith("https://")
+    detail = f"{resp.status_code} -> {location or '(no Location)'}"
+    return (label, "redirect scheme", "https", "https" if ok else "not https", detail, "PASS" if ok else "FAIL"), not ok
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--role", choices=[r for r in EXPECTED if r != "signed_out"], default="public_registered",
@@ -142,6 +164,9 @@ def main():
     signed_rows, signed_failures = run(args.role, session, base_url, EXPECTED[args.role])
     rows += signed_rows
     failures += signed_failures
+    scheme_row, scheme_failed = redirect_scheme_row(args.role, session, base_url)
+    rows.append(scheme_row)
+    failures += scheme_failed
 
     print(f"Site: {base_url}")
     print(f"Account role reported by /api/auth/login: {user_type} "
