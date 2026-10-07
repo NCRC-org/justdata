@@ -168,3 +168,16 @@ def test_timeout_paths(elapsed_s, since_update_s, expected):
     started = now - elapsed_s * 1000
     last_update = now - since_update_s * 1000
     assert _node(f"AppStates.timeoutReason({now}, {started}, {last_update})") == expected
+
+
+def test_idle_text_default_and_override(debug_app):
+    from flask import render_template
+    with debug_app.test_request_context("/"):
+        default = render_template("partials/app_state_idle.html")
+        custom = render_template("partials/app_state_idle.html",
+                                 idle_message="Choose a geography and a lender, then run the analysis.")
+    assert 'Choose a geography<span class="app-wide-only"> on the left</span>, then run the analysis.' in default
+    assert "lender" not in default
+    assert "Choose a geography and a lender, then run the analysis." in custom
+    assert "app-wide-only" not in custom
+    assert ".app-wide-only { display: none; }" in APP_CSS.read_text()
