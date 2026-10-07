@@ -95,3 +95,18 @@ def test_other_deploys_keep_the_staff_only_gate(platform_app, monkeypatch, env, 
         monkeypatch.setenv("JUSTDATA_ENV", env)
     for path in ("/", "/about", "/contact", "/apps", "/lendsight/"):
         assert _is_restricted(_get(platform_app, path, user_type), path), (env, path)
+
+
+@pytest.mark.parametrize("user_type", TESTER_ROLES)
+def test_status_dashboard_is_staff_only(platform_app, monkeypatch, user_type):
+    monkeypatch.setenv("JUSTDATA_ENV", "testing")
+    resp = _get(platform_app, "/status", user_type)
+    assert resp.status_code in (302, 403)
+    assert "Status Dashboard" not in resp.get_data(as_text=True)
+
+
+def test_status_dashboard_still_renders_for_staff(platform_app, monkeypatch):
+    monkeypatch.setenv("JUSTDATA_ENV", "testing")
+    resp = _get(platform_app, "/status", "staff")
+    assert resp.status_code == 200
+    assert "Status Dashboard" in resp.get_data(as_text=True)

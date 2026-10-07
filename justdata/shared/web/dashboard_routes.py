@@ -6,6 +6,8 @@ These routes serve the HTML dashboard pages (landing, admin, analytics, status).
 from flask import render_template, Blueprint
 import os
 
+from justdata.main.auth import staff_required
+
 # Get the templates directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'justdata', 'shared', 'web', 'templates')
@@ -38,8 +40,13 @@ def admin_dashboard():
 
 
 @dashboard_bp.route('/status')
+@staff_required
 def status_dashboard():
-    """Serve the status dashboard."""
+    """Serve the status dashboard (staff roles only).
+
+    Internal page; it had no access check of its own and relied on the global
+    staff-only gate, which tester roles pass on the testing deploy.
+    """
     from flask import url_for
     return render_template('status-dashboard.html', landing_url=url_for('landing'))
 
