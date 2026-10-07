@@ -360,7 +360,7 @@ def download():
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
 
-        report_data = analysis_result.get('report_data', {})
+        report_data = _as_frames(analysis_result.get('report_data', {}))
         metadata = analysis_result.get('metadata', {})
 
         if not report_data:
@@ -380,12 +380,27 @@ def download():
             return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, csv, json, zip'}), 400
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': f'Download failed: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': user_error(
+            "We couldn't build this download.", exc=e, context='branchsight /download')[0]}), 500
+
+
+# Tables the workbook, CSV and PDF read as DataFrames. A result read back from
+# the analysis cache holds them as lists of records.
+_FRAME_KEYS = ('summary', 'by_bank', 'by_county', 'trends', 'raw_data')
+
+
+def _as_frames(report_data):
+    import pandas as pd
+    out = dict(report_data or {})
+    for key in _FRAME_KEYS:
+        if isinstance(out.get(key), list):
+            out[key] = pd.DataFrame(out[key])
+    return out
+
+
+def _county_slug(metadata):
+    counties = (metadata or {}).get('counties') or []
+    return str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
 
 
 def _add_methods_sheet(excel_path, metadata):
@@ -418,7 +433,7 @@ def _add_methods_sheet(excel_path, metadata):
     rows = [
         ('Methods & Definitions', ''),
         ('', ''),
-        ('Data Source', 'FDIC Summary of Deposits (SOD), accessed through the FDIC BankFind API and NCRC\'s BigQuery data warehouse'),
+        ('Data Source', 'FDIC Summary of Deposits (SOD), from NCRC\'s BigQuery copy (branchsight.sod for the latest year, branchsight.sod_legacy for earlier years)'),
         ('Geography', geography),
         ('Years Analyzed', years_str),
         ('', ''),
@@ -427,9 +442,7 @@ def _add_methods_sheet(excel_path, metadata):
         ('SOD (Summary of Deposits)', 'Annual survey of branch office deposits for all FDIC-insured institutions, collected as of June 30 each year'),
         ('HHI (Herfindahl-Hirschman Index)', 'Market concentration measure calculated as the sum of squared deposit market shares \u00d7 10,000. HHI < 1,500 = unconcentrated; 1,500-2,500 = moderately concentrated; > 2,500 = highly concentrated'),
         ('Deposit Market Share', 'Institution\'s deposits as a percentage of total deposits in the geographic area'),
-        ('Branch Count', 'Number of physical branch offices (excludes ATMs and loan production offices)'),
-        ('FDIC Certificate Number', 'Unique identifier assigned by FDIC to each insured institution'),
-        ('Institution Type', 'Charter type (National Bank, State Bank, Savings Association, etc.)'),
+        ('Branch Count', 'Number of unique branch offices (FDIC unique institution number, uninumbr) reported in the Summary of Deposits. No service-type filter is applied'),
         ('Net Change', 'Difference in branch count or deposits between time periods'),
         ('LMI Census Tract', 'Low-to-Moderate Income census tract as defined by FFIEC'),
         ('MMCT', 'Majority-Minority Census Tract where over 50% of the population belongs to a racial or ethnic minority group'),
@@ -477,7 +490,7 @@ def download_excel(report_data, metadata):
         response = send_file(
             tmp_path,
             as_attachment=True,
-            download_name=f'branchsight_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            download_name=f'BranchSight_{_county_slug(metadata)}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
@@ -491,9 +504,7 @@ def download_excel(report_data, metadata):
 
         return response
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Excel export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight Excel export')[0]}), 500
 
 
 def download_pdf(report_data, metadata, analysis_result):
@@ -532,9 +543,7 @@ def download_pdf(report_data, metadata, analysis_result):
 
         return response
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'PDF export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight PDF export')[0]}), 500
 
 
 def download_csv(report_data, metadata):
@@ -562,7 +571,7 @@ def download_csv(report_data, metadata):
             }
         )
     except Exception as e:
-        return jsonify({'error': f'CSV export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight CSV export')[0]}), 500
 
 
 def download_json(report_data, metadata):
@@ -591,7 +600,7 @@ def download_json(report_data, metadata):
             }
         )
     except Exception as e:
-        return jsonify({'error': f'JSON export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight JSON export')[0]}), 500
 
 
 def download_zip(report_data, metadata, analysis_result=None):
@@ -633,9 +642,7 @@ def download_zip(report_data, metadata, analysis_result=None):
                 }
             )
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'ZIP export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight ZIP export')[0]}), 500
 
 
 @branchsight_bp.route('/counties')
