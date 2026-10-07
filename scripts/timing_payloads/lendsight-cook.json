@@ -1,0 +1,16 @@
+{
+  "selection_type": "county",
+  "state_code": "17",
+  "loan_purpose": [
+    "purchase"
+  ],
+  "counties": "Cook County, Illinois",
+  "counties_data": [
+    {
+      "name": "Cook County, Illinois",
+      "geoid5": "17031",
+      "state_fips": "17",
+      "county_fips": "031"
+    }
+  ]
+}
