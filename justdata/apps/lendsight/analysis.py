@@ -244,7 +244,7 @@ class LendSightAnalyzer(AIAnalyzer):
         - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
         """
         
-        return self._call_ai(prompt, max_tokens=400, temperature=0.3)
+        return self._call_ai(prompt, max_tokens=800, temperature=0.3)
     
     def generate_trends_analysis(self, data: Dict[str, Any]) -> str:
         """Analyze overall mortgage origination trends."""
@@ -830,7 +830,7 @@ TABLE DATA:
 {json.dumps(income_borrowers_data, indent=2)[:2000] if income_borrowers_data else 'Not available - cannot generate analysis without data'}
 """
 
-        return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+        return self._call_ai(prompt, max_tokens=500, temperature=0.3)
 
     def generate_income_tracts_discussion(self, data: Dict[str, Any]) -> str:
         """Generate 1 paragraph (max) discussing Section 2 Table 2: Lending to Census Tracts by Income Level."""
@@ -886,7 +886,7 @@ TABLE DATA:
 {json.dumps(income_tracts_data, indent=2)[:2000] if income_tracts_data else 'Not available - cannot generate analysis without data'}
 """
 
-        return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+        return self._call_ai(prompt, max_tokens=500, temperature=0.3)
 
     def generate_minority_tracts_discussion(self, data: Dict[str, Any]) -> str:
         """Generate 1 paragraph (max) discussing Section 2 Table 3: Lending to Census Tracts by Minority Population."""
@@ -942,7 +942,7 @@ TABLE DATA:
 {json.dumps(minority_tracts_data, indent=2)[:2000] if minority_tracts_data else 'Not available - cannot generate analysis without data'}
 """
 
-        return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+        return self._call_ai(prompt, max_tokens=500, temperature=0.3)
 
     def _market_concentration_block(self, market_concentration_data, state_data=None) -> str:
         """Section 4 instructions, shared by the combined call and the
@@ -1648,7 +1648,7 @@ TABLE DATA:
         else:
             return ""
         
-        return self._call_ai(prompt, max_tokens=600, temperature=0.3)
+        return self._call_ai(prompt, max_tokens=900, temperature=0.3)
     
     def _get_population_context(self, data: Dict[str, Any]) -> str:
         """Extract population demographics from most recent Census data for prompt context."""
