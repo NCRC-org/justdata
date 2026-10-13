@@ -60,7 +60,7 @@ NAV_GROUPS = (
     NavGroup("Analyze branches", (
         AppEntry("branchsight", "BranchSight", "/branchsight",
                  "Branch openings, closures and deposit share over time.",
-                 ("FDIC SOD", "Census ACS"),
+                 ("FDIC SOD", "FFIEC census"),
                  "Where are banks opening and closing branches, and how many serve "
                  "low- and moderate-income and majority-minority neighborhoods?"),
     )),

@@ -60,3 +60,9 @@ def test_tract_context_uses_the_branch_flag_definitions(monkeypatch):
     assert g["mmct_only"] == {"tracts": 1, "population": 500}
     assert g["lmi_only"] == {"tracts": 1, "population": 400}
     assert "shared.census" in seen["sql"] and seen["params"][0].value == "01085"
+
+
+def test_header_names_the_ffiec_census_data():
+    from justdata.shared.web.registry import NAV_GROUPS
+    entry = [a for g in NAV_GROUPS for a in g.items if a.key == "branchsight"][0]
+    assert entry.sources == ("FDIC SOD", "FFIEC census")
