@@ -18,7 +18,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from justdata.apps.bizsight.config import BizSightConfig
 from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
 from justdata.shared.utils.progress_tracker import ProgressTracker
-from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, safe_int, safe_float
+from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, classified_totals, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
 from justdata.shared.utils.error_ref import GENERIC_ERROR, user_error
 from justdata.shared.utils.perf import perf_stages, start_perf, timed
@@ -342,6 +342,9 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                         state_middle_income_amount = float(row.get('middle_income_amount', 0.0))
                         state_upper_income_amount = float(row.get('upper_income_amount', 0.0))
                         
+                        # Tract income shares on the classified basis, as in the benchmark files
+                        state_classified = state_low_income_loans + state_moderate_income_loans + state_middle_income_loans + state_upper_income_loans
+                        state_classified_amount = state_low_income_amount + state_moderate_income_amount + state_middle_income_amount + state_upper_income_amount
                         state_benchmarks = {
                             'total_loans': state_total,
                             'total_amount': state_amount,
@@ -349,19 +352,19 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                             'pct_loans_100k_250k': (state_num_100k_250k / state_total * 100) if state_total > 0 else 0.0,
                             'pct_loans_250k_1m': (state_num_250k_1m / state_total * 100) if state_total > 0 else 0.0,
                             'pct_loans_sb_under_1m': (state_numsb_under_1m / state_total * 100) if state_total > 0 else 0.0,
-                            'pct_loans_lmi_tract': (state_lmi_loans / state_total * 100) if state_total > 0 else 0.0,
+                            'pct_loans_lmi_tract': (state_lmi_loans / state_classified * 100) if state_classified > 0 else 0.0,
                             'pct_amount_under_100k': (state_amt_under_100k / state_amount * 100) if state_amount > 0 else 0.0,
                             'pct_amount_250k_1m': (state_amt_250k_1m / state_amount * 100) if state_amount > 0 else 0.0,
                             'pct_amount_sb_under_1m': (state_amtsb_under_1m / state_amount * 100) if state_amount > 0 else 0.0,
                             # Income category percentages
-                            'pct_loans_low_income': (state_low_income_loans / state_total * 100) if state_total > 0 else 0.0,
-                            'pct_loans_moderate_income': (state_moderate_income_loans / state_total * 100) if state_total > 0 else 0.0,
-                            'pct_loans_middle_income': (state_middle_income_loans / state_total * 100) if state_total > 0 else 0.0,
-                            'pct_loans_upper_income': (state_upper_income_loans / state_total * 100) if state_total > 0 else 0.0,
-                            'pct_amount_low_income': (state_low_income_amount / state_amount * 100) if state_amount > 0 else 0.0,
-                            'pct_amount_moderate_income': (state_moderate_income_amount / state_amount * 100) if state_amount > 0 else 0.0,
-                            'pct_amount_middle_income': (state_middle_income_amount / state_amount * 100) if state_amount > 0 else 0.0,
-                            'pct_amount_upper_income': (state_upper_income_amount / state_amount * 100) if state_amount > 0 else 0.0
+                            'pct_loans_low_income': (state_low_income_loans / state_classified * 100) if state_classified > 0 else 0.0,
+                            'pct_loans_moderate_income': (state_moderate_income_loans / state_classified * 100) if state_classified > 0 else 0.0,
+                            'pct_loans_middle_income': (state_middle_income_loans / state_classified * 100) if state_classified > 0 else 0.0,
+                            'pct_loans_upper_income': (state_upper_income_loans / state_classified * 100) if state_classified > 0 else 0.0,
+                            'pct_amount_low_income': (state_low_income_amount / state_classified_amount * 100) if state_classified_amount > 0 else 0.0,
+                            'pct_amount_moderate_income': (state_moderate_income_amount / state_classified_amount * 100) if state_classified_amount > 0 else 0.0,
+                            'pct_amount_middle_income': (state_middle_income_amount / state_classified_amount * 100) if state_classified_amount > 0 else 0.0,
+                            'pct_amount_upper_income': (state_upper_income_amount / state_classified_amount * 100) if state_classified_amount > 0 else 0.0
                         }
                         print(f"DEBUG: State benchmarks loaded from BigQuery: {state_benchmarks}")
                 except Exception as e:
@@ -398,6 +401,9 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                         national_middle_income_amount = float(row.get('middle_income_amount', 0.0))
                         national_upper_income_amount = float(row.get('upper_income_amount', 0.0))
                         
+                        # Tract income shares on the classified basis, as in the benchmark files
+                        national_classified = national_low_income_loans + national_moderate_income_loans + national_middle_income_loans + national_upper_income_loans
+                        national_classified_amount = national_low_income_amount + national_moderate_income_amount + national_middle_income_amount + national_upper_income_amount
                         national_benchmarks = {
                             'total_loans': national_total,
                             'total_amount': national_amount,
@@ -405,19 +411,19 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                             'pct_loans_100k_250k': (national_num_100k_250k / national_total * 100) if national_total > 0 else 0.0,
                             'pct_loans_250k_1m': (national_num_250k_1m / national_total * 100) if national_total > 0 else 0.0,
                             'pct_loans_sb_under_1m': (national_numsb_under_1m / national_total * 100) if national_total > 0 else 0.0,
-                            'pct_loans_lmi_tract': (national_lmi_loans / national_total * 100) if national_total > 0 else 0.0,
+                            'pct_loans_lmi_tract': (national_lmi_loans / national_classified * 100) if national_classified > 0 else 0.0,
                             'pct_amount_under_100k': (national_amt_under_100k / national_amount * 100) if national_amount > 0 else 0.0,
                             'pct_amount_250k_1m': (national_amt_250k_1m / national_amount * 100) if national_amount > 0 else 0.0,
                             'pct_amount_sb_under_1m': (national_amtsb_under_1m / national_amount * 100) if national_amount > 0 else 0.0,
                             # Income category percentages
-                            'pct_loans_low_income': (national_low_income_loans / national_total * 100) if national_total > 0 else 0.0,
-                            'pct_loans_moderate_income': (national_moderate_income_loans / national_total * 100) if national_total > 0 else 0.0,
-                            'pct_loans_middle_income': (national_middle_income_loans / national_total * 100) if national_total > 0 else 0.0,
-                            'pct_loans_upper_income': (national_upper_income_loans / national_total * 100) if national_total > 0 else 0.0,
-                            'pct_amount_low_income': (national_low_income_amount / national_amount * 100) if national_amount > 0 else 0.0,
-                            'pct_amount_moderate_income': (national_moderate_income_amount / national_amount * 100) if national_amount > 0 else 0.0,
-                            'pct_amount_middle_income': (national_middle_income_amount / national_amount * 100) if national_amount > 0 else 0.0,
-                            'pct_amount_upper_income': (national_upper_income_amount / national_amount * 100) if national_amount > 0 else 0.0
+                            'pct_loans_low_income': (national_low_income_loans / national_classified * 100) if national_classified > 0 else 0.0,
+                            'pct_loans_moderate_income': (national_moderate_income_loans / national_classified * 100) if national_classified > 0 else 0.0,
+                            'pct_loans_middle_income': (national_middle_income_loans / national_classified * 100) if national_classified > 0 else 0.0,
+                            'pct_loans_upper_income': (national_upper_income_loans / national_classified * 100) if national_classified > 0 else 0.0,
+                            'pct_amount_low_income': (national_low_income_amount / national_classified_amount * 100) if national_classified_amount > 0 else 0.0,
+                            'pct_amount_moderate_income': (national_moderate_income_amount / national_classified_amount * 100) if national_classified_amount > 0 else 0.0,
+                            'pct_amount_middle_income': (national_middle_income_amount / national_classified_amount * 100) if national_classified_amount > 0 else 0.0,
+                            'pct_amount_upper_income': (national_upper_income_amount / national_classified_amount * 100) if national_classified_amount > 0 else 0.0
                         }
                         print(f"DEBUG: National benchmarks loaded from BigQuery: {national_benchmarks}")
                 except Exception as e:
@@ -944,9 +950,21 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             lmi_tract_amount_calculated = summary_low_income_amount + summary_moderate_income_amount
             print(f"DEBUG: LMI tract data: loans={lmi_tract_loans_calculated}, amount={lmi_tract_amount_calculated}")
 
-        # Calculate LMI percentages
-        pct_loans_to_lmi = (lmi_tract_loans_calculated / summary_total_loans * 100) if summary_total_loans > 0 else 0.0
-        pct_dollars_to_lmi = (lmi_tract_amount_calculated / summary_total_amount * 100) if summary_total_amount > 0 else 0.0
+        # Tract income shares divide by loans with a tract income classification
+        # (the state and national basis); the excluded count is shown under Section 3.
+        classified_loans, classified_amount = classified_totals(summary_2024_df)
+        unclassified_loans = max(summary_total_loans - classified_loans, 0)
+        pct_loans_to_lmi = (lmi_tract_loans_calculated / classified_loans * 100) if classified_loans > 0 else 0.0
+        pct_dollars_to_lmi = (lmi_tract_amount_calculated / classified_amount * 100) if classified_amount > 0 else 0.0
+
+        # First-year LMI amount for the summary strip's change; the Section 2
+        # share no longer multiplies back to it.
+        lmi_tract_amount_first_year = None
+        if 'year' in aggregate_df.columns and 'low_income_amount' in aggregate_df.columns and years:
+            first_df = aggregate_df[aggregate_df['year'].astype(str) == str(min(years))]
+            if not first_df.empty:
+                lmi_tract_amount_first_year = float(first_df['low_income_amount'].fillna(0).sum()) + (
+                    float(first_df['moderate_income_amount'].fillna(0).sum()) if 'moderate_income_amount' in first_df.columns else 0.0)
 
         summary_table = {
             'total_loans': summary_total_loans,  # Use calculated total from summary_2024_df, not summary_row
@@ -955,17 +973,19 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             'pct_dollars_to_lmi_tracts': pct_dollars_to_lmi,
             'lmi_tract_loans': lmi_tract_loans_calculated,
             'lmi_tract_amount': lmi_tract_amount_calculated,
+            'lmi_tract_amount_first_year': lmi_tract_amount_first_year,
+            'unclassified_loans': unclassified_loans,
             'amtsb_under_1m': amtsb_under_1m,  # Use value extracted from aggregate data (in thousands)
             'pct_amount_sb_under_1m': pct_amount_sb_under_1m,  # Percentage for JavaScript fallback
             # Income category percentages
-            'pct_loans_low_income': (summary_low_income_loans / summary_total_loans * 100) if summary_total_loans > 0 else 0.0,
-            'pct_loans_moderate_income': (summary_moderate_income_loans / summary_total_loans * 100) if summary_total_loans > 0 else 0.0,
-            'pct_loans_middle_income': (summary_middle_income_loans / summary_total_loans * 100) if summary_total_loans > 0 else 0.0,
-            'pct_loans_upper_income': (summary_upper_income_loans / summary_total_loans * 100) if summary_total_loans > 0 else 0.0,
-            'pct_amount_low_income': (summary_low_income_amount / summary_total_amount * 100) if summary_total_amount > 0 else 0.0,
-            'pct_amount_moderate_income': (summary_moderate_income_amount / summary_total_amount * 100) if summary_total_amount > 0 else 0.0,
-            'pct_amount_middle_income': (summary_middle_income_amount / summary_total_amount * 100) if summary_total_amount > 0 else 0.0,
-            'pct_amount_upper_income': (summary_upper_income_amount / summary_total_amount * 100) if summary_total_amount > 0 else 0.0
+            'pct_loans_low_income': (summary_low_income_loans / classified_loans * 100) if classified_loans > 0 else 0.0,
+            'pct_loans_moderate_income': (summary_moderate_income_loans / classified_loans * 100) if classified_loans > 0 else 0.0,
+            'pct_loans_middle_income': (summary_middle_income_loans / classified_loans * 100) if classified_loans > 0 else 0.0,
+            'pct_loans_upper_income': (summary_upper_income_loans / classified_loans * 100) if classified_loans > 0 else 0.0,
+            'pct_amount_low_income': (summary_low_income_amount / classified_amount * 100) if classified_amount > 0 else 0.0,
+            'pct_amount_moderate_income': (summary_moderate_income_amount / classified_amount * 100) if classified_amount > 0 else 0.0,
+            'pct_amount_middle_income': (summary_middle_income_amount / classified_amount * 100) if classified_amount > 0 else 0.0,
+            'pct_amount_upper_income': (summary_upper_income_amount / classified_amount * 100) if classified_amount > 0 else 0.0
         }
         
         # Check which income categories have census tracts in the county

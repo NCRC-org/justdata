@@ -146,8 +146,9 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', ''))
         
         notes_content.append(('Calculations', ''))
-        notes_content.append(('', 'Percent of loans to income tracts: (Loans in income category / Total loans) × 100'))
-        notes_content.append(('', 'Percent of dollars to income tracts: (Dollars in income category / Total dollars) × 100'))
+        notes_content.append(('', 'Percent of loans to income tracts: (Loans in income category / Loans with a tract income classification) × 100'))
+        notes_content.append(('', 'Percent of dollars to income tracts: (Dollars in income category / Dollars with a tract income classification) × 100'))
+        notes_content.append(('', 'Loans with no tract income classification are left out of every tract income share (county, state, national and lender); totals include them.'))
         notes_content.append(('', 'Amounts are shown in thousands of dollars unless otherwise noted.'))
         notes_content.append(('', 'Quartiles for map layers: Data divided into 4 equal groups (Q1 = lowest, Q4 = highest)'))
         notes_content.append(('', ''))
