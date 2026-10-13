@@ -2,7 +2,10 @@
    (app_page_context); a button that opens nothing is never shipped.
    methods_anchor: id of the Methods section inside the rendered results. The
    link sits in #resultsActions, which is shown only after a successful run,
-   so it never points at a section that is not on the page (Jad, 2026-10-07). #}
+   so it never points at a section that is not on the page (Jad, 2026-10-07).
+   results_link: {id, label, href}, one app page reachable from a run's
+   results; the app's script points href at the run (MergerMeter's Goals
+   Calculator). #}
 <div class="app-results-toolbar">
   <h2 class="app-results-title" id="resultsTitle">Results</h2>
   <div class="app-results-actions" id="resultsActions" hidden>
@@ -11,5 +14,6 @@
     {% if 'pdf' in exports %}<button type="button" class="btn btn-secondary btn-sm" data-export="pdf">Download report</button>{% endif %}
     <button type="button" class="btn btn-ghost btn-sm" data-action="copy-citation">Copy citation</button>
     {% if methods_anchor %}<a class="btn btn-ghost btn-sm" href="#{{ methods_anchor }}">Methods →</a>{% endif %}
+    {% if results_link %}<a class="btn btn-ghost btn-sm" id="{{ results_link.id }}" href="{{ results_link.href }}">{{ results_link.label }}</a>{% endif %}
   </div>
 </div>
