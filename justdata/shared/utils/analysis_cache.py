@@ -157,9 +157,17 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
             normalized['acquirer_aa'] = str(acquirer_aa)
             normalized['target_aa'] = str(target_aa)
         
-        normalized['hmda_years'] = ','.join(sorted([y.strip() for y in (params.get('hmda_years') or '').split(',') if y.strip()]))
-        normalized['sb_years'] = ','.join(sorted([y.strip() for y in (params.get('sb_years') or '').split(',') if y.strip()]))
-        normalized['loan_purpose'] = (params.get('loan_purpose') or '1').strip()
+        # Every setting that changes the workbook keys the cache. The page
+        # sends year ranges as start/end fields (never hmda_years/sb_years),
+        # and '' for loan purpose means all purposes, so it must not become
+        # '1' (home purchase); before 2026-10-13 runs that differed only in
+        # these shared a key.
+        for field in ('hmda_start_year', 'hmda_end_year', 'sb_start_year', 'sb_end_year',
+                      'baseline_hmda_start_year', 'baseline_hmda_end_year',
+                      'baseline_sb_start_year', 'baseline_sb_end_year',
+                      'peer_group', 'use_national_data', 'acquirer_sb_id', 'target_sb_id'):
+            normalized[field] = str(params.get(field) or '').strip()
+        normalized['loan_purpose'] = str(params.get('loan_purpose') or '').strip()
         normalized['action_taken'] = (params.get('action_taken') or '1').strip()
         normalized['occupancy_type'] = (params.get('occupancy_type') or '1').strip()
         normalized['total_units'] = (params.get('total_units') or '1-4').strip()

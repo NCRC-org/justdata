@@ -82,3 +82,24 @@ def test_lendsight_key_carries_its_report_revision():
     params = {'counties': 'Hillsborough County, Florida', 'years': '2021,2022,2023,2024,2025',
               'loan_purpose': ['purchase'], 'selection_type': 'county', 'state_code': '12'}
     assert normalize_parameters('lendsight', params)['revision'] == 3
+
+
+MERGERMETER_FORM = {
+    'acquirer_lei': '549300ZTT08EKQRVTR15', 'acquirer_rssd': '693224', 'acquirer_sb_id': '0000693224',
+    'target_lei': 'DX0JX77PRMOELF7VG772', 'target_rssd': '395238', 'target_sb_id': '0000395238',
+    'acquirer_assessment_areas': '[{"cbsa_name": "A", "counties": ["X County, Virginia"]}]',
+    'target_assessment_areas': '[]', 'use_national_data': '0', 'loan_purpose': '', 'peer_group': 'volume_50_200',
+    'hmda_start_year': '2023', 'hmda_end_year': '2025', 'sb_start_year': '2023', 'sb_end_year': '2024',
+    'baseline_hmda_start_year': '2023', 'baseline_hmda_end_year': '2025',
+    'baseline_sb_start_year': '2023', 'baseline_sb_end_year': '2024',
+    'action_taken': '1', 'occupancy_type': '1', 'total_units': '1,2,3,4', 'construction_method': '1,2', 'not_reverse': '1',
+}
+
+
+def test_mergermeter_key_covers_every_setting_that_changes_the_workbook():
+    base = generate_cache_key('mergermeter', MERGERMETER_FORM)
+    assert generate_cache_key('mergermeter', dict(MERGERMETER_FORM)) == base
+    for field, value in (('hmda_start_year', '2021'), ('sb_end_year', '2023'), ('baseline_hmda_end_year', '2024'),
+                         ('peer_group', 'all_banks'), ('use_national_data', '1'), ('loan_purpose', '1'),
+                         ('target_sb_id', '0000000001')):
+        assert generate_cache_key('mergermeter', dict(MERGERMETER_FORM, **{field: value})) != base, field
