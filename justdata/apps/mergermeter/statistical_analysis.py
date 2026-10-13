@@ -7,6 +7,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 import warnings
+
+from justdata.shared.utils.error_ref import user_error
+
+# Shown in place of a statistic that failed; the exception is logged under
+# the reference, never shown (spec 04: no raw exception text).
+STAT_UNAVAILABLE = "This analysis could not be computed."
 warnings.filterwarnings('ignore')
 
 # Try to import scipy, but handle if not available
@@ -225,7 +231,7 @@ def analyze_sb_lending_distribution(
             'test_result': None,
             'concerning_cbsas': [],
             'underperforming_cbsas': [],
-            'summary': f'Error analyzing data: {str(e)}'
+            'summary': user_error(STAT_UNAVAILABLE, exc=e, context='mergermeter statistics')[0]
         }
 
 
@@ -319,7 +325,7 @@ def analyze_branch_distribution(
             'test_result': None,
             'concerning_cbsas': [],
             'underperforming_cbsas': [],
-            'summary': f'Error analyzing data: {str(e)}'
+            'summary': user_error(STAT_UNAVAILABLE, exc=e, context='mergermeter statistics')[0]
         }
 
 
