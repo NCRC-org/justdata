@@ -10,10 +10,11 @@ Only forced PageBreaks:
 Everything else flows naturally with Spacer(1, 24) between sections.
 
 Generates a PDF with:
-  Cover -> Team -> Key Findings -> Section 1: Market Overview ->
-  Section 2: Lending by Tract Income -> Section 3: Small Business Lending ->
-  Section 4: Geographic Comparison -> [landscape] Section 5: Top Lenders ->
-  [portrait] Section 6: Market Concentration (HHI) -> Section 7: Methodology
+  Cover -> Team -> Key Findings -> Section 1: Introduction ->
+  Section 2: County Summary (market overview, tract income, small businesses) ->
+  Section 3: County, State, and National Comparison -> [landscape] Section 4: Top Lenders ->
+  [portrait] Section 5: Market Concentration (HHI) -> Methodology
+  (numbered as on the web report)
 """
 
 import os
@@ -318,7 +319,7 @@ def _safe_float(val, default=0.0):
 # Table builders
 # ---------------------------------------------------------------------------
 def _build_county_summary_table(data_rows):
-    """Build the county summary table (Section 1: Market Overview).
+    """Build the county summary table (Section 2: County Summary).
 
     data_rows: list of dicts from county_summary_table with 'Variable' key
     and year columns.
@@ -410,7 +411,7 @@ def _build_county_summary_table(data_rows):
 
 
 def _build_comparison_table(data_rows):
-    """Build the geographic comparison table (Section 4).
+    """Build the geographic comparison table (Section 3).
 
     data_rows: list of dicts with 'Metric', 'County (2024)', 'State (2024)',
     'National (2024)', and '% Change Since 20XX' keys.
@@ -706,7 +707,7 @@ def generate_bizsight_pdf(result_data, metadata):
         hhi_level = latest_hhi.get('concentration_level', '')
         if hhi_val is not None:
             key_findings_parts.append(
-                f'Market concentration HHI: **{int(hhi_val):,}** ({hhi_level})'
+                f'Market concentration HHI: **{round(hhi_val):,}** ({hhi_level})'
             )
 
     if key_findings_parts:
@@ -716,14 +717,36 @@ def generate_bizsight_pdf(result_data, metadata):
         story.append(Spacer(1, 12))
 
     # ==================================================================
-    # SECTION 1: MARKET OVERVIEW
+    # SECTION 1: INTRODUCTION (the web report's Section 1 text)
     # ==================================================================
     story.append(Spacer(1, 8))
+    story.append(_h1('Section 1: Introduction'))
+    story.append(Paragraph(
+        f'This report provides a comprehensive analysis of small business lending activity in '
+        f'{county_display} ({date_range}). The analysis is based on data collected under the '
+        f'Community Reinvestment Act (CRA), which requires large banks to report the small business '
+        f'loans they originate or purchase. Small business loans are defined as loans with original '
+        f'amounts of $1 million or less for commercial and industrial purposes.',
+        _TABLE_INTRO,
+    ))
+    for note in (
+        '<b>PPP Impact.</b> In 2020 and 2021, the Paycheck Protection Program (PPP) significantly '
+        'impacted small business lending patterns. Loan counts and amounts may be elevated during these years.',
+        '<b>Section 1071.</b> Section 1071 of the Dodd-Frank Act has still not been implemented. '
+        'This report does not include borrower demographics.',
+    ):
+        story.append(Paragraph(note, _COMPACT_BODY))
+
+    # ==================================================================
+    # SECTION 2: COUNTY SUMMARY (market overview, tract income, small businesses)
+    # ==================================================================
+    story.append(Spacer(1, 24))
 
     s1_table, s1_has = _build_county_summary_table(county_summary_data)
     if s1_has:
         story.append(KeepTogether([
-            _h1('Section 1: Market Overview'),
+            _h1('Section 2: County Summary'),
+            _h2('Market Overview'),
             Paragraph(
                 'This table shows aggregate small business lending activity in the county '
                 'using Community Reinvestment Act (CRA) data reported by financial institutions '
@@ -758,7 +781,7 @@ def generate_bizsight_pdf(result_data, metadata):
     if tract_income_rows:
         story.append(Spacer(1, 24))
         story.append(KeepTogether([
-            _h1('Section 2: Lending by Census Tract Income Level'),
+            _h2('Lending by Census Tract Income Level'),
             Paragraph(
                 'Census tracts are classified by their median family income relative to the '
                 'area median. Low-to-moderate income (LMI) tracts have median family incomes '
@@ -798,7 +821,7 @@ def generate_bizsight_pdf(result_data, metadata):
     if sb_rows:
         story.append(Spacer(1, 24))
         story.append(KeepTogether([
-            _h1('Section 3: Lending to Small Businesses'),
+            _h2('Lending to Small Businesses'),
             Paragraph(
                 'CRA data includes information on loans to businesses with gross annual '
                 'revenues of less than $1 million. This is a key indicator of lending to truly '
@@ -831,7 +854,7 @@ def generate_bizsight_pdf(result_data, metadata):
     if s4_has:
         story.append(Spacer(1, 24))
         story.append(KeepTogether([
-            _h1('Section 4: Geographic Comparison'),
+            _h1('Section 3: County, State, and National Comparison'),
             Paragraph(
                 'This table compares the county\u2019s small business lending metrics against '
                 'state and national benchmarks for the most recent year. It shows how the local '
@@ -860,7 +883,7 @@ def generate_bizsight_pdf(result_data, metadata):
     if s5_has:
         story.append(NextPageTemplate('landscape'))
         story.append(PageBreak())  # PageBreak #3
-        story.append(_h1('Section 5: Top Lenders'))
+        story.append(_h1('Section 4: Top Lenders'))
         story.append(Paragraph(
             f'Top {lender_count} lenders by total loan volume. Percentage columns show the share '
             'of each lender\u2019s lending in that category. Full lender list available in Excel export.',
@@ -886,7 +909,7 @@ def generate_bizsight_pdf(result_data, metadata):
     # SECTION 6: MARKET CONCENTRATION (HHI)
     # ==================================================================
     story.append(Spacer(1, 12))
-    story.append(_h1('Section 6: Market Concentration'))
+    story.append(_h1('Section 5: Market Concentration'))
 
     # HHI info box
     hhi_info_text = (
