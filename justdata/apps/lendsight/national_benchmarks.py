@@ -47,10 +47,13 @@ NATIONAL_BENCHMARKS = {
     }
 }
 
+# URLs from the shared list (justdata/shared/ncrc_reports.py)
+from justdata.shared.ncrc_reports import ncrc_report_url
+
 NATIONAL_REPORT_LINKS = {
-    'series_home': 'https://ncrc.org/mortgage-market-report-series/',
-    'part_2_demographics': 'https://ncrc.org/mortgage-market-report-series-part-2-lending-trends-by-borrower-and-neighborhood-characteristics',
-    'part_1_overview': 'https://ncrc.org/mortgage-market-report-series-part-1-introduction-to-mortgage-market-trends'
+    'series_home': ncrc_report_url('mortgage_market_series'),
+    'part_2_demographics': ncrc_report_url('mortgage_market_part_2'),
+    'part_1_overview': ncrc_report_url('mortgage_market_part_1'),
 }
 
 def get_national_benchmarks(year: str) -> dict:
