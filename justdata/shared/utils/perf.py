@@ -43,6 +43,14 @@ def perf_stages() -> List[dict]:
     return list(_stages.get() or [])
 
 
+def record_stage(entry: dict) -> None:
+    """Append a stage the caller timed itself (for example one AI call with
+    its stop reason and token counts) to the current run's list."""
+    if _stages.get() is None:
+        _stages.set([])
+    _stages.get().append(entry)
+
+
 @contextmanager
 def timed(stage: str):
     """Time one stage of the current run."""
