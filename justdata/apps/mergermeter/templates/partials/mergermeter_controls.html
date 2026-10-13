@@ -1,0 +1,152 @@
+{# MergerMeter controls (spec 04 Part B item 3): 1 Geography (assessment areas),
+   2 Acquirer and Target in one fieldset, 3 Years, 4 Options. mm_banks.js,
+   mm_areas.js and mm_page.js drive them. The fields posted to /analyze and
+   their values are the former page's, so the analysis and its cache key are
+   unchanged. #}
+{% macro area_panel(bank, label) %}
+<div class="mm-area" data-bank="{{ bank }}" id="{{ bank }}Areas">
+  <p class="app-field-label">{{ label }}</p>
+  <div class="mm-modes" role="radiogroup" aria-label="{{ label }}: how to enter them">
+    <label class="app-check"><input type="radio" name="{{ bank }}_aa_mode" value="manual" checked><span>Enter</span></label>
+    <label class="app-check"><input type="radio" name="{{ bank }}_aa_mode" value="upload"><span>Upload file</span></label>
+    <label class="app-check"><input type="radio" name="{{ bank }}_aa_mode" value="branches"><span>From branches</span></label>
+  </div>
+
+  <div class="mm-mode-panel" data-mode="manual">
+    <div class="mm-manual-list" id="{{ bank }}ManualAreas"></div>
+    <button type="button" class="btn btn-ghost btn-sm" data-add-area="{{ bank }}">Add assessment area</button>
+    <p class="app-field-hint">Name each area and list its counties, one per line ("Denver County, Colorado"). MSA codes ("MSA 14500, 19740") and MSA names are looked up.</p>
+  </div>
+
+  <div class="mm-mode-panel" data-mode="upload" hidden>
+    <div class="app-field">
+      <label for="{{ bank }}AreaFile">Assessment area file (JSON or CSV)</label>
+      <input type="file" id="{{ bank }}AreaFile" accept=".json,.csv">
+      <p class="app-field-hint">CSV columns: Assessment Area Name, State Code, County Code, County Name, State Name.
+        <a href="{{ app_base_url }}/api/download-assessment-area-template" download="assessment_area_template.csv">Download the CSV template</a>.</p>
+    </div>
+    <details class="app-details">
+      <summary>JSON format</summary>
+      <pre class="mm-pre">[
+  {"cbsa_name": "Assessment Area Name",
+   "counties": ["County Name, State", "Another County, State"]},
+  {"cbsa_name": "Another Assessment Area",
+   "counties": ["County Name, State"]}
+]</pre>
+    </details>
+  </div>
+
+  <div class="mm-mode-panel" data-mode="branches" hidden>
+    <p class="app-field-hint">Builds assessment areas from the bank's branch locations (FDIC Summary of Deposits 2025), grouped by metro area. Only counties with a branch are included. Needs the bank's RSSD (step 2).</p>
+    <button type="button" class="btn btn-secondary btn-sm" data-generate-areas="{{ bank }}">Generate from branches</button>
+  </div>
+
+  <p class="mm-status" id="{{ bank }}AreaStatus" role="status" hidden></p>
+  <div class="mm-preview" id="{{ bank }}AreaPreview" hidden></div>
+</div>
+{% endmacro %}
+
+{% macro bank_picker(bank, label) %}
+<div class="mm-bank" data-bank="{{ bank }}" id="{{ bank }}Bank">
+  <div class="app-field mm-search" id="{{ bank }}SearchField">
+    <label for="{{ bank }}_search">{{ label }}</label>
+    <input type="text" id="{{ bank }}_search" class="mm-search-input" data-bank="{{ bank }}" autocomplete="off"
+           placeholder="Search by bank name" role="combobox" aria-autocomplete="list"
+           aria-expanded="false" aria-controls="{{ bank }}_search_results">
+    <ul class="mm-results" id="{{ bank }}_search_results" role="listbox" hidden></ul>
+  </div>
+  <div class="mm-selected" id="{{ bank }}_selected" hidden>
+    <p class="app-field-label">{{ label }}</p>
+    <p class="mm-selected-name" id="{{ bank }}_name_display"></p>
+    <p class="app-field-hint" id="{{ bank }}_location_display"></p>
+    <div class="mm-ids">
+      <div class="app-field"><label for="{{ bank }}_lei">LEI</label><input type="text" id="{{ bank }}_lei" maxlength="20" spellcheck="false"></div>
+      <div class="app-field"><label for="{{ bank }}_rssd">RSSD</label><input type="text" id="{{ bank }}_rssd" spellcheck="false"></div>
+      <div class="app-field"><label for="{{ bank }}_sb_id">Res ID <span class="app-check-hint">optional</span></label><input type="text" id="{{ bank }}_sb_id" spellcheck="false"></div>
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" data-change-bank="{{ bank }}">Change bank</button>
+  </div>
+  <input type="hidden" id="{{ bank }}_name">
+</div>
+{% endmacro %}
+
+<form id="{{ form_id }}" novalidate>
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">1</span>Geography</legend>
+    <label class="app-check"><input type="checkbox" id="mmNational">
+      <span>Use national data<span class="app-check-hint">Skips assessment areas and analyzes the whole country.</span></span></label>
+    <div id="mmAreaInputs">
+      <p class="app-field-hint">Assessment areas combine one or more counties.</p>
+      {{ area_panel('acquirer', 'Acquirer assessment areas') }}
+      {{ area_panel('target', 'Target assessment areas') }}
+    </div>
+  </fieldset>
+
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">2</span>Acquirer and target</legend>
+    {{ bank_picker('acquirer', 'Acquirer (Bank A)') }}
+    <label class="app-check"><input type="checkbox" id="mmSingleBank">
+      <span>Single bank analysis<span class="app-check-hint">Analyze only the acquirer, with no merger comparison.</span></span></label>
+    {{ bank_picker('target', 'Target (Bank B)') }}
+  </fieldset>
+
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">3</span>Years</legend>
+    <p class="app-field-label">Analysis years</p>
+    <div class="mm-years">
+      <div class="app-field"><label for="hmda_start_year">HMDA from</label>
+        <select id="hmda_start_year">{% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_start %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+      <div class="app-field"><label for="hmda_end_year">HMDA to</label>
+        <select id="hmda_end_year">{% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_end %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+      <div class="app-field"><label for="sb_start_year">Small business from</label>
+        <select id="sb_start_year">{% for y in sb_years %}<option value="{{ y }}"{% if y == sb_default_start %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+      <div class="app-field"><label for="sb_end_year">Small business to</label>
+        <select id="sb_end_year">{% for y in sb_years %}<option value="{{ y }}"{% if y == sb_default_end %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+    </div>
+    <p class="app-field-label">Goal baseline years</p>
+    <div class="mm-years">
+      <div class="app-field"><label for="baseline_hmda_start_year">HMDA from</label>
+        <select id="baseline_hmda_start_year">{% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_start %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+      <div class="app-field"><label for="baseline_hmda_end_year">HMDA to</label>
+        <select id="baseline_hmda_end_year">{% for y in hmda_years %}<option value="{{ y }}"{% if y == hmda_default_end %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+      <div class="app-field"><label for="baseline_sb_start_year">Small business from</label>
+        <select id="baseline_sb_start_year">{% for y in sb_years %}<option value="{{ y }}"{% if y == sb_default_start %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+      <div class="app-field"><label for="baseline_sb_end_year">Small business to</label>
+        <select id="baseline_sb_end_year">{% for y in sb_years %}<option value="{{ y }}"{% if y == sb_default_end %} selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+    </div>
+    <p class="app-field-hint">Analysis years feed the data sheets; goal baseline years feed the Goals sheets.</p>
+  </fieldset>
+
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">4</span>Options</legend>
+    <div class="app-field"><label for="loan_purpose">Loan purpose</label>
+      <select id="loan_purpose">
+        <option value="" selected>All loan purposes</option>
+        <option value="1">Home purchase only</option>
+        <option value="31,32">Refinance only</option>
+        <option value="2,4">Home equity only</option>
+      </select>
+      <p class="app-field-hint">Applies to the mortgage data sheets; the Goals sheet includes all loan types.</p></div>
+    <div class="app-field"><label for="peer_group">Peer group</label>
+      <select id="peer_group">
+        <option value="volume_50_200" selected>50% to 200% of volume (default)</option>
+        <option value="all_banks">All banks</option>
+        <option value="all_credit_unions">All credit unions</option>
+        <option value="all_mortgage_companies">All mortgage companies</option>
+        <option value="all_lenders">All lenders</option>
+      </select>
+      <p class="app-field-hint">Which lenders the peer comparisons include.</p></div>
+    {% for f in hmda_filters %}
+    <fieldset class="app-field mm-filter" id="{{ f.name }}" data-filter="{{ f.name }}">
+      <legend class="app-field-label">{{ f.label }}</legend>
+      {% for value, text, checked in f.options %}
+      <label class="app-check"><input type="checkbox" value="{{ value }}"{% if checked %} checked{% endif %}><span>{{ text }}</span></label>
+      {% endfor %}
+    </fieldset>
+    {% endfor %}
+    {% if can_force_refresh %}
+    <label class="app-check"><input type="checkbox" id="mmForceRefresh">
+      <span>Clear cache and regenerate<span class="app-check-hint">Senior executives and admins only. Runs the analysis again.</span></span></label>
+    {% endif %}
+  </fieldset>
+</form>

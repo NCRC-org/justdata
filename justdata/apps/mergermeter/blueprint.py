@@ -3,16 +3,14 @@ MergerMeter Blueprint for main JustData app.
 Converts the standalone MergerMeter app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, send_file, session, Response, url_for
+from flask import Blueprint, render_template, request, jsonify, send_file, session, url_for, make_response
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
-import tempfile
-import zipfile
 from datetime import datetime
 import uuid
 import time
 import json
-from typing import List, Dict
+import re
 from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions, login_required
@@ -20,11 +18,13 @@ from justdata.backend import (
     new_job_id, run_in_background, sse_response,
     identify_caller, lookup_cached_analysis, record_cache_hit, record_completion,
 )
-from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
-from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.analysis_cache import store_cached_result
+from justdata.shared.utils.progress_tracker import get_progress, update_progress
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
 from .version import __version__
+from justdata.shared.utils.gcs_storage import download_json
+from justdata.shared.web.app_page import app_page_context
 # Import functions from mergermeter modules
 from .branch_assessment_area_generator import generate_assessment_areas_from_branches as _generate_assessment_areas
 
@@ -65,43 +65,88 @@ def configure_template_loader(state):
 mergermeter_bp.config = {'MAX_CONTENT_LENGTH': 10 * 1024 * 1024}
 
 
+# HMDA filter checkboxes: values and defaults are the former page's, so the
+# comma-joined codes sent to /analyze (and the cache key) are unchanged.
+HMDA_FILTERS = (
+    {'name': 'action_taken', 'label': 'Action taken', 'options': (
+        ('1', 'Originations (1)', True), ('2', 'Approved but not accepted (2)', False),
+        ('3', 'Denied (3)', False), ('4', 'Withdrawn (4)', False), ('5', 'Closed for incompleteness (5)', False))},
+    {'name': 'occupancy_type', 'label': 'Occupancy', 'options': (
+        ('1', 'Owner-occupied (1)', True), ('2', 'Not owner-occupied (2)', False))},
+    {'name': 'total_units', 'label': 'Units', 'options': (
+        ('1', '1 unit', True), ('2', '2 units', True), ('3', '3 units', True), ('4', '4 units', True), ('5', '5+ units', False))},
+    {'name': 'construction_method', 'label': 'Construction', 'options': (
+        ('1', 'Site-built (1)', True), ('2', 'Manufactured home (2)', True))},
+    {'name': 'not_reverse', 'label': 'Reverse mortgage', 'options': (
+        ('1', 'Not reverse (1)', True), ('2', 'Reverse mortgage (2)', False))},
+)
+SOD_BRANCH_YEAR = 2025  # the year the analysis and branch-generated areas query
+
+
+def _page(job_id=None):
+    """MergerMeter on the analysis-app standard (spec 04 Part B; staff only).
+    /report?job_id= renders the same page and loads that run's workbook.
+    The Goals Calculator, which /report used to render, is at
+    /goals-calculator?job_id=."""
+    from justdata.shared.core.hmda_years import available_hmda_years, default_hmda_year_range
+    from justdata.apps.bizsight.config import BizSightConfig
+    user_permissions = get_user_permissions()
+    hmda_years = available_hmda_years()
+    hmda_default_start, hmda_default_end = default_hmda_year_range()
+    sb_latest = BizSightConfig.SB_LATEST_YEAR
+    sb_years = list(range(2018, sb_latest + 1))  # the former page offered 2018 to 2024
+    ctx = app_page_context(
+        'mergermeter',
+        form_id='mmForm',
+        data_vintage=(f'HMDA {min(hmda_years)} to {max(hmda_years)}; CRA small business '
+                      f'{sb_years[0]} to {sb_years[-1]}; FDIC Summary of Deposits {SOD_BRANCH_YEAR}'),
+        sources=[
+            {'name': 'HMDA', 'vintage': f'{min(hmda_years)} to {max(hmda_years)}, the years selected for the run; '
+                                         'mortgage lending by the acquirer, the target and their peers'},
+            {'name': 'CRA small business', 'vintage': f'{sb_years[0]} to {sb_years[-1]}, the years selected for the run'},
+            {'name': 'FDIC Summary of Deposits', 'vintage': f'{SOD_BRANCH_YEAR}, branch locations and deposits as of June 30'},
+        ],
+        help_url=None,
+        exports=('xlsx',) if user_permissions.get('can_export', False) else (),
+        shows_juxtaposition=True,
+        idle_message='Choose the assessment areas, the acquirer and the target, then run the analysis.',
+    )
+    response = make_response(render_template(
+        'mergermeter_analysis.html',
+        **ctx,
+        hmda_years=hmda_years,
+        hmda_default_start=hmda_default_start,
+        hmda_default_end=hmda_default_end,
+        sb_years=sb_years,
+        sb_default_start=sb_latest - 1,
+        sb_default_end=sb_latest,
+        hmda_filters=HMDA_FILTERS,
+        can_force_refresh=bool(user_permissions.get('executive_tools')),
+        app_base_url=url_for('mergermeter.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
+
+
 @mergermeter_bp.route('/')
 @login_required
 @require_access('mergermeter', 'full')
 def index():
-    """Main page with the analysis form"""
-    user_permissions = get_user_permissions()
-    app_base_url = url_for('mergermeter.index').rstrip('/')
-    # HMDA year selector options/defaults from the platform-wide source of truth
-    # (see justdata/shared/core/hmda_years.py). Bumping LATEST_HMDA_YEAR there adds
-    # the new year to these dropdowns and shifts the default range automatically.
-    from justdata.shared.core.hmda_years import available_hmda_years, default_hmda_year_range
-    hmda_years = available_hmda_years()
-    hmda_default_start, hmda_default_end = default_hmda_year_range()
-    return render_template('mergermeter_analysis.html',
-                         version=__version__,
-                         permissions=user_permissions,
-                         app_base_url=app_base_url,
-                         app_name='MergerMeter',
-                         hmda_years=hmda_years,
-                         hmda_default_start=hmda_default_start,
-                         hmda_default_end=hmda_default_end,
-                         breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}])
+    """Main page with the analysis form."""
+    return _page()
 
 
 @mergermeter_bp.route('/report')
 @login_required
 @require_access('mergermeter', 'full')
 def report():
-    """Report display page - renders Goals Calculator directly"""
-    try:
-        from .mergermeter_ops import goals_calculator as goals_calc_func
-        # Call the goals calculator function which handles all the data loading
-        return goals_calc_func()
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
+    """The shareable report URL: the same page, loading this run's workbook."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id=job_id)
 
 
 @mergermeter_bp.route('/goals-calculator')
@@ -177,7 +222,7 @@ def analyze():
         caller = identify_caller()
         user_type = caller.user_type
         if not caller.user_id and not caller.user_email:
-            print(f"[WARN] MergerMeter analyze: No user identity captured despite @login_required")
+            print("[WARN] MergerMeter analyze: No user identity captured despite @login_required")
             print(f"[WARN] Session keys: {list(session.keys())}")
 
         # For cache key, normalize the year ranges
@@ -334,7 +379,7 @@ def api_load_bank_names():
     """Load bank names from identifiers (LEI, RSSD, or SB Respondent ID)"""
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from .mergermeter_ops import clean_bank_name, get_bank_name_from_lei
+        from .mergermeter_ops import get_bank_name_from_lei
 
         data = request.get_json()
         acquirer = data.get('acquirer', {})
@@ -549,17 +594,40 @@ def api_generate_ai_summary():
 
 
 @mergermeter_bp.route('/report-data')
+@login_required
 @require_access('mergermeter', 'full')
 def report_data():
-    """Return the analysis report data for web display"""
+    """Whether a run's workbook is ready, with the run's metadata for the page.
+    The page then previews the workbook from /excel-data. 202 while the run is
+    still going, 404 if there is no workbook."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        return jsonify({'success': False, 'error': 'Job ID required'}), 400
     try:
-        from .mergermeter_ops import report_data as get_report_data_func
-        # Call the original function
-        return get_report_data_func()
+        from .mergermeter_ops import ensure_local_excel
+        if ensure_local_excel(job_id) is None:
+            progress = get_progress(job_id) or {}
+            if not progress.get('done'):
+                return jsonify({'success': False, 'error': 'Analysis still in progress', 'progress': progress}), 202
+            return jsonify({'success': False, 'error': 'Report file not found.', 'progress': progress}), 404
+        return jsonify({'success': True, 'job_id': job_id, 'metadata': _run_metadata(job_id)})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter /report-data')[0]}), 500
+
+
+_METADATA_KEYS = ('acquirer_name', 'target_name', 'hmda_years', 'sb_years', 'baseline_hmda_years',
+                  'baseline_sb_years', 'loan_purpose', 'use_national_data')
+
+
+def _run_metadata(job_id):
+    """The page-facing part of the run's saved metadata (GCS, then local)."""
+    metadata = download_json(f'mergermeter/merger_metadata_{job_id}.json')
+    if not metadata:
+        path = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
+        if path.exists():
+            with open(path) as f:
+                metadata = json.load(f)
+    return {k: (metadata or {}).get(k) for k in _METADATA_KEYS if (metadata or {}).get(k) is not None}
 
 
 @mergermeter_bp.route('/api/search-banks', methods=['GET'])

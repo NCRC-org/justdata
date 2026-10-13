@@ -1,0 +1,65 @@
+/* MergerMeter page (spec 04 Part B): only what app.css does not cover.
+   Tokens only; every selector is prefixed .mm- (or scoped to #mmForm). */
+
+/* The controls are long (two banks, two sets of assessment areas, filters),
+   so the column scrolls with the page instead of sticking. */
+.app-controls:has(#mmForm) { position: static; }
+
+/* Assessment areas */
+.mm-area { border: 1px solid var(--color-border); padding: var(--s-3); margin-top: var(--s-3); }
+.mm-modes { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin-bottom: var(--s-3); }
+.mm-mode-panel { margin-bottom: var(--s-2); }
+.mm-manual { border-top: 1px solid var(--color-divider); padding-top: var(--s-3); margin-bottom: var(--s-3); }
+.mm-manual textarea { width: 100%; font: inherit; font-size: var(--fs-body-sm); padding: var(--s-2); border: 1px solid var(--color-border-strong); border-radius: var(--r-md); }
+.mm-pre { font-family: var(--font-mono); font-size: var(--fs-caption); background: var(--color-bg-muted); padding: var(--s-2); overflow-x: auto; margin: var(--s-2) 0 0; }
+.mm-status { font-size: var(--fs-body-sm); margin: var(--s-2) 0 0; padding: var(--s-2) var(--s-3); background: var(--color-info-bg); color: var(--color-info-text); }
+.mm-status--ok { background: var(--color-success-bg); color: var(--color-success-text); }
+.mm-status--warn { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.mm-status--error { background: var(--color-danger-bg); color: var(--color-danger-text); }
+.mm-preview { max-height: 280px; overflow-y: auto; margin-top: var(--s-2); }
+.mm-area-item { border: 0; border-left: 3px solid var(--color-bg-accent); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-2); background: var(--color-bg-muted); }
+.mm-area-item legend { font-weight: var(--fw-semibold); font-size: var(--fs-body-sm); padding: 0; }
+.mm-county { display: inline-flex; align-items: center; gap: var(--s-1); margin: var(--s-1) var(--s-2) 0 0; font-size: var(--fs-caption); }
+.mm-county input:not(:checked) + span { text-decoration: line-through; color: var(--color-fg-subtle); }
+
+/* Bank pickers */
+.mm-bank { margin-bottom: var(--s-3); }
+.mm-search { position: relative; }
+.mm-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 20; margin: 0; padding: 0; list-style: none;
+  background: var(--color-bg); border: 1px solid var(--color-border-strong); max-height: 320px; overflow-y: auto; }
+.mm-results [role="option"] { padding: var(--s-2) var(--s-3); border-bottom: 1px solid var(--color-divider); cursor: pointer; display: grid; gap: 2px; }
+.mm-results [role="option"].is-active, .mm-results [role="option"]:hover { background: var(--color-bg-brand-soft); }
+.mm-results-note { padding: var(--s-3); color: var(--color-fg-muted); font-size: var(--fs-body-sm); }
+.mm-opt-name { font-weight: var(--fw-semibold); }
+.mm-opt-meta { font-size: var(--fs-caption); color: var(--color-fg-muted); }
+.mm-opt-ids { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--color-fg-subtle); }
+.mm-selected { border: 1px solid var(--color-border); border-left: 3px solid var(--color-success); padding: var(--s-3); }
+.mm-selected-name { font-weight: var(--fw-bold); margin: 0 0 var(--s-1); }
+.mm-ids { display: grid; grid-template-columns: 1fr; gap: 0 var(--s-2); margin-top: var(--s-2); }
+.mm-ids input { font-family: var(--font-mono); font-size: var(--fs-body-sm); }
+
+/* Years and filters */
+.mm-years { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--s-3); }
+.mm-filter { border: 0; padding: 0; margin: 0 0 var(--s-3); }
+.mm-filter legend { margin-bottom: var(--s-1); }
+/* .app-field label is display:block; these labels are checkbox rows */
+.mm-filter .app-check { display: flex; }
+
+/* Report: the workbook */
+.mm-summary-figure { font-size: var(--fs-h4); line-height: 1.2; overflow-wrap: anywhere; }
+.mm-warnings { font-size: var(--fs-body-sm); margin: var(--s-2) 0 0; }
+.mm-tabs { display: flex; gap: 0; overflow-x: auto; border-bottom: 2px solid var(--color-bg-accent); }
+.mm-tabs [role="tab"] { flex-shrink: 0; white-space: nowrap; border: 1px solid var(--color-border); border-bottom: 0;
+  background: var(--color-bg-muted); color: var(--color-fg-muted); font: inherit; font-size: var(--fs-caption);
+  padding: var(--s-1) var(--s-3); cursor: pointer; }
+.mm-tabs [role="tab"][aria-selected="true"] { background: var(--color-bg); color: var(--color-fg); font-weight: var(--fw-semibold); border-color: var(--color-bg-accent); }
+.mm-tabs [role="tab"]:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: -2px; }
+.mm-sheet { max-height: 600px; overflow: auto; border-top: 0; }
+.mm-sheet-table { border-collapse: collapse; width: 100%; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.mm-sheet-table th { background: var(--color-bg-muted); font-weight: var(--fw-semibold); text-align: left; position: sticky; top: 0;
+  border: 1px solid var(--color-border); padding: var(--s-1) var(--s-2); }
+.mm-sheet-table td { border: 1px solid var(--color-divider); padding: var(--s-1) var(--s-2); white-space: nowrap; vertical-align: top; }
+.mm-sheet-table tr:nth-child(even) td { background: var(--color-bg-muted); }
+.mm-sheet-table .num, .mm-sheet-table .pct { text-align: right; }
+.mm-sheet-table .neg { color: var(--color-danger-text); }
+.mm-sheet-table .empty { color: var(--color-fg-subtle); }
