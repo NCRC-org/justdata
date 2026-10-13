@@ -22,3 +22,15 @@ def test_ceilings():
         limits = [kw.value.value for node in ast.walk(tree) if isinstance(node, ast.Call)
                   for kw in node.keywords if kw.arg == "max_tokens"]
         assert limits and min(limits) >= minimum, (name, limits)
+
+
+def test_combined_reply_with_literal_newlines_parses():
+    analyzer = object.__new__(LendSightAnalyzer)
+    reply = ('{"demographic_overview_discussion": "First paragraph.\n\nSecond.",'
+             ' "income_neighborhood_discussion": "A.\n\nB.",'
+             ' "top_lenders_detailed_discussion": "C.\n\nD.",'
+             ' "market_concentration_discussion": "E.\n\nF."}')
+    analyzer._call_ai = lambda prompt, **k: reply
+    out = analyzer.generate_all_table_discussions({"counties": ["Hillsborough County, Florida"], "years": [2025]})
+    assert out["market_concentration_discussion"] == "E.\n\nF."
+    assert out["demographic_overview_discussion"].startswith("First paragraph.")

@@ -1266,7 +1266,10 @@ TABLE DATA:
                         'market_concentration_discussion': ''
                     }
             
-            discussions = json.loads(response)
+            # strict=False: the reply's multi-paragraph values often contain
+            # literal newlines, which strict JSON rejects ("Invalid control
+            # character"); all four sections were then rewritten one by one.
+            discussions = json.loads(response, strict=False)
             print(f"[DEBUG] Successfully parsed JSON, keys: {list(discussions.keys())}")
             
             # Validate that we have all four keys
