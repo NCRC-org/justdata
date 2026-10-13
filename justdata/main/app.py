@@ -82,6 +82,9 @@ def create_app():
     # NCRC report links for templates, from the one shared list
     from justdata.shared.ncrc_reports import ncrc_report_url
     app.jinja_env.globals['ncrc_report_url'] = ncrc_report_url
+    # NCRC contact details for the footers and the contact page, from one place
+    from justdata.shared.contact import NCRC_CONTACT
+    app.jinja_env.globals['ncrc_contact'] = NCRC_CONTACT
 
     # Context processor to make auth info available in all templates
     @app.context_processor

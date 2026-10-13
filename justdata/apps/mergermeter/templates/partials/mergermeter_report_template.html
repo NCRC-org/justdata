@@ -1,0 +1,23 @@
+{# MergerMeter report body (spec 04 Part B items 5 to 8), cloned into the results
+   column by mm_report.js. The report is the generated workbook, previewed
+   sheet by sheet (SheetJS) exactly as the former page did; the toolbar's
+   Excel button downloads it. #}
+<template id="mmReportTemplate">
+<div class="mm-report">
+  <div class="app-summary" id="mmSummary" aria-label="About this workbook"></div>
+
+  <section class="app-result-section">
+    <h3>Data quality</h3>
+    <p class="app-note" id="mmValidation" hidden></p>
+    <ul class="mm-warnings" id="mmWarnings" hidden></ul>
+  </section>
+
+  <section class="app-result-section">
+    <h3>Workbook</h3>
+    <p class="app-table-intro">Each tab is one sheet of the workbook. Download it from the toolbar to work with the formulas and the Goals sheets in Excel.</p>
+    <div class="mm-tabs" role="tablist" id="mmTabs" aria-label="Workbook sheets"></div>
+    <div id="mmSheets"></div>
+    <p class="app-state-elapsed" id="mmLoading">Loading the workbook preview…</p>
+  </section>
+</div>
+</template>

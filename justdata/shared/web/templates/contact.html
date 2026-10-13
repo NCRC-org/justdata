@@ -15,7 +15,7 @@
             {% if error_ref %}
             <p class="contact-ref" id="contactRef">Reference: <span>{{ error_ref }}</span></p>
             {% endif %}
-            <form id="contactForm" class="contact-form" data-to="info@ncrc.org"{% if error_ref %} data-ref="{{ error_ref }}"{% endif %}>
+            <form id="contactForm" class="contact-form" data-to="{{ ncrc_contact.email }}"{% if error_ref %} data-ref="{{ error_ref }}"{% endif %}>
                 <div class="form-group">
                     <label for="name">Name <span class="required">*</span></label>
                     <input type="text" id="name" name="name" required placeholder="Your full name">
@@ -53,21 +53,21 @@
                 <div class="info-item">
                     <div>
                         <h3>National Community Reinvestment Coalition</h3>
-                        <p>740 15th Street NW, Suite 400<br>Washington, DC 20005</p>
+                        <p>{{ ncrc_contact.address_lines|join('<br>'|safe) }}</p>
                     </div>
                 </div>
                 <div class="info-item">
                     <i data-lucide="mail" aria-hidden="true"></i>
                     <div>
                         <h3>Email</h3>
-                        <p><a href="mailto:info@ncrc.org">info@ncrc.org</a></p>
+                        <p><a href="mailto:{{ ncrc_contact.email }}">{{ ncrc_contact.email }}</a></p>
                     </div>
                 </div>
                 <div class="info-item">
                     <i data-lucide="phone" aria-hidden="true"></i>
                     <div>
                         <h3>Phone</h3>
-                        <p><a href="tel:+12026286270">(202) 628-6270</a></p>
+                        <p><a href="tel:{{ ncrc_contact.phone_tel }}">{{ ncrc_contact.phone }}</a></p>
                     </div>
                 </div>
                 <div class="info-item">

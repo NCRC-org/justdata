@@ -11,6 +11,7 @@ import zipfile
 from datetime import datetime
 import uuid
 import threading
+import re
 import time
 import json
 from typing import List, Dict
@@ -23,6 +24,27 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.shared.web.app_factory import create_app, register_standard_routes
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.perf import perf_stages, record_stage, start_perf
+
+# The progress publisher; _perform_analysis wraps it to time each step.
+_publish_progress = update_progress
+
+
+class _StepClock:
+    """Stage timings for a run (spec 04 A5). Each progress step runs until the
+    next one starts, so marking every step times the queries, the Excel build
+    and the save without restructuring the analysis."""
+
+    def __init__(self):
+        self.name = None
+        self.started = time.perf_counter()
+
+    def mark(self, step):
+        now = time.perf_counter()
+        if self.name:
+            slug = re.sub(r'[^a-z0-9]+', '_', self.name.lower()).strip('_')
+            record_stage({'stage': f'step:{slug}', 'ms': round((now - self.started) * 1000)})
+        self.name, self.started = step, now
 from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 
 # Use absolute imports from repo root (like other apps) - avoids issues with gunicorn
@@ -102,29 +124,6 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
 
 # Note: /health endpoint is already registered by create_app() in app_factory.py
-
-
-def index():
-    """Main page with the analysis form"""
-    return render_template('analysis_template.html',
-                         version=__version__,
-                         app_name='MergerMeter',
-                         breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}])
-
-
-def report():
-    """Report display page"""
-    # Check if job_id is in URL parameters (fallback if session doesn't persist)
-    job_id_from_url = request.args.get('job_id')
-    if job_id_from_url and not session.get('job_id'):
-        session['job_id'] = job_id_from_url
-    return render_template('mergermeter_report.html',
-                         version=__version__,
-                         app_name='MergerMeter',
-                         breadcrumb_items=[
-                             {'name': 'MergerMeter', 'url': '/mergermeter'},
-                             {'name': 'Report', 'url': '/mergermeter/report'}
-                         ])
 
 
 def progress_handler(job_id):
@@ -297,6 +296,14 @@ def analyze():
 
 def _perform_analysis(job_id, form_data):
     """Perform the actual analysis (runs in background thread)"""
+    perf_ref = start_perf('mergermeter', str(job_id)[:8])
+    step_clock = _StepClock()
+
+    def update_progress(jid, data):
+        if not data.get('done'):
+            step_clock.mark(data.get('step'))
+        _publish_progress(jid, data)
+
     try:
         # Create progress tracker
         progress_tracker = create_progress_tracker(job_id)
@@ -1423,6 +1430,10 @@ def _perform_analysis(job_id, form_data):
         ) or []
         
         # Save metadata
+        # Stage timings so far (queries and the Excel build); /report-data returns them
+        step_clock.mark('saving')
+        metadata['perf'] = perf_stages()
+        metadata['perf_ref'] = perf_ref
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
@@ -3228,6 +3239,12 @@ def download():
         return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
+def index():
+    """This module's standalone app is not served; MergerMeter runs inside the
+    JustData platform (blueprint.py), whose page is mergermeter_analysis.html."""
+    return 'MergerMeter runs inside the JustData platform at /mergermeter/.'
+
+
 # Register standard routes
 register_standard_routes(
     app,
@@ -3238,8 +3255,6 @@ register_standard_routes(
     data_handler=None
 )
 
-# Register MergerMeter-specific routes
-app.add_url_rule('/report', 'report', report, methods=['GET'])
 # Note: /report-data and /api/generate-assessment-areas-from-branches are already registered via @app.route decorators above
 
 

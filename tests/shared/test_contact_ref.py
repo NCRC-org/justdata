@@ -39,4 +39,4 @@ def test_missing_or_malformed_reference_is_not_echoed(client, ref):
 def test_form_does_not_claim_a_message_was_sent(client):
     html = client.get("/contact").get_data(as_text=True)
     assert "Thank you for your message" not in html
-    assert 'data-to="info@ncrc.org"' in html
+    assert 'data-to="research@ncrc.org"' in html

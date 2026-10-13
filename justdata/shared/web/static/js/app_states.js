@@ -17,7 +17,8 @@
  *
  * Timeouts (Jad, 2026-10-07): a run ends in the error state if no stage
  * update arrives for 60 s, or after 10 minutes in total even while it keeps
- * reporting progress. The stall clock restarts on every stage().
+ * reporting progress. The stall clock restarts on every stage(). An app
+ * whose runs normally take longer passes loading({maxRunS}) (MergerMeter).
  */
 (function (root) {
   'use strict';
@@ -35,11 +36,17 @@
   };
 
   /** 'stalled', 'max' or null, for a run started at startedMs whose last
-   *  stage update was at lastUpdateMs. */
-  function timeoutReason(nowMs, startedMs, lastUpdateMs) {
-    if ((nowMs - startedMs) / 1000 >= MAX_RUN_S) return 'max';
+   *  stage update was at lastUpdateMs. maxRunS defaults to MAX_RUN_S. */
+  function timeoutReason(nowMs, startedMs, lastUpdateMs, maxRunS) {
+    if ((nowMs - startedMs) / 1000 >= (maxRunS || MAX_RUN_S)) return 'max';
     if ((nowMs - lastUpdateMs) / 1000 >= STALL_TIMEOUT_S) return 'stalled';
     return null;
+  }
+
+  function maxMessage(maxRunS) {
+    if (!maxRunS || maxRunS === MAX_RUN_S) return TIMEOUT_MESSAGES.max;
+    return 'The analysis did not finish within ' + Math.round(maxRunS / 60) +
+      ' minutes. Your filters are saved; try again in a moment.';
   }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -116,11 +123,11 @@
       var stageEl = document.getElementById('loadingStage');
       if (stageEl && stageEl.textContent !== text) stageEl.textContent = text;
     }
-    var reason = timeoutReason(now, run.started, run.lastUpdate);
+    var reason = timeoutReason(now, run.started, run.lastUpdate, run.maxRunS);
     if (reason) {
       var ref = run.ref;
       run.controller.abort();
-      api.error(TIMEOUT_MESSAGES[reason], ref);
+      api.error(reason === 'max' ? maxMessage(run.maxRunS) : TIMEOUT_MESSAGES[reason], ref);
     }
   }
 
@@ -155,7 +162,8 @@
         started: now,
         lastUpdate: now,
         stageFromServer: false,
-        ref: opts.ref || null
+        ref: opts.ref || null,
+        maxRunS: opts.maxRunS || MAX_RUN_S
       };
       show('appStateLoading');
       setBusy(true);

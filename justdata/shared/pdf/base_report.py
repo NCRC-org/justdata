@@ -8,6 +8,7 @@ Provides MagazineDocTemplate with four page templates:
   landscape   — 11x8.5 single-frame with header/footer
 """
 
+from justdata.shared.contact import NCRC_CONTACT
 import os
 from io import BytesIO
 from datetime import datetime
@@ -471,7 +472,7 @@ def build_team_page():
     callout_text = (
         "<b>NCRC Member Services</b> \u2014 NCRC members receive priority access to "
         "custom data analysis, research consultation, and JustData platform features. "
-        "Contact research@ncrc.org for more information."
+        f"Contact {NCRC_CONTACT['email']} for more information."
     )
 
     callout = Table(

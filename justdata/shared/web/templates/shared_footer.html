@@ -112,9 +112,9 @@
             <p class="shared-footer-copyright">&copy; <span id="shared-footer-year"></span> National Community Reinvestment Coalition</p>
             <p class="shared-footer-version">{{ app_name|default('JustData') }} v{{ version|default('0.0.0') }}</p>
             <div class="shared-footer-links">
-                <a href="mailto:research@ncrc.org">research@ncrc.org</a>
+                <a href="mailto:{{ ncrc_contact.email }}">{{ ncrc_contact.email }}</a>
                 <span class="shared-footer-separator">|</span>
-                <a href="tel:+12024644600">(202) 464-4600</a>
+                <a href="tel:{{ ncrc_contact.phone_tel }}">{{ ncrc_contact.phone }}</a>
                 <span class="shared-footer-separator">|</span>
                 <a href="/privacy">Privacy</a>
                 <span class="shared-footer-separator">|</span>
