@@ -312,7 +312,10 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     county_pct_amount_middle_income = (county_middle_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
     county_pct_amount_upper_income = (county_upper_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
     
-    # Get state and national values (with defaults)
+    # Get state and national values (with defaults). The source reports middle
+    # and upper income tracts together (midu): the benchmark files hold that
+    # share as pct_*_middle_upper_income, the BigQuery fallback as
+    # pct_*_upper_income, and the county "upper" variables hold midu.
     state_total = state_benchmarks.get('total_loans', 0)
     state_amount = state_benchmarks.get('total_amount', 0.0)
     state_pct_under_100k = state_benchmarks.get('pct_loans_under_100k', 0.0)
@@ -327,11 +330,11 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     state_pct_loans_low_income = state_benchmarks.get('pct_loans_low_income', 0.0)
     state_pct_loans_moderate_income = state_benchmarks.get('pct_loans_moderate_income', 0.0)
     state_pct_loans_middle_income = state_benchmarks.get('pct_loans_middle_income', 0.0)
-    state_pct_loans_upper_income = state_benchmarks.get('pct_loans_upper_income', 0.0)
+    state_pct_loans_upper_income = state_benchmarks.get('pct_loans_middle_upper_income', state_benchmarks.get('pct_loans_upper_income', 0.0))
     state_pct_amount_low_income = state_benchmarks.get('pct_amount_low_income', 0.0)
     state_pct_amount_moderate_income = state_benchmarks.get('pct_amount_moderate_income', 0.0)
     state_pct_amount_middle_income = state_benchmarks.get('pct_amount_middle_income', 0.0)
-    state_pct_amount_upper_income = state_benchmarks.get('pct_amount_upper_income', 0.0)
+    state_pct_amount_upper_income = state_benchmarks.get('pct_amount_middle_upper_income', state_benchmarks.get('pct_amount_upper_income', 0.0))
     
     national_total = national_benchmarks.get('total_loans', 0)
     national_amount = national_benchmarks.get('total_amount', 0.0)
@@ -347,11 +350,11 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     national_pct_loans_low_income = national_benchmarks.get('pct_loans_low_income', 0.0)
     national_pct_loans_moderate_income = national_benchmarks.get('pct_loans_moderate_income', 0.0)
     national_pct_loans_middle_income = national_benchmarks.get('pct_loans_middle_income', 0.0)
-    national_pct_loans_upper_income = national_benchmarks.get('pct_loans_upper_income', 0.0)
+    national_pct_loans_upper_income = national_benchmarks.get('pct_loans_middle_upper_income', national_benchmarks.get('pct_loans_upper_income', 0.0))
     national_pct_amount_low_income = national_benchmarks.get('pct_amount_low_income', 0.0)
     national_pct_amount_moderate_income = national_benchmarks.get('pct_amount_moderate_income', 0.0)
     national_pct_amount_middle_income = national_benchmarks.get('pct_amount_middle_income', 0.0)
-    national_pct_amount_upper_income = national_benchmarks.get('pct_amount_upper_income', 0.0)
+    national_pct_amount_upper_income = national_benchmarks.get('pct_amount_middle_upper_income', national_benchmarks.get('pct_amount_upper_income', 0.0))
     
     # Calculate % change since 2020 (baseline year)
     def calc_pct_change(current, base):
@@ -438,14 +441,7 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
             '% Change Since 2018': pct_change_moderate_income_loans
         },
         {
-            'Metric': 'Loans to Middle Income Tracts (% of Classified Loans)',
-            'County (2024)': county_pct_loans_middle_income,
-            'State (2024)': state_pct_loans_middle_income,
-            'National (2024)': national_pct_loans_middle_income,
-            '% Change Since 2018': pct_change_middle_income_loans
-        },
-        {
-            'Metric': 'Loans to Upper Income Tracts (% of Classified Loans)',
+            'Metric': 'Loans to Middle- or Upper-Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_upper_income,
             'State (2024)': state_pct_loans_upper_income,
             'National (2024)': national_pct_loans_upper_income,
@@ -501,14 +497,7 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
             '% Change Since 2018': pct_change_moderate_income_amount
         },
         {
-            'Metric': 'Amount to Middle Income Tracts (% of Classified Amount)',
-            'County (2024)': county_pct_amount_middle_income,
-            'State (2024)': state_pct_amount_middle_income,
-            'National (2024)': national_pct_amount_middle_income,
-            '% Change Since 2018': pct_change_middle_income_amount
-        },
-        {
-            'Metric': 'Amount to Upper Income Tracts (% of Classified Amount)',
+            'Metric': 'Amount to Middle- or Upper-Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_upper_income,
             'State (2024)': state_pct_amount_upper_income,
             'National (2024)': national_pct_amount_upper_income,
@@ -736,8 +725,7 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
             'Lmi Tract': lmi_tract_pct,
             'Low Income %': low_income_pct,
             'Moderate Income %': moderate_income_pct,
-            'Middle Income %': middle_income_pct,
-            'Upper Income %': upper_income_pct,
+            'Middle or Upper Income %': upper_income_pct,
             'Amt Total': amt_total,
             'Amt Total (in $000s)': amt_total,  # Same value, will be formatted in frontend
             'Amt Under 100K': amt_under_100k,
@@ -751,8 +739,7 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
             'Amount to LMI Tracts': lmi_tract_amt_pct,
             'Low Income Amt %': low_income_amt_pct,
             'Moderate Income Amt %': moderate_income_amt_pct,
-            'Middle Income Amt %': middle_income_amt_pct,
-            'Upper Income Amt %': upper_income_amt_pct
+            'Middle or Upper Income Amt %': upper_income_amt_pct
         }
         
         lender_data.append(lender_row)

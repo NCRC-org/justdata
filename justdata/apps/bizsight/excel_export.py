@@ -256,11 +256,11 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             
             # Determine which columns belong to number vs amount
             number_cols = ['Lender Name', 'Num Total', 'Num Under 100K', 'Num 100K 250K', 'Num 250K 1M', 
-                          'Numsb Under 1M', 'Low Income %', 'Moderate Income %', 'Middle Income %', 
-                          'Upper Income %', 'Unknown Income %']
+                          'Numsb Under 1M', 'Low Income %', 'Moderate Income %',
+                          'Middle or Upper Income %']
             amount_cols = ['Lender Name', 'Amt Total (in $000s)', 'Amt Under 100K', 'Amt 100K 250K', 
                           'Amt 250K 1M', 'Amtsb Under 1M %', 'Low Income Amt %', 'Moderate Income Amt %', 
-                          'Middle Income Amt %', 'Upper Income Amt %', 'Unknown Income Amt %']
+                          'Middle or Upper Income Amt %']
             
             # Filter to available columns
             available_cols = lenders_df.columns.tolist()

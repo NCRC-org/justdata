@@ -52,3 +52,22 @@ def test_section3_shows_the_excluded_count_and_methods_states_the_basis():
     assert "'Excludes ' + fmtInt(unclassified)" in js and 'with no tract classification' in js
     assert 'leaving out loans with none' in methods
     assert 'LMI Tracts (% of Total)' not in js
+
+
+def test_middle_and_upper_are_one_category_with_real_benchmarks():
+    """The source reports middle and upper tracts together (midu); the benchmark
+    files hold that share as pct_*_middle_upper_income."""
+    state = {'pct_loans_middle_upper_income': 79.5765, 'pct_amount_middle_upper_income': 80.0945}
+    national = {'pct_loans_middle_upper_income': 78.082, 'pct_amount_middle_upper_income': 76.8896}
+    table = create_comparison_table(pd.DataFrame([ROW]), state, national).set_index('Metric')
+    assert not [m for m in table.index if 'Middle Income' in m or 'to Upper Income' in m]
+    row = table.loc['Loans to Middle- or Upper-Income Tracts (% of Classified Loans)']
+    assert round(row['County (2024)'], 4) == round(60 / 90 * 100, 4)
+    assert (row['State (2024)'], row['National (2024)']) == (79.5765, 78.082)
+    assert table.loc['Amount to Middle- or Upper-Income Tracts (% of Classified Amount)', 'State (2024)'] == 80.0945
+
+    lender = create_top_lenders_table(pd.DataFrame([dict(ROW, lender_name='Bank A')]), year=2024).iloc[0]
+    assert 'Middle Income %' not in lender and 'Upper Income %' not in lender
+    assert round(lender['Middle or Upper Income %'], 4) == round(60 / 90 * 100, 4)
+    js = (ROOT / 'justdata/shared/web/static/js/bizsight/bs_report.js').read_text()
+    assert "['Mid/Upper', 'Middle or Upper Income']" in js

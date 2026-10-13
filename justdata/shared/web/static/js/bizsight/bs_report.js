@@ -157,7 +157,8 @@
 
   // ---- Section 4: top lenders -----------------------------------------------
 
-  var INCOME_COLS = [['Low', 'Low Income'], ['Mod', 'Moderate Income'], ['Mid', 'Middle Income'], ['Upper', 'Upper Income']];
+  // The source reports middle and upper income tracts together.
+  var INCOME_COLS = [['Low', 'Low Income'], ['Mod', 'Moderate Income'], ['Mid/Upper', 'Middle or Upper Income']];
 
   function lenderColumns(kind) {
     var n = kind === 'number';
