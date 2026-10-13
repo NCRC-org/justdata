@@ -629,130 +629,51 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # are hardcoded in JavaScript, so we don't need AI calls for those.
             
             if analyzer:
-                # Combined call 1: All table discussions (reduces 3 calls to 1)
+                # Call 1: the four section discussions in one combined call.
+                # Any discussion it leaves empty (a failed call, a reply cut
+                # off at max_tokens, invalid JSON, a missing key) is written by
+                # its own call, each in its own try, so one failure cannot
+                # blank another section. Section 4 (market concentration)
+                # used to have no single-section call, so it was always blank
+                # whenever the combined call failed (Workflow 13277127143).
                 if progress_tracker:
                     progress_tracker.update_ai_progress(1, 3, 'Table Discussions (Combined)')
                 print("  Generating all table discussions (combined call)...")
+                discussions = {}
                 try:
                     with timed('narrative:table_discussions'):
-                        discussions = analyzer.generate_all_table_discussions(ai_data)
-                    print(f"  [DEBUG] Discussions returned: {list(discussions.keys())}")
-                    
-                    # Extract and validate each discussion
-                    demo_disc = discussions.get('demographic_overview_discussion', '')
-                    income_disc = discussions.get('income_neighborhood_discussion', '')
-                    lenders_disc = discussions.get('top_lenders_detailed_discussion', '')
-                    market_conc_disc = discussions.get('market_concentration_discussion', '')
-                    
-                    print(f"  [DEBUG] demographic_overview_discussion length: {len(demo_disc)}")
-                    print(f"  [DEBUG] income_neighborhood_discussion length: {len(income_disc)}")
-                    print(f"  [DEBUG] top_lenders_detailed_discussion length: {len(lenders_disc)}")
-                    print(f"  [DEBUG] market_concentration_discussion length: {len(market_conc_disc)}")
-                    
-                    # Check if discussions are empty and count how many are empty
-                    empty_count = 0
-                    if not demo_disc or len(demo_disc.strip()) == 0:
-                        print("  [WARNING] demographic_overview_discussion is empty or whitespace only")
-                        empty_count += 1
-                    if not income_disc or len(income_disc.strip()) == 0:
-                        print("  [WARNING] income_neighborhood_discussion is empty or whitespace only")
-                        empty_count += 1
-                    if not lenders_disc or len(lenders_disc.strip()) == 0:
-                        print("  [WARNING] top_lenders_detailed_discussion is empty or whitespace only")
-                        empty_count += 1
-                    if not market_conc_disc or len(market_conc_disc.strip()) == 0:
-                        print("  [WARNING] market_concentration_discussion is empty or whitespace only")
-                        empty_count += 1
-
-                    # If ALL discussions are empty, trigger fallback to individual calls
-                    if empty_count == 4:
-                        print("  [WARNING] All 4 discussions are empty, triggering fallback to individual calls")
-                        raise ValueError("All discussions returned empty from combined call")
-
-                    # Store the discussions (even if some are empty, so frontend knows they were attempted)
-                    ai_insights['demographic_overview_discussion'] = demo_disc
-                    ai_insights['income_neighborhood_discussion'] = income_disc
-                    ai_insights['top_lenders_detailed_discussion'] = lenders_disc
-                    ai_insights['market_concentration_discussion'] = market_conc_disc
-
-                    print("  [OK] All table discussions generated successfully")
-
-                    # Generate individual Section 2 narratives (one per table)
-                    print("  Generating individual Section 2 table narratives...")
-                    try:
-                        ai_insights['income_borrowers_discussion'] = analyzer.generate_income_borrowers_discussion(ai_data)
-                        print(f"    [OK] income_borrowers_discussion length: {len(ai_insights.get('income_borrowers_discussion', ''))}")
-                    except Exception as e:
-                        print(f"    [WARNING] Failed to generate income_borrowers_discussion: {e}")
-                        ai_insights['income_borrowers_discussion'] = ''
-
-                    try:
-                        ai_insights['income_tracts_discussion'] = analyzer.generate_income_tracts_discussion(ai_data)
-                        print(f"    [OK] income_tracts_discussion length: {len(ai_insights.get('income_tracts_discussion', ''))}")
-                    except Exception as e:
-                        print(f"    [WARNING] Failed to generate income_tracts_discussion: {e}")
-                        ai_insights['income_tracts_discussion'] = ''
-
-                    try:
-                        ai_insights['minority_tracts_discussion'] = analyzer.generate_minority_tracts_discussion(ai_data)
-                        print(f"    [OK] minority_tracts_discussion length: {len(ai_insights.get('minority_tracts_discussion', ''))}")
-                    except Exception as e:
-                        print(f"    [WARNING] Failed to generate minority_tracts_discussion: {e}")
-                        ai_insights['minority_tracts_discussion'] = ''
-                    print(f"  [DEBUG] ai_insights keys after storing: {list(ai_insights.keys())}")
-                    print(f"  [DEBUG] Stored demographic_overview_discussion length: {len(ai_insights.get('demographic_overview_discussion', ''))}")
-                    print(f"  [DEBUG] Stored income_neighborhood_discussion length: {len(ai_insights.get('income_neighborhood_discussion', ''))}")
-                    print(f"  [DEBUG] Stored top_lenders_detailed_discussion length: {len(ai_insights.get('top_lenders_detailed_discussion', ''))}")
-                    print(f"  [DEBUG] Stored market_concentration_discussion length: {len(ai_insights.get('market_concentration_discussion', ''))}")
+                        discussions = analyzer.generate_all_table_discussions(ai_data) or {}
                 except Exception as gen_error:
-                    print(f"  [ERROR] Error generating table discussions: {gen_error}")
-                    import traceback
-                    traceback.print_exc()
-                    # Fallback to individual calls if combined call fails
-                    print("  Falling back to individual discussion calls...")
+                    print(f"  [ERROR] Combined table discussions failed: {type(gen_error).__name__}")
+                single_section = {
+                    'demographic_overview_discussion': analyzer.generate_demographic_overview_discussion,
+                    'income_neighborhood_discussion': analyzer.generate_income_neighborhood_discussion,
+                    'top_lenders_detailed_discussion': analyzer.generate_top_lenders_detailed_discussion,
+                    'market_concentration_discussion': analyzer.generate_market_concentration_discussion,
+                }
+                for key, generate in single_section.items():
+                    text = (discussions.get(key) or '').strip()
+                    if not text:
+                        print(f"  {key} empty after the combined call; generating it on its own...")
+                        try:
+                            with timed(f'narrative:{key}'):
+                                text = (generate(ai_data) or '').strip()
+                        except Exception as e:
+                            print(f"  [WARNING] {key} failed: {type(e).__name__}")
+                            text = ''
+                    ai_insights[key] = text
+
+                # Section 2's three table narratives, each on its own
+                for key, generate in (
+                        ('income_borrowers_discussion', analyzer.generate_income_borrowers_discussion),
+                        ('income_tracts_discussion', analyzer.generate_income_tracts_discussion),
+                        ('minority_tracts_discussion', analyzer.generate_minority_tracts_discussion)):
                     try:
-                        print("    Generating demographic_overview_discussion individually...")
-                        ai_insights['demographic_overview_discussion'] = analyzer.generate_demographic_overview_discussion(ai_data)
-                        print(f"    [OK] demographic_overview_discussion length: {len(ai_insights.get('demographic_overview_discussion', ''))}")
-
-                        print("    Generating income_neighborhood_discussion individually...")
-                        ai_insights['income_neighborhood_discussion'] = analyzer.generate_income_neighborhood_discussion(ai_data)
-                        print(f"    [OK] income_neighborhood_discussion length: {len(ai_insights.get('income_neighborhood_discussion', ''))}")
-
-                        print("    Generating top_lenders_detailed_discussion individually...")
-                        ai_insights['top_lenders_detailed_discussion'] = analyzer.generate_top_lenders_detailed_discussion(ai_data)
-                        print(f"    [OK] top_lenders_detailed_discussion length: {len(ai_insights.get('top_lenders_detailed_discussion', ''))}")
-
-                        # Note: market_concentration_discussion is only available via combined call
-                        print("    [INFO] market_concentration_discussion not available in fallback mode")
-                        ai_insights['market_concentration_discussion'] = ''
-
-                        # Generate individual Section 2 narratives in fallback mode
-                        print("    Generating individual Section 2 table narratives...")
-                        try:
-                            ai_insights['income_borrowers_discussion'] = analyzer.generate_income_borrowers_discussion(ai_data)
-                            print(f"      [OK] income_borrowers_discussion length: {len(ai_insights.get('income_borrowers_discussion', ''))}")
-                        except Exception as e:
-                            print(f"      [WARNING] Failed to generate income_borrowers_discussion: {e}")
-                            ai_insights['income_borrowers_discussion'] = ''
-
-                        try:
-                            ai_insights['income_tracts_discussion'] = analyzer.generate_income_tracts_discussion(ai_data)
-                            print(f"      [OK] income_tracts_discussion length: {len(ai_insights.get('income_tracts_discussion', ''))}")
-                        except Exception as e:
-                            print(f"      [WARNING] Failed to generate income_tracts_discussion: {e}")
-                            ai_insights['income_tracts_discussion'] = ''
-
-                        try:
-                            ai_insights['minority_tracts_discussion'] = analyzer.generate_minority_tracts_discussion(ai_data)
-                            print(f"      [OK] minority_tracts_discussion length: {len(ai_insights.get('minority_tracts_discussion', ''))}")
-                        except Exception as e:
-                            print(f"      [WARNING] Failed to generate minority_tracts_discussion: {e}")
-                            ai_insights['minority_tracts_discussion'] = ''
-                    except Exception as fallback_error:
-                        print(f"  [ERROR] Fallback also failed: {fallback_error}")
-                        traceback.print_exc()
-                        # Don't raise - continue without these insights
+                        with timed(f'narrative:{key}'):
+                            ai_insights[key] = generate(ai_data)
+                    except Exception as e:
+                        print(f"    [WARNING] Failed to generate {key}: {type(e).__name__}")
+                        ai_insights[key] = ''
                 
                 # Call 2: Key findings (intro paragraph is now generated in JavaScript)
                 if progress_tracker:

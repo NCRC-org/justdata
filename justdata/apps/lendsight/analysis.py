@@ -939,6 +939,78 @@ TABLE DATA:
 
         return self._call_ai(prompt, max_tokens=300, temperature=0.3)
 
+    def _market_concentration_block(self, market_concentration_data) -> str:
+        """Section 4 instructions, shared by the combined call and the
+        single-section call that fills Section 4 when the combined one fails."""
+        return f"""
+        === DATA FOR SECTION 4: MARKET CONCENTRATION ===
+        Market Concentration Data (HHI by year and loan purpose): {json.dumps(market_concentration_data, indent=2)[:2000] if market_concentration_data else 'Not available'}
+        
+        For "market_concentration_discussion":
+        - This table shows market concentration using the Herfindahl-Hirschman Index (HHI) for all loans, home purchase loans, refinance loans, and home equity lending by year
+        - HHI measures market concentration by calculating the sum of squared market shares for all lenders
+        - HHI values range from 0 to 10,000, where:
+          * Lower values (below 1,500) indicate more competitive markets with many lenders sharing market share
+          * Moderate values (1,500-2,500) indicate moderate concentration
+          * Higher values (above 2,500) indicate highly concentrated markets dominated by fewer lenders
+        - The table shows HHI values for each loan type (All Loans, Home Purchase, Refinance, Home Equity) for each year
+        - CRITICAL: Before analyzing trends, you MUST first assess the overall competitive nature of the market:
+          * If HHI values are consistently below 1,500 (or even well below 1,500), the market is HIGHLY COMPETITIVE
+          * You MUST acknowledge this competitive nature prominently in your analysis
+          * Even if concentration increased over time, if values remain well below 1,500, emphasize that the market remains highly competitive overall
+          * Put any increases in concentration in proper context - a market that goes from 200 to 400 HHI is still highly competitive (both well below 1,500)
+          * Do NOT focus solely on increases without acknowledging the overall competitive nature
+        - FIRST PARAGRAPH: Explain how to read the table and what it means
+          * Explain what HHI measures and what it means for market competition in plain English
+          * CRITICALLY: If HHI values are below 1,500, explicitly state that the market is highly competitive
+          * Explain what the different loan types represent
+          * Describe the overall competitive nature of the market - do NOT list every HHI value
+          * Reference national trends from NCRC reports when relevant
+        - SECOND PARAGRAPH: Explain the trends and patterns in plain English
+          * CRITICALLY: If HHI values are well below 1,500, acknowledge that the market remains highly competitive even if concentration increased
+          * Describe overall trends (is the market becoming more or less competitive?)
+          * Only cite the MOST SIGNIFICANT changes or differences between loan types
+          * Explain what these patterns mean for borrowers and the lending market
+          * DO NOT list every single HHI value - focus on the most compelling trends
+          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+        - Use PLAIN ENGLISH - avoid technical jargon
+        - Do NOT include specific HHI numbers or calculations in the discussion
+        - Focus on explaining what the patterns mean, not the mathematical details
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - Only cite the MOST COMPELLING information: the biggest changes or most notable patterns
+        - DO NOT create a "wall of numbers" - cite at most 1-2 specific examples per paragraph
+        - AT LEAST 2 PARAGRAPHS (minimum requirement)
+        - CRITICAL: If all HHI values in the data are below 1,500, you MUST emphasize the competitive nature of the market prominently, even if discussing increases over time
+        """
+
+    def generate_market_concentration_discussion(self, data: Dict[str, Any]) -> str:
+        """Section 4 on its own. The combined call was the only source of this
+        narrative, so whenever it failed Section 4 was left blank."""
+        counties = data.get('counties', [])
+        years = data.get('years', [])
+        if len(counties) == 1:
+            counties_str = counties[0]
+        elif len(counties) <= 3:
+            counties_str = ', '.join(counties)
+        else:
+            counties_str = f"{counties[0]} and {len(counties) - 1} other counties"
+        year_range = f"{min(years)} to {max(years)}" if len(years) > 1 else (str(years[0]) if years else "the selected years")
+        prompt = f"""
+        Generate at least 2 paragraphs discussing market concentration in mortgage lending in {counties_str}, {year_range}.
+
+        {self._get_ncrc_report_sources()}
+
+        {self._market_concentration_block(data.get('market_concentration', []))}
+
+        WRITING REQUIREMENTS:
+        - Write in PLAIN ENGLISH, objective third person, professional tone
+        - NO assumptions about causality or why patterns exist, NO policy recommendations, NO speculation
+        - Present ONLY what the data shows
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
+        - Return only the discussion text (no JSON, no headings)
+        """
+        return self._call_ai(prompt, max_tokens=800, temperature=0.3)
+
     def generate_all_table_discussions(self, data: Dict[str, Any]) -> Dict[str, str]:
         """Generate all four table discussions in a single API call to reduce rate limit issues.
 
@@ -1103,44 +1175,7 @@ TABLE DATA:
         - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
         
-        === DATA FOR SECTION 4: MARKET CONCENTRATION ===
-        Market Concentration Data (HHI by year and loan purpose): {json.dumps(market_concentration_data, indent=2)[:2000] if market_concentration_data else 'Not available'}
-        
-        For "market_concentration_discussion":
-        - This table shows market concentration using the Herfindahl-Hirschman Index (HHI) for all loans, home purchase loans, refinance loans, and home equity lending by year
-        - HHI measures market concentration by calculating the sum of squared market shares for all lenders
-        - HHI values range from 0 to 10,000, where:
-          * Lower values (below 1,500) indicate more competitive markets with many lenders sharing market share
-          * Moderate values (1,500-2,500) indicate moderate concentration
-          * Higher values (above 2,500) indicate highly concentrated markets dominated by fewer lenders
-        - The table shows HHI values for each loan type (All Loans, Home Purchase, Refinance, Home Equity) for each year
-        - CRITICAL: Before analyzing trends, you MUST first assess the overall competitive nature of the market:
-          * If HHI values are consistently below 1,500 (or even well below 1,500), the market is HIGHLY COMPETITIVE
-          * You MUST acknowledge this competitive nature prominently in your analysis
-          * Even if concentration increased over time, if values remain well below 1,500, emphasize that the market remains highly competitive overall
-          * Put any increases in concentration in proper context - a market that goes from 200 to 400 HHI is still highly competitive (both well below 1,500)
-          * Do NOT focus solely on increases without acknowledging the overall competitive nature
-        - FIRST PARAGRAPH: Explain how to read the table and what it means
-          * Explain what HHI measures and what it means for market competition in plain English
-          * CRITICALLY: If HHI values are below 1,500, explicitly state that the market is highly competitive
-          * Explain what the different loan types represent
-          * Describe the overall competitive nature of the market - do NOT list every HHI value
-          * Reference national trends from NCRC reports when relevant
-        - SECOND PARAGRAPH: Explain the trends and patterns in plain English
-          * CRITICALLY: If HHI values are well below 1,500, acknowledge that the market remains highly competitive even if concentration increased
-          * Describe overall trends (is the market becoming more or less competitive?)
-          * Only cite the MOST SIGNIFICANT changes or differences between loan types
-          * Explain what these patterns mean for borrowers and the lending market
-          * DO NOT list every single HHI value - focus on the most compelling trends
-          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
-        - Use PLAIN ENGLISH - avoid technical jargon
-        - Do NOT include specific HHI numbers or calculations in the discussion
-        - Focus on explaining what the patterns mean, not the mathematical details
-        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
-        - Only cite the MOST COMPELLING information: the biggest changes or most notable patterns
-        - DO NOT create a "wall of numbers" - cite at most 1-2 specific examples per paragraph
-        - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - CRITICAL: If all HHI values in the data are below 1,500, you MUST emphasize the competitive nature of the market prominently, even if discussing increases over time
+        {self._market_concentration_block(market_concentration_data)}
         
         CRITICAL WRITING REQUIREMENTS FOR ALL SECTIONS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms
