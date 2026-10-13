@@ -11,6 +11,8 @@ import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime
 
+from justdata.shared.utils.env_utils import ai_disabled, refuse_if_ai_disabled
+
 # =============================================================================
 # AI USAGE TRACKING
 # =============================================================================
@@ -107,7 +109,7 @@ def _flush_ai_usage_to_bigquery():
     """Flush accumulated AI usage to BigQuery."""
     global _ai_usage_buffer, _last_flush_time
     
-    if not _ai_usage_buffer:
+    if not _ai_usage_buffer or ai_disabled():
         return
     
     try:
@@ -373,6 +375,7 @@ def ask_ai(
     Returns:
         The AI response text
     """
+    refuse_if_ai_disabled()
     if ai_provider != "claude":
         raise Exception(f"Unsupported AI provider: {ai_provider}")
 
@@ -447,6 +450,7 @@ class AIAnalyzer:
         # NCRC_STYLE_GUIDE; leave it unset for prompts that should go through as written.
         self.style_guide = style_guide
         self.app_name = app_name
+        refuse_if_ai_disabled()
         if ai_provider != "claude":
             raise Exception(f"Unsupported AI provider: {ai_provider}")
         # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
@@ -477,6 +481,7 @@ class AIAnalyzer:
         if self.style_guide:
             prompt = self.style_guide + "\n" + prompt
         call_model = model or self.model
+        refuse_if_ai_disabled()
         try:
             try:
                 import anthropic
