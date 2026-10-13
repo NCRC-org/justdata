@@ -203,6 +203,42 @@ class BigQueryClient:
         
         return self.query(sql)
     
+    def get_state_lender_amounts(self, state_fips: str, years: list):
+        """Lender loan amounts summed across a state, by year, for the
+        statewide HHI (Workflow 13277160986). Same tables and joins as
+        get_disclosure_data, and the same de-duplication as the county HHI
+        (one row per respondent per county per year) before summing."""
+        from google.cloud.bigquery import ArrayQueryParameter, QueryJobConfig, ScalarQueryParameter
+        sql = f"""
+        WITH d AS (
+            SELECT
+                CAST(d.year AS INT64) AS year,
+                l.sb_lender AS lender_name,
+                COALESCE(d.amt_under_100k, 0) + COALESCE(d.amt_100k_250k, 0) + COALESCE(d.amt_250k_1m, 0) AS amt,
+                ROW_NUMBER() OVER (
+                    PARTITION BY d.year, d.respondent_id, LPAD(CAST(d.geoid5 AS STRING), 5, '0')
+                    ORDER BY l.sb_lender) AS rn
+            FROM `{self.project_id}.bizsight.sb_county_summary` d
+            JOIN (
+                SELECT sb_resid, sb_lender,
+                ROW_NUMBER() OVER (PARTITION BY sb_resid ORDER BY sb_year DESC) AS rn
+                FROM `{self.project_id}.bizsight.sb_lenders`
+            ) l ON d.respondent_id = l.sb_resid AND l.rn = 1
+            JOIN `{self.project_id}.shared.cbsa_to_county` g
+                ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
+            WHERE SUBSTR(LPAD(CAST(g.geoid5 AS STRING), 5, '0'), 1, 2) = @state_fips
+                AND CAST(d.year AS INT64) IN UNNEST(@years)
+        )
+        SELECT year, lender_name, SUM(amt) AS amt
+        FROM d WHERE rn = 1
+        GROUP BY year, lender_name
+        """
+        job_config = QueryJobConfig(query_parameters=[
+            ScalarQueryParameter('state_fips', 'STRING', str(state_fips).zfill(2)),
+            ArrayQueryParameter('years', 'INT64', [int(y) for y in years]),
+        ])
+        return self.query(sql, job_config=job_config)
+
     def get_county_summary_stats(self, geoid5: str, years: list = None):
         """
         Get summary statistics for a county including LMI metrics.

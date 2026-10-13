@@ -82,7 +82,11 @@
       <figcaption class="app-figure-title">Figure 1: Market Concentration (HHI) by Year</figcaption>
       <div class="app-chart"><canvas id="bsHhiChart" role="img" aria-label="Market concentration (HHI) of small business lending by year"></canvas></div>
     </figure>
-    <p class="app-caption"><strong>Source:</strong> FFIEC CRA Small Business Lending data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. HHI values range from 0 to 10,000. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
+    <div id="bsHhiCompareWrap" hidden>
+      <h4 class="app-table-title">County and statewide HHI</h4>
+      <div class="app-table-wrap"><table class="app-table bs-table" id="bsHhiCompare"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <p class="app-caption"><strong>Source:</strong> FFIEC CRA Small Business Lending data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. HHI values range from 0 to 10,000. The statewide HHI uses the same lending data and years across every county in the state. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
     {% with id="bsHhiNarrative" %}{% include "partials/bizsight_narrative.html" %}{% endwith %}
   </section>
 

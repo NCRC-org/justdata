@@ -944,6 +944,26 @@ def generate_bizsight_pdf(result_data, metadata):
         '1,500\u20132,500 = Moderate, &gt;2,500 = Concentrated'
     ))
 
+    # County beside statewide HHI, same lending data and years
+    state_rows = [d for d in hhi_by_year if d.get('state_hhi_value') is not None]
+    if state_rows:
+        hhi_years = [d for d in hhi_by_year if d.get('year') is not None]
+        year_cols = [str(int(float(d['year']))) for d in hhi_years]
+        fmt = lambda v: f'{round(float(v)):,}' if v is not None else ''
+        state_label = f"{state_rows[0].get('state_name') or 'State'} (statewide)"
+        table_rows = [
+            dict({'Market': metadata.get('county_name') or 'County'}, **{c: fmt(d.get('hhi_value')) for c, d in zip(year_cols, hhi_years)}),
+            dict({'Market': state_label}, **{c: fmt(d.get('state_hhi_value')) for c, d in zip(year_cols, hhi_years)}),
+        ]
+        story.append(Spacer(1, 8))
+        story.append(_h2('County and statewide HHI'))
+        story.append(build_data_table(
+            table_rows, ['Market'] + year_cols, [2.0 * inch] + [0.8 * inch] * len(year_cols),
+            header_labels=['Market'] + year_cols, use_paragraph_col0=True))
+        story.append(_caption('HHI is the sum of the squared market shares (0 to 10,000) of each lender\u2019s '
+                              'total small business loan amount, for the county and, separately, for every county '
+                              'in the state, from the same CRA data and years.'))
+
     # HHI AI narrative
     hhi_narrative = ai.get('hhi_trends_discussion', '')
     if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():

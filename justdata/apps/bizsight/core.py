@@ -18,7 +18,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from justdata.apps.bizsight.config import BizSightConfig
 from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
 from justdata.shared.utils.progress_tracker import ProgressTracker
-from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, classified_totals, safe_int, safe_float
+from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, classified_totals, statewide_hhi_by_year, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
 from justdata.shared.utils.error_ref import GENERIC_ERROR, user_error
 from justdata.shared.utils.perf import perf_stages, start_perf, timed
@@ -710,6 +710,22 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     'concentration_level': hhi_concentration
                 })
         
+        # Statewide HHI for the same years, from the same tables, joins and
+        # de-duplication as the county figure (Workflow 13277160986). Carried
+        # on each hhi_by_year entry so the cache, page and exports get it. A
+        # failure leaves it out and never fails the report.
+        if hhi_by_year:
+            try:
+                with timed('bq:state_hhi'):
+                    state_rows = bq_client.get_state_lender_amounts(str(geoid5).zfill(5)[:2], years).to_dataframe()
+                state_hhi = {int(r['year']): r['hhi_value'] for r in
+                             statewide_hhi_by_year(state_rows.to_dict('records'), years)}
+                for entry in hhi_by_year:
+                    entry['state_hhi_value'] = state_hhi.get(int(entry['year']))
+                    entry['state_name'] = county_data.get('state_name', '')
+            except Exception as e:
+                print(f"[WARNING] Statewide HHI failed: {type(e).__name__}")
+
         print(f"DEBUG: HHI by year calculated: {len(hhi_by_year)} years")
         for hhi_year_data in hhi_by_year:
             print(f"DEBUG: Year {hhi_year_data['year']}: HHI={hhi_year_data.get('hhi_value')}, Level={hhi_year_data.get('concentration_level')}")
