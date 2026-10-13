@@ -32,7 +32,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # BizSight 2: tract income shares divide by classified loans (2026-10-13).
 # LendSight 2: narratives after the #212 fixes and the per-section fallback;
 # results stored before may lack Sections 3 and 4 (2026-10-13).
-REPORT_REVISIONS = {'bizsight': 2, 'lendsight': 2}
+# LendSight 3: results stored between the #215 and #216 deploys lack key
+# findings (a 400-token ceiling, raised in #216) (2026-10-13).
+REPORT_REVISIONS = {'bizsight': 2, 'lendsight': 3}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
