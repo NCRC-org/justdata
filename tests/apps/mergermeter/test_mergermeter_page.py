@@ -68,10 +68,13 @@ def test_report_data_is_a_readiness_check(client, monkeypatch, tmp_path):
     import justdata.apps.mergermeter.mergermeter_ops as ops
     monkeypatch.setattr(ops, "ensure_local_excel", lambda job_id: tmp_path / "x.xlsx" if job_id == "ready" else None)
     monkeypatch.setattr(bp, "download_json", lambda path: {"acquirer_name": "Bank A", "target_name": "Bank B",
-                                                           "hmda_years": [2020, 2024], "acquirer_lei": "X" * 20})
+                                                           "hmda_years": [2020, 2024], "acquirer_lei": "X" * 20,
+                                                           "perf": [{"stage": "step:querying_hmda_data_for_bank_a", "ms": 900}],
+                                                           "perf_ref": "abcd1234"})
     ok = client.get("/mergermeter/report-data?job_id=ready").get_json()
     assert ok == {"success": True, "job_id": "ready",
-                  "metadata": {"acquirer_name": "Bank A", "target_name": "Bank B", "hmda_years": [2020, 2024]}}
+                  "metadata": {"acquirer_name": "Bank A", "target_name": "Bank B", "hmda_years": [2020, 2024]},
+                  "perf": [{"stage": "step:querying_hmda_data_for_bank_a", "ms": 900}], "ref": "abcd1234"}
     monkeypatch.setattr(bp, "get_progress", lambda job_id: {"done": False})
     assert client.get("/mergermeter/report-data?job_id=running").status_code == 202
     monkeypatch.setattr(bp, "get_progress", lambda job_id: {"done": True, "error": "x"})
@@ -104,3 +107,15 @@ def test_no_inline_styles_icons_or_oversized_files():
 def test_workbook_cells_are_escaped():
     js = (JS / "mm_report.js").read_text()
     assert "esc(t.val)" in js and "esc(w)" in js
+
+
+def test_step_clock_times_each_progress_step():
+    from justdata.apps.mergermeter.mergermeter_ops import _StepClock
+    from justdata.shared.utils.perf import perf_stages, start_perf
+    start_perf("mergermeter")
+    clock = _StepClock()
+    clock.mark("Querying HMDA data for Bank A...")
+    clock.mark("Generating Excel report...")
+    clock.mark("saving")
+    assert [s["stage"] for s in perf_stages()] == ["step:querying_hmda_data_for_bank_a", "step:generating_excel_report"]
+    assert all(isinstance(s["ms"], int) for s in perf_stages())

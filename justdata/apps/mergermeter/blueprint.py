@@ -610,7 +610,11 @@ def report_data():
             if not progress.get('done'):
                 return jsonify({'success': False, 'error': 'Analysis still in progress', 'progress': progress}), 202
             return jsonify({'success': False, 'error': 'Report file not found.', 'progress': progress}), 404
-        return jsonify({'success': True, 'job_id': job_id, 'metadata': _run_metadata(job_id)})
+        saved = _saved_metadata(job_id)
+        return jsonify({'success': True, 'job_id': job_id,
+                        'metadata': {k: saved[k] for k in _METADATA_KEYS if saved.get(k) is not None},
+                        # Stage timings of the run (spec 04 A5)
+                        'perf': saved.get('perf'), 'ref': saved.get('perf_ref')})
     except Exception as e:
         return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter /report-data')[0]}), 500
 
@@ -619,15 +623,15 @@ _METADATA_KEYS = ('acquirer_name', 'target_name', 'hmda_years', 'sb_years', 'bas
                   'baseline_sb_years', 'loan_purpose', 'use_national_data')
 
 
-def _run_metadata(job_id):
-    """The page-facing part of the run's saved metadata (GCS, then local)."""
+def _saved_metadata(job_id):
+    """The run's saved metadata (GCS, then this instance's disk), or {}."""
     metadata = download_json(f'mergermeter/merger_metadata_{job_id}.json')
     if not metadata:
         path = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
         if path.exists():
             with open(path) as f:
                 metadata = json.load(f)
-    return {k: (metadata or {}).get(k) for k in _METADATA_KEYS if (metadata or {}).get(k) is not None}
+    return metadata or {}
 
 
 @mergermeter_bp.route('/api/search-banks', methods=['GET'])

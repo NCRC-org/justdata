@@ -11,6 +11,7 @@ import zipfile
 from datetime import datetime
 import uuid
 import threading
+import re
 import time
 import json
 from typing import List, Dict
@@ -23,6 +24,27 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.shared.web.app_factory import create_app, register_standard_routes
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.perf import perf_stages, record_stage, start_perf
+
+# The progress publisher; _perform_analysis wraps it to time each step.
+_publish_progress = update_progress
+
+
+class _StepClock:
+    """Stage timings for a run (spec 04 A5). Each progress step runs until the
+    next one starts, so marking every step times the queries, the Excel build
+    and the save without restructuring the analysis."""
+
+    def __init__(self):
+        self.name = None
+        self.started = time.perf_counter()
+
+    def mark(self, step):
+        now = time.perf_counter()
+        if self.name:
+            slug = re.sub(r'[^a-z0-9]+', '_', self.name.lower()).strip('_')
+            record_stage({'stage': f'step:{slug}', 'ms': round((now - self.started) * 1000)})
+        self.name, self.started = step, now
 from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 
 # Use absolute imports from repo root (like other apps) - avoids issues with gunicorn
@@ -274,6 +296,14 @@ def analyze():
 
 def _perform_analysis(job_id, form_data):
     """Perform the actual analysis (runs in background thread)"""
+    perf_ref = start_perf('mergermeter', str(job_id)[:8])
+    step_clock = _StepClock()
+
+    def update_progress(jid, data):
+        if not data.get('done'):
+            step_clock.mark(data.get('step'))
+        _publish_progress(jid, data)
+
     try:
         # Create progress tracker
         progress_tracker = create_progress_tracker(job_id)
@@ -1400,6 +1430,10 @@ def _perform_analysis(job_id, form_data):
         ) or []
         
         # Save metadata
+        # Stage timings so far (queries and the Excel build); /report-data returns them
+        step_clock.mark('saving')
+        metadata['perf'] = perf_stages()
+        metadata['perf_ref'] = perf_ref
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
