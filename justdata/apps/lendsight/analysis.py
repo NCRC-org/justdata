@@ -944,7 +944,7 @@ TABLE DATA:
 
         return self._call_ai(prompt, max_tokens=300, temperature=0.3)
 
-    def _market_concentration_block(self, market_concentration_data) -> str:
+    def _market_concentration_block(self, market_concentration_data, state_data=None) -> str:
         """Section 4 instructions, shared by the combined call and the
         single-section call that fills Section 4 when the combined one fails."""
         return f"""
@@ -986,6 +986,19 @@ TABLE DATA:
         - DO NOT create a "wall of numbers" - cite at most 1-2 specific examples per paragraph
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
         - CRITICAL: If all HHI values in the data are below 1,500, you MUST emphasize the competitive nature of the market prominently, even if discussing increases over time
+        {self._statewide_hhi_block(state_data)}
+        """
+
+    def _statewide_hhi_block(self, state_data) -> str:
+        """Statewide HHI for the same loans and years (Workflow 13277160986).
+        The narrative may compare; it may not explain the difference."""
+        if not state_data:
+            return ""
+        return f"""
+        Statewide HHI for the same kind of loans and years (computed the same way, across every county in the state):
+        {json.dumps(state_data, indent=2)[:1500]}
+        - You MAY say whether the county is more or less concentrated than its state, and by how much
+        - You MUST NOT suggest why the county and state differ, or attribute the difference to any cause
         """
 
     def generate_market_concentration_discussion(self, data: Dict[str, Any]) -> str:
@@ -1005,7 +1018,7 @@ TABLE DATA:
 
         {self._get_ncrc_report_sources()}
 
-        {self._market_concentration_block(data.get('market_concentration', []))}
+        {self._market_concentration_block(data.get('market_concentration', []), data.get('market_concentration_state'))}
 
         WRITING REQUIREMENTS:
         - Write in PLAIN ENGLISH, objective third person, professional tone
@@ -1180,7 +1193,7 @@ TABLE DATA:
         - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
         
-        {self._market_concentration_block(market_concentration_data)}
+        {self._market_concentration_block(market_concentration_data, data.get('market_concentration_state'))}
         
         CRITICAL WRITING REQUIREMENTS FOR ALL SECTIONS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms

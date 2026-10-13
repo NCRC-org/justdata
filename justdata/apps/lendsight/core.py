@@ -16,6 +16,7 @@ from justdata.apps.lendsight.data_utils import (
     SUMMARY_PROJECT_ID
 )
 from justdata.apps.lendsight.report_builder import build_mortgage_report
+from justdata.apps.lendsight.report_builder.sections.concentration import statewide_market_concentration
 from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 from justdata.apps.lendsight.version import __version__
 from justdata.shared.utils.perf import perf_stages, start_perf, timed
@@ -466,6 +467,11 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         
         # Add census data to report_data
         report_data['census_data'] = census_data
+
+        # Statewide HHI from the same table, filters and years as the county
+        # figure, shown beside it in Section 4 and the exports.
+        with timed('bq:state_hhi'):
+            report_data['market_concentration_state'] = statewide_market_concentration(all_results, years, loan_purpose)
         
         # Note: Excel report is now generated on-demand when user requests download
         # This improves performance and prevents timeouts during analysis
@@ -552,6 +558,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'minority_tracts': minority_tracts_data,  # Section 2 Table 3: Lending to Census Tracts by Minority Pop
                 'top_lenders_detailed': top_lenders_detailed_data,
                 'market_concentration': market_concentration_data,
+                'market_concentration_state': report_data.get('market_concentration_state') or [],
                 'trends_data': convert_numpy_types(report_data.get('trends', {}).to_dict('records') if not report_data.get('trends', pd.DataFrame()).empty else []),
                 'hhi': convert_numpy_types(hhi_data),
                 'county_data': convert_numpy_types(county_df.to_dict('records') if not county_df.empty else []),

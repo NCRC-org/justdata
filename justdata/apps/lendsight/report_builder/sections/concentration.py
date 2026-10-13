@@ -198,3 +198,69 @@ def calculate_mortgage_hhi_for_year(df: pd.DataFrame, year: int) -> Dict[str, An
     }
 
 
+
+
+def statewide_market_concentration(rows: List[Dict[str, Any]], years: List[int], loan_purpose=None,
+                                   fetch=None) -> List[Dict[str, Any]]:
+    """Statewide HHI beside the county figure (Workflow 13277160986).
+
+    For each state the report's counties are in, lender loan amounts across
+    the whole state come from the same table and filters as the county data
+    (data_utils.statewide_lender_amounts), and create_market_concentration_table
+    computes the HHI, so both figures use one method. A failed state query
+    leaves that state out; it never fails the report.
+    """
+    if fetch is None:
+        from justdata.apps.lendsight.data_utils import statewide_lender_amounts as fetch
+    states = {}
+    for row in rows or []:
+        geoid5 = str(row.get('geoid5') or '').zfill(5)
+        county_state = str(row.get('county_state') or '')
+        if geoid5 != '00000' and ',' in county_state:
+            states.setdefault(geoid5[:2], county_state.rsplit(',', 1)[1].strip())
+    out = []
+    for fips, name in sorted(states.items()):
+        try:
+            df = pd.DataFrame(fetch(fips, years, loan_purpose))
+        except Exception as e:
+            print(f"[WARNING] Statewide HHI for state {fips} failed: {type(e).__name__}")
+            continue
+        if df.empty:
+            continue
+        df['year'] = df['year'].astype(int)
+        rows_ = create_market_concentration_table(df, [int(y) for y in years])
+        # String year keys, as the cached county table has them; mixed int
+        # and str keys break Flask's sorted JSON.
+        out.append({'state': name, 'state_fips': fips,
+                    'rows': [{str(k): v for k, v in r.items()} for r in rows_]})
+    return out
+
+
+HHI_METHOD_SENTENCE = (
+    "HHI is the sum of the squared market shares (0 to 10,000) of every lender's total "
+    "loan amount, computed for the selected counties and, separately, for all counties "
+    "in the state, from the same HMDA loans (same filters, loan purposes and years)."
+)
+
+
+def hhi_comparison_rows(county_rows, states, years, area_label: str) -> List[Dict[str, Any]]:
+    """County HHI rows followed by the matching statewide rows, for the
+    exports: Market, Loan Purpose, then one column per year. Loan purposes
+    with no county value in any year are left out."""
+    out = []
+    for c in county_rows or []:
+        purpose = c.get('Loan Purpose')
+        if all(c.get(y, c.get(str(y))) is None for y in years):
+            continue
+        markets = [(area_label, c)]
+        for s in states or []:
+            match = next((r for r in s.get('rows', []) if r.get('Loan Purpose') == purpose), None)
+            if match:
+                markets.append((f"{s.get('state')} (statewide)", match))
+        for market, row in markets:
+            entry = {'Market': market, 'Loan Purpose': purpose}
+            for y in years:
+                value = row.get(y, row.get(str(y)))
+                entry[str(y)] = round(float(value)) if value is not None else None
+            out.append(entry)
+    return out

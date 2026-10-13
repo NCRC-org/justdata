@@ -630,3 +630,27 @@ def execute_tiered_queries(county: str, years: List[int], loan_purpose: list = N
         'tract_data': tract_results
     }
 
+
+
+def loan_purpose_param(loan_purpose: list = None) -> str:
+    """The @loan_purpose value mortgage_report.sql expects."""
+    if loan_purpose is None or len(loan_purpose) == 0 or set(loan_purpose) == {'purchase', 'refinance', 'equity'}:
+        return 'all'
+    return ','.join(sorted(loan_purpose))
+
+
+def statewide_lender_amounts(state_fips: str, years: List[int], loan_purpose: list = None) -> List[dict]:
+    """Lender loan amounts across a whole state, by year and loan purpose, on
+    the county report's filters (sql_templates/state_hhi_lender_amounts.sql).
+    One parameterised BigQuery job."""
+    from google.cloud.bigquery import ArrayQueryParameter, QueryJobConfig, ScalarQueryParameter
+    sql_path = os.path.join(os.path.dirname(__file__), 'sql_templates', 'state_hhi_lender_amounts.sql')
+    with open(sql_path) as f:
+        sql = f.read()
+    job_config = QueryJobConfig(query_parameters=[
+        ScalarQueryParameter('state_fips', 'STRING', str(state_fips).zfill(2)),
+        ArrayQueryParameter('years', 'INT64', [int(y) for y in years]),
+        ScalarQueryParameter('loan_purpose', 'STRING', loan_purpose_param(loan_purpose)),
+    ])
+    client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
+    return [dict(row) for row in client.query(sql, job_config=job_config).result()]

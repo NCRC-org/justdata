@@ -96,7 +96,11 @@
         <div class="app-chart app-chart"><canvas id="lsHhiChart" role="img" aria-label="Market concentration (HHI) by year"></canvas></div>
       </figure>
     </div>
-    <p class="app-caption"><strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. HHI values range from 0 to 10,000. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
+    <div id="lsHhiCompareWrap" hidden>
+      <h4 class="app-table-title">County and statewide HHI</h4>
+      <div class="app-table-wrap"><table class="app-table" id="lsHhiCompare"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <p class="app-caption"><strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. HHI values range from 0 to 10,000. The statewide HHI uses the same loans (same filters and years) across every county in the state. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
     {% with id="lsConcentrationNarrative" %}{% include "partials/lendsight_narrative.html" %}{% endwith %}
   </section>
 

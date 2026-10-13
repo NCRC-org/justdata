@@ -512,7 +512,7 @@ def render_hhi_chart(market_concentration_data):
     # Value labels on bars
     for i, v in enumerate(values):
         if v > 0:
-            ax.text(i, v + max_val * 0.03, str(int(v)), ha='center', fontsize=8, fontweight='bold')
+            ax.text(i, v + max_val * 0.03, f"{round(v):,}", ha="center", fontsize=8, fontweight="bold")
 
     ax.set_xticks(x)
     ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=8)

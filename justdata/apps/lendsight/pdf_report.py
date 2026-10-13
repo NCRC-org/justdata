@@ -57,6 +57,7 @@ from justdata.apps.lendsight.pdf_charts import (
     render_sparkline, chart_to_image,
 )
 from justdata.apps.lendsight.version import __version__
+from justdata.apps.lendsight.report_builder.sections.concentration import HHI_METHOD_SENTENCE, hhi_comparison_rows
 
 
 # ---------------------------------------------------------------------------
@@ -1068,6 +1069,32 @@ def _build_hhi_table(data):
     return table, True
 
 
+def _build_hhi_comparison_table(market_conc, states, metadata):
+    """County HHI rows with the matching statewide rows (Workflow 13277160986)."""
+    years = []
+    for y in metadata.get('years', []) if isinstance(metadata.get('years'), list) else []:
+        try:
+            years.append(int(y))
+        except (ValueError, TypeError):
+            pass
+    counties = metadata.get('counties') or []
+    area = counties[0] if isinstance(counties, list) and len(counties) == 1 else 'Selected counties'
+    rows = hhi_comparison_rows(_df_to_dicts(market_conc), states, sorted(years), area)
+    if not rows:
+        return Spacer(1, 0), False
+    year_cols = [str(y) for y in sorted(years)]
+    for row in rows:
+        for col in year_cols:
+            row[col] = f'{row[col]:,}' if row.get(col) is not None else ''
+    table = build_data_table(
+        rows, ['Market', 'Loan Purpose'] + year_cols,
+        [1.9 * inch, 1.1 * inch] + [0.7 * inch] * len(year_cols),
+        header_labels=['Market', 'Loan Purpose'] + year_cols,
+        use_paragraph_col0=True,
+    )
+    return table, True
+
+
 # ---------------------------------------------------------------------------
 # Main PDF generator (v4 overhaul)
 # ---------------------------------------------------------------------------
@@ -1389,6 +1416,15 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         'Source: HMDA data. HHI &lt;1,500 = Competitive, '
         '1,500\u20132,500 = Moderate, &gt;2,500 = Concentrated'
     ))
+
+    # County beside statewide HHI, same loans and years
+    hhi_cmp_tbl, hhi_cmp_has = _build_hhi_comparison_table(
+        market_conc, report_data.get('market_concentration_state') or [], metadata)
+    if hhi_cmp_has:
+        story.append(Spacer(1, 8))
+        story.append(_h2('County and statewide HHI'))
+        story.append(hhi_cmp_tbl)
+        story.append(_caption(HHI_METHOD_SENTENCE))
 
     # HHI AI narrative
     hhi_narrative = ai.get('market_concentration_discussion', '')

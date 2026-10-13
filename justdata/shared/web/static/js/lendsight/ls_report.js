@@ -133,6 +133,27 @@
       '<strong>Abbreviations:</strong> Native Am. = Native American; Hawaiian/PI = Hawaiian/Pacific Islander. | <strong>Counties:</strong> ' + esc((metadata.counties || []).join(', '));
   }
 
+  /** County HHI beside the statewide HHI for the same loans and years. */
+  function hhiCompare(countyRows, states, years, area) {
+    if (!states.length) return;
+    var fmt = function (v) { var n = parseFloat(v); return isNaN(n) ? '-' : Math.round(n).toLocaleString(); };
+    var rows = [];
+    countyRows.forEach(function (c) {
+      var purpose = c['Loan Purpose'];
+      rows.push([purpose + ', ' + area, c]);
+      states.forEach(function (s) {
+        var match = (s.rows || []).filter(function (r) { return r['Loan Purpose'] === purpose; })[0];
+        if (match) rows.push([purpose + ', ' + s.state + ' (statewide)', match]);
+      });
+    });
+    var table = $('lsHhiCompare');
+    table.tHead.innerHTML = '<tr><th scope="col">Market</th>' + years.map(function (y) { return '<th scope="col" class="num">' + y + '</th>'; }).join('') + '</tr>';
+    table.tBodies[0].innerHTML = rows.map(function (r) {
+      return '<tr><th scope="row">' + esc(r[0]) + '</th>' + years.map(function (y) { return '<td class="num">' + esc(fmt(r[1][y])) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    $('lsHhiCompareWrap').hidden = false;
+  }
+
   function concentration(data, metadata, p) {
     var rows = data.market_concentration || [];
     var years = (metadata.years || []).map(Number).sort(function (a, b) { return a - b; });
@@ -146,6 +167,8 @@
       if (!shown.length) shown = [rows[0]];
     }
     $('lsSection4').hidden = false;
+    var counties = metadata.counties || [];
+    hhiCompare(shown, data.market_concentration_state || [], years, counties.length === 1 ? counties[0] : 'selected counties');
     narrative('lsConcentrationNarrative', (metadata.ai_insights || {}).market_concentration_discussion, true);
     return root.LendSight.charts.hhi($('lsHhiChart'), shown, years);
   }
