@@ -1,0 +1,9 @@
+[
+  {"app": "lendsight", "payload": "scripts/timing_payloads/lendsight-cook.json", "label": "cook-uncached", "runs": 2},
+  {"app": "lendsight", "payload": "scripts/timing_payloads/lendsight-lowndes.json", "label": "lowndes-uncached", "runs": 2},
+  {"app": "bizsight", "payload": "scripts/timing_payloads/bizsight-cook.json", "label": "cook-uncached", "runs": 2},
+  {"app": "bizsight", "payload": "scripts/timing_payloads/bizsight-lowndes.json", "label": "lowndes-uncached", "runs": 2},
+  {"app": "branchsight", "payload": "scripts/timing_payloads/branchsight-cook.json", "label": "cook-uncached", "runs": 2},
+  {"app": "branchsight", "payload": "scripts/timing_payloads/branchsight-lowndes.json", "label": "lowndes-uncached", "runs": 2},
+  {"app": "mergermeter", "payload": "scripts/timing_payloads/mergermeter-atlantic-union-synovus.json", "label": "atlantic-synovus-uncached", "runs": 2, "timeout": 1800}
+]
