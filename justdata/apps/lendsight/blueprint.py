@@ -20,6 +20,7 @@ from justdata.shared.utils.analysis_cache import store_cached_result, get_analys
 
 # In-memory fallback for when BigQuery cache store fails
 _result_fallback = {}
+_FALLBACK_LIMIT = 20
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from .core import analysis_years, run_analysis, parse_web_parameters
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
@@ -395,7 +396,10 @@ def analyze():
                     import traceback
                     traceback.print_exc()
                     # Store result in-memory fallback so user can still see results
+                    # (the most recent _FALLBACK_LIMIT results on this instance)
                     _result_fallback[job_id] = result
+                    while len(_result_fallback) > _FALLBACK_LIMIT:
+                        _result_fallback.pop(next(iter(_result_fallback)))
                     progress_tracker.complete(success=True)
                 
                 record_completion('lendsight', cache_params, caller, job_id,
@@ -443,6 +447,22 @@ def report():
     return _page(job_id=job_id)
 
 
+def _json_safe(obj):
+    """Dict keys as strings, numpy scalars as Python numbers, NaN as None."""
+    import math
+    import numpy as np
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, (np.floating, float)):
+        value = float(obj)
+        return None if math.isnan(value) or math.isinf(value) else value
+    return obj
+
+
 @lendsight_bp.route('/report-data', methods=['GET'])
 @login_required
 @require_access('lendsight', 'limited')
@@ -461,7 +481,8 @@ def report_data():
         # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
         if not analysis_result and job_id in _result_fallback:
-            analysis_result = _result_fallback.pop(job_id)
+            # Not popped: a reload and /download read the same fallback
+            analysis_result = _result_fallback.get(job_id)
             print(f"[INFO] Using in-memory fallback for job_id={job_id}")
         if not analysis_result:
             # Check progress to see if analysis is still running
@@ -525,7 +546,12 @@ def report_data():
         
         return jsonify({
             'success': True,
-            'data': converted_report_data,
+            # String keys throughout: a result served from the in-memory
+            # fallback (a failed cache write) still has the HHI tables' int
+            # year keys beside 'Loan Purpose', and Flask's sorted JSON
+            # cannot order mixed keys (500). Cached results already have
+            # string keys.
+            'data': _json_safe(converted_report_data),
             'metadata': metadata_with_ai,
             'ai_insights': ai_insights,  # Also include at top level for backward compatibility
             # Stage timings of the run that produced this result (spec 04 A5).
