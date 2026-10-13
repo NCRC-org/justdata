@@ -1,0 +1,1709 @@
+{
+ "acquirer_lei": "549300ZTT08EKQRVTR15",
+ "acquirer_rssd": "693224",
+ "acquirer_sb_id": "0000693224",
+ "target_lei": "DX0JX77PRMOELF7VG772",
+ "target_rssd": "395238",
+ "target_sb_id": "0000395238",
+ "acquirer_name": "ATLANTIC UNION BANK",
+ "target_name": "SYNOVUS BANK",
+ "single_bank_mode": "0",
+ "use_national_data": "0",
+ "acquirer_assessment_areas": [
+  {
+   "cbsa_name": "Baltimore-Columbia-Towson, MD",
+   "counties": [
+    {
+     "state_code": "24",
+     "county_code": "003",
+     "county_name": "Anne Arundel County",
+     "state_name": "Maryland",
+     "geoid5": "24003"
+    },
+    {
+     "state_code": "24",
+     "county_code": "005",
+     "county_name": "Baltimore County",
+     "state_name": "Maryland",
+     "geoid5": "24005"
+    },
+    {
+     "state_code": "24",
+     "county_code": "013",
+     "county_name": "Carroll County",
+     "state_name": "Maryland",
+     "geoid5": "24013"
+    },
+    {
+     "state_code": "24",
+     "county_code": "027",
+     "county_name": "Howard County",
+     "state_name": "Maryland",
+     "geoid5": "24027"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Blacksburg-Christiansburg, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "121",
+     "county_name": "Montgomery County",
+     "state_name": "Virginia",
+     "geoid5": "51121"
+    },
+    {
+     "state_code": "51",
+     "county_code": "155",
+     "county_name": "Pulaski County",
+     "state_name": "Virginia",
+     "geoid5": "51155"
+    },
+    {
+     "state_code": "51",
+     "county_code": "750",
+     "county_name": "Radford city",
+     "state_name": "Virginia",
+     "geoid5": "51750"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Burlington, NC",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "001",
+     "county_name": "Alamance County",
+     "state_name": "North Carolina",
+     "geoid5": "37001"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Charlottesville, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "003",
+     "county_name": "Albemarle County",
+     "state_name": "Virginia",
+     "geoid5": "51003"
+    },
+    {
+     "state_code": "51",
+     "county_code": "540",
+     "county_name": "Charlottesville city",
+     "state_name": "Virginia",
+     "geoid5": "51540"
+    },
+    {
+     "state_code": "51",
+     "county_code": "065",
+     "county_name": "Fluvanna County",
+     "state_name": "Virginia",
+     "geoid5": "51065"
+    },
+    {
+     "state_code": "51",
+     "county_code": "125",
+     "county_name": "Nelson County",
+     "state_name": "Virginia",
+     "geoid5": "51125"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Danville, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "590",
+     "county_name": "Danville city",
+     "state_name": "Virginia",
+     "geoid5": "51590"
+    },
+    {
+     "state_code": "51",
+     "county_code": "143",
+     "county_name": "Pittsylvania County",
+     "state_name": "Virginia",
+     "geoid5": "51143"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Elizabeth City, NC",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "139",
+     "county_name": "Pasquotank County",
+     "state_name": "North Carolina",
+     "geoid5": "37139"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Greensboro-High Point, NC",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "081",
+     "county_name": "Guilford County",
+     "state_name": "North Carolina",
+     "geoid5": "37081"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Harrisonburg, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "660",
+     "county_name": "Harrisonburg city",
+     "state_name": "Virginia",
+     "geoid5": "51660"
+    },
+    {
+     "state_code": "51",
+     "county_code": "165",
+     "county_name": "Rockingham County",
+     "state_name": "Virginia",
+     "geoid5": "51165"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Kill Devil Hills, NC",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "055",
+     "county_name": "Dare County",
+     "state_name": "North Carolina",
+     "geoid5": "37055"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Lynchburg, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "019",
+     "county_name": "Bedford County",
+     "state_name": "Virginia",
+     "geoid5": "51019"
+    },
+    {
+     "state_code": "51",
+     "county_code": "680",
+     "county_name": "Lynchburg city",
+     "state_name": "Virginia",
+     "geoid5": "51680"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Martinsville, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "089",
+     "county_name": "Henry County",
+     "state_name": "Virginia",
+     "geoid5": "51089"
+    },
+    {
+     "state_code": "51",
+     "county_code": "690",
+     "county_name": "Martinsville city",
+     "state_name": "Virginia",
+     "geoid5": "51690"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Raleigh-Cary, NC",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "183",
+     "county_name": "Wake County",
+     "state_name": "North Carolina",
+     "geoid5": "37183"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Richmond, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "041",
+     "county_name": "Chesterfield County",
+     "state_name": "Virginia",
+     "geoid5": "51041"
+    },
+    {
+     "state_code": "51",
+     "county_code": "570",
+     "county_name": "Colonial Heights city",
+     "state_name": "Virginia",
+     "geoid5": "51570"
+    },
+    {
+     "state_code": "51",
+     "county_code": "085",
+     "county_name": "Hanover County",
+     "state_name": "Virginia",
+     "geoid5": "51085"
+    },
+    {
+     "state_code": "51",
+     "county_code": "087",
+     "county_name": "Henrico County",
+     "state_name": "Virginia",
+     "geoid5": "51087"
+    },
+    {
+     "state_code": "51",
+     "county_code": "101",
+     "county_name": "King William County",
+     "state_name": "Virginia",
+     "geoid5": "51101"
+    },
+    {
+     "state_code": "51",
+     "county_code": "760",
+     "county_name": "Richmond city",
+     "state_name": "Virginia",
+     "geoid5": "51760"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Roanoke, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "067",
+     "county_name": "Franklin County",
+     "state_name": "Virginia",
+     "geoid5": "51067"
+    },
+    {
+     "state_code": "51",
+     "county_code": "161",
+     "county_name": "Roanoke County",
+     "state_name": "Virginia",
+     "geoid5": "51161"
+    },
+    {
+     "state_code": "51",
+     "county_code": "770",
+     "county_name": "Roanoke city",
+     "state_name": "Virginia",
+     "geoid5": "51770"
+    },
+    {
+     "state_code": "51",
+     "county_code": "775",
+     "county_name": "Salem city",
+     "state_name": "Virginia",
+     "geoid5": "51775"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Salisbury, MD-DE",
+   "counties": [
+    {
+     "state_code": "24",
+     "county_code": "047",
+     "county_name": "Worcester County",
+     "state_name": "Maryland",
+     "geoid5": "24047"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Staunton, VA",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "015",
+     "county_name": "Augusta County",
+     "state_name": "Virginia",
+     "geoid5": "51015"
+    },
+    {
+     "state_code": "51",
+     "county_code": "790",
+     "county_name": "Staunton city",
+     "state_name": "Virginia",
+     "geoid5": "51790"
+    },
+    {
+     "state_code": "51",
+     "county_code": "820",
+     "county_name": "Waynesboro city",
+     "state_name": "Virginia",
+     "geoid5": "51820"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Virginia Beach-Norfolk-Newport News, VA-NC",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "550",
+     "county_name": "Chesapeake city",
+     "state_name": "Virginia",
+     "geoid5": "51550"
+    },
+    {
+     "state_code": "37",
+     "county_code": "053",
+     "county_name": "Currituck County",
+     "state_name": "North Carolina",
+     "geoid5": "37053"
+    },
+    {
+     "state_code": "51",
+     "county_code": "073",
+     "county_name": "Gloucester County",
+     "state_name": "Virginia",
+     "geoid5": "51073"
+    },
+    {
+     "state_code": "51",
+     "county_code": "095",
+     "county_name": "James City County",
+     "state_name": "Virginia",
+     "geoid5": "51095"
+    },
+    {
+     "state_code": "51",
+     "county_code": "700",
+     "county_name": "Newport News city",
+     "state_name": "Virginia",
+     "geoid5": "51700"
+    },
+    {
+     "state_code": "51",
+     "county_code": "710",
+     "county_name": "Norfolk city",
+     "state_name": "Virginia",
+     "geoid5": "51710"
+    },
+    {
+     "state_code": "51",
+     "county_code": "800",
+     "county_name": "Suffolk city",
+     "state_name": "Virginia",
+     "geoid5": "51800"
+    },
+    {
+     "state_code": "51",
+     "county_code": "810",
+     "county_name": "Virginia Beach city",
+     "state_name": "Virginia",
+     "geoid5": "51810"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Washington-Arlington-Alexandria, DC-VA-MD-WV",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "510",
+     "county_name": "Alexandria city",
+     "state_name": "Virginia",
+     "geoid5": "51510"
+    },
+    {
+     "state_code": "51",
+     "county_code": "013",
+     "county_name": "Arlington County",
+     "state_name": "Virginia",
+     "geoid5": "51013"
+    },
+    {
+     "state_code": "51",
+     "county_code": "047",
+     "county_name": "Culpeper County",
+     "state_name": "Virginia",
+     "geoid5": "51047"
+    },
+    {
+     "state_code": "11",
+     "county_code": "001",
+     "county_name": "District of Columbia",
+     "state_name": "District of Columbia",
+     "geoid5": "11001"
+    },
+    {
+     "state_code": "51",
+     "county_code": "059",
+     "county_name": "Fairfax County",
+     "state_name": "Virginia",
+     "geoid5": "51059"
+    },
+    {
+     "state_code": "51",
+     "county_code": "600",
+     "county_name": "Fairfax city",
+     "state_name": "Virginia",
+     "geoid5": "51600"
+    },
+    {
+     "state_code": "51",
+     "county_code": "061",
+     "county_name": "Fauquier County",
+     "state_name": "Virginia",
+     "geoid5": "51061"
+    },
+    {
+     "state_code": "24",
+     "county_code": "021",
+     "county_name": "Frederick County",
+     "state_name": "Maryland",
+     "geoid5": "24021"
+    },
+    {
+     "state_code": "51",
+     "county_code": "630",
+     "county_name": "Fredericksburg city",
+     "state_name": "Virginia",
+     "geoid5": "51630"
+    },
+    {
+     "state_code": "51",
+     "county_code": "107",
+     "county_name": "Loudoun County",
+     "state_name": "Virginia",
+     "geoid5": "51107"
+    },
+    {
+     "state_code": "51",
+     "county_code": "113",
+     "county_name": "Madison County",
+     "state_name": "Virginia",
+     "geoid5": "51113"
+    },
+    {
+     "state_code": "51",
+     "county_code": "685",
+     "county_name": "Manassas Park city",
+     "state_name": "Virginia",
+     "geoid5": "51685"
+    },
+    {
+     "state_code": "24",
+     "county_code": "031",
+     "county_name": "Montgomery County",
+     "state_name": "Maryland",
+     "geoid5": "24031"
+    },
+    {
+     "state_code": "24",
+     "county_code": "033",
+     "county_name": "Prince George's County",
+     "state_name": "Maryland",
+     "geoid5": "24033"
+    },
+    {
+     "state_code": "51",
+     "county_code": "153",
+     "county_name": "Prince William County",
+     "state_name": "Virginia",
+     "geoid5": "51153"
+    },
+    {
+     "state_code": "51",
+     "county_code": "157",
+     "county_name": "Rappahannock County",
+     "state_name": "Virginia",
+     "geoid5": "51157"
+    },
+    {
+     "state_code": "51",
+     "county_code": "177",
+     "county_name": "Spotsylvania County",
+     "state_name": "Virginia",
+     "geoid5": "51177"
+    },
+    {
+     "state_code": "51",
+     "county_code": "179",
+     "county_name": "Stafford County",
+     "state_name": "Virginia",
+     "geoid5": "51179"
+    },
+    {
+     "state_code": "51",
+     "county_code": "187",
+     "county_name": "Warren County",
+     "state_name": "Virginia",
+     "geoid5": "51187"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Winston-Salem, NC",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "067",
+     "county_name": "Forsyth County",
+     "state_name": "North Carolina",
+     "geoid5": "37067"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Virginia Non-Metro Area",
+   "counties": [
+    {
+     "state_code": "51",
+     "county_code": "001",
+     "county_name": "Accomack County",
+     "state_name": "Virginia",
+     "geoid5": "51001"
+    },
+    {
+     "state_code": "51",
+     "county_code": "033",
+     "county_name": "Caroline County",
+     "state_name": "Virginia",
+     "geoid5": "51033"
+    },
+    {
+     "state_code": "51",
+     "county_code": "580",
+     "county_name": "Covington city",
+     "state_name": "Virginia",
+     "geoid5": "51580"
+    },
+    {
+     "state_code": "51",
+     "county_code": "057",
+     "county_name": "Essex County",
+     "state_name": "Virginia",
+     "geoid5": "51057"
+    },
+    {
+     "state_code": "51",
+     "county_code": "063",
+     "county_name": "Floyd County",
+     "state_name": "Virginia",
+     "geoid5": "51063"
+    },
+    {
+     "state_code": "51",
+     "county_code": "081",
+     "county_name": "Greensville County",
+     "state_name": "Virginia",
+     "geoid5": "51081"
+    },
+    {
+     "state_code": "51",
+     "county_code": "083",
+     "county_name": "Halifax County",
+     "state_name": "Virginia",
+     "geoid5": "51083"
+    },
+    {
+     "state_code": "51",
+     "county_code": "099",
+     "county_name": "King George County",
+     "state_name": "Virginia",
+     "geoid5": "51099"
+    },
+    {
+     "state_code": "51",
+     "county_code": "103",
+     "county_name": "Lancaster County",
+     "state_name": "Virginia",
+     "geoid5": "51103"
+    },
+    {
+     "state_code": "51",
+     "county_code": "131",
+     "county_name": "Northampton County",
+     "state_name": "Virginia",
+     "geoid5": "51131"
+    },
+    {
+     "state_code": "51",
+     "county_code": "133",
+     "county_name": "Northumberland County",
+     "state_name": "Virginia",
+     "geoid5": "51133"
+    },
+    {
+     "state_code": "51",
+     "county_code": "137",
+     "county_name": "Orange County",
+     "state_name": "Virginia",
+     "geoid5": "51137"
+    },
+    {
+     "state_code": "51",
+     "county_code": "159",
+     "county_name": "Richmond County",
+     "state_name": "Virginia",
+     "geoid5": "51159"
+    },
+    {
+     "state_code": "51",
+     "county_code": "163",
+     "county_name": "Rockbridge County",
+     "state_name": "Virginia",
+     "geoid5": "51163"
+    },
+    {
+     "state_code": "51",
+     "county_code": "193",
+     "county_name": "Westmoreland County",
+     "state_name": "Virginia",
+     "geoid5": "51193"
+    },
+    {
+     "state_code": "51",
+     "county_code": "197",
+     "county_name": "Wythe County",
+     "state_name": "Virginia",
+     "geoid5": "51197"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "North Carolina Non-Metro Area",
+   "counties": [
+    {
+     "state_code": "37",
+     "county_code": "033",
+     "county_name": "Caswell County",
+     "state_name": "North Carolina",
+     "geoid5": "37033"
+    },
+    {
+     "state_code": "37",
+     "county_code": "041",
+     "county_name": "Chowan County",
+     "state_name": "North Carolina",
+     "geoid5": "37041"
+    }
+   ]
+  }
+ ],
+ "target_assessment_areas": [
+  {
+   "cbsa_name": "Albany, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "095",
+     "county_name": "Dougherty County",
+     "state_name": "Georgia",
+     "geoid5": "13095"
+    },
+    {
+     "state_code": "13",
+     "county_code": "177",
+     "county_name": "Lee County",
+     "state_name": "Georgia",
+     "geoid5": "13177"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Americus, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "261",
+     "county_name": "Sumter County",
+     "state_name": "Georgia",
+     "geoid5": "13261"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Athens-Clarke County, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "059",
+     "county_name": "Clarke County",
+     "state_name": "Georgia",
+     "geoid5": "13059"
+    },
+    {
+     "state_code": "13",
+     "county_code": "219",
+     "county_name": "Oconee County",
+     "state_name": "Georgia",
+     "geoid5": "13219"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Atlanta-Sandy Springs-Alpharetta, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "015",
+     "county_name": "Bartow County",
+     "state_name": "Georgia",
+     "geoid5": "13015"
+    },
+    {
+     "state_code": "13",
+     "county_code": "045",
+     "county_name": "Carroll County",
+     "state_name": "Georgia",
+     "geoid5": "13045"
+    },
+    {
+     "state_code": "13",
+     "county_code": "057",
+     "county_name": "Cherokee County",
+     "state_name": "Georgia",
+     "geoid5": "13057"
+    },
+    {
+     "state_code": "13",
+     "county_code": "067",
+     "county_name": "Cobb County",
+     "state_name": "Georgia",
+     "geoid5": "13067"
+    },
+    {
+     "state_code": "13",
+     "county_code": "077",
+     "county_name": "Coweta County",
+     "state_name": "Georgia",
+     "geoid5": "13077"
+    },
+    {
+     "state_code": "13",
+     "county_code": "089",
+     "county_name": "DeKalb County",
+     "state_name": "Georgia",
+     "geoid5": "13089"
+    },
+    {
+     "state_code": "13",
+     "county_code": "097",
+     "county_name": "Douglas County",
+     "state_name": "Georgia",
+     "geoid5": "13097"
+    },
+    {
+     "state_code": "13",
+     "county_code": "113",
+     "county_name": "Fayette County",
+     "state_name": "Georgia",
+     "geoid5": "13113"
+    },
+    {
+     "state_code": "13",
+     "county_code": "117",
+     "county_name": "Forsyth County",
+     "state_name": "Georgia",
+     "geoid5": "13117"
+    },
+    {
+     "state_code": "13",
+     "county_code": "121",
+     "county_name": "Fulton County",
+     "state_name": "Georgia",
+     "geoid5": "13121"
+    },
+    {
+     "state_code": "13",
+     "county_code": "135",
+     "county_name": "Gwinnett County",
+     "state_name": "Georgia",
+     "geoid5": "13135"
+    },
+    {
+     "state_code": "13",
+     "county_code": "143",
+     "county_name": "Haralson County",
+     "state_name": "Georgia",
+     "geoid5": "13143"
+    },
+    {
+     "state_code": "13",
+     "county_code": "151",
+     "county_name": "Henry County",
+     "state_name": "Georgia",
+     "geoid5": "13151"
+    },
+    {
+     "state_code": "13",
+     "county_code": "217",
+     "county_name": "Newton County",
+     "state_name": "Georgia",
+     "geoid5": "13217"
+    },
+    {
+     "state_code": "13",
+     "county_code": "223",
+     "county_name": "Paulding County",
+     "state_name": "Georgia",
+     "geoid5": "13223"
+    },
+    {
+     "state_code": "13",
+     "county_code": "227",
+     "county_name": "Pickens County",
+     "state_name": "Georgia",
+     "geoid5": "13227"
+    },
+    {
+     "state_code": "13",
+     "county_code": "247",
+     "county_name": "Rockdale County",
+     "state_name": "Georgia",
+     "geoid5": "13247"
+    },
+    {
+     "state_code": "13",
+     "county_code": "297",
+     "county_name": "Walton County",
+     "state_name": "Georgia",
+     "geoid5": "13297"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Augusta-Richmond County, GA-SC",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "073",
+     "county_name": "Columbia County",
+     "state_name": "Georgia",
+     "geoid5": "13073"
+    },
+    {
+     "state_code": "13",
+     "county_code": "245",
+     "county_name": "Richmond County",
+     "state_name": "Georgia",
+     "geoid5": "13245"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Birmingham-Hoover, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "073",
+     "county_name": "Jefferson County",
+     "state_name": "Alabama",
+     "geoid5": "01073"
+    },
+    {
+     "state_code": "01",
+     "county_code": "117",
+     "county_name": "Shelby County",
+     "state_name": "Alabama",
+     "geoid5": "01117"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Brunswick, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "127",
+     "county_name": "Glynn County",
+     "state_name": "Georgia",
+     "geoid5": "13127"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Calhoun, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "129",
+     "county_name": "Gordon County",
+     "state_name": "Georgia",
+     "geoid5": "13129"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Cape Coral-Fort Myers, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "071",
+     "county_name": "Lee County",
+     "state_name": "Florida",
+     "geoid5": "12071"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Charleston-North Charleston, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "015",
+     "county_name": "Berkeley County",
+     "state_name": "South Carolina",
+     "geoid5": "45015"
+    },
+    {
+     "state_code": "45",
+     "county_code": "019",
+     "county_name": "Charleston County",
+     "state_name": "South Carolina",
+     "geoid5": "45019"
+    },
+    {
+     "state_code": "45",
+     "county_code": "035",
+     "county_name": "Dorchester County",
+     "state_name": "South Carolina",
+     "geoid5": "45035"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Chattanooga, TN-GA",
+   "counties": [
+    {
+     "state_code": "47",
+     "county_code": "065",
+     "county_name": "Hamilton County",
+     "state_name": "Tennessee",
+     "geoid5": "47065"
+    },
+    {
+     "state_code": "13",
+     "county_code": "295",
+     "county_name": "Walker County",
+     "state_name": "Georgia",
+     "geoid5": "13295"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Clewiston, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "051",
+     "county_name": "Hendry County",
+     "state_name": "Florida",
+     "geoid5": "12051"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Columbia, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "055",
+     "county_name": "Kershaw County",
+     "state_name": "South Carolina",
+     "geoid5": "45055"
+    },
+    {
+     "state_code": "45",
+     "county_code": "063",
+     "county_name": "Lexington County",
+     "state_name": "South Carolina",
+     "geoid5": "45063"
+    },
+    {
+     "state_code": "45",
+     "county_code": "079",
+     "county_name": "Richland County",
+     "state_name": "South Carolina",
+     "geoid5": "45079"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Columbus, GA-AL",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "053",
+     "county_name": "Chattahoochee County",
+     "state_name": "Georgia",
+     "geoid5": "13053"
+    },
+    {
+     "state_code": "13",
+     "county_code": "215",
+     "county_name": "Muscogee County",
+     "state_name": "Georgia",
+     "geoid5": "13215"
+    },
+    {
+     "state_code": "01",
+     "county_code": "113",
+     "county_name": "Russell County",
+     "state_name": "Alabama",
+     "geoid5": "01113"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Crestview-Fort Walton Beach-Destin, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "091",
+     "county_name": "Okaloosa County",
+     "state_name": "Florida",
+     "geoid5": "12091"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Dalton, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "213",
+     "county_name": "Murray County",
+     "state_name": "Georgia",
+     "geoid5": "13213"
+    },
+    {
+     "state_code": "13",
+     "county_code": "313",
+     "county_name": "Whitfield County",
+     "state_name": "Georgia",
+     "geoid5": "13313"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Daphne-Fairhope-Foley, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "003",
+     "county_name": "Baldwin County",
+     "state_name": "Alabama",
+     "geoid5": "01003"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Deltona-Daytona Beach-Ormond Beach, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "127",
+     "county_name": "Volusia County",
+     "state_name": "Florida",
+     "geoid5": "12127"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Dothan, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "069",
+     "county_name": "Houston County",
+     "state_name": "Alabama",
+     "geoid5": "01069"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Enterprise, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "031",
+     "county_name": "Coffee County",
+     "state_name": "Alabama",
+     "geoid5": "01031"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Florence, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "041",
+     "county_name": "Florence County",
+     "state_name": "South Carolina",
+     "geoid5": "45041"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Greenville-Anderson, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "045",
+     "county_name": "Greenville County",
+     "state_name": "South Carolina",
+     "geoid5": "45045"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Hilton Head Island-Bluffton, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "013",
+     "county_name": "Beaufort County",
+     "state_name": "South Carolina",
+     "geoid5": "45013"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Huntsville, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "089",
+     "county_name": "Madison County",
+     "state_name": "Alabama",
+     "geoid5": "01089"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Jacksonville, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "031",
+     "county_name": "Duval County",
+     "state_name": "Florida",
+     "geoid5": "12031"
+    },
+    {
+     "state_code": "12",
+     "county_code": "089",
+     "county_name": "Nassau County",
+     "state_name": "Florida",
+     "geoid5": "12089"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Jasper, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "127",
+     "county_name": "Walker County",
+     "state_name": "Alabama",
+     "geoid5": "01127"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "LaGrange, GA-AL",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "285",
+     "county_name": "Troup County",
+     "state_name": "Georgia",
+     "geoid5": "13285"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Macon-Bibb County, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "021",
+     "county_name": "Bibb County",
+     "state_name": "Georgia",
+     "geoid5": "13021"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Miami-Fort Lauderdale-Pompano Beach, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "011",
+     "county_name": "Broward County",
+     "state_name": "Florida",
+     "geoid5": "12011"
+    },
+    {
+     "state_code": "12",
+     "county_code": "086",
+     "county_name": "Miami-Dade County",
+     "state_name": "Florida",
+     "geoid5": "12086"
+    },
+    {
+     "state_code": "12",
+     "county_code": "099",
+     "county_name": "Palm Beach County",
+     "state_name": "Florida",
+     "geoid5": "12099"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Mobile, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "097",
+     "county_name": "Mobile County",
+     "state_name": "Alabama",
+     "geoid5": "01097"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Montgomery, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "001",
+     "county_name": "Autauga County",
+     "state_name": "Alabama",
+     "geoid5": "01001"
+    },
+    {
+     "state_code": "01",
+     "county_code": "101",
+     "county_name": "Montgomery County",
+     "state_name": "Alabama",
+     "geoid5": "01101"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Myrtle Beach-Conway-North Myrtle Beach, SC-NC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "051",
+     "county_name": "Horry County",
+     "state_name": "South Carolina",
+     "geoid5": "45051"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Naples-Marco Island, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "021",
+     "county_name": "Collier County",
+     "state_name": "Florida",
+     "geoid5": "12021"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Nashville-Davidson--Murfreesboro--Franklin, TN",
+   "counties": [
+    {
+     "state_code": "47",
+     "county_code": "037",
+     "county_name": "Davidson County",
+     "state_name": "Tennessee",
+     "geoid5": "47037"
+    },
+    {
+     "state_code": "47",
+     "county_code": "187",
+     "county_name": "Williamson County",
+     "state_name": "Tennessee",
+     "geoid5": "47187"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "North Port-Sarasota-Bradenton, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "081",
+     "county_name": "Manatee County",
+     "state_name": "Florida",
+     "geoid5": "12081"
+    },
+    {
+     "state_code": "12",
+     "county_code": "115",
+     "county_name": "Sarasota County",
+     "state_name": "Florida",
+     "geoid5": "12115"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Orlando-Kissimmee-Sanford, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "095",
+     "county_name": "Orange County",
+     "state_name": "Florida",
+     "geoid5": "12095"
+    },
+    {
+     "state_code": "12",
+     "county_code": "117",
+     "county_name": "Seminole County",
+     "state_name": "Florida",
+     "geoid5": "12117"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Ozark, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "045",
+     "county_name": "Dale County",
+     "state_name": "Alabama",
+     "geoid5": "01045"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Palm Bay-Melbourne-Titusville, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "009",
+     "county_name": "Brevard County",
+     "state_name": "Florida",
+     "geoid5": "12009"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Pensacola-Ferry Pass-Brent, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "033",
+     "county_name": "Escambia County",
+     "state_name": "Florida",
+     "geoid5": "12033"
+    },
+    {
+     "state_code": "12",
+     "county_code": "113",
+     "county_name": "Santa Rosa County",
+     "state_name": "Florida",
+     "geoid5": "12113"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Port St. Lucie, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "085",
+     "county_name": "Martin County",
+     "state_name": "Florida",
+     "geoid5": "12085"
+    },
+    {
+     "state_code": "12",
+     "county_code": "111",
+     "county_name": "St. Lucie County",
+     "state_name": "Florida",
+     "geoid5": "12111"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Punta Gorda, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "015",
+     "county_name": "Charlotte County",
+     "state_name": "Florida",
+     "geoid5": "12015"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Rome, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "115",
+     "county_name": "Floyd County",
+     "state_name": "Georgia",
+     "geoid5": "13115"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "St. Marys, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "039",
+     "county_name": "Camden County",
+     "state_name": "Georgia",
+     "geoid5": "13039"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Savannah, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "051",
+     "county_name": "Chatham County",
+     "state_name": "Georgia",
+     "geoid5": "13051"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Sebastian-Vero Beach, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "061",
+     "county_name": "Indian River County",
+     "state_name": "Florida",
+     "geoid5": "12061"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Spartanburg, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "083",
+     "county_name": "Spartanburg County",
+     "state_name": "South Carolina",
+     "geoid5": "45083"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Statesboro, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "031",
+     "county_name": "Bulloch County",
+     "state_name": "Georgia",
+     "geoid5": "13031"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Sumter, SC",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "027",
+     "county_name": "Clarendon County",
+     "state_name": "South Carolina",
+     "geoid5": "45027"
+    },
+    {
+     "state_code": "45",
+     "county_code": "085",
+     "county_name": "Sumter County",
+     "state_name": "South Carolina",
+     "geoid5": "45085"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Tallahassee, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "073",
+     "county_name": "Leon County",
+     "state_name": "Florida",
+     "geoid5": "12073"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Tampa-St. Petersburg-Clearwater, FL",
+   "counties": [
+    {
+     "state_code": "12",
+     "county_code": "057",
+     "county_name": "Hillsborough County",
+     "state_name": "Florida",
+     "geoid5": "12057"
+    },
+    {
+     "state_code": "12",
+     "county_code": "101",
+     "county_name": "Pasco County",
+     "state_name": "Florida",
+     "geoid5": "12101"
+    },
+    {
+     "state_code": "12",
+     "county_code": "103",
+     "county_name": "Pinellas County",
+     "state_name": "Florida",
+     "geoid5": "12103"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Thomasville, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "275",
+     "county_name": "Thomas County",
+     "state_name": "Georgia",
+     "geoid5": "13275"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Tifton, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "277",
+     "county_name": "Tift County",
+     "state_name": "Georgia",
+     "geoid5": "13277"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Tuscaloosa, AL",
+   "counties": [
+    {
+     "state_code": "01",
+     "county_code": "125",
+     "county_name": "Tuscaloosa County",
+     "state_name": "Alabama",
+     "geoid5": "01125"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Valdosta, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "185",
+     "county_name": "Lowndes County",
+     "state_name": "Georgia",
+     "geoid5": "13185"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Warner Robins, GA",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "153",
+     "county_name": "Houston County",
+     "state_name": "Georgia",
+     "geoid5": "13153"
+    },
+    {
+     "state_code": "13",
+     "county_code": "225",
+     "county_name": "Peach County",
+     "state_name": "Georgia",
+     "geoid5": "13225"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "Georgia Non-Metro Area",
+   "counties": [
+    {
+     "state_code": "13",
+     "county_code": "043",
+     "county_name": "Candler County",
+     "state_name": "Georgia",
+     "geoid5": "13043"
+    },
+    {
+     "state_code": "13",
+     "county_code": "147",
+     "county_name": "Hart County",
+     "state_name": "Georgia",
+     "geoid5": "13147"
+    }
+   ]
+  },
+  {
+   "cbsa_name": "South Carolina Non-Metro Area",
+   "counties": [
+    {
+     "state_code": "45",
+     "county_code": "061",
+     "county_name": "Lee County",
+     "state_name": "South Carolina",
+     "geoid5": "45061"
+    }
+   ]
+  }
+ ],
+ "loan_purpose": "",
+ "peer_group": "volume_50_200",
+ "action_taken": "1",
+ "occupancy_type": "1",
+ "total_units": "1,2,3,4",
+ "construction_method": "1,2",
+ "not_reverse": "1",
+ "hmda_start_year": "2023",
+ "hmda_end_year": "2025",
+ "sb_start_year": "2023",
+ "sb_end_year": "2024",
+ "baseline_hmda_start_year": "2023",
+ "baseline_hmda_end_year": "2025",
+ "baseline_sb_start_year": "2023",
+ "baseline_sb_end_year": "2024"
+}

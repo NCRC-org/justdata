@@ -12,6 +12,7 @@ What the pages send today, and so what these payloads send:
 | LendSight | none sent: the server analyses the five most recent HMDA years (2021 to 2025 since the spec 04 LendSight PR; ticket 13229533844). The page before that PR sent 2018 to 2024, which the server also ignored | `loan_purpose: ["purchase"]` (page default), `state_code` as FIPS |
 | BizSight | none sent: the server uses `config.SB_YEARS`, 2020 to 2024 (since the spec 04 BizSight PR; the page before sent 2020 and 2024, which keys the cache the same way) | full county object as `county_data` |
 | BranchSight | none sent: the server uses `config.SOD_YEARS`, 2021 to 2025 (since the spec 04 BranchSight PR; the page before sent the same five years, so the cache key is unchanged) | `state_code` is the state name (its state list uses names as codes); `counties` is the exact county name |
+| MergerMeter | the page defaults: HMDA 2023 to 2025, small business 2023 to 2024, and the same goal-baseline years | form fields, not JSON (`mergermeter-atlantic-union-synovus.json`, Jad's pair, 2026-10-13). Assessment areas are generated from branches (FDIC SOD 2025) for both banks with every county kept: 21 areas / 84 counties for Atlantic Union, 57 / 100 for Synovus. This matches a page run that uses "From branches" for both banks and keeps every county, so the two share a cache key. Other fields are the page defaults (all loan purposes, 50% to 200% peer group, originations, owner-occupied, 1 to 4 units, site-built and manufactured, not reverse) |
 
 When a per-app PR changes what its page posts (for example LendSight moving
 to 2025), update that app's two files in the same PR, so before-and-after runs
@@ -36,6 +37,7 @@ mkdir -p audit/timings
 .venv/bin/python scripts/time_analysis.py run --app bizsight    --payload scripts/timing_payloads/bizsight-lowndes.json    --runs 2 --uncached --label lowndes-uncached --out audit/timings/uncached.jsonl
 .venv/bin/python scripts/time_analysis.py run --app branchsight --payload scripts/timing_payloads/branchsight-cook.json    --runs 2 --uncached --label cook-uncached    --out audit/timings/uncached.jsonl
 .venv/bin/python scripts/time_analysis.py run --app branchsight --payload scripts/timing_payloads/branchsight-lowndes.json --runs 2 --uncached --label lowndes-uncached --out audit/timings/uncached.jsonl
+.venv/bin/python scripts/time_analysis.py run --app mergermeter --payload scripts/timing_payloads/mergermeter-atlantic-union-synovus.json --runs 2 --uncached --label atlantic-synovus-uncached --timeout 1800 --out audit/timings/uncached.jsonl
 
 # Bytes billed per run, matched by the job label (needs bigquery.jobs.listAll on justdata-ncrc)
 .venv/bin/python scripts/time_analysis.py bytes --in audit/timings/uncached.jsonl
