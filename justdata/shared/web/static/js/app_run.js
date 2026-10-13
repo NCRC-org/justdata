@@ -7,7 +7,8 @@
  *     jobId: null,                       // set when the page is /report?job_id=
  *     form: document.getElementById(...),
  *     validate: () => true,              // app's own field checks
- *     body: () => ({...}),               // JSON posted to /analyze
+ *     body: () => ({...}),               // JSON posted to /analyze, or a FormData sent as is
+ *     maxRunSeconds: 1800,               // optional; longer than the 10-minute default
  *     render: (jobId, body) => Promise,  // fill the cloned report; body is /report-data
  *     emptyWhen: message => bool,        // a "no data" failure shows the empty state
  *     emptyText: '...',                  // reason shown in the empty state
@@ -91,11 +92,14 @@
 
   function run() {
     if (cfg.validate && !cfg.validate()) return;
-    var signal = root.AppStates.loading();
+    var payload = cfg.body();
+    var isForm = typeof FormData !== 'undefined' && payload instanceof FormData;
+    var signal = root.AppStates.loading({ maxRunS: cfg.maxRunSeconds });
     current = null;
     fetch(cfg.baseUrl + '/analyze', {
       method: 'POST', credentials: 'same-origin', signal: signal,
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg.body())
+      headers: isForm ? {} : { 'Content-Type': 'application/json' },
+      body: isForm ? payload : JSON.stringify(payload)
     }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (res) {
       if (!res.success || !res.job_id) {
         var parts = root.AppProgress.splitRef(res.error);
@@ -114,7 +118,7 @@
   /** Page opened as /report?job_id=: show the report, or follow it if running. */
   function open(jobId) {
     current = jobId;
-    var signal = root.AppStates.loading({ ref: jobId.slice(0, 8) });
+    var signal = root.AppStates.loading({ ref: jobId.slice(0, 8), maxRunS: cfg.maxRunSeconds });
     getJSON(cfg.baseUrl + '/report-data?job_id=' + encodeURIComponent(jobId), signal).then(function (res) {
       if (res.status === 200 && res.body.success) show(jobId, res.body);
       else if (res.status === 202) follow(jobId, signal);

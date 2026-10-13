@@ -267,3 +267,23 @@ def test_shared_modules_load_in_order_and_stay_small(debug_app):
     assert order == sorted(order)
     for m in ("app_report.js", "app_run.js"):
         assert len((WEB / "static" / "js" / m).read_text().splitlines()) < 300, m
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("elapsed_s,max_run_s,expected", [
+    (900, 1800, None),     # MergerMeter: 15 minutes is still running
+    (1800, 1800, "max"),
+    (600, None, "max"),    # the 10-minute default is unchanged
+])
+def test_per_app_run_limit(elapsed_s, max_run_s, expected):
+    now = 10_000_000
+    started = now - elapsed_s * 1000
+    arg = "undefined" if max_run_s is None else str(max_run_s)
+    assert _node(f"AppStates.timeoutReason({now}, {started}, {now}, {arg})") == expected
+
+
+def test_app_run_sends_a_formdata_body_as_is():
+    js = (WEB / "static" / "js" / "app_run.js").read_text()
+    assert "payload instanceof FormData" in js
+    assert "body: isForm ? payload : JSON.stringify(payload)" in js
+    assert "loading({ maxRunS: cfg.maxRunSeconds })" in js
