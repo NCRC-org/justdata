@@ -1463,9 +1463,8 @@ def _perform_analysis(job_id, form_data):
             print(f"[GCS] Warning: Failed to upload to GCS: {e}")
             # Continue - local files still available for same-instance access
 
-        # "Doing something cool" step before completion
-        update_progress(job_id, {'percent': 98, 'step': 'Doing something cool...', 'done': False, 'error': None})
-        print("\nDoing something cool...")
+        # Neutral stage text (spec 04 A3); the page builds the workbook tabs next.
+        update_progress(job_id, {'percent': 98, 'step': 'Building charts and narrative', 'done': False, 'error': None})
 
         update_progress(job_id, {
             'percent': 100,
