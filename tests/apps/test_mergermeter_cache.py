@@ -20,7 +20,8 @@ def test_successful_run_is_stored_in_the_analysis_cache(monkeypatch):
     monkeypatch.setattr(bp, "record_completion", lambda *a, **k: None)
     monkeypatch.setattr(bp, "store_cached_result", lambda **kw: stored.update(kw))
     monkeypatch.setattr(ops, "_perform_analysis",
-                        lambda job_id, form: {"success": True, "job_id": job_id, "excel_filename": f"x_{job_id}.xlsx"})
+                        lambda job_id, form: {"success": True, "job_id": job_id, "excel_filename": f"x_{job_id}.xlsx",
+                                              "workbook_in_gcs": True})
 
     app = create_app()
     app.config["TESTING"] = True
@@ -72,3 +73,63 @@ def test_perform_analysis_returns_a_success_result():
                 for k, v in zip(node.value.keys, node.value.values))
     ]
     assert success_returns, "_perform_analysis must return {'success': True, ...} so the result is cached"
+
+
+def _client(monkeypatch):
+    from justdata.main.app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    client = app.test_client()
+    with client.session_transaction() as s:
+        s["user_type"] = "staff"
+        s["firebase_user"] = {"uid": "t", "email": "t@example.org", "email_verified": True}
+    return client
+
+
+def test_run_whose_workbook_missed_gcs_is_not_cached(monkeypatch):
+    """A cache hit is served by job_id from GCS; without the workbook there it
+    would 404 on another instance, so such a run is not stored."""
+    import justdata.apps.mergermeter.blueprint as bp
+    import justdata.apps.mergermeter.mergermeter_ops as ops
+
+    stored = {}
+    monkeypatch.setattr(bp, "run_in_background", lambda work, **kw: work())
+    monkeypatch.setattr(bp, "lookup_cached_analysis", lambda *a, **k: None)
+    monkeypatch.setattr(bp, "record_completion", lambda *a, **k: None)
+    monkeypatch.setattr(bp, "store_cached_result", lambda **kw: stored.update(kw))
+    monkeypatch.setattr(ops, "_perform_analysis",
+                        lambda job_id, form: {"success": True, "job_id": job_id, "excel_filename": "x.xlsx",
+                                              "workbook_in_gcs": False})
+    resp = _client(monkeypatch).post("/mergermeter/analyze", data={"acquirer_lei": "A" * 20, "target_lei": "B" * 20})
+    assert resp.status_code == 200
+    assert stored == {}
+
+
+class _Rows:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def result(self):
+        return self._rows
+
+
+def test_stored_mergermeter_entry_is_found_again(monkeypatch):
+    """End to end through the cache code: what store_cached_result writes for a
+    MergerMeter run (no sections) is accepted by get_cached_result. It used to
+    require two sections, so no MergerMeter entry was ever served."""
+    from types import SimpleNamespace
+    import justdata.shared.utils.analysis_cache as ac
+
+    result = {"success": True, "job_id": "mm-1", "excel_filename": "x.xlsx", "workbook_in_gcs": True}
+    assert ac.extract_sections("mergermeter", result) == []
+
+    class Client:
+        def query(self, sql, job_config=None):
+            if "FROM `" + ac.CACHE_TABLE + "` c" in sql:
+                return _Rows([SimpleNamespace(job_id="mm-1", cache_key="k", access_count=0, status="completed")])
+            if "FROM `" + ac.SECTIONS_TABLE + "`" in sql:
+                return _Rows([])
+            return _Rows([])
+    monkeypatch.setattr(ac, "get_bigquery_client", lambda *a, **k: Client())
+    hit = ac.get_cached_result("mergermeter", {"acquirer_lei": "A" * 20, "target_lei": "B" * 20}, "staff")
+    assert hit and hit["job_id"] == "mm-1"

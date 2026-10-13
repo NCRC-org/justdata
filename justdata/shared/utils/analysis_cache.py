@@ -650,7 +650,10 @@ def get_cached_result(app_name: str, params: Dict[str, Any],
         # Validate that we have enough sections for a complete result
         # LendSight should have at least 5 sections (summary, demographic_overview, etc.)
         # If not, the cache entry is incomplete and should be ignored
-        min_sections = {'lendsight': 5, 'branchsight': 3, 'bizsight': 3, 'mergermeter': 2}
+        # MergerMeter stores no sections: its result is the workbook in GCS,
+        # found by job_id (mergermeter_ops.ensure_local_excel). Requiring 2
+        # sections meant no MergerMeter entry was ever served.
+        min_sections = {'lendsight': 5, 'branchsight': 3, 'bizsight': 3, 'mergermeter': 0}
         min_count = min_sections.get(app_name.lower(), 2)
         if len(sections_rows) < min_count:
             print(f"[WARNING] Cache entry has only {len(sections_rows)} sections, expected at least {min_count}. Ignoring incomplete cache.")

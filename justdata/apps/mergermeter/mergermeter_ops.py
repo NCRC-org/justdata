@@ -32,6 +32,7 @@ from justdata.apps.mergermeter.version import __version__
 # GCS storage for persistent file storage across Cloud Run instances
 from justdata.shared.utils.gcs_storage import download_file, download_json, upload_file, upload_json
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
+from justdata.apps.mergermeter.statistical_analysis import STAT_UNAVAILABLE
 
 # Load unified environment configuration (primary method - works for both local and Render)
 ensure_unified_env_loaded(verbose=True)
@@ -219,7 +220,8 @@ def progress_handler(job_id):
             import traceback
             traceback.print_exc()
             try:
-                yield f"data: {{\"percent\": 0, \"step\": \"Connection error\", \"done\": true, \"error\": \"Progress tracking error: {str(e)}\"}}\n\n"
+                yield "data: " + json.dumps({"percent": 0, "step": "Connection error", "done": True,
+                                             "error": user_error(REQUEST_ERROR, exc=e, context=f"mergermeter progress {job_id}")[0]}) + "\n\n"
             except:
                 pass
     
@@ -1452,20 +1454,20 @@ def _perform_analysis(job_id, form_data):
         print(f"  Saved raw data to {raw_data_file}")
 
         # Upload to GCS for persistence across Cloud Run instances
+        workbook_in_gcs = False
         try:
             upload_json(f'mergermeter/merger_metadata_{job_id}.json', metadata)
             upload_json(f'mergermeter/merger_raw_data_{job_id}.json', raw_data)
             # The workbook too, so a cached result can be previewed and
             # downloaded from any Cloud Run instance, not only the one that ran it.
-            upload_file(f'mergermeter/{excel_file.name}', str(excel_file))
+            workbook_in_gcs = bool(upload_file(f'mergermeter/{excel_file.name}', str(excel_file)))
             print(f"[GCS] Uploaded analysis files for job {job_id}")
         except Exception as e:
             print(f"[GCS] Warning: Failed to upload to GCS: {e}")
             # Continue - local files still available for same-instance access
 
-        # "Doing something cool" step before completion
-        update_progress(job_id, {'percent': 98, 'step': 'Doing something cool...', 'done': False, 'error': None})
-        print("\nDoing something cool...")
+        # Neutral stage text (spec 04 A3); the page builds the workbook tabs next.
+        update_progress(job_id, {'percent': 98, 'step': 'Building charts and narrative', 'done': False, 'error': None})
 
         update_progress(job_id, {
             'percent': 100,
@@ -1475,8 +1477,11 @@ def _perform_analysis(job_id, form_data):
             'validation_warnings': [w['issue'] for w in validation_warnings] if validation_warnings else []
         })
 
-        # Returned so the blueprint stores this run in the analysis cache.
-        return {'success': True, 'job_id': job_id, 'excel_filename': excel_file.name}
+        # Returned so the blueprint stores this run in the analysis cache. A
+        # cached MergerMeter result is the workbook in GCS, so the blueprint
+        # stores the run only when that upload succeeded.
+        return {'success': True, 'job_id': job_id, 'excel_filename': excel_file.name,
+                'workbook_in_gcs': workbook_in_gcs}
 
     except Exception as e:
         error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'mergermeter job={job_id}')
@@ -2492,7 +2497,7 @@ def generate_ai_summary():
                     break
                 except Exception as e:
                     print(f"  [AI Summary] Error analyzing SB lending: {e}")
-                    sb_analysis = {'summary': f'Error analyzing data: {str(e)}'}
+                    sb_analysis = {'summary': user_error(STAT_UNAVAILABLE, exc=e, context='mergermeter ai summary')[0]}
         
         # Analyze branch distribution
         branch_analysis = {}
@@ -2504,7 +2509,7 @@ def generate_ai_summary():
                     break
                 except Exception as e:
                     print(f"  [AI Summary] Error analyzing branch distribution: {e}")
-                    branch_analysis = {'summary': f'Error analyzing data: {str(e)}'}
+                    branch_analysis = {'summary': user_error(STAT_UNAVAILABLE, exc=e, context='mergermeter ai summary')[0]}
         
         # Analyze HHI
         hhi_analysis = {}
@@ -2514,7 +2519,7 @@ def generate_ai_summary():
                 hhi_analysis = analyze_hhi_concentration(report_data['HHI Analysis'])
             except Exception as e:
                 print(f"  [AI Summary] Error analyzing HHI: {e}")
-                hhi_analysis = {'summary': f'Error analyzing data: {str(e)}'}
+                hhi_analysis = {'summary': user_error(STAT_UNAVAILABLE, exc=e, context='mergermeter ai summary')[0]}
         
         # Generate AI summary
         from justdata.shared.analysis.ai_provider import AIAnalyzer, NCRC_STYLE_GUIDE
