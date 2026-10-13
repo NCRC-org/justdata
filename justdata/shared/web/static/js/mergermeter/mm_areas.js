@@ -3,9 +3,10 @@
  *   Enter:         name + counties (one per line, or MSA codes/names), any number
  *   Upload file:   JSON or CSV to /api/upload-assessment-areas
  *   From branches: /api/generate-assessment-areas-from-branches (RSSD, SOD 2025)
- * An uploaded or generated list is previewed with a checkbox per county;
- * unticking a county drops it (and an area with none left). What is sent is
- * that list followed by the entered areas, as before.
+ * An uploaded or generated list is shown collapsed ("84 counties selected in
+ * 21 areas", app_choices.js) and opens to a checkbox per county; unticking a
+ * county drops it (and an area with none left). What is sent is that list
+ * followed by the entered areas, as before.
  *
  *   MergerMeter.areas.collect('acquirer') -> [{cbsa_name, counties, ...}]
  */
@@ -52,21 +53,25 @@
       });
       return kept.length ? Object.assign({}, aa, { counties: kept }) : null;
     }).filter(Boolean);
+    var n = filtered[bank].length;
+    preview.dataset.suffix = 'in ' + n + (n === 1 ? ' area' : ' areas');
+    root.AppChoices.update(preview);
   }
 
   function showList(bank, areas) {
     stored[bank] = JSON.parse(JSON.stringify(areas));
     var preview = $(bank + 'AreaPreview');
-    preview.innerHTML = areas.map(function (aa, a) {
+    $(bank + 'AreaList').innerHTML = areas.map(function (aa, a) {
       var counties = aa.counties || [];
       return '<fieldset class="mm-area-item"><legend>' + esc(aa.cbsa_name || 'Unnamed area') +
-        ' <span class="app-check-hint">' + counties.length + ' counties</span></legend>' +
+        ' <span class="app-check-hint">' + counties.length + (counties.length === 1 ? ' county' : ' counties') + '</span></legend>' +
         counties.map(function (c, k) {
           return '<label class="mm-county"><input type="checkbox" checked data-aa="' + a + '" data-county="' + k + '">' +
             '<span>' + esc(countyLabel(c)) + '</span></label>';
         }).join('') + '</fieldset>';
     }).join('');
     preview.hidden = !areas.length;
+    preview.open = false;
     applyTicks(bank);
     if (areas.length) clearNote(bank);
   }
@@ -122,7 +127,7 @@
         if (!res.success) { status(bank, res.error || 'The file could not be read.', 'error'); return; }
         var areas = res.assessment_areas || [];
         if (!areas.length) { status(bank, 'The file was read but has no assessment areas. Check its format.', 'warn'); return; }
-        status(bank, 'Read ' + (res.count || areas.length) + ' assessment areas. Untick any county to leave it out.', 'ok');
+        status(bank, 'Read ' + (res.count || areas.length) + ' assessment areas. Choose Change to leave out any county.', 'ok');
         showList(bank, areas);
       })
       .catch(function () { status(bank, 'Network error. Check your connection and try again.', 'error'); });
@@ -142,7 +147,7 @@
     }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (res) {
       if (!res.success) { status(bank, res.error || 'Assessment areas could not be generated.', 'error'); return; }
       var areas = res.assessment_areas || [];
-      status(bank, 'Generated ' + (res.count || areas.length) + ' assessment areas from branch locations. Untick any county to leave it out.', 'ok');
+      status(bank, 'Generated ' + (res.count || areas.length) + ' assessment areas from branch locations. Choose Change to leave out any county.', 'ok');
       if (areas.length) showList(bank, areas);
     }).catch(function () {
       status(bank, 'Network error. Check your connection and try again.', 'error');
@@ -173,8 +178,9 @@
         stored[bank] = null;
         filtered[bank] = [];
         $(bank + 'ManualAreas').innerHTML = '';
-        $(bank + 'AreaPreview').innerHTML = '';
+        $(bank + 'AreaList').innerHTML = '';
         $(bank + 'AreaPreview').hidden = true;
+        root.AppChoices.close($(bank + 'AreaPreview'));
         $(bank + 'AreaFile').value = '';
         status(bank, '');
       });

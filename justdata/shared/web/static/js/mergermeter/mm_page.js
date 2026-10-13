@@ -169,6 +169,7 @@
       national.checked = false;
       syncSingle();
       syncNational();
+      root.AppChoices.close($('mmFilters'));
     }
   });
   syncSingle();

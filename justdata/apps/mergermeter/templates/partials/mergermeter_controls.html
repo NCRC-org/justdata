@@ -2,7 +2,8 @@
    2 Acquirer and Target in one fieldset, 3 Years, 4 Options. mm_banks.js,
    mm_areas.js and mm_page.js drive them. The fields posted to /analyze and
    their values are the former page's, so the analysis and its cache key are
-   unchanged. #}
+   unchanged. Long lists (assessment-area counties, the HMDA filters) are
+   collapsed app-choices (app_choices.js). #}
 {% macro area_panel(bank, label) %}
 <div class="mm-area" data-bank="{{ bank }}" id="{{ bank }}Areas">
   <p class="app-field-label">{{ label }}</p>
@@ -42,7 +43,10 @@
   </div>
 
   <p class="mm-status" id="{{ bank }}AreaStatus" role="status" hidden></p>
-  <div class="mm-preview" id="{{ bank }}AreaPreview" hidden></div>
+  <details class="app-choices mm-preview" id="{{ bank }}AreaPreview" data-noun="counties" hidden>
+    <summary><span class="app-choices-text"></span><span class="app-choices-change"></span></summary>
+    <div class="app-choices-body" id="{{ bank }}AreaList"></div>
+  </details>
 </div>
 {% endmacro %}
 
@@ -136,14 +140,20 @@
         <option value="all_lenders">All lenders</option>
       </select>
       <p class="app-field-hint">Which lenders the peer comparisons include.</p></div>
-    {% for f in hmda_filters %}
-    <fieldset class="app-field mm-filter" id="{{ f.name }}" data-filter="{{ f.name }}">
-      <legend class="app-field-label">{{ f.label }}</legend>
-      {% for value, text, checked in f.options %}
-      <label class="app-check"><input type="checkbox" value="{{ value }}"{% if checked %} checked{% endif %}><span>{{ text }}</span></label>
-      {% endfor %}
-    </fieldset>
-    {% endfor %}
+    <p class="app-field-label">HMDA filters</p>
+    <details class="app-choices" id="mmFilters" data-summary="labels">
+      <summary><span class="app-choices-text"></span><span class="app-choices-change"></span></summary>
+      <div class="app-choices-body">
+        {% for f in hmda_filters %}
+        <fieldset class="app-field mm-filter" id="{{ f.name }}" data-filter="{{ f.name }}">
+          <legend class="app-field-label">{{ f.label }}</legend>
+          {% for value, text, checked in f.options %}
+          <label class="app-check"><input type="checkbox" value="{{ value }}"{% if checked %} checked{% endif %}><span>{{ text }}</span></label>
+          {% endfor %}
+        </fieldset>
+        {% endfor %}
+      </div>
+    </details>
     {% if can_force_refresh %}
     <label class="app-check"><input type="checkbox" id="mmForceRefresh">
       <span>Clear cache and regenerate<span class="app-check-hint">Senior executives and admins only. Runs the analysis again.</span></span></label>
