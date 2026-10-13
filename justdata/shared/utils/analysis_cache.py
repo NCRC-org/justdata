@@ -26,6 +26,11 @@ DATASET_ID = 'cache_testing' if os.getenv('JUSTDATA_ENV') == 'testing' else 'cac
 CACHE_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_cache'
 USAGE_TABLE = f'{PROJECT_ID}.{DATASET_ID}.usage_log'
 RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
+
+# Bump an app's revision when a change alters the figures a stored result
+# holds, so results cached under the old calculation are not served again.
+# BizSight 2: tract income shares divide by classified loans (2026-10-13).
+REPORT_REVISIONS = {'bizsight': 2}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
@@ -113,6 +118,7 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
         normalized['metro_code'] = params.get('metro_code', '').strip() if params.get('metro_code') else None
     
     elif app_name.lower() == 'bizsight':
+        normalized['revision'] = REPORT_REVISIONS['bizsight']
         county_data = params.get('county_data', {})
         if isinstance(county_data, dict):
             geoid5 = str(county_data.get('geoid5') or county_data.get('GEOID5', '')).zfill(5)

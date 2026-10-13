@@ -59,3 +59,22 @@ def test_zip_bundles_workbook_and_pdf(client):
 def test_pdf(client):
     resp = client.get("/bizsight/download?format=pdf&job_id=x")
     assert resp.status_code == 200 and resp.data.startswith(b"%PDF")
+
+
+def test_workbook_names_the_years_it_holds(tmp_path):
+    """The workbook said 2018-2024 and "% Change Since 2018"; the change is
+    measured from 2020 and the data runs 2020-2024."""
+    import pandas as pd
+    from openpyxl import load_workbook
+    from justdata.apps.bizsight.excel_export import save_bizsight_excel_report
+    from justdata.apps.bizsight.report_builder import create_comparison_table
+    from tests.apps.bizsight.test_bizsight_denominator import ROW
+
+    comparison = create_comparison_table(pd.DataFrame([ROW]), {}, {}, {'total_loans': 80}).to_dict('records')
+    path = tmp_path / "bs.xlsx"
+    save_bizsight_excel_report({'comparison_table': comparison}, str(path), RESULT["metadata"])
+    wb = load_workbook(path)
+    notes = " ".join(str(c.value) for row in wb["Methods & Definitions"].iter_rows() for c in row if c.value)
+    assert "2018" not in notes and "aggregate data for 2020-2024" in notes and "HHI by year from 2020 to 2024" in notes
+    header = [c.value for c in wb["Comparison - Number"][1]]
+    assert "% Change Since 2020" in header and "% Change Since 2018" not in header

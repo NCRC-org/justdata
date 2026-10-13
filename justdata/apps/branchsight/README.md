@@ -12,8 +12,9 @@ web report plus PDF/Excel exports.
   `/report`, `/report-data`, `/download`, `/health`.
 - `/report?job_id=` renders the same page as `/`; the page loads that job's
   results into its results column (spec 04 standard).
-- `/geography-context/<geoid5>`: Census ACS tract context for the report
-  (`data_utils.tract_context`; the Census API needs `CENSUS_API_KEY`).
+- `/geography-context/<geoid5>`: tract counts for the report's Geography
+  Context table (`data_utils.tract_context`), from the FFIEC census data in
+  `shared.census` on the branch flags' definitions.
 
 ## Data sources
 
@@ -21,6 +22,8 @@ web report plus PDF/Excel exports.
   `sod` for the latest year, `sod_legacy` for earlier years. The years run
   are `config.SOD_YEARS` (2021 to 2025).
 - Crosswalks: `justdata-ncrc.shared.cbsa_to_county`
+- Tract income level and minority share: `justdata-ncrc.shared.census`
+  (FFIEC census data, latest year)
 - SQL templates: `sql_templates/`
 
 ## Reports

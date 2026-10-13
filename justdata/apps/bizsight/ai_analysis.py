@@ -338,7 +338,7 @@ class BizSightAnalyzer:
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
         - First paragraph: Focus on overall lending market patterns, loan size distributions, and which types of loans (under $100K, $100K-$250K, $250K-$1M) dominate the market BY NUMBER
-        - Second paragraph: Focus on lending to low-to-moderate income (LMI) tracts and businesses with revenue under $1 million, and discuss the distribution of lending across different income categories (Low, Moderate, Middle, Upper Income tracts)
+        - Second paragraph: Focus on lending to low-to-moderate income (LMI) tracts and businesses with revenue under $1 million, and discuss the distribution of lending across different income categories (Low, Moderate, and Middle- or Upper-Income tracts; the data reports middle and upper together)
         - Focus on patterns and distributions rather than specific lender details
         - Avoid listing too many specific numbers - focus on patterns and trends
 

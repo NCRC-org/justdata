@@ -31,6 +31,17 @@ def safe_float(value, default=0.0):
         return default
 
 
+def classified_totals(df: pd.DataFrame):
+    """Loans and amount with a tract income classification (low, moderate, or
+    middle-or-upper). Every tract income share divides by these, matching the
+    state and national benchmarks; loans with no classification are left out."""
+    def total(col, cast):
+        return cast(df[col].fillna(0).sum()) if col in df.columns else cast(0)
+    loans = sum(total(c, safe_int) for c in ('low_income_loans', 'moderate_income_loans', 'midu_income_loans'))
+    amount = sum(total(c, safe_float) for c in ('low_income_amount', 'moderate_income_amount', 'midu_income_amount'))
+    return loans, amount
+
+
 def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     """
     Create county-level summary table for Section 2 (2018-2024).
@@ -106,8 +117,9 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
         else:
             lmi_tract_amount = 0.0
         
-        lmi_tract_pct = (lmi_tract_loans / num_total * 100) if num_total > 0 else 0.0
-        amt_lmi_tract_pct = (lmi_tract_amount / amt_total * 100) if amt_total > 0 else 0.0
+        classified_num, classified_amt = classified_totals(year_data)
+        lmi_tract_pct = (lmi_tract_loans / classified_num * 100) if classified_num > 0 else 0.0
+        amt_lmi_tract_pct = (lmi_tract_amount / classified_amt * 100) if classified_amt > 0 else 0.0
         
         # Calculate percentages
         num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
@@ -151,13 +163,13 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
         ('Loans $100K-$250K (% of Total)', 'num_100k_250k_pct', True),
         ('Loans $250K-$1M (% of Total)', 'num_250k_1m_pct', True),
         ('Loans to Businesses Under $1M Revenue (% of Total)', 'numsb_under_1m_pct', True),
-        ('Loans to LMI Tracts (% of Total)', 'lmi_tract_pct', True),
+        ('Loans to LMI Tracts (% of Classified Loans)', 'lmi_tract_pct', True),
         ('Total Loan Amount (in millions)', 'amt_total', False),
         ('Amount Under $100K (% of Total)', 'amt_under_100k_pct', True),
         ('Amount $100K-$250K (% of Total)', 'amt_100k_250k_pct', True),
         ('Amount $250K-$1M (% of Total)', 'amt_250k_1m_pct', True),
         ('Amount to Businesses Under $1M Revenue (% of Total)', 'amtsb_under_1m_pct', True),
-        ('Amount to LMI Tracts (% of Total)', 'amt_lmi_tract_pct', True)
+        ('Amount to LMI Tracts (% of Classified Amount)', 'amt_lmi_tract_pct', True)
     ]
     
     for var_name, var_key, is_pct in variables:
@@ -282,24 +294,28 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     county_pct_100k_250k = (num_100k_250k / num_total * 100) if num_total > 0 else 0.0
     county_pct_250k_1m = (num_250k_1m / num_total * 100) if num_total > 0 else 0.0
     county_pct_sb_under_1m = (numsb_under_1m / num_total * 100) if num_total > 0 else 0.0
-    county_pct_lmi_tract = (lmi_tract_loans / num_total * 100) if num_total > 0 else 0.0
+    classified_num, classified_amt = classified_totals(county_2024)
+    county_pct_lmi_tract = (lmi_tract_loans / classified_num * 100) if classified_num > 0 else 0.0
     
     county_pct_amt_under_100k = (amt_under_100k / amt_total * 100) if amt_total > 0 else 0.0
     county_pct_amt_100k_250k = (amt_100k_250k / amt_total * 100) if amt_total > 0 else 0.0
     county_pct_amt_250k_1m = (amt_250k_1m / amt_total * 100) if amt_total > 0 else 0.0
     county_pct_amt_sb_under_1m = (amtsb_under_1m / amt_total * 100) if amt_total > 0 else 0.0
     
-    county_pct_loans_low_income = (county_low_income_loans / num_total * 100) if num_total > 0 else 0.0
-    county_pct_loans_moderate_income = (county_moderate_income_loans / num_total * 100) if num_total > 0 else 0.0
-    county_pct_loans_middle_income = (county_middle_income_loans / num_total * 100) if num_total > 0 else 0.0
-    county_pct_loans_upper_income = (county_upper_income_loans / num_total * 100) if num_total > 0 else 0.0
+    county_pct_loans_low_income = (county_low_income_loans / classified_num * 100) if classified_num > 0 else 0.0
+    county_pct_loans_moderate_income = (county_moderate_income_loans / classified_num * 100) if classified_num > 0 else 0.0
+    county_pct_loans_middle_income = (county_middle_income_loans / classified_num * 100) if classified_num > 0 else 0.0
+    county_pct_loans_upper_income = (county_upper_income_loans / classified_num * 100) if classified_num > 0 else 0.0
     
-    county_pct_amount_low_income = (county_low_income_amount / amt_total * 100) if amt_total > 0 else 0.0
-    county_pct_amount_moderate_income = (county_moderate_income_amount / amt_total * 100) if amt_total > 0 else 0.0
-    county_pct_amount_middle_income = (county_middle_income_amount / amt_total * 100) if amt_total > 0 else 0.0
-    county_pct_amount_upper_income = (county_upper_income_amount / amt_total * 100) if amt_total > 0 else 0.0
+    county_pct_amount_low_income = (county_low_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
+    county_pct_amount_moderate_income = (county_moderate_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
+    county_pct_amount_middle_income = (county_middle_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
+    county_pct_amount_upper_income = (county_upper_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
     
-    # Get state and national values (with defaults)
+    # Get state and national values (with defaults). The source reports middle
+    # and upper income tracts together (midu): the benchmark files hold that
+    # share as pct_*_middle_upper_income, the BigQuery fallback as
+    # pct_*_upper_income, and the county "upper" variables hold midu.
     state_total = state_benchmarks.get('total_loans', 0)
     state_amount = state_benchmarks.get('total_amount', 0.0)
     state_pct_under_100k = state_benchmarks.get('pct_loans_under_100k', 0.0)
@@ -314,11 +330,11 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     state_pct_loans_low_income = state_benchmarks.get('pct_loans_low_income', 0.0)
     state_pct_loans_moderate_income = state_benchmarks.get('pct_loans_moderate_income', 0.0)
     state_pct_loans_middle_income = state_benchmarks.get('pct_loans_middle_income', 0.0)
-    state_pct_loans_upper_income = state_benchmarks.get('pct_loans_upper_income', 0.0)
+    state_pct_loans_upper_income = state_benchmarks.get('pct_loans_middle_upper_income', state_benchmarks.get('pct_loans_upper_income', 0.0))
     state_pct_amount_low_income = state_benchmarks.get('pct_amount_low_income', 0.0)
     state_pct_amount_moderate_income = state_benchmarks.get('pct_amount_moderate_income', 0.0)
     state_pct_amount_middle_income = state_benchmarks.get('pct_amount_middle_income', 0.0)
-    state_pct_amount_upper_income = state_benchmarks.get('pct_amount_upper_income', 0.0)
+    state_pct_amount_upper_income = state_benchmarks.get('pct_amount_middle_upper_income', state_benchmarks.get('pct_amount_upper_income', 0.0))
     
     national_total = national_benchmarks.get('total_loans', 0)
     national_amount = national_benchmarks.get('total_amount', 0.0)
@@ -334,11 +350,11 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     national_pct_loans_low_income = national_benchmarks.get('pct_loans_low_income', 0.0)
     national_pct_loans_moderate_income = national_benchmarks.get('pct_loans_moderate_income', 0.0)
     national_pct_loans_middle_income = national_benchmarks.get('pct_loans_middle_income', 0.0)
-    national_pct_loans_upper_income = national_benchmarks.get('pct_loans_upper_income', 0.0)
+    national_pct_loans_upper_income = national_benchmarks.get('pct_loans_middle_upper_income', national_benchmarks.get('pct_loans_upper_income', 0.0))
     national_pct_amount_low_income = national_benchmarks.get('pct_amount_low_income', 0.0)
     national_pct_amount_moderate_income = national_benchmarks.get('pct_amount_moderate_income', 0.0)
     national_pct_amount_middle_income = national_benchmarks.get('pct_amount_middle_income', 0.0)
-    national_pct_amount_upper_income = national_benchmarks.get('pct_amount_upper_income', 0.0)
+    national_pct_amount_upper_income = national_benchmarks.get('pct_amount_middle_upper_income', national_benchmarks.get('pct_amount_upper_income', 0.0))
     
     # Calculate % change since 2020 (baseline year)
     def calc_pct_change(current, base):
@@ -387,119 +403,105 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
             'County (2024)': county_pct_under_100k,
             'State (2024)': state_pct_under_100k,
             'National (2024)': national_pct_under_100k,
-            '% Change Since 2018': pct_change_num_under_100k
+            '% Change Since 2020': pct_change_num_under_100k
         },
         {
             'Metric': 'Loans $100K-$250K (% of Total)',
             'County (2024)': county_pct_100k_250k,
             'State (2024)': state_pct_100k_250k,
             'National (2024)': national_pct_100k_250k,
-            '% Change Since 2018': pct_change_num_100k_250k
+            '% Change Since 2020': pct_change_num_100k_250k
         },
         {
             'Metric': 'Loans $250K-$1M (% of Total)',
             'County (2024)': county_pct_250k_1m,
             'State (2024)': state_pct_250k_1m,
             'National (2024)': national_pct_250k_1m,
-            '% Change Since 2018': pct_change_num_250k_1m
+            '% Change Since 2020': pct_change_num_250k_1m
         },
         {
             'Metric': 'Loans to Businesses Under $1M Revenue (% of Total)',
             'County (2024)': county_pct_sb_under_1m,
             'State (2024)': state_pct_sb_under_1m,
             'National (2024)': national_pct_sb_under_1m,
-            '% Change Since 2018': pct_change_numsb_under_1m
+            '% Change Since 2020': pct_change_numsb_under_1m
         },
         {
-            'Metric': 'Loans to Low Income Tracts (% of Total)',
+            'Metric': 'Loans to Low Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_low_income,
             'State (2024)': state_pct_loans_low_income,
             'National (2024)': national_pct_loans_low_income,
-            '% Change Since 2018': pct_change_low_income_loans
+            '% Change Since 2020': pct_change_low_income_loans
         },
         {
-            'Metric': 'Loans to Moderate Income Tracts (% of Total)',
+            'Metric': 'Loans to Moderate Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_moderate_income,
             'State (2024)': state_pct_loans_moderate_income,
             'National (2024)': national_pct_loans_moderate_income,
-            '% Change Since 2018': pct_change_moderate_income_loans
+            '% Change Since 2020': pct_change_moderate_income_loans
         },
         {
-            'Metric': 'Loans to Middle Income Tracts (% of Total)',
-            'County (2024)': county_pct_loans_middle_income,
-            'State (2024)': state_pct_loans_middle_income,
-            'National (2024)': national_pct_loans_middle_income,
-            '% Change Since 2018': pct_change_middle_income_loans
-        },
-        {
-            'Metric': 'Loans to Upper Income Tracts (% of Total)',
+            'Metric': 'Loans to Middle- or Upper-Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_upper_income,
             'State (2024)': state_pct_loans_upper_income,
             'National (2024)': national_pct_loans_upper_income,
-            '% Change Since 2018': pct_change_upper_income_loans
+            '% Change Since 2020': pct_change_upper_income_loans
         },
         {
             'Metric': 'Total Loan Amount (in millions)',
             'County (2024)': amt_total,
             'State (2024)': state_amount,
             'National (2024)': national_amount,
-            '% Change Since 2018': pct_change_total_amount
+            '% Change Since 2020': pct_change_total_amount
         },
         {
             'Metric': 'Amount Under $100K (% of Total)',
             'County (2024)': county_pct_amt_under_100k,
             'State (2024)': state_pct_amt_under_100k,
             'National (2024)': national_pct_amt_under_100k,
-            '% Change Since 2018': pct_change_amt_under_100k
+            '% Change Since 2020': pct_change_amt_under_100k
         },
         {
             'Metric': 'Amount $100K-$250K (% of Total)',
             'County (2024)': county_pct_amt_100k_250k,
             'State (2024)': state_pct_amt_100k_250k,
             'National (2024)': national_pct_amt_100k_250k,
-            '% Change Since 2018': pct_change_amt_100k_250k
+            '% Change Since 2020': pct_change_amt_100k_250k
         },
         {
             'Metric': 'Amount $250K-$1M (% of Total)',
             'County (2024)': county_pct_amt_250k_1m,
             'State (2024)': state_pct_amt_250k_1m,
             'National (2024)': national_pct_amt_250k_1m,
-            '% Change Since 2018': pct_change_amt_250k_1m
+            '% Change Since 2020': pct_change_amt_250k_1m
         },
         {
             'Metric': 'Amount to Businesses Under $1M Revenue (% of Total)',
             'County (2024)': county_pct_amt_sb_under_1m,
             'State (2024)': state_pct_amt_sb_under_1m,
             'National (2024)': national_pct_amt_sb_under_1m,
-            '% Change Since 2018': pct_change_amtsb_under_1m
+            '% Change Since 2020': pct_change_amtsb_under_1m
         },
         {
-            'Metric': 'Amount to Low Income Tracts (% of Total)',
+            'Metric': 'Amount to Low Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_low_income,
             'State (2024)': state_pct_amount_low_income,
             'National (2024)': national_pct_amount_low_income,
-            '% Change Since 2018': pct_change_low_income_amount
+            '% Change Since 2020': pct_change_low_income_amount
         },
         {
-            'Metric': 'Amount to Moderate Income Tracts (% of Total)',
+            'Metric': 'Amount to Moderate Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_moderate_income,
             'State (2024)': state_pct_amount_moderate_income,
             'National (2024)': national_pct_amount_moderate_income,
-            '% Change Since 2018': pct_change_moderate_income_amount
+            '% Change Since 2020': pct_change_moderate_income_amount
         },
         {
-            'Metric': 'Amount to Middle Income Tracts (% of Total)',
-            'County (2024)': county_pct_amount_middle_income,
-            'State (2024)': state_pct_amount_middle_income,
-            'National (2024)': national_pct_amount_middle_income,
-            '% Change Since 2018': pct_change_middle_income_amount
-        },
-        {
-            'Metric': 'Amount to Upper Income Tracts (% of Total)',
+            'Metric': 'Amount to Middle- or Upper-Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_upper_income,
             'State (2024)': state_pct_amount_upper_income,
             'National (2024)': national_pct_amount_upper_income,
-            '% Change Since 2018': pct_change_upper_income_amount
+            '% Change Since 2020': pct_change_upper_income_amount
         }
     ]
     
@@ -669,20 +671,21 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         middle_income_amt = 0.0
         upper_income_amt = 0.0
 
+        classified_num, classified_amt = classified_totals(lender_df)
         if 'low_income_loans' in lender_df.columns:
             low_income_num = safe_int(lender_df['low_income_loans'].fillna(0).sum())
             moderate_income_num = safe_int(lender_df['moderate_income_loans'].fillna(0).sum()) if 'moderate_income_loans' in lender_df.columns else 0
             middle_income_num = 0
             upper_income_num = safe_int(lender_df['midu_income_loans'].fillna(0).sum()) if 'midu_income_loans' in lender_df.columns else 0
             lmi_num = low_income_num + moderate_income_num
-            lmi_tract_pct = (lmi_num / num_total * 100) if num_total > 0 else 0.0
+            lmi_tract_pct = (lmi_num / classified_num * 100) if classified_num > 0 else 0.0
         if 'low_income_amount' in lender_df.columns:
             low_income_amt = safe_float(lender_df['low_income_amount'].fillna(0).sum())
             moderate_income_amt = safe_float(lender_df['moderate_income_amount'].fillna(0).sum()) if 'moderate_income_amount' in lender_df.columns else 0.0
             middle_income_amt = 0.0
             upper_income_amt = safe_float(lender_df['midu_income_amount'].fillna(0).sum()) if 'midu_income_amount' in lender_df.columns else 0.0
             lmi_amt = low_income_amt + moderate_income_amt
-            lmi_tract_amt_pct = (lmi_amt / amt_total * 100) if amt_total > 0 else 0.0
+            lmi_tract_amt_pct = (lmi_amt / classified_amt * 100) if classified_amt > 0 else 0.0
         
         # Calculate percentages
         num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
@@ -695,15 +698,15 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         amt_250k_1m_pct = (amt_250k_1m / amt_total * 100) if amt_total > 0 else 0.0
         amtsb_under_1m_pct = (amtsbrev_under_1m / amt_total * 100) if amt_total > 0 else 0.0
         
-        low_income_pct = (low_income_num / num_total * 100) if num_total > 0 else 0.0
-        moderate_income_pct = (moderate_income_num / num_total * 100) if num_total > 0 else 0.0
-        middle_income_pct = (middle_income_num / num_total * 100) if num_total > 0 else 0.0
-        upper_income_pct = (upper_income_num / num_total * 100) if num_total > 0 else 0.0
+        low_income_pct = (low_income_num / classified_num * 100) if classified_num > 0 else 0.0
+        moderate_income_pct = (moderate_income_num / classified_num * 100) if classified_num > 0 else 0.0
+        middle_income_pct = (middle_income_num / classified_num * 100) if classified_num > 0 else 0.0
+        upper_income_pct = (upper_income_num / classified_num * 100) if classified_num > 0 else 0.0
         
-        low_income_amt_pct = (low_income_amt / amt_total * 100) if amt_total > 0 else 0.0
-        moderate_income_amt_pct = (moderate_income_amt / amt_total * 100) if amt_total > 0 else 0.0
-        middle_income_amt_pct = (middle_income_amt / amt_total * 100) if amt_total > 0 else 0.0
-        upper_income_amt_pct = (upper_income_amt / amt_total * 100) if amt_total > 0 else 0.0
+        low_income_amt_pct = (low_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
+        moderate_income_amt_pct = (moderate_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
+        middle_income_amt_pct = (middle_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
+        upper_income_amt_pct = (upper_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
         
         # Clean lender name (abbreviate common suffixes)
         cleaned_lender_name = clean_lender_name(lender_name)
@@ -722,8 +725,7 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
             'Lmi Tract': lmi_tract_pct,
             'Low Income %': low_income_pct,
             'Moderate Income %': moderate_income_pct,
-            'Middle Income %': middle_income_pct,
-            'Upper Income %': upper_income_pct,
+            'Middle or Upper Income %': upper_income_pct,
             'Amt Total': amt_total,
             'Amt Total (in $000s)': amt_total,  # Same value, will be formatted in frontend
             'Amt Under 100K': amt_under_100k,
@@ -737,8 +739,7 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
             'Amount to LMI Tracts': lmi_tract_amt_pct,
             'Low Income Amt %': low_income_amt_pct,
             'Moderate Income Amt %': moderate_income_amt_pct,
-            'Middle Income Amt %': middle_income_amt_pct,
-            'Upper Income Amt %': upper_income_amt_pct
+            'Middle or Upper Income Amt %': upper_income_amt_pct
         }
         
         lender_data.append(lender_row)

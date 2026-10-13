@@ -1,5 +1,5 @@
-"""BranchSight Geography Context: Census tract data served by the server
-(the Census API requires a key, so the former browser calls never worked)."""
+"""BranchSight Geography Context: tract counts from the FFIEC census data,
+on the same LMI and majority-minority definitions as the SOD branch flags."""
 
 import pytest
 
@@ -18,7 +18,7 @@ def client():
 
 def test_route_returns_tract_context(client, monkeypatch):
     import justdata.apps.branchsight.blueprint as bp
-    ctx = {"acs_year": 2022, "lmi_threshold": 40100.8, "groups": {}}
+    ctx = {"ffiec_year": 2025, "groups": {}}
     monkeypatch.setattr(bp, "tract_context", lambda g: ctx)
     assert client.get("/branchsight/geography-context/01085").get_json() == ctx
     assert client.get("/branchsight/geography-context/1085x").status_code == 400
@@ -33,27 +33,36 @@ def test_route_error_has_a_reference(client, monkeypatch):
     assert resp.status_code == 502 and "SECRET" not in resp.get_json()["error"]
 
 
-def test_tract_context_groups(monkeypatch):
+def test_tract_context_uses_the_branch_flag_definitions(monkeypatch):
+    """LMI is FFIEC income level 1 or 2; majority-minority is 50% or more (the
+    SOD flags count 50.0% tracts as majority-minority)."""
+    from types import SimpleNamespace as Row
     from justdata.apps.branchsight import data_utils
-    import requests
-    tracts = [["pop", "inc", "race", "white", "state", "county", "tract"],
-              ["1000", "30000", "1000", "200", "01", "085", "1"],   # LMI and majority-minority
-              ["500", "90000", "500", "100", "01", "085", "2"],     # majority-minority only
-              ["400", "20000", "400", "300", "01", "085", "3"],     # LMI only
-              ["0", "10000", "0", "0", "01", "085", "4"],           # no population: left out
-              ["300", "-666666666", "300", "290", "01", "085", "5"]]  # no income estimate
-    county = [["B19113_001E", "state", "county"], ["50000", "01", "085"]]
-    calls = []
+    rows = [Row(year="2025", income_level=1, minority_population=80.0, total_persons=1000),  # both
+            Row(year="2025", income_level=3, minority_population=50.0, total_persons=500),   # majority-minority only
+            Row(year="2025", income_level=2, minority_population=49.9, total_persons=400),   # LMI only
+            Row(year="2025", income_level=4, minority_population=10.0, total_persons=300),   # neither
+            Row(year="2025", income_level=0, minority_population=None, total_persons=200),   # income unknown: neither
+            Row(year="2025", income_level=1, minority_population=90.0, total_persons=0)]     # no population: left out
+    seen = {}
 
-    def fake_get(url, params=None, timeout=None):
-        calls.append(params)
-        return type("R", (), {"json": lambda self: tracts if params["for"] == "tract:*" else county})()
-    monkeypatch.setattr(requests, "get", fake_get)
-    monkeypatch.setattr("justdata.shared.utils.census_historical_utils._get_census_api_key", lambda: "k")
+    class Client:
+        def query(self, sql, job_config=None):
+            seen["sql"], seen["params"] = sql, job_config.query_parameters
+            return type("J", (), {"result": lambda self: rows})()
+    monkeypatch.setattr(data_utils, "get_bigquery_client", lambda *a, **k: Client())
     data_utils.tract_context.cache_clear()
     out = data_utils.tract_context("01085")
     g = out["groups"]
-    assert out["lmi_threshold"] == 40000
-    assert g["all"] == {"tracts": 4, "population": 2200}
-    assert g["both"]["tracts"] == 1 and g["mmct_only"]["tracts"] == 1 and g["lmi_only"]["tracts"] == 1
-    assert all(p["key"] == "k" for p in calls)
+    assert out["ffiec_year"] == 2025
+    assert g["all"] == {"tracts": 5, "population": 2400}
+    assert g["both"] == {"tracts": 1, "population": 1000}
+    assert g["mmct_only"] == {"tracts": 1, "population": 500}
+    assert g["lmi_only"] == {"tracts": 1, "population": 400}
+    assert "shared.census" in seen["sql"] and seen["params"][0].value == "01085"
+
+
+def test_header_names_the_ffiec_census_data():
+    from justdata.shared.web.registry import NAV_GROUPS
+    entry = [a for g in NAV_GROUPS for a in g.items if a.key == "branchsight"][0]
+    assert entry.sources == ("FDIC SOD", "FFIEC census")

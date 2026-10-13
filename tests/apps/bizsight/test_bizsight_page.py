@@ -76,3 +76,11 @@ def test_section1_opens_with_one_paragraph_not_two(client):
     definition = "Small business loans are defined as loans with original amounts of $1 million or less"
     assert (html + js).count(definition) == 1 and definition in html
     assert "This report analyzes small business lending" not in js
+
+
+def test_section1_describes_cra_data_as_originations_and_purchases(client):
+    """12 CFR 228.42(a), 25.42(a), 345.42(a): large banks collect and report
+    small business loans "originated or purchased"; applications are not reported."""
+    html = _page(client)
+    assert "report the small business loans they originate or purchase" in html
+    assert "loan applications and originations" not in html

@@ -60,3 +60,18 @@ def test_string_years_are_unchanged(app, params):
 def test_year_shapes(value, expected):
     params = {**BRANCHSIGHT_PARAMS, 'years': value}
     assert normalize_parameters('branchsight', params)['years'] == expected
+
+
+def test_bizsight_key_carries_its_report_revision():
+    """BizSight results cached before the classified-loan denominator are not reused."""
+    from justdata.shared.utils import analysis_cache
+    params = {'county_data': {'geoid5': '17031'}, 'years': '2020,2021,2022,2023,2024'}
+    assert normalize_parameters('bizsight', params)['revision'] == 2
+    current = generate_cache_key('bizsight', params)
+    old = dict(analysis_cache.REPORT_REVISIONS)
+    try:
+        analysis_cache.REPORT_REVISIONS['bizsight'] = 1
+        assert generate_cache_key('bizsight', params) != current
+    finally:
+        analysis_cache.REPORT_REVISIONS.clear()
+        analysis_cache.REPORT_REVISIONS.update(old)

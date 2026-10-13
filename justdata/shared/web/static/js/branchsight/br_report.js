@@ -7,9 +7,8 @@
  * Table 1's latest column, each with its net change since the first year.
  *
  * Geography Context: tract counts and population from /geography-context
- * (Census ACS 5-year, data_utils.tract_context). The former page called the
- * Census API from the browser without a key, which the API now refuses, so
- * the section never showed. The county comes from the branch rows' geoid5.
+ * (FFIEC census data, data_utils.tract_context), on the branch flags'
+ * definitions. The county comes from the branch rows' geoid5.
  *
  * Chart colours: HHI bars --ncrc-blue-500; thresholds moderate (1,500)
  * --ncrc-gold and high (2,500) --ncrc-red.
@@ -76,7 +75,7 @@
     $('brCensusNote').hidden = !(years.indexOf('2021') >= 0 && years.indexOf('2022') >= 0);
   }
 
-  // ---- Geography context (Census ACS) --------------------------------------
+  // ---- Geography context (FFIEC census data) -------------------------------
 
   function geography(geoid5) {
     if (!/^\d{5}$/.test(geoid5 || '')) return Promise.resolve();
@@ -90,10 +89,9 @@
         return '<tr><th scope="row">' + esc(r[0]) + '</th><td class="num">' + x.tracts.toLocaleString() + '</td><td class="num">' +
           x.population.toLocaleString() + '</td><td class="num">' + (totalPop ? (x.population / totalPop * 100).toFixed(1) + '%' : '-') + '</td></tr>';
       }).join('');
-      var y = res.body.acs_year;
-      $('brGeographyCaption').textContent = 'Source: U.S. Census Bureau, ' + (y - 4) + '-' + y + ' American Community Survey 5-Year Estimates. ' +
-        'LMI tracts are those with median family income at or below 80% of the county median ($' + Math.round(res.body.lmi_threshold).toLocaleString() + '). ' +
-        'Majority-minority tracts are those where people other than non-Hispanic white residents are more than 50% of the population. Tracts with no population are left out.';
+      $('brGeographyCaption').textContent = 'Source: FFIEC census data' + (res.body.ffiec_year ? ', ' + res.body.ffiec_year : '') + ', compiled by NCRC. ' +
+        'LMI tracts are FFIEC low- or moderate-income tracts (median family income below 80% of the area median); ' +
+        'majority-minority tracts have a minority share of 50% or more. These are the definitions the branch counts use. Tracts with no population are left out.';
       $('brGeography').hidden = false;
     }).catch(function () { $('brGeography').hidden = true; });
   }

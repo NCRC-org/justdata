@@ -54,7 +54,7 @@
         <li><strong>Total:</strong> Total number or amount of small business loans</li>
         <li><strong>&lt;100K / 100-250K / 250K-1M:</strong> Percentage of loans in each size category</li>
         <li><strong>Sm Biz:</strong> Percentage of loans to businesses with annual revenues under $1 million</li>
-        <li><strong>Low / Mod / Mid / Upper:</strong> Percentage of loans in census tracts of each income level</li>
+        <li><strong>Low / Mod / Mid/Upper:</strong> Percentage of loans in census tracts of each income level; the source data reports middle- and upper-income tracts together</li>
         <li><strong>$000s:</strong> Dollar amounts expressed in thousands</li>
     </ul>
 
@@ -62,7 +62,7 @@
 
     <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) &times; 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) &times; 100.</p>
 
-    <p><strong>Income Tract Percentage Calculations:</strong> For percentages by census tract income category (Low, Moderate, Middle, Upper, and LMI), the denominator excludes loans where the tract income classification is unknown or unavailable. Some census tracts lack income classifications due to data suppression, boundary changes, or other Census Bureau limitations. Including these unclassified loans in the denominator would artificially deflate all income category percentages. The formula used is: (income category loans / total loans with known tract income classification) &times; 100. Total loan counts and dollar amounts reported elsewhere in this report include all loans regardless of tract income classification.</p>
+    <p><strong>Income Tract Percentage Calculations:</strong> Every tract income share in this report (county, state, national and lender) divides by the loans or dollars with a tract income classification, leaving out loans with none; totals include all loans.</p>
 
     <p><strong>Change Over Time:</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). Positive changes are displayed in blue; negative changes in red.</p>
 
@@ -97,9 +97,7 @@
         <li><strong>Sm Biz:</strong> Small Business (revenue under $1M)</li>
     </ul>
 
-    <h4>Data Quality and AI Disclosure</h4>
-    <p><strong>Data Validation:</strong> Income tract classifications are validated against FFIEC Census tract income level designations.</p>
-
+    <h4>AI Disclosure and Limitations</h4>
     <p><strong>AI-Generated Narrative Content:</strong> The analytical narratives in Sections 2 through 5 of this report are generated using artificial intelligence (Claude, developed by Anthropic) based on the underlying data tables and calculations. The data tables, calculations, and statistical measures presented in this report are computed directly from FFIEC CRA disclosure data and are not AI-generated.</p>
 
     <p><strong>Limitations:</strong> CRA data reflects lending reported by covered depository institutions and may not capture all small business lending activity in a market. Lending by non-bank lenders, credit unions below the reporting threshold, and fintech companies is generally not included. Market share calculations and HHI values should be interpreted in this context.</p>

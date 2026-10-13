@@ -5,9 +5,12 @@
  *
  * Summary strip: latest-year loans, amount, average loan, amount to
  * businesses under $1M revenue and amount in LMI tracts, each with its
- * change since the first year computed from that year's actual figures.
- * (The former page estimated the first-year LMI amount by applying the
- * latest year's LMI share; with no first-year figure the change is omitted.)
+ * change since the first year computed from that year's actual figures
+ * (the first-year LMI amount is summary_table.lmi_tract_amount_first_year;
+ * without it the change is omitted).
+ *
+ * Tract income shares divide by loans with a tract classification; Section 3
+ * notes how many loans that leaves out (summary_table.unclassified_loans).
  *
  * Chart colours: HHI series --ncrc-blue-500; thresholds moderate (1,500)
  * --ncrc-gold and high (2,500) --ncrc-red.
@@ -65,8 +68,7 @@
     var sbPct0 = at('Amount to Businesses Under $1M Revenue (% of Total)', first);
     var sb0 = amount0 !== null && sbPct0 !== null ? amount0 * sbPct0 / 100 : null;
     var lmi = num(s.lmi_tract_amount);
-    var lmiPct0 = at('Amount to LMI Tracts (% of Total)', first);
-    var lmi0 = amount0 !== null && lmiPct0 !== null ? amount0 * lmiPct0 / 100 : null;
+    var lmi0 = num(s.lmi_tract_amount_first_year);
 
     var items = [
       { figure: fmtInt(loans), label: 'Small business loans, ' + last, note: changeNote(pctChange(loans, loans0), first) },
@@ -155,7 +157,8 @@
 
   // ---- Section 4: top lenders -----------------------------------------------
 
-  var INCOME_COLS = [['Low', 'Low Income'], ['Mod', 'Moderate Income'], ['Mid', 'Middle Income'], ['Upper', 'Upper Income']];
+  // The source reports middle and upper income tracts together.
+  var INCOME_COLS = [['Low', 'Low Income'], ['Mod', 'Moderate Income'], ['Mid/Upper', 'Middle or Upper Income']];
 
   function lenderColumns(kind) {
     var n = kind === 'number';
@@ -229,6 +232,11 @@
     comparisonTable($('bsComparisonNumberTable'), comp.filter(function (r) { return (r.Metric || '').indexOf('Amount') < 0; }));
     comparisonTable($('bsComparisonAmountTable'), comp.filter(function (r) { return (r.Metric || '').indexOf('Amount') >= 0; }));
     $('bsComparisonNumberIntro').textContent = 'Table 1 compares the number of small business loans in ' + place + ' with state (' + (md.state_name || 'statewide') + ') and national benchmarks for ' + last + '. This comparison helps identify whether local lending patterns are consistent with broader trends or represent unique local market conditions.';
+    var unclassified = num((res.summary_table || {}).unclassified_loans);
+    if (unclassified) {
+      $('bsUnclassifiedNote').textContent = 'Excludes ' + fmtInt(unclassified) + ' loan' + (unclassified === 1 ? '' : 's') + ' with no tract classification.';
+      $('bsUnclassifiedNote').hidden = false;
+    }
     $('bsComparisonAmountIntro').textContent = 'Table 2 compares the dollar amount of small business lending in ' + place + ' with state and national figures for ' + last + '. Loan amounts (in thousands) reveal how local lending volume compares to broader geographic benchmarks.';
 
     var lenders = res.top_lenders_table || [];
