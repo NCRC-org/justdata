@@ -70,8 +70,17 @@ def _record_narrative_call(section, model, max_tokens, started, response, exc):
         "ok": exc is None,
         "failure": None if exc is None else _failure_reason(exc, stop),
     }
+    # A reply that ends within 10% of its ceiling is the next one to be cut
+    # off (Jad, 2026-10-13): flag it so the squeeze shows before a section
+    # goes missing.
+    out, cap = entry["output_tokens"], entry["max_tokens"]
+    entry["near_limit"] = bool(exc is None and out is not None and isinstance(cap, int) and cap > 0
+                               and out >= NEAR_LIMIT_SHARE * cap)
     record_stage(entry)
     print("[narrative] " + json.dumps(entry), flush=True)
+    if entry["near_limit"]:
+        print(f"[narrative] WARNING {entry['stage']} used {out} of {cap} output tokens "
+              f"(job {entry['job']}); raise its max_tokens before it is cut off", flush=True)
 
 # =============================================================================
 # AI USAGE TRACKING
@@ -94,6 +103,9 @@ _last_flush_time = None
 # thinking block used part of max_tokens and table narratives were cut off
 # mid-sentence.
 NO_THINKING = {"type": "disabled"}
+
+# Share of a call's max_tokens at or above which the narrative log warns.
+NEAR_LIMIT_SHARE = 0.9
 
 
 def response_text(response) -> str:
