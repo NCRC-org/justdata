@@ -84,7 +84,7 @@ can name the code that does the excluding.
 | LendSight | Dropped | No matching-confidence exclusion in the code. `mortgage_report.sql` applies scope filters only (originations, owner-occupied, 1-4 units, site-built, not reverse), already listed in Methods. Methods' "Data Cleaning" claim (1st/99th percentile loan-amount trimming) had no code behind it and was removed from the web report and PDF. |
 | BizSight | Dropped | No matching-confidence exclusion in the code. Related finding for Jad (not changed): Methods says tract-income percentages exclude loans with no tract income classification. That holds for the state and national benchmarks (`generate_benchmarks.py:58`, known-income denominators) but not for the county column (`report_builder.py:292`, `core.py:954`, total-loan denominators), so Section 3 compares county figures against state and national figures built on different denominators. |
 | BranchSight | Dropped | No matching-confidence exclusion in the code. `branch_report.sql` keeps every SOD row whose geoid5 maps to the chosen county (no service-type or other filter, as Methods says). The workbook's "Branch Count ... excludes ATMs and loan production offices" described a filter the code does not apply and was replaced. |
-| MergerMeter | Pending (MergerMeter PR) | |
+| MergerMeter | Dropped | No matching-confidence exclusion in the code. The HMDA scope filters are the ones the user picks in step 4 (action taken, occupancy, units, construction, reverse mortgage), shown with their codes. |
 
 ### LendSight (refactor/lendsight-standard)
 
@@ -133,6 +133,25 @@ can name the code that does the excluding.
   middle-or-upper shares were 0.0% (wrong benchmark key) and are fixed.
   Section 1 says CRA data covers loans originated or purchased (12 CFR
   228.42). The workbook's change column and year notes said 2018.
+
+### MergerMeter (refactor/mergermeter-page-standard; staff only)
+
+- On the standard: `mergermeter_analysis.html` extends `app_page.html` (32
+  lines; it was 2,529 with inline CSS and jQuery). Steps: 1 Geography
+  (assessment areas or national), 2 Acquirer and target, 3 Years, 4 Options.
+  Built on AppRun (FormData body, 30-minute run limit) and AppReport.
+- Analysis and outputs unchanged: the page posts the former page's form
+  fields and values; checked locally by capturing the form `/analyze`
+  received, and by a full run whose workbook previews as before.
+- `/report?job_id=` is the shareable URL (it used to render the Goals
+  Calculator, still at `/goals-calculator?job_id=`); `/report-data` is a
+  readiness check with the run's metadata and stage timings.
+- `rg 'style="' justdata/apps/mergermeter` and `rg "fa-"
+  justdata/apps/mergermeter` return nothing; 14 unreachable templates were
+  deleted.
+- Stage timings (step clock around the progress updates): locally the
+  Mortgage Goals query is the slowest step (10.1 s of a 42 s run), the one
+  to note for a later optimization ticket.
 
 ### BranchSight (refactor/branchsight-standard)
 
@@ -187,16 +206,16 @@ the hygiene PR #208 (merged 2026-10-07); the rest are tracked above or in the de
 - **BranchMapper** (not a tester app; found in the BranchSight PR, not changed): `data_utils.find_exact_county_match` has the same substring county match that ran 35 BranchSight counties as a different county. Ticket draft below (Jad creates it).
 - **BizSight:**
   - `/download` ignores the in-memory fallback, so export returns 404 when the cache write failed.
-  - The in-memory fallback itself fails: when the cache write fails, `run_job` stores the raw result, and `/report-data` returns 500 on its DataFrames ("The truth value of a DataFrame is ambiguous", `clean_for_json`). Found in a local check 2026-10-13; not changed.
+  - The in-memory fallback itself fails: when the cache write fails, `run_job` stores the raw result, and `/report-data` returns 500 on its DataFrames ("The truth value of a DataFrame is ambiguous", `clean_for_json`). Found in a local check 2026-10-13; fixed in #215 (LendSight had the same failure; also fixed there).
   - Map code is dead.
 - **MergerMeter:**
-  - It never writes results to the analysis cache, because `_perform_analysis` returns None. Fixed in the shared PR (803dc35).
-  - `single_bank_mode` is sent by the UI but dropped by the blueprint.
-  - The assessment-area template link is missing the `/mergermeter` prefix.
-  - The upload help text says "PDF or Text" but only JSON/CSV is accepted.
+  - It never writes results to the analysis cache, because `_perform_analysis` returns None. Fixed in the shared PR (803dc35); stored entries could not be served until #214.
+  - `single_bank_mode` is sent by the UI but dropped by the blueprint. Not changed: the page rebuild keeps the analysis as it is.
+  - The assessment-area template link is missing the `/mergermeter` prefix. Fixed in the page rebuild.
+  - The upload help text says "PDF or Text" but only JSON/CSV is accepted. Fixed in the page rebuild.
   - The Goals Calculator posts to `/api/save-goals-config`, which exists only in the standalone app.
   - `/progress/<job_id>` has `login_required` but no `require_access`.
-  - Orphan partials: `_analysis_*` and `_mergermeter_report_*`.
+  - Orphan partials: `_analysis_*` and `_mergermeter_report_*`. Deleted in the page rebuild, with `analysis_template.html` and `mergermeter_report.html`.
 - **Dead templates:** `analysis_template.html` in LendSight, BizSight and MergerMeter. Only MergerMeter's standalone ops app renders the name.
 
 ## Ticket draft: BranchMapper wrong-county lookup (for the Workflow board)
