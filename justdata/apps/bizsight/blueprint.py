@@ -28,6 +28,7 @@ from justdata.shared.web.app_page import app_page_context
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
+_FALLBACK_LIMIT = 20
 
 # Get shared templates directory
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
@@ -256,7 +257,10 @@ def analyze():
                     import traceback
                     traceback.print_exc()
                     # Store result in-memory fallback so user can still see results
+                    # (the most recent _FALLBACK_LIMIT results on this instance)
                     _result_fallback[job_id] = result
+                    while len(_result_fallback) > _FALLBACK_LIMIT:
+                        _result_fallback.pop(next(iter(_result_fallback)))
                     progress_tracker.complete(success=True)
 
                 print(f"[DEBUG] Progress marked complete for job_id: {job_id}")
@@ -527,7 +531,11 @@ def report_data():
         # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
         if not analysis_result and job_id in _result_fallback:
-            analysis_result = _result_fallback.pop(job_id)
+            # Not popped: the page may reload it, and /download reads the
+            # same fallback. Its report_data holds the raw DataFrames for
+            # the workbook; the page never reads them, so they stay out of
+            # the response.
+            analysis_result = {k: v for k, v in _result_fallback[job_id].items() if k != 'report_data'}
             print(f"[INFO] Using in-memory fallback for job_id={job_id}")
         if not analysis_result:
             # Check progress to see if analysis is still running
@@ -557,6 +565,15 @@ def report_data():
 
         def clean_for_json(obj):
             """Recursively clean data structure for JSON serialization."""
+            # DataFrames first: pd.isna() on a DataFrame raises "truth value
+            # is ambiguous", which made /report-data return 500 for results
+            # served from the in-memory fallback (a failed cache write).
+            if isinstance(obj, pd.DataFrame):
+                return clean_for_json(obj.to_dict('records'))
+            if isinstance(obj, pd.Series):
+                return clean_for_json(obj.tolist())
+            if isinstance(obj, np.ndarray):
+                return clean_for_json(obj.tolist())
             if isinstance(obj, dict):
                 return {k: clean_for_json(v) for k, v in obj.items()}
             elif isinstance(obj, list):
