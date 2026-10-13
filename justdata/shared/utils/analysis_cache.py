@@ -30,7 +30,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # Bump an app's revision when a change alters the figures a stored result
 # holds, so results cached under the old calculation are not served again.
 # BizSight 2: tract income shares divide by classified loans (2026-10-13).
-REPORT_REVISIONS = {'bizsight': 2}
+# LendSight 2: narratives after the #212 fixes and the per-section fallback;
+# results stored before may lack Sections 3 and 4 (2026-10-13).
+REPORT_REVISIONS = {'bizsight': 2, 'lendsight': 2}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
@@ -163,6 +165,7 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
         normalized['not_reverse'] = (params.get('not_reverse') or '1').strip()
     
     elif app_name.lower() == 'lendsight':
+        normalized['revision'] = REPORT_REVISIONS['lendsight']
         counties = params.get('counties', '')
         if isinstance(counties, str):
             counties_list = [c.strip().lower() for c in counties.split(';') if c.strip()]

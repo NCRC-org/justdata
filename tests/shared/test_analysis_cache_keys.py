@@ -75,3 +75,10 @@ def test_bizsight_key_carries_its_report_revision():
     finally:
         analysis_cache.REPORT_REVISIONS.clear()
         analysis_cache.REPORT_REVISIONS.update(old)
+
+
+def test_lendsight_key_carries_its_report_revision():
+    """LendSight results stored before the narrative fixes are not reused."""
+    params = {'counties': 'Hillsborough County, Florida', 'years': '2021,2022,2023,2024,2025',
+              'loan_purpose': ['purchase'], 'selection_type': 'county', 'state_code': '12'}
+    assert normalize_parameters('lendsight', params)['revision'] == 2
