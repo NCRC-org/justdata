@@ -414,47 +414,34 @@ def get_available_years() -> List[int]:
 
 
 # ACS 5-year vintage for the Geography Context table (the page states it).
-TRACT_CONTEXT_ACS_YEAR = 2022
-
-
 @lru_cache(maxsize=512)
 def tract_context(geoid5: str) -> Dict:
     """Census tract counts and population for one county, by LMI and
-    majority-minority status (ACS 5-year, TRACT_CONTEXT_ACS_YEAR).
-
-    LMI: tract median family income at or below 80% of the county median.
-    Majority-minority: people other than non-Hispanic white residents are
-    more than 50% of the tract population. Tracts with no population are
-    left out. The Census API requires a key, so this runs on the server.
+    majority-minority status, from the FFIEC census file (shared.census,
+    latest year). These are the same definitions the SOD branch flags use:
+    br_lmi is FFIEC income level low or moderate (tract median family income
+    below 80% of the area median), and br_minority is a minority share of
+    50% or more (checked against every 2025 branch, 2026-10-13). Tracts with
+    no population are left out.
     """
-    import requests
-    from justdata.shared.utils.census_historical_utils import _get_census_api_key as get_census_api_key
-
-    key = get_census_api_key()
-    if not key:
-        raise RuntimeError('CENSUS_API_KEY is not set')
-    st, co = geoid5[:2], geoid5[2:]
-    base = f'https://api.census.gov/data/{TRACT_CONTEXT_ACS_YEAR}/acs/acs5'
-    tracts = requests.get(base, timeout=20, params={
-        'get': 'B01003_001E,B19113_001E,B03002_001E,B03002_003E',
-        'for': 'tract:*', 'in': f'state:{st} county:{co}', 'key': key}).json()
-    county = requests.get(base, timeout=20, params={
-        'get': 'B19113_001E', 'for': f'county:{co}', 'in': f'state:{st}', 'key': key}).json()
-    median = float(county[1][0] or 0)
-    threshold = median * 0.8
+    from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
+    client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
+    job_config = QueryJobConfig(query_parameters=[ScalarQueryParameter('geoid5', 'STRING', geoid5)])
+    rows = list(client.query(
+        "SELECT year, income_level, minority_population, total_persons FROM shared.census "
+        "WHERE CONCAT(state_code, county_code) = @geoid5 "
+        "AND year = (SELECT MAX(year) FROM shared.census)",
+        job_config=job_config).result())
     groups = {k: {'tracts': 0, 'population': 0} for k in ('all', 'lmi_only', 'mmct_only', 'both')}
-    for row in tracts[1:]:
-        pop = float(row[0] or 0)
+    for row in rows:
+        pop = int(row.total_persons or 0)
         if pop <= 0:
             continue
-        income = float(row[1] or 0)
-        race_total, white = float(row[2] or 0), float(row[3] or 0)
-        is_lmi = 0 < income <= threshold
-        is_mmct = race_total > 0 and (race_total - white) / race_total * 100 > 50
+        is_lmi = row.income_level in (1, 2)
+        is_mmct = row.minority_population is not None and row.minority_population >= 50
         key_ = 'both' if is_lmi and is_mmct else 'lmi_only' if is_lmi else 'mmct_only' if is_mmct else None
         for k in ('all', key_):
             if k:
                 groups[k]['tracts'] += 1
-                groups[k]['population'] += int(pop)
-    return {'acs_year': TRACT_CONTEXT_ACS_YEAR, 'county_median_family_income': median,
-            'lmi_threshold': threshold, 'groups': groups}
+                groups[k]['population'] += pop
+    return {'ffiec_year': int(rows[0].year) if rows else None, 'groups': groups}
