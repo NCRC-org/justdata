@@ -10,8 +10,8 @@ import requests
 from justdata.shared.ncrc_reports import NCRC_REPORTS
 
 ROOT = Path(__file__).resolve().parents[2]
-# Site navigation, not report links
-NOT_REPORTS = {"https://ncrc.org/membership/"}
+# Site navigation and the contact source, not report links
+NOT_REPORTS = {"https://ncrc.org/membership/", "https://ncrc.org/contact/"}
 
 
 @pytest.mark.parametrize("report", NCRC_REPORTS, ids=lambda r: r.key)

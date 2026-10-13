@@ -4,9 +4,9 @@
             <div>
                 <p style="margin: 0 0 8px 0; font-size: 13px;">&copy; 2026 National Community Reinvestment Coalition</p>
                 <div style="display: flex; gap: 16px; font-size: 13px;">
-                    <a href="mailto:research@ncrc.org">research@ncrc.org</a>
+                    {% if ncrc_contact %}<a href="mailto:{{ ncrc_contact.email }}">{{ ncrc_contact.email }}</a>{% endif %}
                     <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="tel:+12024644600">(202) 464-4600</a>
+                    {% if ncrc_contact %}<a href="tel:{{ ncrc_contact.phone_tel }}">{{ ncrc_contact.phone }}</a>{% endif %}
                     <span style="color: rgba(255,255,255,0.5);">|</span>
                     <a href="/privacy">Privacy</a>
                     <span style="color: rgba(255,255,255,0.5);">|</span>

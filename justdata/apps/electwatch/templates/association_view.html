@@ -504,9 +504,9 @@
             <div style="text-align: left;">
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
                 <div style="display: flex; gap: 16px; font-size: 13px;">
-                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
+                    {% if ncrc_contact %}<a href="mailto:{{ ncrc_contact.email }}" style="color: #8bb8ff; text-decoration: none;">{{ ncrc_contact.email }}</a>{% endif %}
                     <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
+                    {% if ncrc_contact %}<a href="tel:{{ ncrc_contact.phone_tel }}" style="color: #8bb8ff; text-decoration: none;">{{ ncrc_contact.phone }}</a>{% endif %}
                 </div>
                 <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
                     Created by Jay Richardson &amp; Jad Edlebi
