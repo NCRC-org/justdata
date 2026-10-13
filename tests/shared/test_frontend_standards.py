@@ -153,11 +153,6 @@ EMOJI_RE = re.compile(
 )
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "4 in-scope templates still carry emoji as of step 1 (BizSight's "
-    "analysis_template.html and three MergerMeter files) -- removed in "
-    "step 6. Flip to a hard assertion once that step lands."
-))
 def test_no_emoji_in_scope():
     """Part D item 6 (step 1, scoped): no in-scope template or CSS file
     contains emoji or decorative unicode.
@@ -204,17 +199,7 @@ INLINE_STYLE_BUDGET: dict[str, int] = {
     "justdata/apps/analytics/templates/analytics/user_map.html": 2,
     "justdata/apps/analytics/templates/analytics/users.html": 3,
     "justdata/apps/bizsight/templates/bizsight_analysis.html": 20,
-    "justdata/apps/mergermeter/templates/analysis_template.html": 1,
     "justdata/apps/mergermeter/templates/goals_calculator.html": 3,
-    "justdata/apps/mergermeter/templates/mergermeter_analysis.html": 249,
-    "justdata/apps/mergermeter/templates/mergermeter_report.html": 73,
-    "justdata/apps/mergermeter/templates/partials/_analysis_main.html": 204,
-    "justdata/apps/mergermeter/templates/partials/_analysis_scripts.html": 44,
-    "justdata/apps/mergermeter/templates/partials/_analysis_template_footer.html": 15,
-    "justdata/apps/mergermeter/templates/partials/_analysis_template_main.html": 175,
-    "justdata/apps/mergermeter/templates/partials/_analysis_template_scripts.html": 27,
-    "justdata/apps/mergermeter/templates/partials/_mergermeter_report_main.html": 7,
-    "justdata/apps/mergermeter/templates/partials/_mergermeter_report_scripts.html": 65,
     "justdata/shared/web/templates/access_restricted.html": 2,
     "justdata/shared/web/templates/admin-dashboard.html": 4,
     "justdata/shared/web/templates/admin-users.html": 24,

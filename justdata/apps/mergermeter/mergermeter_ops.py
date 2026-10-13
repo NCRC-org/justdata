@@ -104,29 +104,6 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
 # Note: /health endpoint is already registered by create_app() in app_factory.py
 
 
-def index():
-    """Main page with the analysis form"""
-    return render_template('analysis_template.html',
-                         version=__version__,
-                         app_name='MergerMeter',
-                         breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}])
-
-
-def report():
-    """Report display page"""
-    # Check if job_id is in URL parameters (fallback if session doesn't persist)
-    job_id_from_url = request.args.get('job_id')
-    if job_id_from_url and not session.get('job_id'):
-        session['job_id'] = job_id_from_url
-    return render_template('mergermeter_report.html',
-                         version=__version__,
-                         app_name='MergerMeter',
-                         breadcrumb_items=[
-                             {'name': 'MergerMeter', 'url': '/mergermeter'},
-                             {'name': 'Report', 'url': '/mergermeter/report'}
-                         ])
-
-
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
     def event_stream():
@@ -3228,6 +3205,12 @@ def download():
         return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='mergermeter')[0]}), 500
 
 
+def index():
+    """This module's standalone app is not served; MergerMeter runs inside the
+    JustData platform (blueprint.py), whose page is mergermeter_analysis.html."""
+    return 'MergerMeter runs inside the JustData platform at /mergermeter/.'
+
+
 # Register standard routes
 register_standard_routes(
     app,
@@ -3238,8 +3221,6 @@ register_standard_routes(
     data_handler=None
 )
 
-# Register MergerMeter-specific routes
-app.add_url_rule('/report', 'report', report, methods=['GET'])
 # Note: /report-data and /api/generate-assessment-areas-from-branches are already registered via @app.route decorators above
 
 

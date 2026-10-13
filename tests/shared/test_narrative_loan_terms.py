@@ -20,6 +20,5 @@ def test_lendsight_prompts_say_originations():
 def test_mergermeter_loans_method_says_originations():
     for rel in ("justdata/apps/mergermeter/mergermeter_ops.py",
                 "justdata/apps/mergermeter/branch_assessment_area_generator.py",
-                "justdata/apps/mergermeter/templates/partials/_analysis_template_main.html",
-                "justdata/apps/mergermeter/templates/partials/_analysis_template_scripts.html"):
+                "justdata/apps/mergermeter/templates/partials/mergermeter_controls.html"):
         assert "loan applications" not in (ROOT / rel).read_text(), rel
