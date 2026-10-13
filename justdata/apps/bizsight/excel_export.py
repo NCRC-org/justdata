@@ -175,8 +175,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', 'AI Model: Narratives generated using Claude AI (Anthropic).'))
         notes_content.append(('', ''))
         
-        notes_content.append(('Data Quality Assurance', ''))
-        notes_content.append(('', 'All data used in this report has been downloaded, cleaned, and tested by NCRC Research staff.'))
+        notes_content.append(('Data Access', ''))
         notes_content.append(('', 'Users can download the complete raw dataset using the Excel Export feature.'))
         notes_content.append(('', 'For official CRA data and documentation, visit the appropriate regulatory agency websites.'))
         notes_content.append(('', ''))
