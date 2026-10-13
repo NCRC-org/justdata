@@ -1745,7 +1745,7 @@ def generate_assessment_areas_from_branches():
             method_descriptions = {
                 'all_branches': 'branches',
                 'deposits': 'branch deposits',
-                'loans': 'loan applications'
+                'loans': 'originated loans'
             }
             return jsonify({
                 'success': False,

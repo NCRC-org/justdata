@@ -296,7 +296,7 @@ def generate_assessment_areas_from_branches(
 
     Method 1: 'all_branches' - All CBSAs where the bank has branches
     Method 2: 'deposits' - CBSAs where bank has >=1% of its total branch deposits
-    Method 3: 'loans' - CBSAs where bank has >=1% of its total loan applications
+    Method 3: 'loans' - CBSAs where bank has >=1% of its total originated loans (HMDA action_taken = 1)
 
     For all methods, ONLY counties where the bank has branches are included
     (not all counties in the metro area).
@@ -387,8 +387,8 @@ def generate_assessment_areas_from_branches(
             return assessment_areas
             
         elif method == 'loans':
-            # Method 3: CBSAs with >=1% of bank's loan applications
-            print(f"  Method: CBSAs with >={min_share*100:.1f}% of bank's loan applications")
+            # Method 3: CBSAs with >=1% of bank's originated loans
+            print(f"  Method: CBSAs with >={min_share*100:.1f}% of bank's originated loans")
             
             # For loans method, we need LEI (HMDA uses LEI, not RSSD)
             if not lei:

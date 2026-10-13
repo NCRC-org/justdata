@@ -41,7 +41,7 @@ class LendSightAnalyzer(AIAnalyzer):
 
         1. MORTGAGE LENDING GAP (what THIS report shows):
            - Measures ACCESS TO CREDIT, not homeownership rates
-           - Example: "Black residents = 9% of county population but received 4% of mortgage approvals"
+           - Example: "Black residents = 9% of county population but received 4% of originated mortgage loans"
            - This shows barriers to OBTAINING mortgages
            - Source: LendSight report data (HMDA mortgage originations)
 
@@ -51,7 +51,7 @@ class LendSightAnalyzer(AIAnalyzer):
              https://ncrc.org/the-racial-wealth-gap-1992-to-2022/
            - This documents who ALREADY OWNS homes, not who is getting new mortgages
 
-        KEY RULE: NEVER conflate lending approval gaps with homeownership gaps.
+        KEY RULE: NEVER conflate lending gaps with homeownership gaps.
         - They measure DIFFERENT points in the housing access pipeline
         - Lending gaps show barriers to credit ACCESS
         - Homeownership gaps show ultimate OUTCOMES
@@ -210,10 +210,10 @@ class LendSightAnalyzer(AIAnalyzer):
         - MMCT = Majority-Minority Census Tracts
 
         CRITICAL DATA DISTINCTION:
-        - This data shows MORTGAGE APPROVALS (access to credit), NOT homeownership rates
+        - This data shows ORIGINATED MORTGAGE LOANS (loans that closed), NOT applications, approvals or denials, and NOT homeownership rates
         - When discussing racial/ethnic lending patterns, use "lending gap" or "mortgage access gap"
         - NEVER use "homeownership gap" - that's a different metric measuring actual ownership rates
-        - Example: "Black borrowers received X% of mortgage approvals" (correct) vs "Black homeownership rate" (wrong metric)
+        - Example: "Black borrowers received X% of originated mortgage loans" (correct) vs "Black homeownership rate" (wrong metric)
 
         FORMAT REQUIREMENTS:
         - Each finding must be formatted as: **Title:** Sentence describing the finding
@@ -548,7 +548,7 @@ You are writing for a general audience unfamiliar with mortgage discrimination a
 === ABSOLUTE HARD LIMITS - YOU WILL BE SCORED ON THESE ===
 
 NUMBER LIMIT: You may cite AT MOST THREE (3) numbers in your ENTIRE response.
-- Example of 3 numbers: "Black residents represent 18% of population, received 6% of mortgage approvals—a 12-point gap"
+- Example of 3 numbers: "Black residents represent 18% of population, received 6% of originated mortgage loans—a 12-point gap"
 - That uses your entire budget: 18%, 6%, 12 points = 3 numbers
 - If you cite 4 or more numbers anywhere in your response, you have FAILED
 - Focus on the SINGLE most egregious disparity only
@@ -566,7 +566,8 @@ WHAT YOU MUST NOT DO:
 ❌ Recite what's already visible in the table
 ❌ Use phrases like "the data shows" or "according to the table"
 ❌ Cite population percentages AND lending percentages for multiple groups
-❌ Conflate lending approval gaps with homeownership rate gaps (they are DIFFERENT metrics)
+❌ Conflate lending gaps with homeownership rate gaps (they are DIFFERENT metrics)
+❌ Describe the data as approvals, applications or denials: it covers originated loans only
 ❌ Use "homeownership gap" when referring to this lending data - use "lending gap" or "mortgage access gap"
 
 === THE DATA (for context only, NOT to recite) ===
@@ -578,7 +579,7 @@ Latest Year: {latest_year}
 POPULATION DEMOGRAPHICS (Most Recent Census):
 {population_context if population_context else 'Population data not available for comparison.'}
 
-LENDING DATA BY RACE/ETHNICITY (shows mortgage APPROVALS, not homeownership rates):
+LENDING DATA BY RACE/ETHNICITY (shows ORIGINATED mortgage loans, not applications, approvals or homeownership rates):
 {json.dumps(demographic_data, indent=2)[:2000] if demographic_data else 'Lending data not available'}
 
 === YOUR TASK ===
@@ -589,13 +590,13 @@ PARAGRAPH 1 - Educational Context + Most Striking Disparity:
 - Start by explaining what the MORTGAGE LENDING GAP is (disparity in access to mortgage credit, distinct from homeownership rates)
 - Note this measures ACCESS to credit - a barrier BEFORE homeownership
 - Mention redlining's historical impact and ongoing effects (algorithmic bias, neighborhood disinvestment)
-- Identify the SINGLE most egregious LENDING disparity in the data (pick ONE group with largest population-to-approval gap)
-- For that ONE group, cite AT MOST 3 numbers showing: population %, mortgage approval %, gap
-- Example: "Black residents represent 18% of population, received 6% of mortgage approvals—a 12-point gap"
+- Identify the SINGLE most egregious LENDING disparity in the data (pick ONE group with largest gap between population share and share of originated loans)
+- For that ONE group, cite AT MOST 3 numbers showing: population %, share of originated mortgage loans %, gap
+- Example: "Black residents represent 18% of population, received 6% of originated mortgage loans—a 12-point gap"
 
 PARAGRAPH 2 - Broader Pattern + Real-World Impact:
 - Describe the OVERALL trend for other groups WITHOUT citing specific percentages
-- Use qualitative language: "Some groups received mortgage approvals at rates exceeding their population share, others fell short"
+- Use qualitative language: "Some groups received shares of originated mortgage loans exceeding their population share, others fell short"
 - Explain what these lending disparities mean for families trying to build wealth
 - Connect to structural barriers (algorithmic bias, neighborhood disinvestment, etc.)
 - Reference national patterns from NCRC research if relevant
@@ -613,9 +614,9 @@ You may reference NCRC reports using markdown hyperlinks: [link text](URL)
 [This conflates lending gaps with homeownership gaps and cites too many numbers - FAILED]
 
 ✅ SUCCESS EXAMPLE (cites exactly 3 numbers, correct terminology):
-"Montgomery County's lending patterns reveal a persistent mortgage lending gap—the disparity in access to mortgage credit that creates barriers to homeownership for communities of color. This gap in credit access has roots in redlining, the discriminatory practice legally banned in 1968 whose effects persist through algorithmic bias and neighborhood disinvestment. Most striking: Black residents represent 18% of the county's population but received only 6% of mortgage approvals, a 12-percentage-point gap in credit access that compounds across generations.
+"Montgomery County's lending patterns reveal a persistent mortgage lending gap—the disparity in access to mortgage credit that creates barriers to homeownership for communities of color. This gap in credit access has roots in redlining, the discriminatory practice legally banned in 1968 whose effects persist through algorithmic bias and neighborhood disinvestment. Most striking: Black residents represent 18% of the county's population but received only 6% of originated mortgage loans, a 12-percentage-point gap in credit access that compounds across generations.
 
-While some demographic groups received mortgage approvals at rates exceeding their population share and others fell short, these lending disparities reflect structural barriers rather than individual lender decisions. Limited mortgage access means limited opportunity to build home equity—the primary wealth-building mechanism for American families. For broader context on how lending gaps translate to actual homeownership disparities, see the [NCRC Racial Wealth Gap report](https://ncrc.org/the-racial-wealth-gap-1992-to-2022/)."
+While some demographic groups received shares of originated mortgage loans exceeding their population share and others fell short, these lending disparities reflect structural barriers rather than individual lender decisions. Limited mortgage access means limited opportunity to build home equity—the primary wealth-building mechanism for American families. For broader context on how lending gaps translate to actual homeownership disparities, see the [NCRC Racial Wealth Gap report](https://ncrc.org/the-racial-wealth-gap-1992-to-2022/)."
 [This cites exactly 3 numbers, uses correct terminology (lending gap, mortgage access), and properly distinguishes from homeownership rates - SUCCESS]
 
 === CRITICAL WRITING REQUIREMENTS ===
@@ -912,7 +913,7 @@ This table shows WHERE mortgage loans are going based on the racial/ethnic compo
 HISTORICAL CONTEXT:
 Redlining (legal until 1968) systematically denied mortgages to communities of color. While outlawed, its effects persist:
 - Formerly redlined neighborhoods still have lower property values
-- Communities of color often face higher denial rates and worse loan terms
+- This report covers originated loans only; it does not measure applications, approvals or denials
 - Mortgage access patterns can indicate ongoing structural barriers
 
 IMPORTANT NOTE: The 2020 Census redrew tract boundaries, increasing MMCT designations by ~30% nationally. Shifts between 2021-2022 may partly reflect boundary changes, not just lending changes.
