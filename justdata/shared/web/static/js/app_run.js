@@ -154,6 +154,9 @@
     var field = el.closest('.app-field');
     var err = field.querySelector('.app-field-error');
     field.classList.toggle('is-invalid', !!message);
+    // A collapsed option list (app_choices.js) opens so the message shows.
+    var list = message && el.closest('details.app-choices');
+    if (list) list.open = true;
     if (message && !err) {
       err = document.createElement('p');
       err.className = 'app-field-error';

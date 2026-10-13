@@ -34,7 +34,7 @@ def test_standard_skeleton_and_step_order(client):
     steps = [html.index(s) for s in ("</span>Geography</legend>", "</span>Acquirer and target</legend>",
                                      "</span>Years</legend>", "</span>Options</legend>")]
     assert steps == sorted(steps)
-    for m in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js",
+    for m in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js", "app_choices.js",
               "mergermeter/mm_report.js", "mergermeter/mm_banks.js", "mergermeter/mm_areas.js", "mergermeter/mm_page.js"):
         assert m in html, m
     assert "jquery" not in html.lower() and "select2" not in html.lower()

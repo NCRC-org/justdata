@@ -1,10 +1,6 @@
 /* MergerMeter page (spec 04 Part B): only what app.css does not cover.
    Tokens only; every selector is prefixed .mm- (or scoped to #mmForm). */
 
-/* The controls are long (two banks, two sets of assessment areas, filters),
-   so the column scrolls with the page instead of sticking. */
-.app-controls:has(#mmForm) { position: static; }
-
 /* Assessment areas */
 .mm-area { border: 1px solid var(--color-border); padding: var(--s-3); margin-top: var(--s-3); }
 .mm-modes { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin-bottom: var(--s-3); }

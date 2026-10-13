@@ -38,8 +38,17 @@
 /* Workbench */
 .app-workbench { display: grid; grid-template-columns: 360px 1fr; gap: var(--gutter); padding-top: var(--s-7); padding-bottom: var(--s-9); align-items: start; }
 @media (max-width: 1100px) { .app-workbench { grid-template-columns: 1fr; } }
-.app-controls { position: sticky; top: calc(var(--header-h) + var(--s-4)); background: var(--color-bg); border: 1px solid var(--color-border); }
-@media (max-width: 1100px) { .app-controls { position: static; } }
+/* Two columns: the controls stick below the header and scroll inside
+   themselves (head and Run button stay in view), while the results scroll
+   the page. Stacked (1100px and below): no internal scroll. */
+.app-controls { position: sticky; top: calc(var(--header-h) + var(--s-4)); background: var(--color-bg); border: 1px solid var(--color-border);
+  max-height: calc(100vh - var(--header-h) - 2 * var(--s-4)); display: flex; flex-direction: column; overflow-y: auto; }
+.app-controls > form { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.app-controls-head, .app-controls-foot { flex-shrink: 0; }
+@media (max-width: 1100px) {
+  .app-controls { position: static; max-height: none; display: block; overflow: visible; }
+  .app-controls > form { overflow: visible; }
+}
 /* Text that only makes sense in the two-column layout ("on the left") */
 @media (max-width: 1100px) { .app-wide-only { display: none; } }
 .app-controls-head, .app-controls-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); padding: var(--s-4) var(--s-5); }
@@ -75,6 +84,16 @@
 .app-details summary { cursor: pointer; font-weight: var(--fw-semibold); color: var(--color-fg); }
 .app-details summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
 .app-details ul { margin: var(--s-2) 0 0; padding-left: var(--s-5); color: var(--color-fg-muted); }
+/* Long option lists collapse to a one-line summary (app_choices.js) */
+.app-choices { border: 1px solid var(--color-border); margin: 0 0 var(--s-3); }
+.app-choices > summary { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); padding: var(--s-2) var(--s-3);
+  cursor: pointer; list-style: none; font-size: var(--fs-body-sm); }
+.app-choices > summary::-webkit-details-marker { display: none; }
+.app-choices > summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
+.app-choices-text { min-width: 0; }
+.app-choices-change { flex-shrink: 0; font-weight: var(--fw-semibold); color: var(--color-link); white-space: nowrap; }
+.app-choices[open] > summary { border-bottom: 1px solid var(--color-divider); }
+.app-choices-body { padding: var(--s-3); }
 
 /* Results */
 .app-results { min-height: 480px; border: 1px solid var(--color-border); background: var(--color-bg); display: flex; flex-direction: column; min-width: 0; }
