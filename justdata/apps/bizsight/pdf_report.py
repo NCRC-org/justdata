@@ -687,8 +687,10 @@ def generate_bizsight_pdf(result_data, metadata):
                                     if k != 'Variable' and str(k).strip().isdigit()])
                 if year_cols:
                     latest = row.get(year_cols[-1], 0)
+                    measure = ('of loan dollars with a tract income classification' if var.lower().startswith('amount')
+                               else 'of loans with a tract income classification')
                     key_findings_parts.append(
-                        f'**{_fmt_pct(latest)}** of loans went to LMI census tracts in {year_cols[-1]}'
+                        f'**{_fmt_pct(latest)}** {measure} went to LMI census tracts in {year_cols[-1]}'
                     )
 
     if top_lenders_data:

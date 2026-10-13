@@ -51,3 +51,13 @@ def test_page_workbook_and_methods_show_the_state_figure(tmp_path):
     rows = list(load_workbook(path)["HHI by Year"].iter_rows(values_only=True))
     assert rows[0] == ("Year", "County HHI", "County concentration", "State", "Statewide HHI")
     assert rows[1] == (2024, 517.37, "Low", "Illinois", 377.37)
+
+
+def test_pdf_sections_match_the_page_and_lmi_findings_name_their_measure():
+    src = (ROOT / "justdata/apps/bizsight/pdf_report.py").read_text()
+    for heading in ("Section 1: Introduction", "Section 2: County Summary",
+                    "Section 3: County, State, and National Comparison", "Section 4: Top Lenders",
+                    "Section 5: Market Concentration"):
+        assert f"_h1('{heading}')" in src, heading
+    assert "Section 6" not in src
+    assert "of loan dollars with a tract income classification" in src
