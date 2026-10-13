@@ -199,7 +199,6 @@ INLINE_STYLE_BUDGET: dict[str, int] = {
     "justdata/apps/analytics/templates/analytics/user_map.html": 2,
     "justdata/apps/analytics/templates/analytics/users.html": 3,
     "justdata/apps/bizsight/templates/bizsight_analysis.html": 20,
-    "justdata/apps/mergermeter/templates/goals_calculator.html": 3,
     "justdata/shared/web/templates/access_restricted.html": 2,
     "justdata/shared/web/templates/admin-dashboard.html": 4,
     "justdata/shared/web/templates/admin-users.html": 24,

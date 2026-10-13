@@ -9,7 +9,6 @@
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -28,6 +27,9 @@
         * {
             box-sizing: border-box;
         }
+
+        body.gc-page { background: var(--color-bg-muted); min-height: 100vh; }
+        .gc-loading { text-align: center; padding: var(--s-9) var(--s-5); color: var(--color-fg-muted); }
 
         body {
             margin: 0;
@@ -100,7 +102,7 @@
         }
     </style>
 </head>
-<body style="background: #f5f5f5; min-height: 100vh;">
+<body class="gc-page">
     {% include "shared_header.html" %}
     {% include "shared_header_js.html" %}
 
@@ -112,10 +114,7 @@
         </div>
         {% else %}
         <!-- Content will be rendered by JavaScript -->
-        <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px;"></i>
-            <div>Loading Goals Calculator...</div>
-        </div>
+        <div class="gc-loading" role="status">Loading the Goals Calculator…</div>
         {% endif %}
     </div>
 
