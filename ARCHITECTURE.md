@@ -175,6 +175,11 @@ extend `app_page.html`, rendered with `app_page_context(...)` from
 Each app adds only its own controls and report body (for example
 `js/branchsight/br_page.js` and `br_report.js`).
 
+**NCRC report links** — every ncrc.org report URL used in a prompt or template is in
+`justdata/shared/ncrc_reports.py` (title, URL, last checked). When NCRC publishes a new
+edition, update its entry there; `tests/shared/test_ncrc_reports.py` fails on any link
+that does not return 200.
+
 **Auth** — `justdata/main/auth/` provides `login_required`,
 `require_access`, `admin_required`, and `staff_required` decorators on top
 of Firebase. All blueprints import from there. `require_access(app, level)`

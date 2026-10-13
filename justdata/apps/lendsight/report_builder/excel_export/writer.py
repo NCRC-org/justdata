@@ -12,6 +12,7 @@ from openpyxl.utils import get_column_letter
 
 from justdata.shared.core.hmda_years import is_valid_hmda_year
 from justdata.apps.lendsight.report_builder.formatting import sanitize_sheet_name
+from justdata.apps.lendsight.report_builder.sections.concentration import HHI_METHOD_SENTENCE, hhi_comparison_rows
 from justdata.apps.lendsight.report_builder.excel_export.demographic import (
     create_demographic_overview_table_for_excel,
     create_population_demographics_table_for_excel,
@@ -31,7 +32,8 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
     3. Section 1: Demographic Overview (with ALL categories and No Data)
     4. Section 2: Income and Neighborhood Indicators
     5. Section 3: Top Lenders (with ALL categories and No Data)
-    6. Raw Data (all raw data used in the report)
+    6. Section 4: Market Concentration (county and statewide HHI)
+    7. Raw Data (all raw data used in the report)
     """
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, PatternFill
@@ -112,6 +114,11 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         methods_content.append(('', 'Percentages are calculated as: (category loans / total loans) × 100'))
         methods_content.append(('', ''))
         
+        methods_content.append(('Market Concentration (HHI)', ''))
+        methods_content.append(('', HHI_METHOD_SENTENCE))
+        methods_content.append(('', 'HHI below 1,500 = low concentration; 1,500 to 2,500 = moderate; above 2,500 = high.'))
+        methods_content.append(('', ''))
+
         methods_content.append(('Data Filters Applied', ''))
         methods_content.append(('', 'Originations only (action taken = 1)'))
         methods_content.append(('', 'Owner-occupied properties (occupancy type = 1)'))
@@ -231,6 +238,17 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
             if not top_lenders_detailed.empty:
                 top_lenders_detailed.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
         
+        # Section 4: county and statewide HHI by year and loan purpose
+        counties_meta = (metadata or {}).get('counties') or []
+        area = counties_meta[0] if len(counties_meta) == 1 else 'Selected counties'
+        market_concentration = report_data.get('market_concentration', [])
+        if isinstance(market_concentration, pd.DataFrame):
+            market_concentration = market_concentration.to_dict('records')
+        hhi_rows = hhi_comparison_rows(market_concentration, report_data.get('market_concentration_state') or [],
+                                       years, area)
+        if hhi_rows:
+            pd.DataFrame(hhi_rows).to_excel(writer, sheet_name=sanitize_sheet_name('Section 4 - Concentration (HHI)'), index=False)
+
         # Style the header row for all data sheets (not Methods sheet)
         from openpyxl.styles import NamedStyle
         from openpyxl.styles.numbers import FORMAT_NUMBER, FORMAT_PERCENTAGE

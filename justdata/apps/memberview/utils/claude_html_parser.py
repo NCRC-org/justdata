@@ -29,6 +29,8 @@ class ClaudeHTMLParser:
         Args:
             cache_dir: Directory to cache parsed results
         """
+        from justdata.shared.utils.env_utils import refuse_if_ai_disabled
+        refuse_if_ai_disabled()
         if not ANTHROPIC_AVAILABLE:
             raise ImportError("anthropic package is required. Install with: pip install anthropic")
         

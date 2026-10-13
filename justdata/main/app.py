@@ -79,6 +79,10 @@ def create_app():
     app.register_blueprint(auth_bp)
     print("[INFO] Auth blueprint registered at /api/auth")
 
+    # NCRC report links for templates, from the one shared list
+    from justdata.shared.ncrc_reports import ncrc_report_url
+    app.jinja_env.globals['ncrc_report_url'] = ncrc_report_url
+
     # Context processor to make auth info available in all templates
     @app.context_processor
     def inject_auth():

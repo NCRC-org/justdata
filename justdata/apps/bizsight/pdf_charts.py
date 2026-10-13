@@ -94,7 +94,7 @@ def render_hhi_chart(hhi_by_year):
     # Value labels on bars
     for i, v in enumerate(values):
         if v > 0:
-            ax.text(i, v + max_val * 0.03, str(int(v)), ha='center',
+            ax.text(i, v + max_val * 0.03, f'{round(v):,}', ha='center',
                     fontsize=8, fontweight='bold')
 
     ax.set_xticks(x)

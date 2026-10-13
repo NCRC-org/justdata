@@ -977,7 +977,7 @@
                 const descriptions = {
                     'all_branches': 'Includes all CBSAs where the bank has at least one branch. All counties in those CBSAs are included.',
                     'deposits': 'Includes CBSAs where the bank has at least 1% of its total branch deposits. All counties in qualifying CBSAs are included.',
-                    'loans': 'Includes CBSAs where the bank has at least 1% of its total loan applications. All counties in qualifying CBSAs are included.'
+                    'loans': 'Includes CBSAs where the bank has at least 1% of its total originated loans. All counties in qualifying CBSAs are included.'
                 };
                 
                 descElement.text(descriptions[method] || descriptions['all_branches']);
@@ -1024,7 +1024,7 @@
                 const methodMessages = {
                     'all_branches': 'Querying branch locations...',
                     'deposits': 'Querying branch deposits...',
-                    'loans': 'Querying loan applications...'
+                    'loans': 'Querying originated loans...'
                 };
                 statusText.html(`<i class="fas fa-spinner fa-spin"></i> ${methodMessages[method] || 'Querying data...'}`);
                 statusDiv.css({
@@ -1062,7 +1062,7 @@
                         const methodLabels = {
                             'all_branches': 'branch locations',
                             'deposits': 'branch deposits',
-                            'loans': 'loan applications'
+                            'loans': 'originated loans'
                         };
                         const methodLabel = methodLabels[result.method] || 'branch locations';
                         statusText.html(`<i class="fas fa-check-circle"></i> Generated ${result.count || result.assessment_areas?.length || 0} assessment areas from ${methodLabel}.`);

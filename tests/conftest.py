@@ -15,6 +15,11 @@ import pytest
 # Ensure project root is on path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# No test may reach a real AI key or write AI usage (env_utils.ai_disabled).
+# Set before any justdata import; the autouse fixture below sets it again.
+# A test that exercises the AI client uses the mocked_ai_client fixture.
+os.environ["JUSTDATA_AI_DISABLED"] = "1"
+
 
 # ---------------------------------------------------------------------------
 # Environment fixtures
@@ -32,6 +37,7 @@ def _mock_env(monkeypatch):
         "CENSUS_API_KEY": "test-census-key",
         "FLASK_DEBUG": "false",
         "MAPBOX_ACCESS_TOKEN": "pk.test-token",
+        "JUSTDATA_AI_DISABLED": "1",
     }
     for key, value in defaults.items():
         monkeypatch.setenv(key, value)
@@ -209,3 +215,16 @@ def mock_progress_tracker():
             "get": mock_get,
             "create": mock_create,
         }
+
+@pytest.fixture
+def mocked_ai_client(monkeypatch):
+    """Turn the AI switch off for one test, with anthropic.Anthropic replaced
+    by a mock first, so the client code runs but nothing leaves the process
+    and no usage is written. Yields the mock class."""
+    import anthropic
+    import justdata.shared.analysis.ai_provider as aip
+    client_class = MagicMock(name="Anthropic")
+    monkeypatch.setattr(anthropic, "Anthropic", client_class)
+    monkeypatch.setattr(aip, "_flush_ai_usage_to_bigquery", lambda: None)
+    monkeypatch.delenv("JUSTDATA_AI_DISABLED", raising=False)
+    yield client_class

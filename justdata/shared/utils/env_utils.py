@@ -8,6 +8,35 @@ import os
 from pathlib import Path
 from typing import Optional, Tuple
 
+# JUSTDATA_AI_DISABLED=1 turns every AI call off before any key is read: the
+# AI clients raise AIDisabledError, get_api_key returns None for the AI key
+# names, and AI usage is never written. The test suite and local scripts set
+# it unconditionally, because unsetting the key variables is not enough: the
+# shared env loader re-reads them from .env (2026-10-13, 88 ai_usage rows).
+AI_DISABLED_ENV = 'JUSTDATA_AI_DISABLED'
+AI_KEY_NAMES = ('CLAUDE_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY')
+
+
+class AIDisabledError(RuntimeError):
+    """Raised by an AI client when JUSTDATA_AI_DISABLED=1."""
+
+
+def ai_disabled() -> bool:
+    return os.environ.get(AI_DISABLED_ENV) == '1'
+
+
+def scrub_ai_keys() -> None:
+    """With AI disabled, remove the AI keys a .env load may have added."""
+    if ai_disabled():
+        for name in AI_KEY_NAMES:
+            os.environ.pop(name, None)
+
+
+def refuse_if_ai_disabled() -> None:
+    """Call first in any code that creates an AI client, before reading a key."""
+    if ai_disabled():
+        raise AIDisabledError(f'AI calls are off ({AI_DISABLED_ENV}=1)')
+
 
 def is_local_development() -> bool:
     """
@@ -120,6 +149,7 @@ def load_env_file(repo_root: Optional[Path] = None, verbose: bool = False) -> bo
         env_path = get_env_file_path(repo_root)
         if env_path and env_path.exists():
             load_dotenv(env_path, override=False)  # Don't override existing env vars
+            scrub_ai_keys()
             if verbose:
                 print(f"[ENV] Loaded .env file from: {env_path}")
             return True
@@ -143,6 +173,9 @@ def get_api_key(key_name: str, fallback_name: Optional[str] = None,
     Returns:
         API key value, or None if not found
     """
+    if ai_disabled() and (key_name in AI_KEY_NAMES or fallback_name in AI_KEY_NAMES):
+        return None
+
     # Try primary key
     api_key = os.getenv(key_name)
     

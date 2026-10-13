@@ -13,6 +13,13 @@ import pytest
 from justdata.shared.analysis.ai_provider import AIAnalyzer, NCRC_STYLE_GUIDE
 
 
+@pytest.fixture(autouse=True)
+def _client_mocked(mocked_ai_client):
+    """These tests run the client code against a mocked Anthropic class
+    (conftest.mocked_ai_client turns the AI switch off only for them)."""
+    yield mocked_ai_client
+
+
 @pytest.fixture
 def captured_prompt(monkeypatch):
     """Capture the prompt text handed to the Anthropic client."""

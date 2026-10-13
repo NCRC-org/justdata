@@ -7,6 +7,13 @@ Similar structure to BranchSight but for mortgage origination data.
 import json
 from typing import Dict, Any
 from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types, NCRC_STYLE_GUIDE
+from justdata.shared.ncrc_reports import ncrc_report, ncrc_report_url
+
+# NCRC report links come from shared/ncrc_reports.py, the one list to update
+# when NCRC publishes a new edition.
+RACIAL_WEALTH_GAP_URL = ncrc_report_url("racial_wealth_gap")
+MORTGAGE_SERIES_KEYS = ("mortgage_market_part_1", "mortgage_market_part_2", "mortgage_market_part_3",
+                        "mortgage_market_part_4", "mortgage_market_part_5")
 
 
 class LendSightAnalyzer(AIAnalyzer):
@@ -19,39 +26,37 @@ class LendSightAnalyzer(AIAnalyzer):
 
     def _get_ncrc_report_sources(self) -> str:
         """Return formatted NCRC report sources for AI prompts."""
-        return """
+        reports = "\n".join(f"        - {ncrc_report(k).title}: {ncrc_report(k).url}" for k in MORTGAGE_SERIES_KEYS)
+        part_1 = ncrc_report("mortgage_market_part_1")
+        return f"""
         REFERENCE SOURCES - NCRC Mortgage Market Report Series:
         You may reference these NCRC research reports if the information is relevant and valid for the analysis:
-        - Part 1: Introduction to Mortgage Market Trends: https://ncrc.org/mortgage-market-report-series-part-1-introduction-to-mortgage-market-trends/
-        - Part 2: Lending Trends by Borrower and Neighborhood Characteristics: https://ncrc.org/mortgage-market-report-series-part-2-lending-trends-by-borrower-and-neighborhood-characteristics/
-        - Part 3: Native American and Hawaiian Lending: https://ncrc.org/mortgage-market-report-series-part-3-native-american-and-hawaiian-lending/
-        - Part 4: Mortgage Lending Across American Cities: https://ncrc.org/mortgage-market-report-series-part-4-mortgage-lending-across-american-cities/
-        - Part 5: Top 50 Home Purchase Lenders Analysis for 2024: https://ncrc.org/mortgage-market-report-series-part-5-top-50-home-purchase-lenders-analysis-for-2024/
+{reports}
 
         If you reference any of these reports, you MUST include a hypertext link using markdown format: [link text](URL)
-        Example: "As noted in NCRC's mortgage market analysis ([Part 1: Introduction to Mortgage Market Trends](https://ncrc.org/mortgage-market-report-series-part-1-introduction-to-mortgage-market-trends/)), non-bank lenders now dominate the market."
+        Example: "As noted in NCRC's mortgage market analysis ([{part_1.title}]({part_1.url})), non-bank lenders now dominate the market."
         Only reference these sources if the information is directly relevant and supports your analysis.
         """
 
     def _get_data_source_distinction(self) -> str:
         """Return guidance on distinguishing lending gaps from homeownership gaps."""
-        return """
+        return f"""
         CRITICAL DATA SOURCE DISTINCTION - Housing Analysis:
         When analyzing housing disparities, you MUST distinguish between two related but DISTINCT metrics:
 
         1. MORTGAGE LENDING GAP (what THIS report shows):
            - Measures ACCESS TO CREDIT, not homeownership rates
-           - Example: "Black residents = 9% of county population but received 4% of mortgage approvals"
+           - Example: "Black residents = 9% of county population but received 4% of originated mortgage loans"
            - This shows barriers to OBTAINING mortgages
            - Source: LendSight report data (HMDA mortgage originations)
 
         2. HOMEOWNERSHIP GAP (a DIFFERENT metric, NOT in this report):
            - Measures actual homeownership RATES by race
            - For homeownership rate data, reference the NCRC Racial Wealth Gap report:
-             https://ncrc.org/the-racial-wealth-gap-1992-to-2022/
+             {RACIAL_WEALTH_GAP_URL}
            - This documents who ALREADY OWNS homes, not who is getting new mortgages
 
-        KEY RULE: NEVER conflate lending approval gaps with homeownership gaps.
+        KEY RULE: NEVER conflate lending gaps with homeownership gaps.
         - They measure DIFFERENT points in the housing access pipeline
         - Lending gaps show barriers to credit ACCESS
         - Homeownership gaps show ultimate OUTCOMES
@@ -210,10 +215,10 @@ class LendSightAnalyzer(AIAnalyzer):
         - MMCT = Majority-Minority Census Tracts
 
         CRITICAL DATA DISTINCTION:
-        - This data shows MORTGAGE APPROVALS (access to credit), NOT homeownership rates
+        - This data shows ORIGINATED MORTGAGE LOANS (loans that closed), NOT applications, approvals or denials, and NOT homeownership rates
         - When discussing racial/ethnic lending patterns, use "lending gap" or "mortgage access gap"
         - NEVER use "homeownership gap" - that's a different metric measuring actual ownership rates
-        - Example: "Black borrowers received X% of mortgage approvals" (correct) vs "Black homeownership rate" (wrong metric)
+        - Example: "Black borrowers received X% of originated mortgage loans" (correct) vs "Black homeownership rate" (wrong metric)
 
         FORMAT REQUIREMENTS:
         - Each finding must be formatted as: **Title:** Sentence describing the finding
@@ -548,7 +553,7 @@ You are writing for a general audience unfamiliar with mortgage discrimination a
 === ABSOLUTE HARD LIMITS - YOU WILL BE SCORED ON THESE ===
 
 NUMBER LIMIT: You may cite AT MOST THREE (3) numbers in your ENTIRE response.
-- Example of 3 numbers: "Black residents represent 18% of population, received 6% of mortgage approvals—a 12-point gap"
+- Example of 3 numbers: "Black residents represent 18% of population, received 6% of originated mortgage loans—a 12-point gap"
 - That uses your entire budget: 18%, 6%, 12 points = 3 numbers
 - If you cite 4 or more numbers anywhere in your response, you have FAILED
 - Focus on the SINGLE most egregious disparity only
@@ -566,7 +571,8 @@ WHAT YOU MUST NOT DO:
 ❌ Recite what's already visible in the table
 ❌ Use phrases like "the data shows" or "according to the table"
 ❌ Cite population percentages AND lending percentages for multiple groups
-❌ Conflate lending approval gaps with homeownership rate gaps (they are DIFFERENT metrics)
+❌ Conflate lending gaps with homeownership rate gaps (they are DIFFERENT metrics)
+❌ Describe the data as approvals, applications or denials: it covers originated loans only
 ❌ Use "homeownership gap" when referring to this lending data - use "lending gap" or "mortgage access gap"
 
 === THE DATA (for context only, NOT to recite) ===
@@ -578,7 +584,7 @@ Latest Year: {latest_year}
 POPULATION DEMOGRAPHICS (Most Recent Census):
 {population_context if population_context else 'Population data not available for comparison.'}
 
-LENDING DATA BY RACE/ETHNICITY (shows mortgage APPROVALS, not homeownership rates):
+LENDING DATA BY RACE/ETHNICITY (shows ORIGINATED mortgage loans, not applications, approvals or homeownership rates):
 {json.dumps(demographic_data, indent=2)[:2000] if demographic_data else 'Lending data not available'}
 
 === YOUR TASK ===
@@ -589,17 +595,17 @@ PARAGRAPH 1 - Educational Context + Most Striking Disparity:
 - Start by explaining what the MORTGAGE LENDING GAP is (disparity in access to mortgage credit, distinct from homeownership rates)
 - Note this measures ACCESS to credit - a barrier BEFORE homeownership
 - Mention redlining's historical impact and ongoing effects (algorithmic bias, neighborhood disinvestment)
-- Identify the SINGLE most egregious LENDING disparity in the data (pick ONE group with largest population-to-approval gap)
-- For that ONE group, cite AT MOST 3 numbers showing: population %, mortgage approval %, gap
-- Example: "Black residents represent 18% of population, received 6% of mortgage approvals—a 12-point gap"
+- Identify the SINGLE most egregious LENDING disparity in the data (pick ONE group with largest gap between population share and share of originated loans)
+- For that ONE group, cite AT MOST 3 numbers showing: population %, share of originated mortgage loans %, gap
+- Example: "Black residents represent 18% of population, received 6% of originated mortgage loans—a 12-point gap"
 
 PARAGRAPH 2 - Broader Pattern + Real-World Impact:
 - Describe the OVERALL trend for other groups WITHOUT citing specific percentages
-- Use qualitative language: "Some groups received mortgage approvals at rates exceeding their population share, others fell short"
+- Use qualitative language: "Some groups received shares of originated mortgage loans exceeding their population share, others fell short"
 - Explain what these lending disparities mean for families trying to build wealth
 - Connect to structural barriers (algorithmic bias, neighborhood disinvestment, etc.)
 - Reference national patterns from NCRC research if relevant
-- For context on actual homeownership rates (a different metric), reference the [NCRC Racial Wealth Gap report](https://ncrc.org/the-racial-wealth-gap-1992-to-2022/)
+- For context on actual homeownership rates (a different metric), reference the [NCRC Racial Wealth Gap report]({RACIAL_WEALTH_GAP_URL})
 
 === REFERENCE SOURCES ===
 {self._get_ncrc_report_sources()}
@@ -613,9 +619,9 @@ You may reference NCRC reports using markdown hyperlinks: [link text](URL)
 [This conflates lending gaps with homeownership gaps and cites too many numbers - FAILED]
 
 ✅ SUCCESS EXAMPLE (cites exactly 3 numbers, correct terminology):
-"Montgomery County's lending patterns reveal a persistent mortgage lending gap—the disparity in access to mortgage credit that creates barriers to homeownership for communities of color. This gap in credit access has roots in redlining, the discriminatory practice legally banned in 1968 whose effects persist through algorithmic bias and neighborhood disinvestment. Most striking: Black residents represent 18% of the county's population but received only 6% of mortgage approvals, a 12-percentage-point gap in credit access that compounds across generations.
+"Montgomery County's lending patterns reveal a persistent mortgage lending gap—the disparity in access to mortgage credit that creates barriers to homeownership for communities of color. This gap in credit access has roots in redlining, the discriminatory practice legally banned in 1968 whose effects persist through algorithmic bias and neighborhood disinvestment. Most striking: Black residents represent 18% of the county's population but received only 6% of originated mortgage loans, a 12-percentage-point gap in credit access that compounds across generations.
 
-While some demographic groups received mortgage approvals at rates exceeding their population share and others fell short, these lending disparities reflect structural barriers rather than individual lender decisions. Limited mortgage access means limited opportunity to build home equity—the primary wealth-building mechanism for American families. For broader context on how lending gaps translate to actual homeownership disparities, see the [NCRC Racial Wealth Gap report](https://ncrc.org/the-racial-wealth-gap-1992-to-2022/)."
+While some demographic groups received shares of originated mortgage loans exceeding their population share and others fell short, these lending disparities reflect structural barriers rather than individual lender decisions. Limited mortgage access means limited opportunity to build home equity—the primary wealth-building mechanism for American families. For broader context on how lending gaps translate to actual homeownership disparities, see the [NCRC Racial Wealth Gap report]({RACIAL_WEALTH_GAP_URL})."
 [This cites exactly 3 numbers, uses correct terminology (lending gap, mortgage access), and properly distinguishes from homeownership rates - SUCCESS]
 
 === CRITICAL WRITING REQUIREMENTS ===
@@ -912,7 +918,7 @@ This table shows WHERE mortgage loans are going based on the racial/ethnic compo
 HISTORICAL CONTEXT:
 Redlining (legal until 1968) systematically denied mortgages to communities of color. While outlawed, its effects persist:
 - Formerly redlined neighborhoods still have lower property values
-- Communities of color often face higher denial rates and worse loan terms
+- This report covers originated loans only; it does not measure applications, approvals or denials
 - Mortgage access patterns can indicate ongoing structural barriers
 
 IMPORTANT NOTE: The 2020 Census redrew tract boundaries, increasing MMCT designations by ~30% nationally. Shifts between 2021-2022 may partly reflect boundary changes, not just lending changes.
@@ -937,6 +943,91 @@ TABLE DATA:
 """
 
         return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+
+    def _market_concentration_block(self, market_concentration_data, state_data=None) -> str:
+        """Section 4 instructions, shared by the combined call and the
+        single-section call that fills Section 4 when the combined one fails."""
+        return f"""
+        === DATA FOR SECTION 4: MARKET CONCENTRATION ===
+        Market Concentration Data (HHI by year and loan purpose): {json.dumps(market_concentration_data, indent=2)[:2000] if market_concentration_data else 'Not available'}
+        
+        For "market_concentration_discussion":
+        - This table shows market concentration using the Herfindahl-Hirschman Index (HHI) for all loans, home purchase loans, refinance loans, and home equity lending by year
+        - HHI measures market concentration by calculating the sum of squared market shares for all lenders
+        - HHI values range from 0 to 10,000, where:
+          * Lower values (below 1,500) indicate more competitive markets with many lenders sharing market share
+          * Moderate values (1,500-2,500) indicate moderate concentration
+          * Higher values (above 2,500) indicate highly concentrated markets dominated by fewer lenders
+        - The table shows HHI values for each loan type (All Loans, Home Purchase, Refinance, Home Equity) for each year
+        - CRITICAL: Before analyzing trends, you MUST first assess the overall competitive nature of the market:
+          * If HHI values are consistently below 1,500 (or even well below 1,500), the market is HIGHLY COMPETITIVE
+          * You MUST acknowledge this competitive nature prominently in your analysis
+          * Even if concentration increased over time, if values remain well below 1,500, emphasize that the market remains highly competitive overall
+          * Put any increases in concentration in proper context - a market that goes from 200 to 400 HHI is still highly competitive (both well below 1,500)
+          * Do NOT focus solely on increases without acknowledging the overall competitive nature
+        - FIRST PARAGRAPH: Explain how to read the table and what it means
+          * Explain what HHI measures and what it means for market competition in plain English
+          * CRITICALLY: If HHI values are below 1,500, explicitly state that the market is highly competitive
+          * Explain what the different loan types represent
+          * Describe the overall competitive nature of the market - do NOT list every HHI value
+          * Reference national trends from NCRC reports when relevant
+        - SECOND PARAGRAPH: Explain the trends and patterns in plain English
+          * CRITICALLY: If HHI values are well below 1,500, acknowledge that the market remains highly competitive even if concentration increased
+          * Describe overall trends (is the market becoming more or less competitive?)
+          * Only cite the MOST SIGNIFICANT changes or differences between loan types
+          * Explain what these patterns mean for borrowers and the lending market
+          * DO NOT list every single HHI value - focus on the most compelling trends
+          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+        - Use PLAIN ENGLISH - avoid technical jargon
+        - Do NOT include specific HHI numbers or calculations in the discussion
+        - Focus on explaining what the patterns mean, not the mathematical details
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - Only cite the MOST COMPELLING information: the biggest changes or most notable patterns
+        - DO NOT create a "wall of numbers" - cite at most 1-2 specific examples per paragraph
+        - AT LEAST 2 PARAGRAPHS (minimum requirement)
+        - CRITICAL: If all HHI values in the data are below 1,500, you MUST emphasize the competitive nature of the market prominently, even if discussing increases over time
+        {self._statewide_hhi_block(state_data)}
+        """
+
+    def _statewide_hhi_block(self, state_data) -> str:
+        """Statewide HHI for the same loans and years (Workflow 13277160986).
+        The narrative may compare; it may not explain the difference."""
+        if not state_data:
+            return ""
+        return f"""
+        Statewide HHI for the same kind of loans and years (computed the same way, across every county in the state):
+        {json.dumps(state_data, indent=2)[:1500]}
+        - You MAY say whether the county is more or less concentrated than its state, and by how much
+        - You MUST NOT suggest why the county and state differ, or attribute the difference to any cause
+        """
+
+    def generate_market_concentration_discussion(self, data: Dict[str, Any]) -> str:
+        """Section 4 on its own. The combined call was the only source of this
+        narrative, so whenever it failed Section 4 was left blank."""
+        counties = data.get('counties', [])
+        years = data.get('years', [])
+        if len(counties) == 1:
+            counties_str = counties[0]
+        elif len(counties) <= 3:
+            counties_str = ', '.join(counties)
+        else:
+            counties_str = f"{counties[0]} and {len(counties) - 1} other counties"
+        year_range = f"{min(years)} to {max(years)}" if len(years) > 1 else (str(years[0]) if years else "the selected years")
+        prompt = f"""
+        Generate at least 2 paragraphs discussing market concentration in mortgage lending in {counties_str}, {year_range}.
+
+        {self._get_ncrc_report_sources()}
+
+        {self._market_concentration_block(data.get('market_concentration', []), data.get('market_concentration_state'))}
+
+        WRITING REQUIREMENTS:
+        - Write in PLAIN ENGLISH, objective third person, professional tone
+        - NO assumptions about causality or why patterns exist, NO policy recommendations, NO speculation
+        - Present ONLY what the data shows
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
+        - Return only the discussion text (no JSON, no headings)
+        """
+        return self._call_ai(prompt, max_tokens=800, temperature=0.3)
 
     def generate_all_table_discussions(self, data: Dict[str, Any]) -> Dict[str, str]:
         """Generate all four table discussions in a single API call to reduce rate limit issues.
@@ -1102,44 +1193,7 @@ TABLE DATA:
         - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
         
-        === DATA FOR SECTION 4: MARKET CONCENTRATION ===
-        Market Concentration Data (HHI by year and loan purpose): {json.dumps(market_concentration_data, indent=2)[:2000] if market_concentration_data else 'Not available'}
-        
-        For "market_concentration_discussion":
-        - This table shows market concentration using the Herfindahl-Hirschman Index (HHI) for all loans, home purchase loans, refinance loans, and home equity lending by year
-        - HHI measures market concentration by calculating the sum of squared market shares for all lenders
-        - HHI values range from 0 to 10,000, where:
-          * Lower values (below 1,500) indicate more competitive markets with many lenders sharing market share
-          * Moderate values (1,500-2,500) indicate moderate concentration
-          * Higher values (above 2,500) indicate highly concentrated markets dominated by fewer lenders
-        - The table shows HHI values for each loan type (All Loans, Home Purchase, Refinance, Home Equity) for each year
-        - CRITICAL: Before analyzing trends, you MUST first assess the overall competitive nature of the market:
-          * If HHI values are consistently below 1,500 (or even well below 1,500), the market is HIGHLY COMPETITIVE
-          * You MUST acknowledge this competitive nature prominently in your analysis
-          * Even if concentration increased over time, if values remain well below 1,500, emphasize that the market remains highly competitive overall
-          * Put any increases in concentration in proper context - a market that goes from 200 to 400 HHI is still highly competitive (both well below 1,500)
-          * Do NOT focus solely on increases without acknowledging the overall competitive nature
-        - FIRST PARAGRAPH: Explain how to read the table and what it means
-          * Explain what HHI measures and what it means for market competition in plain English
-          * CRITICALLY: If HHI values are below 1,500, explicitly state that the market is highly competitive
-          * Explain what the different loan types represent
-          * Describe the overall competitive nature of the market - do NOT list every HHI value
-          * Reference national trends from NCRC reports when relevant
-        - SECOND PARAGRAPH: Explain the trends and patterns in plain English
-          * CRITICALLY: If HHI values are well below 1,500, acknowledge that the market remains highly competitive even if concentration increased
-          * Describe overall trends (is the market becoming more or less competitive?)
-          * Only cite the MOST SIGNIFICANT changes or differences between loan types
-          * Explain what these patterns mean for borrowers and the lending market
-          * DO NOT list every single HHI value - focus on the most compelling trends
-          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
-        - Use PLAIN ENGLISH - avoid technical jargon
-        - Do NOT include specific HHI numbers or calculations in the discussion
-        - Focus on explaining what the patterns mean, not the mathematical details
-        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
-        - Only cite the MOST COMPELLING information: the biggest changes or most notable patterns
-        - DO NOT create a "wall of numbers" - cite at most 1-2 specific examples per paragraph
-        - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - CRITICAL: If all HHI values in the data are below 1,500, you MUST emphasize the competitive nature of the market prominently, even if discussing increases over time
+        {self._market_concentration_block(market_concentration_data, data.get('market_concentration_state'))}
         
         CRITICAL WRITING REQUIREMENTS FOR ALL SECTIONS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms

@@ -12,6 +12,11 @@ def generate_summaries(coordinator):
     logger.info("\n--- Generating AI Summaries ---")
 
     try:
+        from justdata.shared.utils.env_utils import ai_disabled
+        if ai_disabled():
+            logger.warning("JUSTDATA_AI_DISABLED=1 - skipping AI summaries")
+            coordinator.summaries = {'status': 'skipped', 'reason': 'AI disabled'}
+            return
         from anthropic import Anthropic
         api_key = os.getenv('CLAUDE_API_KEY')
 

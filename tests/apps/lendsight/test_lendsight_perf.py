@@ -8,7 +8,7 @@ def test_queries_and_narrative_are_timed():
     import justdata.apps.lendsight.core as core
     tree = ast.parse(inspect.getsource(core.run_analysis))
     stages = {
-        item.context_expr.args[0].value
+        getattr(item.context_expr.args[0], "value", None)
         for node in ast.walk(tree) if isinstance(node, ast.With)
         for item in node.items
         if isinstance(item.context_expr, ast.Call) and getattr(item.context_expr.func, "id", "") == "timed"

@@ -144,6 +144,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', '  - HHI 1,500-2,500: Moderate concentration'))
         notes_content.append(('', '  - HHI > 2,500: High concentration'))
         notes_content.append(('', 'HHI is calculated using the total dollar amount of loans by all lenders in each year.'))
+        notes_content.append(('', 'The statewide HHI applies the same calculation to the same lending data and years across every county in the state.'))
         notes_content.append(('', ''))
         
         notes_content.append(('Calculations', ''))
@@ -282,10 +283,12 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             hhi_df = pd.DataFrame(hhi_by_year)
             if not hhi_df.empty:
                 # Reorder columns if they exist
-                preferred_order = ['year', 'hhi_value', 'concentration_level']
+                preferred_order = ['year', 'hhi_value', 'concentration_level', 'state_name', 'state_hhi_value']
                 columns = [col for col in preferred_order if col in hhi_df.columns]
                 columns.extend([col for col in hhi_df.columns if col not in columns])
-                hhi_df = hhi_df[columns]
+                hhi_df = hhi_df[columns].rename(columns={
+                    'year': 'Year', 'hhi_value': 'County HHI', 'concentration_level': 'County concentration',
+                    'state_name': 'State', 'state_hhi_value': 'Statewide HHI'})
                 hhi_df.to_excel(writer, sheet_name=sanitize_sheet_name('HHI by Year'), index=False)
         
         # Raw Data sheet (if available)

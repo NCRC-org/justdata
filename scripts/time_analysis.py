@@ -44,6 +44,10 @@ import sys
 import time
 from datetime import datetime, timezone
 
+# This script times runs on a deployed site and must never call the AI
+# itself or write AI usage from this machine (env_utils.ai_disabled).
+os.environ["JUSTDATA_AI_DISABLED"] = "1"
+
 import requests
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

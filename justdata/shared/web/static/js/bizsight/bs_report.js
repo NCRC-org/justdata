@@ -175,11 +175,25 @@
 
   // ---- Section 5: HHI ---------------------------------------------------------
 
-  function hhi(rows) {
+  /** County HHI beside the statewide HHI for the same years (state_hhi_value). */
+  function hhiCompare(data, place) {
+    var withState = data.filter(function (d) { return num(d.state_hhi_value) !== null; });
+    if (!withState.length) return;
+    var fmt = function (v) { var n = num(v); return n === null ? '-' : Math.round(n).toLocaleString(); };
+    var table = $('bsHhiCompare');
+    table.tHead.innerHTML = '<tr><th scope="col">Market</th>' + data.map(function (d) { return '<th scope="col" class="num">' + esc(String(Math.round(d.year))) + '</th>'; }).join('') + '</tr>';
+    table.tBodies[0].innerHTML = [[place || 'County', 'hhi_value'], [(withState[0].state_name || 'State') + ' (statewide)', 'state_hhi_value']].map(function (r) {
+      return '<tr><th scope="row">' + esc(r[0]) + '</th>' + data.map(function (d) { return '<td class="num">' + esc(fmt(d[r[1]])) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    $('bsHhiCompareWrap').hidden = false;
+  }
+
+  function hhi(rows, place) {
     var data = (rows || []).filter(function (d) { var y = parseFloat(d.year); return Math.abs(y - Math.round(y)) < 0.01; })
       .sort(function (a, b) { return a.year - b.year; });
     if (!data.length) return Promise.resolve();
     $('section5').hidden = false;
+    hhiCompare(data, place);
     var C = R.charts, blue = C.token('--ncrc-blue-500');
     var values = data.map(function (d) { return num(d.hhi_value) || 0; });
     return C.ready().then(function () {
@@ -257,7 +271,7 @@
     R.narrative($('bsHhiNarrative'), ai.hhi_trends_discussion, true);
 
     $('bsCitation').textContent = root.AppStates.formatCitation('BizSight', citation);
-    return hhi(res.hhi_by_year);
+    return hhi(res.hhi_by_year, md.county_name);
   }
 
   root.BizSight = root.BizSight || {};

@@ -95,6 +95,8 @@ def load_shared_env(verbose: bool = False) -> bool:
         try:
             from dotenv import load_dotenv
             load_dotenv(env_path, override=False)  # Don't override existing env vars
+            from justdata.shared.utils.env_utils import scrub_ai_keys
+            scrub_ai_keys()
             if verbose:
                 print(f"[UNIFIED_ENV] Loaded shared .env file from: {env_path}")
             return True

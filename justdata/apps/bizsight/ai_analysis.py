@@ -351,6 +351,22 @@ class BizSightAnalyzer:
 
         return self.ai.generate_text(prompt, max_tokens=800, temperature=0.3)
 
+    @staticmethod
+    def _statewide_hhi_text(hhi_by_year_data) -> str:
+        """Statewide HHI for the same years (Workflow 13277160986). The
+        narrative may compare; it may not explain the difference."""
+        state = {d.get('year'): d.get('state_hhi_value') for d in hhi_by_year_data or []
+                 if d.get('state_hhi_value') is not None}
+        if not state:
+            return ""
+        name = next((d.get('state_name') for d in hhi_by_year_data if d.get('state_name')), 'the state')
+        return f"""
+        Statewide HHI for {name}, same lending data and years, computed the same way across every county in the state:
+        {json.dumps(state, indent=2)}
+        - You MAY say whether the county is more or less concentrated than {name}, and by how much
+        - You MUST NOT suggest why the county and state differ, or attribute the difference to any cause
+        """
+
     def generate_hhi_trends_discussion(self, data: Dict[str, Any]) -> str:
         """
         Generate 2 paragraphs discussing HHI trends over time (Section 5).
@@ -405,6 +421,7 @@ class BizSightAnalyzer:
 
         HHI Data by Year:
         {json.dumps(hhi_values, indent=2)}
+        {self._statewide_hhi_text(hhi_by_year_data)}
 
         Key Trends:
         - First year (2020) HHI: {first_hhi if first_hhi else 'Not available'}

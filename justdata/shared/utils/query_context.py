@@ -42,6 +42,15 @@ def set_query_context(app: Optional[str] = None, job_id: Optional[str] = None,
     _bypass_cache.set(bool(bypass_cache))
 
 
+def current_job() -> Optional[str]:
+    """The job id of the analysis running in this thread, if any."""
+    return _job.get()
+
+
+def current_app() -> Optional[str]:
+    return _app.get()
+
+
 def current_labels() -> dict:
     labels = {"env": _label(os.getenv("JUSTDATA_ENV") or "local")}
     if _app.get():

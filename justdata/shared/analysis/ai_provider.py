@@ -7,9 +7,71 @@ Shared across BranchSight, BizSight, and LendSight.
 import sys
 import os
 import json
+import time
 import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime
+
+from justdata.shared.utils.env_utils import ai_disabled, refuse_if_ai_disabled
+
+
+def _narrative_section() -> str:
+    """The analyzer method that asked for this call (generate_key_findings
+    gives "key_findings"), found by walking up the stack past generate_text."""
+    frame = sys._getframe(2)
+    while frame is not None:
+        name = frame.f_code.co_name
+        if name.startswith("generate_") and name != "generate_text":
+            return name[len("generate_"):]
+        frame = frame.f_back
+    return "unnamed"
+
+
+def _failure_reason(exc: BaseException, stop_reason) -> str:
+    """A short category for the narrative log; never the exception text."""
+    if stop_reason == "max_tokens":
+        return "max_tokens"
+    kind = type(exc).__name__
+    return {"RateLimitError": "rate_limit", "APITimeoutError": "timeout",
+            "APIConnectionError": "connection", "InternalServerError": "server_error",
+            "OverloadedError": "overloaded"}.get(kind, "no_text" if "no text" in str(exc) else kind)
+
+
+def _log_narrative_call(section: str, model: str, max_tokens: int, started: float,
+                        response=None, exc: BaseException = None) -> None:
+    """One record per narrative call, keyed to the job (Workflow 13277127143):
+    section, duration, stop reason, token counts and the failure reason. It
+    goes to stdout (Cloud Run logs) and into the run's perf list, which the
+    cache keeps and /report-data returns."""
+    try:
+        _record_narrative_call(section, model, max_tokens, started, response, exc)
+    except Exception as log_error:  # logging must never break a narrative
+        print(f"[narrative] log failed: {type(log_error).__name__}", flush=True)
+
+
+def _record_narrative_call(section, model, max_tokens, started, response, exc):
+    from justdata.shared.utils.perf import record_stage
+    from justdata.shared.utils.query_context import current_app, current_job
+
+    def plain(value, kind):
+        return value if isinstance(value, kind) else None
+    usage = getattr(response, "usage", None)
+    stop = plain(getattr(response, "stop_reason", None), str)
+    entry = {
+        "stage": f"ai:{section}",
+        "ms": round((time.perf_counter() - started) * 1000),
+        "job": current_job(),
+        "app": current_app(),
+        "model": model,
+        "max_tokens": max_tokens,
+        "stop_reason": stop,
+        "input_tokens": plain(getattr(usage, "input_tokens", None), int),
+        "output_tokens": plain(getattr(usage, "output_tokens", None), int),
+        "ok": exc is None,
+        "failure": None if exc is None else _failure_reason(exc, stop),
+    }
+    record_stage(entry)
+    print("[narrative] " + json.dumps(entry), flush=True)
 
 # =============================================================================
 # AI USAGE TRACKING
@@ -107,7 +169,7 @@ def _flush_ai_usage_to_bigquery():
     """Flush accumulated AI usage to BigQuery."""
     global _ai_usage_buffer, _last_flush_time
     
-    if not _ai_usage_buffer:
+    if not _ai_usage_buffer or ai_disabled():
         return
     
     try:
@@ -373,6 +435,7 @@ def ask_ai(
     Returns:
         The AI response text
     """
+    refuse_if_ai_disabled()
     if ai_provider != "claude":
         raise Exception(f"Unsupported AI provider: {ai_provider}")
 
@@ -447,6 +510,7 @@ class AIAnalyzer:
         # NCRC_STYLE_GUIDE; leave it unset for prompts that should go through as written.
         self.style_guide = style_guide
         self.app_name = app_name
+        refuse_if_ai_disabled()
         if ai_provider != "claude":
             raise Exception(f"Unsupported AI provider: {ai_provider}")
         # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
@@ -477,6 +541,10 @@ class AIAnalyzer:
         if self.style_guide:
             prompt = self.style_guide + "\n" + prompt
         call_model = model or self.model
+        refuse_if_ai_disabled()
+        section = _narrative_section()
+        started = time.perf_counter()
+        response = None
         try:
             try:
                 import anthropic
@@ -501,8 +569,11 @@ class AIAnalyzer:
                     report_type=report_type
                 )
 
-            return response_text(response).strip()
+            text = response_text(response).strip()
+            _log_narrative_call(section, call_model, max_tokens, started, response)
+            return text
         except Exception as e:
+            _log_narrative_call(section, call_model, max_tokens, started, response, e)
             error_msg = f"Error calling {self.provider} API: {e}"
             print(error_msg)
             import traceback

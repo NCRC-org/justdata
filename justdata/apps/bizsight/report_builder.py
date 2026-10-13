@@ -807,21 +807,30 @@ def calculate_hhi_for_lenders(disclosure_df: pd.DataFrame, year: int = 2024) -> 
         if total_amt > 0:
             lender_amounts[lender_name] = total_amt
     
+    return hhi_from_amounts(lender_amounts)
+
+
+def hhi_from_amounts(lender_amounts: Dict[str, float]) -> Optional[float]:
+    """HHI (0 to 10,000) from each lender's total amount: the sum of squared
+    percentage market shares. Used for the county and the statewide figure."""
+    lender_amounts = {k: v for k, v in (lender_amounts or {}).items() if v and v > 0}
     if not lender_amounts:
         return None
-    
     total_amount = sum(lender_amounts.values())
     if total_amount <= 0:
         return None
-    
-    # Calculate market shares as percentages
-    market_shares = {}
-    for lender_name, lender_amt in lender_amounts.items():
-        market_shares[lender_name] = (lender_amt / total_amount) * 100
-    
-    # Calculate HHI: sum of squared market shares (0-10,000 scale)
-    hhi = sum(share ** 2 for share in market_shares.values())
+    hhi = sum(((amt / total_amount) * 100) ** 2 for amt in lender_amounts.values())
     return round(hhi, 2)
+
+
+def statewide_hhi_by_year(rows, years: List[int]) -> List[Dict]:
+    """Statewide HHI per year from get_state_lender_amounts rows
+    (year, lender_name, amt), with hhi_from_amounts as for the county."""
+    by_year: Dict[int, Dict[str, float]] = {}
+    for row in rows or []:
+        amounts = by_year.setdefault(int(row['year']), {})
+        amounts[row['lender_name']] = amounts.get(row['lender_name'], 0.0) + float(row['amt'] or 0)
+    return [{'year': y, 'hhi_value': hhi_from_amounts(by_year.get(int(y), {}))} for y in years]
 
 
 def calculate_hhi_by_year(disclosure_df: pd.DataFrame, years: List[int]) -> List[Dict]:
