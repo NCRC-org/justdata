@@ -558,7 +558,6 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         notes_content.append(('', ''))
         if metadata:
             if 'generated_at' in metadata:
-                from datetime import datetime
                 try:
                     gen_date = datetime.fromisoformat(metadata['generated_at'].replace('Z', '+00:00'))
                     notes_content.append(('Report Generated:', gen_date.strftime('%Y-%m-%d %H:%M:%S UTC')))
@@ -619,7 +618,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         notes_content.append(('Data Sources', ''))
         notes_content.append(('', ''))
         notes_content.append(('Primary Source:', 'FDIC Summary of Deposits (SOD)'))
-        notes_content.append(('Data Tables:', 'branches.sod, branches.sod_legacy (from NCRC datasets)'))
+        notes_content.append(('Data Tables:', 'branchsight.sod, branchsight.sod_legacy (from NCRC datasets)'))
         notes_content.append(('Geographic Crosswalk:', 'shared.cbsa_to_county (for county-state mapping)'))
         notes_content.append(('Data Quality:', 'All data has been downloaded, cleaned, and tested by NCRC Research staff'))
         notes_content.append(('', ''))

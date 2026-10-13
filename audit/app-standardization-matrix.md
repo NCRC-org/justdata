@@ -83,7 +83,7 @@ can name the code that does the excluding.
 |---|---|---|
 | LendSight | Dropped | No matching-confidence exclusion in the code. `mortgage_report.sql` applies scope filters only (originations, owner-occupied, 1-4 units, site-built, not reverse), already listed in Methods. Methods' "Data Cleaning" claim (1st/99th percentile loan-amount trimming) had no code behind it and was removed from the web report and PDF. |
 | BizSight | Dropped | No matching-confidence exclusion in the code. Related finding for Jad (not changed): Methods says tract-income percentages exclude loans with no tract income classification. That holds for the state and national benchmarks (`generate_benchmarks.py:58`, known-income denominators) but not for the county column (`report_builder.py:292`, `core.py:954`, total-loan denominators), so Section 3 compares county figures against state and national figures built on different denominators. |
-| BranchSight | Pending (BranchSight PR) | |
+| BranchSight | Dropped | No matching-confidence exclusion in the code. `branch_report.sql` keeps every SOD row whose geoid5 maps to the chosen county (no service-type or other filter, as Methods says). The workbook's "Branch Count ... excludes ATMs and loan production offices" described a filter the code does not apply and was replaced. |
 | MergerMeter | Pending (MergerMeter PR) | |
 
 ### LendSight (refactor/lendsight-standard)
@@ -126,6 +126,28 @@ can name the code that does the excluding.
   justdata/apps/bizsight` return nothing.
 - Stage timings recorded and returned by `/report-data`.
 
+### BranchSight (refactor/branchsight-standard)
+
+- On the standard: `branchsight_analysis.html` extends `app_page.html`; the
+  report renders in the results column; `/branchsight/report?job_id=` is the
+  shareable URL. Built on AppRun and AppReport.
+- Time to interactive (entry page, required item): before, 5 Lighthouse
+  runs on testing 2026-10-07: 1.9, 1.2, 1.5, 1.2, 1.9 s (audit run: 2.1 s).
+  After: see the PR (measured after deploy).
+- Years: `config.SOD_YEARS` (2021 to 2025; 2025 is the latest year in
+  `branchsight.sod`) is the single source.
+- Fixed: 35 counties ran as a different county (substring county match,
+  e.g. Johnson County, Kansas ran as Johnson County, Arkansas); every
+  Excel, ZIP and CSV download of a stored result failed; the Geography
+  Context section never showed (keyless Census API calls); "done" could
+  reach the page before the result was stored; five per-year queries plus
+  five repeat county lookups became one parameterised query; the
+  narratives run in parallel; exception text no longer reaches users.
+- `rg 'style="' justdata/apps/branchsight/templates` and `rg "fa-"
+  justdata/apps/branchsight/templates` return nothing.
+- Stage timings recorded and returned by `/report-data` (and, from this PR,
+  kept through the analysis cache for LendSight and BranchSight).
+
 ## Findings that matter before testers
 
 These were live on the testing site at audit time. Items 1 to 5 are fixed in
@@ -146,9 +168,10 @@ the hygiene PR #208 (merged 2026-10-07); the rest are tracked above or in the de
 - **LendSight:**
   - `shared/web/static/js/app.js` loads twice on the entry page. Its top-level `const` declarations should make the second load throw. Inferred from code, not run.
   - The app's own `static/js/app.js` and `style.css` are never served: `url_for('static')` resolves to `shared/web/static`.
-- **BranchSight:**
+- **BranchSight:** (both fixed in the BranchSight PR)
   - `done` can fire before the result is stored, so `/report-data` returns 404 in that gap. The front end retries to cover it.
   - Map and population-chart code is never called.
+- **BranchMapper** (not a tester app; found in the BranchSight PR, not changed): `data_utils.find_exact_county_match` has the same substring county match that ran 35 BranchSight counties as a different county.
 - **BizSight:**
   - `/download` ignores the in-memory fallback, so export returns 404 when the cache write failed.
   - Map code is dead.

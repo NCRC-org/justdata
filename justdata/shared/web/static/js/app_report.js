@@ -21,6 +21,7 @@
  *       show-all / top-N toggle. columns: [{key, label, numeric, format(v, row)}];
  *       opts: {topN, expandButton, filter(row), defaultSort(a, b), labels}.
  *       Returns {render()} so callers can re-render after a filter changes.
+ *       Numeric columns sort on the cell's leading number (AppReport.sortNumber).
  */
 (function (root) {
   'use strict';
@@ -125,6 +126,13 @@
 
   // ---- Sortable table -----------------------------------------------------
 
+  /** Leading number of a cell: "$1,234" -> 1234, "12 (34.5%)" -> 12. */
+  function sortNumber(v) {
+    if (typeof v === 'number') return v;
+    var n = parseFloat(String(v === null || v === undefined ? '' : v).replace(/[$,\s]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
   function sortableTable(table, rows, columns, opts) {
     opts = opts || {};
     var labels = opts.labels || { more: 'Show all lenders', fewer: 'Show top 10 only' };
@@ -137,7 +145,7 @@
 
     function sortValue(row, c) {
       var v = row[c.key];
-      return c.numeric ? (parseFloat(String(v).replace(/[^0-9.-]/g, '')) || 0) : String(v || '').toLowerCase();
+      return c.numeric ? sortNumber(v) : String(v || '').toLowerCase();
     }
 
     function render() {
@@ -186,6 +194,7 @@
     formatNarrative: formatNarrative,
     narrative: narrative,
     charts: { ready: ready, token: token, thresholds: thresholds, draw: draw },
-    sortableTable: sortableTable
+    sortableTable: sortableTable,
+    sortNumber: sortNumber
   };
 })(typeof window !== 'undefined' ? window : globalThis);

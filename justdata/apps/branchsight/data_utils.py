@@ -4,12 +4,25 @@ BranchSight-specific data utilities for BigQuery and county reference.
 Adapted from ncrc-test-apps branchsight.
 """
 
-from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-from typing import List, Optional, Dict
+from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string
+from functools import lru_cache
+from typing import List, Dict
 from .config import PROJECT_ID
 
 # App name for per-app credential support
 APP_NAME = 'BRANCHSIGHT'
+
+
+def exact_county_matches(client, county_input: str) -> List[str]:
+    """county_state values equal to county_input, ignoring case."""
+    from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
+    job_config = QueryJobConfig(query_parameters=[
+        ScalarQueryParameter('county', 'STRING', county_input.strip())])
+    rows = client.query(
+        "SELECT DISTINCT county_state FROM shared.cbsa_to_county "
+        "WHERE LOWER(county_state) = LOWER(@county) ORDER BY county_state",
+        job_config=job_config).result()
+    return [row.county_state for row in rows]
 
 
 def find_exact_county_match(county_input: str) -> list:
@@ -58,6 +71,15 @@ def find_exact_county_match(county_input: str) -> list:
         # For non-Connecticut counties, use BigQuery lookup
         client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
 
+        # The picker sends the exact county_state, so match it exactly first.
+        # A substring match is wrong for 35 counties: "Kansas" is inside
+        # "Arkansas" and "Smith County" inside "Deaf Smith County", and the
+        # first sorted match was used (Johnson County, Kansas ran as Johnson
+        # County, Arkansas).
+        exact = exact_county_matches(client, county_input)
+        if exact:
+            return exact[:1]
+
         # Parse county and state
         if ',' in county_input:
             county_name, state = county_input.split(',', 1)
@@ -96,7 +118,8 @@ def find_exact_county_match(county_input: str) -> list:
         county_job = client.query(county_query)
         county_results = list(county_job.result())
         matches = [row.county_state for row in county_results]
-        return matches
+        # Free-text input only: an ambiguous substring match is not a match.
+        return matches if len(matches) == 1 else []
     except Exception as e:
         print(f"Error finding county match for {county_input}: {e}")
         import traceback
@@ -341,41 +364,27 @@ def get_available_metro_areas() -> List[Dict[str, str]]:
         return []
 
 
-def execute_branch_query(sql_template: str, county: str, year: int) -> List[dict]:
+def execute_branch_query(sql_template: str, county: str, years: List[int]) -> List[dict]:
     """
-    Execute a BigQuery SQL query for branch data with parameter substitution.
+    Run the branch query for one county and all its years in one BigQuery job.
 
     Args:
-        sql_template: SQL query template with @county and @year parameters
-        county: County name in "County, State" format
-        year: Year as integer
+        sql_template: SQL with @county (STRING) and @years (ARRAY<STRING>)
+                      query parameters
+        county: Exact county_state, as resolved by find_exact_county_match
+        years: Years to include
 
     Returns:
         List of dictionaries containing query results
     """
-    try:
-        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
-
-        # Find the exact county match from the database
-        county_matches = find_exact_county_match(county)
-
-        if not county_matches:
-            raise Exception(f"No matching counties found for: {county}")
-
-        # Use the first match
-        exact_county = county_matches[0]
-
-        # Escape apostrophes in county name for SQL safety
-        escaped_county = escape_sql_string(exact_county)
-
-        # Substitute parameters in SQL template
-        sql = sql_template.replace('@county', f"'{escaped_county}'").replace('@year', f"'{year}'")
-
-        # Execute query
-        return execute_query(client, sql)
-
-    except Exception as e:
-        raise Exception(f"Error executing BigQuery query for {county} {year}: {e}")
+    from google.cloud.bigquery import ArrayQueryParameter, QueryJobConfig, ScalarQueryParameter
+    client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
+    job_config = QueryJobConfig(query_parameters=[
+        ScalarQueryParameter('county', 'STRING', county),
+        ArrayQueryParameter('years', 'STRING', [str(y) for y in years]),
+    ])
+    rows = client.query(sql_template, job_config=job_config).result(timeout=120)
+    return [dict(row.items()) for row in rows]
 
 
 def get_available_years() -> List[int]:
@@ -402,3 +411,50 @@ def get_available_years() -> List[int]:
         print(f"BigQuery not available for years: {e}")
         # Return fallback years
         return list(range(2025, 2016, -1))  # 2025 down to 2017
+
+
+# ACS 5-year vintage for the Geography Context table (the page states it).
+TRACT_CONTEXT_ACS_YEAR = 2022
+
+
+@lru_cache(maxsize=512)
+def tract_context(geoid5: str) -> Dict:
+    """Census tract counts and population for one county, by LMI and
+    majority-minority status (ACS 5-year, TRACT_CONTEXT_ACS_YEAR).
+
+    LMI: tract median family income at or below 80% of the county median.
+    Majority-minority: people other than non-Hispanic white residents are
+    more than 50% of the tract population. Tracts with no population are
+    left out. The Census API requires a key, so this runs on the server.
+    """
+    import requests
+    from justdata.shared.utils.census_historical_utils import _get_census_api_key as get_census_api_key
+
+    key = get_census_api_key()
+    if not key:
+        raise RuntimeError('CENSUS_API_KEY is not set')
+    st, co = geoid5[:2], geoid5[2:]
+    base = f'https://api.census.gov/data/{TRACT_CONTEXT_ACS_YEAR}/acs/acs5'
+    tracts = requests.get(base, timeout=20, params={
+        'get': 'B01003_001E,B19113_001E,B03002_001E,B03002_003E',
+        'for': 'tract:*', 'in': f'state:{st} county:{co}', 'key': key}).json()
+    county = requests.get(base, timeout=20, params={
+        'get': 'B19113_001E', 'for': f'county:{co}', 'in': f'state:{st}', 'key': key}).json()
+    median = float(county[1][0] or 0)
+    threshold = median * 0.8
+    groups = {k: {'tracts': 0, 'population': 0} for k in ('all', 'lmi_only', 'mmct_only', 'both')}
+    for row in tracts[1:]:
+        pop = float(row[0] or 0)
+        if pop <= 0:
+            continue
+        income = float(row[1] or 0)
+        race_total, white = float(row[2] or 0), float(row[3] or 0)
+        is_lmi = 0 < income <= threshold
+        is_mmct = race_total > 0 and (race_total - white) / race_total * 100 > 50
+        key_ = 'both' if is_lmi and is_mmct else 'lmi_only' if is_lmi else 'mmct_only' if is_mmct else None
+        for k in ('all', key_):
+            if k:
+                groups[k]['tracts'] += 1
+                groups[k]['population'] += int(pop)
+    return {'acs_year': TRACT_CONTEXT_ACS_YEAR, 'county_median_family_income': median,
+            'lmi_threshold': threshold, 'groups': groups}

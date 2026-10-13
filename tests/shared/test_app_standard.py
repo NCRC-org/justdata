@@ -245,6 +245,18 @@ def test_narrative_is_escaped_before_markdown(text, expected):
     assert out.stdout == expected
 
 
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
+@pytest.mark.parametrize("value,expected", [
+    ("12 (34.5%)", 12), ("$1,234", 1234), ("-7", -7), ("12.5%", 12.5), (3, 3), ("", 0), ("n/a", 0),
+])
+def test_numeric_sort_reads_the_leading_number(value, expected):
+    # The old parser stripped every non-digit: "12 (34.5%)" sorted as 1234.5.
+    script = (f"require({json.dumps(str(APP_REPORT_JS))});"
+              f"process.stdout.write(JSON.stringify(AppReport.sortNumber({json.dumps(value)})));")
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True)
+    assert float(out.stdout) == expected
+
+
 def test_app_report_js_size():
     assert len(APP_REPORT_JS.read_text().splitlines()) < 300
 

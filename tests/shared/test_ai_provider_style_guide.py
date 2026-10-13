@@ -22,11 +22,13 @@ def captured_prompt(monkeypatch):
     def _fake_anthropic(api_key=None):
         client = MagicMock()
 
-        def _create(model=None, max_tokens=None, messages=None):
+        def _create(model=None, max_tokens=None, messages=None, thinking=None):
             sent["prompt"] = messages[0]["content"]
             sent["model"] = model
             sent["max_tokens"] = max_tokens
+            sent["thinking"] = thinking
             block = MagicMock()
+            block.type = "text"  # real replies type each block (thinking, text)
             block.text = "narrative"
             response = MagicMock()
             response.content = [block]

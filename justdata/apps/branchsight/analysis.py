@@ -342,13 +342,13 @@ Top Banks by Deposits:
         Analyze differences in branch distribution between counties:
         
         Counties: {counties}
-        Year: 2024
+        Year: {data.get('final_year')}
         
         IMPORTANT DEFINITIONS:
         - LMICT = Low-to-Moderate Income Census Tracts (areas with median family income below 80% of area median)
         - MMCT = Majority-Minority Census Tracts (areas where minority populations represent more than 50% of total population)
         
-        COUNTY DATA (2024):
+        COUNTY DATA ({data.get('final_year')}):
         {county_text}
         
         ANALYSIS REQUIREMENTS:

@@ -1,0 +1,64 @@
+{# BranchSight report body (spec 04 Part B item 5), cloned into #resultsBody by
+   br_page.js and filled by br_report.js. Static wording is carried over from
+   the former /report page; years and the place come from the run (data-br). #}
+<template id="brReportTemplate">
+<div class="br-report">
+  <div class="app-summary" id="brSummary" aria-label="Summary for the most recent year"></div>
+
+  <section class="app-result-section" id="brOverview">
+    <h3>Executive Summary</h3>
+    <div class="report-prose" id="brExecutiveSummary"></div>
+    <p class="app-note app-note--caution" id="brCensusNote" hidden><strong>Census boundaries.</strong> It is important to note that shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts.</p>
+    <h4 class="app-table-title">Key Findings</h4>
+    {% with id="brKeyFindings" %}{% include "partials/branchsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="brGeography" hidden>
+    <h3>Geography Context</h3>
+    <p class="app-table-intro">Census tract characteristics for <span data-br="place"></span>, from the American Community Survey (ACS) 5-year estimates. The tract categories are mutually exclusive.</p>
+    <div class="app-table-wrap"><table class="app-table br-table" id="brGeographyTable">
+      <thead><tr><th scope="col">Tract type</th><th scope="col" class="num">Tracts</th><th scope="col" class="num">Population</th><th scope="col" class="num">Share of population</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="app-caption" id="brGeographyCaption"></p>
+  </section>
+
+  <section class="app-result-section" id="brSection1">
+    <h3>Section 1: Yearly Breakdown</h3>
+    <h4 class="app-table-title">Table 1: Yearly Branch Summary</h4>
+    <div class="report-prose" id="brSummaryIntro"></div>
+    <div class="app-table-wrap"><table class="app-table br-table" id="brSummaryTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption" id="brSummaryCaption"></p>
+    {% with id="brSummaryNarrative" %}{% include "partials/branchsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="brSection2">
+    <h3>Section 2: Bank Networks</h3>
+    <h4 class="app-table-title">Table 1: Top Banks by Branch Count</h4>
+    <div class="report-prose" id="brBankIntro"></div>
+    <div class="app-table-tools">
+      <p class="app-hint">Select a column header to sort.</p>
+      <button type="button" class="btn btn-ghost btn-sm" id="brBankExpand" aria-expanded="false" hidden>Show all banks</button>
+    </div>
+    <div class="app-table-wrap"><table class="app-table br-table" id="brBankTable"><thead></thead><tbody></tbody></table></div>
+    <p class="app-caption" id="brBankCaption"></p>
+    {% with id="brBankNarrative" %}{% include "partials/branchsight_narrative.html" %}{% endwith %}
+  </section>
+
+  <section class="app-result-section" id="brSection3" hidden>
+    <h3>Section 3: Market Concentration</h3>
+    <div class="report-prose">
+      <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+      <p>HHI for bank branch deposits in <span data-br="place"></span> across the years analyzed:</p>
+    </div>
+    <figure class="app-figure">
+      <figcaption class="app-figure-title">Figure 1: Market Concentration (HHI) by Year</figcaption>
+      <div class="app-chart"><canvas id="brHhiChart" role="img" aria-label="Market concentration (HHI) of branch deposits by year"></canvas></div>
+    </figure>
+    <p class="app-caption"><strong>Source:</strong> FDIC Summary of Deposits (SOD) data, compiled and maintained in NCRC's curated databases. <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all bank networks in the market based on total deposit amounts. HHI values range from 0 to 10,000. <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.</p>
+    {% with id="brHhiNarrative" %}{% include "partials/branchsight_narrative.html" %}{% endwith %}
+  </section>
+
+  {% include "partials/branchsight_methods.html" %}
+</div>
+</template>

@@ -11,7 +11,7 @@ What the pages send today, and so what these payloads send:
 |---|---|---|
 | LendSight | none sent: the server analyses the five most recent HMDA years (2021 to 2025 since the spec 04 LendSight PR; ticket 13229533844). The page before that PR sent 2018 to 2024, which the server also ignored | `loan_purpose: ["purchase"]` (page default), `state_code` as FIPS |
 | BizSight | none sent: the server uses `config.SB_YEARS`, 2020 to 2024 (since the spec 04 BizSight PR; the page before sent 2020 and 2024, which keys the cache the same way) | full county object as `county_data` |
-| BranchSight | 2021 to 2025 (fixed in the page) | `state_code` is the state name (its state list uses names as codes) |
+| BranchSight | none sent: the server uses `config.SOD_YEARS`, 2021 to 2025 (since the spec 04 BranchSight PR; the page before sent the same five years, so the cache key is unchanged) | `state_code` is the state name (its state list uses names as codes); `counties` is the exact county name |
 
 When a per-app PR changes what its page posts (for example LendSight moving
 to 2025), update that app's two files in the same PR, so before-and-after runs

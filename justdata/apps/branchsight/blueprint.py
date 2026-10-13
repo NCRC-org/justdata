@@ -3,9 +3,10 @@ BranchSight Blueprint for main JustData app.
 Converts the standalone BranchSight app into a blueprint for the unified platform.
 """
 
-from flask import Blueprint, current_app, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
+import re
 import tempfile
 import time
 import json
@@ -22,15 +23,17 @@ from justdata.backend import (
     new_job_id, run_in_background, sse_response,
     identify_caller, lookup_cached_analysis, record_cache_hit, record_completion,
 )
-from justdata.shared.utils.progress_tracker import get_progress, create_progress_tracker, store_analysis_result, get_analysis_result
+from justdata.shared.utils.progress_tracker import get_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id
 
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
 from .core import run_analysis, parse_web_parameters
-from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
-from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
+from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID, SOD_YEARS
+from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, tract_context, TRACT_CONTEXT_ACS_YEAR
 from .version import __version__
+from justdata.shared.web.app_page import app_page_context
+from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 
 def sanitize_for_json(obj):
     """Recursively replace Infinity and NaN with None in nested dicts/lists.
@@ -67,7 +70,7 @@ def configure_template_loader(state):
     """Configure Jinja2 to search blueprint templates first, then shared templates.
 
     IMPORTANT: Blueprint templates must come FIRST in the ChoiceLoader so that
-    app-specific templates (like report_template.html) are found before shared
+    app-specific templates are found before shared
     templates or other blueprints' templates with the same name.
     """
     app = state.app
@@ -75,32 +78,56 @@ def configure_template_loader(state):
     shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
     app.jinja_loader = ChoiceLoader([
         blueprint_loader,  # Blueprint templates first (highest priority)
-        shared_loader,     # Shared templates (for report_interstitial.html, etc.)
+        shared_loader,     # Shared templates (app_page.html and its partials)
         app.jinja_loader   # Main app loader (fallback)
     ])
+
+
+def _page(job_id=None):
+    """The BranchSight page (spec 04 standard). /report?job_id= renders the same
+    page; its script then loads that job's results into the results column."""
+    user_permissions = get_user_permissions()
+    years = list(SOD_YEARS)
+    ctx = app_page_context(
+        'branchsight',
+        form_id='brForm',
+        data_vintage=f'FDIC Summary of Deposits {years[0]} to {years[-1]}',
+        sources=[
+            {'name': 'FDIC Summary of Deposits',
+             'vintage': f'{years[0]} to {years[-1]}. Branch offices of FDIC-insured institutions, '
+                        'as of June 30 each year'},
+            {'name': 'Census',
+             'vintage': f'{TRACT_CONTEXT_ACS_YEAR - 4}-{TRACT_CONTEXT_ACS_YEAR} American Community '
+                        'Survey 5-year estimates, for the Geography Context table',
+             'url': 'https://www.census.gov/data/developers/data-sets/acs-5year.html'},
+        ],
+        # No help link before a run; after one, the toolbar links to Methods.
+        help_url=None,
+        methods_anchor='methodsSection',
+        exports=('xlsx', 'pdf') if user_permissions.get('can_export', False) else (),
+        # No exclusion_note: BranchSight has no "matched with confidence"
+        # exclusion (spec 04 decision 2; outcome recorded in the matrix).
+        shows_juxtaposition=True,
+    )
+    response = make_response(render_template(
+        'branchsight_analysis.html',
+        **ctx,
+        is_staff=is_privileged_user(get_user_type()),
+        analysis_years=years,
+        app_base_url=url_for('branchsight.index').rstrip('/'),
+        job_id=job_id,
+        breadcrumb_items=[{'name': 'BranchSight', 'url': '/branchsight'}],
+    ))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    return response
 
 
 @branchsight_bp.route('/')
 @login_required
 @require_access('branchsight', 'limited')
 def index():
-    """Main page with the analysis form"""
-    user_permissions = get_user_permissions()
-    user_type = get_user_type()
-    # Privileged users (staff, senior_executive, admin) see the "clear cache" checkbox
-    is_staff = is_privileged_user(user_type)
-    cache_buster = int(time.time())
-    app_base_url = url_for('branchsight.index').rstrip('/')
-    response = make_response(render_template('branchsight_analysis.html',
-                                           permissions=user_permissions,
-                                           is_staff=is_staff,
-                                           cache_buster=cache_buster,
-                                           app_base_url=app_base_url,
-                                           version=__version__))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+    """Main page with the analysis form."""
+    return _page()
 
 
 @branchsight_bp.route('/progress/<job_id>')
@@ -122,7 +149,9 @@ def analyze():
         data = request.get_json()
         selection_type = data.get('selection_type', 'county')
         counties_str = data.get('counties', '').strip()
-        years = data.get('years', '').strip()
+        # The analysis always runs config.SOD_YEARS; years the page sends are
+        # ignored, and the cache key uses the resolved years.
+        years = ','.join(map(str, SOD_YEARS))
         state_code = data.get('state_code', None)
         metro_code = data.get('metro_code', None)
         job_id = new_job_id()
@@ -145,16 +174,14 @@ def analyze():
         elif selection_type == 'metro' and not metro_code:
             return jsonify({'error': 'Please select a metro area'}), 400
 
-        if not years:
-            return jsonify({'error': 'Please provide years'}), 400
-
         # Parse parameters
         try:
             counties_list, years_list = parse_web_parameters(
                 counties_str, years, selection_type, state_code, metro_code
             )
         except Exception as e:
-            return jsonify({'error': f'Error parsing parameters: {str(e)}'}), 400
+            return jsonify({'success': False, 'error': user_error(
+                "We couldn't read the selected county.", exc=e, context='branchsight parse_web_parameters')[0]}), 400
 
         def remember_in_session(active_job_id):
             session['counties'] = ';'.join(counties_list) if counties_list else counties_str
@@ -193,8 +220,13 @@ def analyze():
                                        selection_type, state_code, metro_code)
 
                 if not result.get('success'):
-                    error_msg = result.get('error', 'Unknown error')
-                    progress_tracker.update_progress('error', message=error_msg)
+                    # result['error'] is written by core (safe to show); an
+                    # unexpected exception is logged under the same reference.
+                    exc = result.get('exception')
+                    progress_tracker.fail(result.get('error') or GENERIC_ERROR, exc=exc)
+                    record_completion('branchsight', cache_params, caller, job_id,
+                                      start_time, request_id,
+                                      error_message=str(exc) if exc else result.get('error'))
                     return
 
                 # Store in BigQuery cache (survives across Cloud Run instances)
@@ -227,44 +259,25 @@ def analyze():
                                   start_time, request_id)
 
             except Exception as e:
-                error_msg = str(e)
-                progress_tracker.complete(success=False, error=error_msg)
+                progress_tracker.fail(GENERIC_ERROR, exc=e)
 
         run_in_background(run_job, job_id=job_id)
 
         return jsonify({'success': True, 'job_id': job_id})
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'An error occurred: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /analyze')[0]}), 500
 
 
 @branchsight_bp.route('/report')
 @login_required
 @require_access('branchsight', 'limited')
 def report():
-    """Report display page"""
-    from jinja2 import Environment, ChoiceLoader, FileSystemLoader, select_autoescape
-    app_base_url = url_for('branchsight.index').rstrip('/')
-    # Create a custom Environment that searches branchsight templates FIRST,
-    # then shared templates. This prevents loading wrong template when multiple
-    # blueprints have templates with the same name (e.g., report_template.html)
-    env = Environment(
-        loader=ChoiceLoader([
-            FileSystemLoader(str(TEMPLATES_DIR_PATH)),  # BranchSight templates first
-            FileSystemLoader(str(SHARED_TEMPLATES_DIR))  # Shared templates (for shared_header.html)
-        ]),
-        autoescape=select_autoescape(['html', 'xml'])
-    )
-    env.globals['url_for'] = url_for
-    template = env.get_template('report_template.html')
-    # A raw Environment skips Flask's context processors, so run them here:
-    # shared_header.html's nav drawer needs nav_groups (main/app.py inject_shell()).
-    context = {}
-    current_app.update_template_context(context)
-    return template.render(**context, app_base_url=app_base_url, version=__version__)
+    """Shareable report URL: the same page, which loads ?job_id= into the results."""
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        job_id = None
+    return _page(job_id)
 
 
 @branchsight_bp.route('/report-data')
@@ -302,7 +315,6 @@ def report_data():
         # Data from BigQuery is already serialized (no DataFrames)
         # Data from in-memory fallback may have DataFrames
         import numpy as np
-        import pandas as pd
 
         report_data = analysis_result.get('report_data', {})
         serialized_data = {}
@@ -317,15 +329,19 @@ def report_data():
                 serialized_data[key] = val
 
         ai_insights = analysis_result.get('ai_insights', {})
+        stored_meta = analysis_result.get('metadata') or {}
 
         # Sanitize all data to prevent Infinity/NaN from reaching JSON serialization
         response_data = sanitize_for_json({
             'success': True,
             'data': serialized_data,
             'metadata': {
-                **analysis_result.get('metadata', {}),
+                **stored_meta,
                 'ai_insights': ai_insights
-            }
+            },
+            # Stage timings of the run that produced this result (spec 04 A5)
+            'perf': stored_meta.get('perf'),
+            'ref': stored_meta.get('perf_ref'),
         })
 
         response = jsonify(response_data)
@@ -333,12 +349,7 @@ def report_data():
         return response
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': f'Failed to retrieve report data: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /report-data')[0]}), 500
 
 
 @branchsight_bp.route('/download')
@@ -359,7 +370,7 @@ def download():
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
 
-        report_data = analysis_result.get('report_data', {})
+        report_data = _as_frames(analysis_result.get('report_data', {}))
         metadata = analysis_result.get('metadata', {})
 
         if not report_data:
@@ -379,12 +390,27 @@ def download():
             return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, csv, json, zip'}), 400
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': f'Download failed: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': user_error(
+            "We couldn't build this download.", exc=e, context='branchsight /download')[0]}), 500
+
+
+# Tables the workbook, CSV and PDF read as DataFrames. A result read back from
+# the analysis cache holds them as lists of records.
+_FRAME_KEYS = ('summary', 'by_bank', 'by_county', 'trends', 'raw_data')
+
+
+def _as_frames(report_data):
+    import pandas as pd
+    out = dict(report_data or {})
+    for key in _FRAME_KEYS:
+        if isinstance(out.get(key), list):
+            out[key] = pd.DataFrame(out[key])
+    return out
+
+
+def _county_slug(metadata):
+    counties = (metadata or {}).get('counties') or []
+    return str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
 
 
 def _add_methods_sheet(excel_path, metadata):
@@ -417,7 +443,7 @@ def _add_methods_sheet(excel_path, metadata):
     rows = [
         ('Methods & Definitions', ''),
         ('', ''),
-        ('Data Source', 'FDIC Summary of Deposits (SOD), accessed through the FDIC BankFind API and NCRC\'s BigQuery data warehouse'),
+        ('Data Source', 'FDIC Summary of Deposits (SOD), from NCRC\'s BigQuery copy (branchsight.sod for the latest year, branchsight.sod_legacy for earlier years)'),
         ('Geography', geography),
         ('Years Analyzed', years_str),
         ('', ''),
@@ -426,9 +452,7 @@ def _add_methods_sheet(excel_path, metadata):
         ('SOD (Summary of Deposits)', 'Annual survey of branch office deposits for all FDIC-insured institutions, collected as of June 30 each year'),
         ('HHI (Herfindahl-Hirschman Index)', 'Market concentration measure calculated as the sum of squared deposit market shares \u00d7 10,000. HHI < 1,500 = unconcentrated; 1,500-2,500 = moderately concentrated; > 2,500 = highly concentrated'),
         ('Deposit Market Share', 'Institution\'s deposits as a percentage of total deposits in the geographic area'),
-        ('Branch Count', 'Number of physical branch offices (excludes ATMs and loan production offices)'),
-        ('FDIC Certificate Number', 'Unique identifier assigned by FDIC to each insured institution'),
-        ('Institution Type', 'Charter type (National Bank, State Bank, Savings Association, etc.)'),
+        ('Branch Count', 'Number of unique branch offices (FDIC unique institution number, uninumbr) reported in the Summary of Deposits. No service-type filter is applied'),
         ('Net Change', 'Difference in branch count or deposits between time periods'),
         ('LMI Census Tract', 'Low-to-Moderate Income census tract as defined by FFIEC'),
         ('MMCT', 'Majority-Minority Census Tract where over 50% of the population belongs to a racial or ethnic minority group'),
@@ -476,7 +500,7 @@ def download_excel(report_data, metadata):
         response = send_file(
             tmp_path,
             as_attachment=True,
-            download_name=f'branchsight_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            download_name=f'BranchSight_{_county_slug(metadata)}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
@@ -490,9 +514,7 @@ def download_excel(report_data, metadata):
 
         return response
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Excel export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight Excel export')[0]}), 500
 
 
 def download_pdf(report_data, metadata, analysis_result):
@@ -531,9 +553,7 @@ def download_pdf(report_data, metadata, analysis_result):
 
         return response
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'PDF export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight PDF export')[0]}), 500
 
 
 def download_csv(report_data, metadata):
@@ -561,7 +581,7 @@ def download_csv(report_data, metadata):
             }
         )
     except Exception as e:
-        return jsonify({'error': f'CSV export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight CSV export')[0]}), 500
 
 
 def download_json(report_data, metadata):
@@ -590,7 +610,7 @@ def download_json(report_data, metadata):
             }
         )
     except Exception as e:
-        return jsonify({'error': f'JSON export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight JSON export')[0]}), 500
 
 
 def download_zip(report_data, metadata, analysis_result=None):
@@ -632,9 +652,7 @@ def download_zip(report_data, metadata, analysis_result=None):
                 }
             )
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'ZIP export failed: {str(e)}'}), 500
+        return jsonify({'error': user_error("We couldn't build this download.", exc=e, context='branchsight ZIP export')[0]}), 500
 
 
 @branchsight_bp.route('/counties')
@@ -779,10 +797,22 @@ def counties_by_state(state_code):
         return jsonify(counties)
     except Exception as e:
         import traceback
-        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
-        print(f"[ERROR] branchsight/counties-by-state error: {error_msg}")
         traceback.print_exc()
-        return jsonify({'error': error_msg}), 500
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /counties-by-state')[0]}), 500
+
+
+@branchsight_bp.route('/geography-context/<geoid5>')
+@login_required
+@require_access('branchsight', 'limited')
+def geography_context(geoid5):
+    """Census tract context for the report's Geography Context table. The
+    Census API requires a key, so the page asks the server."""
+    if not re.fullmatch(r'\d{5}', geoid5 or ''):
+        return jsonify({'error': 'Invalid county.'}), 400
+    try:
+        return jsonify(tract_context(geoid5))
+    except Exception as e:
+        return jsonify({'error': user_error(REQUEST_ERROR, exc=e, context='branchsight /geography-context')[0]}), 502
 
 
 @branchsight_bp.route('/health')

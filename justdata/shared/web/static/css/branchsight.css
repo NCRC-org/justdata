@@ -1,0 +1,8 @@
+/* BranchSight report body (spec 04 Part B): only what app.css does not cover.
+   Tokens only; every selector is prefixed .br-. */
+.br-table { font-size: 13px; }
+.br-table th, .br-table td { padding: 6px; }
+.br-table td { white-space: nowrap; }
+.br-table th[scope="row"] { white-space: normal; min-width: 10em; max-width: 18em; line-height: 1.3; }
+.br-up { color: var(--color-success-text); font-weight: var(--fw-semibold); }
+.br-down { color: var(--color-danger-text); font-weight: var(--fw-semibold); }
