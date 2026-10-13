@@ -403,105 +403,105 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
             'County (2024)': county_pct_under_100k,
             'State (2024)': state_pct_under_100k,
             'National (2024)': national_pct_under_100k,
-            '% Change Since 2018': pct_change_num_under_100k
+            '% Change Since 2020': pct_change_num_under_100k
         },
         {
             'Metric': 'Loans $100K-$250K (% of Total)',
             'County (2024)': county_pct_100k_250k,
             'State (2024)': state_pct_100k_250k,
             'National (2024)': national_pct_100k_250k,
-            '% Change Since 2018': pct_change_num_100k_250k
+            '% Change Since 2020': pct_change_num_100k_250k
         },
         {
             'Metric': 'Loans $250K-$1M (% of Total)',
             'County (2024)': county_pct_250k_1m,
             'State (2024)': state_pct_250k_1m,
             'National (2024)': national_pct_250k_1m,
-            '% Change Since 2018': pct_change_num_250k_1m
+            '% Change Since 2020': pct_change_num_250k_1m
         },
         {
             'Metric': 'Loans to Businesses Under $1M Revenue (% of Total)',
             'County (2024)': county_pct_sb_under_1m,
             'State (2024)': state_pct_sb_under_1m,
             'National (2024)': national_pct_sb_under_1m,
-            '% Change Since 2018': pct_change_numsb_under_1m
+            '% Change Since 2020': pct_change_numsb_under_1m
         },
         {
             'Metric': 'Loans to Low Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_low_income,
             'State (2024)': state_pct_loans_low_income,
             'National (2024)': national_pct_loans_low_income,
-            '% Change Since 2018': pct_change_low_income_loans
+            '% Change Since 2020': pct_change_low_income_loans
         },
         {
             'Metric': 'Loans to Moderate Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_moderate_income,
             'State (2024)': state_pct_loans_moderate_income,
             'National (2024)': national_pct_loans_moderate_income,
-            '% Change Since 2018': pct_change_moderate_income_loans
+            '% Change Since 2020': pct_change_moderate_income_loans
         },
         {
             'Metric': 'Loans to Middle- or Upper-Income Tracts (% of Classified Loans)',
             'County (2024)': county_pct_loans_upper_income,
             'State (2024)': state_pct_loans_upper_income,
             'National (2024)': national_pct_loans_upper_income,
-            '% Change Since 2018': pct_change_upper_income_loans
+            '% Change Since 2020': pct_change_upper_income_loans
         },
         {
             'Metric': 'Total Loan Amount (in millions)',
             'County (2024)': amt_total,
             'State (2024)': state_amount,
             'National (2024)': national_amount,
-            '% Change Since 2018': pct_change_total_amount
+            '% Change Since 2020': pct_change_total_amount
         },
         {
             'Metric': 'Amount Under $100K (% of Total)',
             'County (2024)': county_pct_amt_under_100k,
             'State (2024)': state_pct_amt_under_100k,
             'National (2024)': national_pct_amt_under_100k,
-            '% Change Since 2018': pct_change_amt_under_100k
+            '% Change Since 2020': pct_change_amt_under_100k
         },
         {
             'Metric': 'Amount $100K-$250K (% of Total)',
             'County (2024)': county_pct_amt_100k_250k,
             'State (2024)': state_pct_amt_100k_250k,
             'National (2024)': national_pct_amt_100k_250k,
-            '% Change Since 2018': pct_change_amt_100k_250k
+            '% Change Since 2020': pct_change_amt_100k_250k
         },
         {
             'Metric': 'Amount $250K-$1M (% of Total)',
             'County (2024)': county_pct_amt_250k_1m,
             'State (2024)': state_pct_amt_250k_1m,
             'National (2024)': national_pct_amt_250k_1m,
-            '% Change Since 2018': pct_change_amt_250k_1m
+            '% Change Since 2020': pct_change_amt_250k_1m
         },
         {
             'Metric': 'Amount to Businesses Under $1M Revenue (% of Total)',
             'County (2024)': county_pct_amt_sb_under_1m,
             'State (2024)': state_pct_amt_sb_under_1m,
             'National (2024)': national_pct_amt_sb_under_1m,
-            '% Change Since 2018': pct_change_amtsb_under_1m
+            '% Change Since 2020': pct_change_amtsb_under_1m
         },
         {
             'Metric': 'Amount to Low Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_low_income,
             'State (2024)': state_pct_amount_low_income,
             'National (2024)': national_pct_amount_low_income,
-            '% Change Since 2018': pct_change_low_income_amount
+            '% Change Since 2020': pct_change_low_income_amount
         },
         {
             'Metric': 'Amount to Moderate Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_moderate_income,
             'State (2024)': state_pct_amount_moderate_income,
             'National (2024)': national_pct_amount_moderate_income,
-            '% Change Since 2018': pct_change_moderate_income_amount
+            '% Change Since 2020': pct_change_moderate_income_amount
         },
         {
             'Metric': 'Amount to Middle- or Upper-Income Tracts (% of Classified Amount)',
             'County (2024)': county_pct_amount_upper_income,
             'State (2024)': state_pct_amount_upper_income,
             'National (2024)': national_pct_amount_upper_income,
-            '% Change Since 2018': pct_change_upper_income_amount
+            '% Change Since 2020': pct_change_upper_income_amount
         }
     ]
     
