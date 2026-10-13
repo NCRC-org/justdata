@@ -1,4 +1,4 @@
-.PHONY: help install dev test clean docker-build docker-up docker-down docker-logs lint format deploy-all deploy-main deploy-branchsight deploy-lendsight deploy-branchmapper
+.PHONY: help install dev test test-network clean docker-build docker-up docker-down docker-logs lint format deploy-all deploy-main deploy-branchsight deploy-lendsight deploy-branchmapper
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "Development:"
 	@echo "  run          Run the API server locally"
 	@echo "  test         Run tests"
+	@echo "  test-network Run only the tests that reach the internet (NCRC report links)"
 	@echo "  lint         Run linting checks"
 	@echo "  format       Format code with black and isort"
 	@echo ""
@@ -50,6 +51,10 @@ run:
 
 test:
 	pytest tests/ -v --cov=justdata --cov-report=html
+
+# Not part of the default run or CI: these depend on outside sites answering.
+test-network:
+	pytest tests/ -v -m network --run-network
 
 lint:
 	flake8 justdata/ tests/

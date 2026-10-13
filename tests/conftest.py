@@ -22,6 +22,24 @@ os.environ["JUSTDATA_AI_DISABLED"] = "1"
 
 
 # ---------------------------------------------------------------------------
+# Network tests: opt-in, so the default run and CI stay deterministic
+# ---------------------------------------------------------------------------
+
+def pytest_addoption(parser):
+    parser.addoption("--run-network", action="store_true", default=False,
+                     help="also run tests marked network (they reach the internet)")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run-network"):
+        return
+    skip = pytest.mark.skip(reason="reaches the internet; run with --run-network (make test-network)")
+    for item in items:
+        if "network" in item.keywords:
+            item.add_marker(skip)
+
+
+# ---------------------------------------------------------------------------
 # Environment fixtures
 # ---------------------------------------------------------------------------
 
