@@ -125,6 +125,14 @@ can name the code that does the excluding.
 - `rg 'style="' justdata/apps/bizsight/templates` and `rg "fa-"
   justdata/apps/bizsight` return nothing.
 - Stage timings recorded and returned by `/report-data`.
+- Follow-ups (fix/bizsight-branchsight-followups, Jad 2026-10-13): every
+  tract income share, on the page and in the workbook, divides by loans
+  with a tract classification (the state and national basis); Section 3
+  notes the excluded count; the cache key carries report revision 2 so
+  older results are not served. Section 3's state and national
+  middle-or-upper shares were 0.0% (wrong benchmark key) and are fixed.
+  Section 1 says CRA data covers loans originated or purchased (12 CFR
+  228.42). The workbook's change column and year notes said 2018.
 
 ### BranchSight (refactor/branchsight-standard)
 
@@ -147,6 +155,11 @@ can name the code that does the excluding.
   justdata/apps/branchsight/templates` return nothing.
 - Stage timings recorded and returned by `/report-data` (and, from this PR,
   kept through the analysis cache for LendSight and BranchSight).
+- Follow-up (Jad 2026-10-13): Geography Context counts tracts from the
+  FFIEC census data (`shared.census`) on the branch flags' definitions
+  (income level low or moderate; minority share 50% or more), replacing the
+  ACS county-median basis. Methods' MMCT definition says "50% or more",
+  which is what the flags do.
 
 ## Findings that matter before testers
 
@@ -171,9 +184,10 @@ the hygiene PR #208 (merged 2026-10-07); the rest are tracked above or in the de
 - **BranchSight:** (both fixed in the BranchSight PR)
   - `done` can fire before the result is stored, so `/report-data` returns 404 in that gap. The front end retries to cover it.
   - Map and population-chart code is never called.
-- **BranchMapper** (not a tester app; found in the BranchSight PR, not changed): `data_utils.find_exact_county_match` has the same substring county match that ran 35 BranchSight counties as a different county.
+- **BranchMapper** (not a tester app; found in the BranchSight PR, not changed): `data_utils.find_exact_county_match` has the same substring county match that ran 35 BranchSight counties as a different county. Ticket draft below (Jad creates it).
 - **BizSight:**
   - `/download` ignores the in-memory fallback, so export returns 404 when the cache write failed.
+  - The in-memory fallback itself fails: when the cache write fails, `run_job` stores the raw result, and `/report-data` returns 500 on its DataFrames ("The truth value of a DataFrame is ambiguous", `clean_for_json`). Found in a local check 2026-10-13; not changed.
   - Map code is dead.
 - **MergerMeter:**
   - It never writes results to the analysis cache, because `_perform_analysis` returns None. Fixed in the shared PR (803dc35).
@@ -184,6 +198,68 @@ the hygiene PR #208 (merged 2026-10-07); the rest are tracked above or in the de
   - `/progress/<job_id>` has `login_required` but no `require_access`.
   - Orphan partials: `_analysis_*` and `_mergermeter_report_*`.
 - **Dead templates:** `analysis_template.html` in LendSight, BizSight and MergerMeter. Only MergerMeter's standalone ops app renders the name.
+
+## Ticket draft: BranchMapper wrong-county lookup (for the Workflow board)
+
+Ready to paste; Jad creates the item.
+
+**Title:** BranchMapper: county lookup matches part of the name, so some counties show another county's branches
+
+**Description:**
+`/branchmapper/api/branches` resolves the requested county with
+`find_exact_county_match` (`justdata/apps/branchmapper/data_utils.py:118`),
+called from `execute_branch_query` (line 331). The lookup selects
+`county_state` values that contain the county name and contain the state
+name (`LIKE '%name%' AND LIKE '%state%'`), then uses the first row in
+alphabetical order. When another county's name or state contains the
+requested one, BranchMapper shows the wrong county's branches with no
+warning. Examples from the same lookup in BranchSight: Johnson County,
+Kansas returns Johnson County, Arkansas ("Kansas" is inside "Arkansas");
+Smith County, Texas returns Deaf Smith County, Texas. A read-only check of
+`shared.cbsa_to_county` found 35 counties affected in BranchSight. The
+query is also built by string interpolation rather than query parameters.
+
+**Who it affects:** staff using BranchMapper (it is not a tester app).
+
+**Fix:** use the exact match BranchSight now uses
+(`branchsight.data_utils.exact_county_matches`: a parameterised
+`LOWER(county_state) = LOWER(@county)` query), fall back to a substring
+match only when it returns exactly one row, and pass the county and year
+to the branch query as query parameters (BranchSight PR #212, commits
+399d40b and efda23a).
+
+**Acceptance:** Johnson County, Kansas and Smith County, Texas each return
+their own branches; a test covers both names; no county or year value is
+interpolated into SQL.
+
+## Unintended writes to `firebase_analytics.ai_usage` (exclude from analytics)
+
+Not deleted (Jad, 2026-10-13). The table has no id column, so the rows are
+identified by timestamp (as stored, UTC), app and model. All are
+`provider = 'claude'`, `model = 'claude-sonnet-5'`, `report_type = 'unknown'`.
+
+1. **BranchSight, 4 rows**, local fixture run for PR #212, 2026-10-07:
+   | timestamp | input tokens | output tokens | cost (USD) |
+   |---|---|---|---|
+   | 2026-10-07T21:44:04.490019 | 1,791 | 275 | 0.009498 |
+   | 2026-10-07T21:44:10.819346 | 1,469 | 391 | 0.010272 |
+   | 2026-10-07T21:44:16.783582 | 1,520 | 427 | 0.010965 |
+   | 2026-10-07T21:44:23.656974 | 1,333 | 455 | 0.010824 |
+2. **BizSight, 88 rows**, local before/after runs of the Section 3
+   denominator (Cook and Lowndes, three runs), 2026-10-13: every
+   `app_name = 'bizsight'` row with timestamp from 2026-10-13T14:42:39.372547
+   to 2026-10-13T14:51:40.702860 (22 rows at 14:42, 29 at 14:45, 37 at
+   14:51; $0.65 in total). The runs unset the AI key variables, but the
+   app found its key another way; later local runs stub `ai_provider`.
+
+Filter for analytics:
+
+```sql
+WHERE NOT (app_name = 'branchsight' AND timestamp BETWEEN '2026-10-07T21:44:04' AND '2026-10-07T21:44:24')
+  AND NOT (app_name = 'bizsight' AND timestamp BETWEEN '2026-10-13T14:42:39' AND '2026-10-13T14:51:41')
+```
+
+The four BranchSight rows from 2026-10-08T15:02 are not from this work.
 
 ## Timing method (`scripts/time_analysis.py`)
 
