@@ -136,7 +136,7 @@
   function fromBranches(bank, button) {
     var rssd = $(bank + '_rssd').value.trim();
     if (!rssd) {
-      status(bank, 'Select the ' + (bank === 'acquirer' ? 'acquirer' : 'target') + ' in step 2 first; this needs its RSSD.', 'error');
+      status(bank, 'Select the ' + (bank === 'acquirer' ? 'acquirer' : 'target') + ' in step 1 first; this needs its RSSD.', 'error');
       return;
     }
     button.disabled = true;

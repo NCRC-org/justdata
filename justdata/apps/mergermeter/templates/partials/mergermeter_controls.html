@@ -1,9 +1,11 @@
-{# MergerMeter controls (spec 04 Part B item 3): 1 Geography (assessment areas),
-   2 Acquirer and Target in one fieldset, 3 Years, 4 Options. mm_banks.js,
-   mm_areas.js and mm_page.js drive them. The fields posted to /analyze and
-   their values are the former page's, so the analysis and its cache key are
-   unchanged. Long lists (assessment-area counties, the HMDA filters) are
-   collapsed app-choices (app_choices.js). #}
+{# MergerMeter controls (spec 04 Part B item 3): 1 Acquirer and target in one
+   fieldset, 2 Geography (assessment areas), 3 Years, 4 Options. Banks come
+   first because "From branches" needs the bank's RSSD: an approved exception
+   to spec 04's fixed order, under the rule that a step depending on another
+   step's answer comes after it. mm_banks.js, mm_areas.js and mm_page.js drive
+   them. The fields posted to /analyze and their values are the former page's,
+   so the analysis and its cache key are unchanged. Long lists (assessment-area
+   counties, the HMDA filters) are collapsed app-choices (app_choices.js). #}
 {% macro area_panel(bank, label) %}
 <div class="mm-area" data-bank="{{ bank }}" id="{{ bank }}Areas">
   <p class="app-field-label">{{ label }}</p>
@@ -38,7 +40,7 @@
   </div>
 
   <div class="mm-mode-panel" data-mode="branches" hidden>
-    <p class="app-field-hint">Builds assessment areas from the bank's branch locations (FDIC Summary of Deposits 2025), grouped by metro area. Only counties with a branch are included. Needs the bank's RSSD (step 2).</p>
+    <p class="app-field-hint">Builds assessment areas from the bank's branch locations (FDIC Summary of Deposits 2025), grouped by metro area. Only counties with a branch are included. Needs the bank's RSSD (step 1).</p>
     <button type="button" class="btn btn-secondary btn-sm" data-generate-areas="{{ bank }}">Generate from branches</button>
   </div>
 
@@ -76,7 +78,15 @@
 
 <form id="{{ form_id }}" novalidate>
   <fieldset class="app-step">
-    <legend><span class="app-step-n">1</span>Geography</legend>
+    <legend><span class="app-step-n">1</span>Acquirer and target</legend>
+    {{ bank_picker('acquirer', 'Acquirer (Bank A)') }}
+    <label class="app-check"><input type="checkbox" id="mmSingleBank">
+      <span>Single bank analysis<span class="app-check-hint">Analyze only the acquirer, with no merger comparison.</span></span></label>
+    {{ bank_picker('target', 'Target (Bank B)') }}
+  </fieldset>
+
+  <fieldset class="app-step">
+    <legend><span class="app-step-n">2</span>Geography</legend>
     <label class="app-check"><input type="checkbox" id="mmNational">
       <span>Use national data<span class="app-check-hint">Skips assessment areas and analyzes the whole country.</span></span></label>
     <div id="mmAreaInputs">
@@ -84,14 +94,6 @@
       {{ area_panel('acquirer', 'Acquirer assessment areas') }}
       {{ area_panel('target', 'Target assessment areas') }}
     </div>
-  </fieldset>
-
-  <fieldset class="app-step">
-    <legend><span class="app-step-n">2</span>Acquirer and target</legend>
-    {{ bank_picker('acquirer', 'Acquirer (Bank A)') }}
-    <label class="app-check"><input type="checkbox" id="mmSingleBank">
-      <span>Single bank analysis<span class="app-check-hint">Analyze only the acquirer, with no merger comparison.</span></span></label>
-    {{ bank_picker('target', 'Target (Bank B)') }}
   </fieldset>
 
   <fieldset class="app-step">

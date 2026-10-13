@@ -31,7 +31,8 @@ def _page(client, path="/mergermeter/"):
 def test_standard_skeleton_and_step_order(client):
     html = _page(client)
     assert 'class="app-header"' in html and 'id="runBtn">Run analysis</button>' in html and 'form="mmForm"' in html
-    steps = [html.index(s) for s in ("1</span>Geography</legend>", "2</span>Acquirer and target</legend>",
+    # Banks before geography: "From branches" needs the bank (approved exception to spec 04's order)
+    steps = [html.index(s) for s in ("1</span>Acquirer and target</legend>", "2</span>Geography</legend>",
                                      "3</span>Years</legend>", "4</span>Options</legend>")]
     assert steps == sorted(steps)
     for m in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js", "app_choices.js",
@@ -143,4 +144,4 @@ def test_long_lists_are_collapsed(client):
     assert all(f'id="{name}"' in filters for name in
                ("action_taken", "occupancy_type", "total_units", "construction_method", "not_reverse"))
     areas = (JS / "mm_areas.js").read_text()
-    assert "AppChoices.update(preview)" in areas
+    assert "AppChoices.update(preview)" in areas and "in step 1 first" in areas
