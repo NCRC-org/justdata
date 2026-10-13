@@ -211,8 +211,9 @@ def analyze():
                 from .mergermeter_ops import _perform_analysis
                 result = _perform_analysis(job_id, form_data)
                 
-                # Store in cache if successful
-                if result and result.get('success'):
+                # Store in cache if successful. The cached result is the
+                # workbook in GCS; without it a cache hit elsewhere would 404.
+                if result and result.get('success') and result.get('workbook_in_gcs'):
                     try:
                         metadata = {
                             'duration_seconds': time.time() - start_time

@@ -1452,12 +1452,13 @@ def _perform_analysis(job_id, form_data):
         print(f"  Saved raw data to {raw_data_file}")
 
         # Upload to GCS for persistence across Cloud Run instances
+        workbook_in_gcs = False
         try:
             upload_json(f'mergermeter/merger_metadata_{job_id}.json', metadata)
             upload_json(f'mergermeter/merger_raw_data_{job_id}.json', raw_data)
             # The workbook too, so a cached result can be previewed and
             # downloaded from any Cloud Run instance, not only the one that ran it.
-            upload_file(f'mergermeter/{excel_file.name}', str(excel_file))
+            workbook_in_gcs = bool(upload_file(f'mergermeter/{excel_file.name}', str(excel_file)))
             print(f"[GCS] Uploaded analysis files for job {job_id}")
         except Exception as e:
             print(f"[GCS] Warning: Failed to upload to GCS: {e}")
@@ -1474,8 +1475,11 @@ def _perform_analysis(job_id, form_data):
             'validation_warnings': [w['issue'] for w in validation_warnings] if validation_warnings else []
         })
 
-        # Returned so the blueprint stores this run in the analysis cache.
-        return {'success': True, 'job_id': job_id, 'excel_filename': excel_file.name}
+        # Returned so the blueprint stores this run in the analysis cache. A
+        # cached MergerMeter result is the workbook in GCS, so the blueprint
+        # stores the run only when that upload succeeded.
+        return {'success': True, 'job_id': job_id, 'excel_filename': excel_file.name,
+                'workbook_in_gcs': workbook_in_gcs}
 
     except Exception as e:
         error_msg, _ref = user_error(GENERIC_ERROR, exc=e, context=f'mergermeter job={job_id}')
