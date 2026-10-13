@@ -155,7 +155,7 @@ name collision.
 `app.js`, `auth.js`, and a `components/` directory (currently
 `GoalsCalculator.js`).
 
-**Analysis-app page (spec 04)** — LendSight, BizSight and BranchSight
+**Analysis-app page (spec 04)** — LendSight, BizSight, BranchSight and MergerMeter
 extend `app_page.html`, rendered with `app_page_context(...)` from
 `justdata/shared/web/app_page.py`. The page loads four shared modules from
 `justdata/shared/web/static/js/`, in this order:
@@ -173,7 +173,9 @@ extend `app_page.html`, rendered with `app_page_context(...)` from
   `/<app>/report?job_id=` URL, and the state-then-county picker.
 
 Each app adds only its own controls and report body (for example
-`js/branchsight/br_page.js` and `br_report.js`).
+`js/branchsight/br_page.js` and `br_report.js`). AppRun posts JSON, or a
+FormData as is (MergerMeter's `/analyze` reads form fields), and an app with
+long runs sets `maxRunSeconds` (MergerMeter: 30 minutes; the default is 10).
 
 **NCRC report links** — every ncrc.org report URL used in a prompt or template is in
 `justdata/shared/ncrc_reports.py` (title, URL, last checked). When NCRC publishes a new
