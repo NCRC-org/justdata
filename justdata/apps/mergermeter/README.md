@@ -12,6 +12,13 @@ goal-setting report.
 - Standard route shape: `/`, `/analyze`, `/progress/<job_id>`,
   `/report`, `/report-data`, `/download`, `/health`, plus the
   goals-calculator page.
+- `/report?job_id=` renders the same page as `/` and loads that run's
+  workbook (spec 04 standard). The Goals Calculator is at
+  `/goals-calculator?job_id=`.
+- `/report-data` is a readiness check: the run's metadata and stage
+  timings once its workbook exists (local or GCS), 202 while it runs.
+  `/excel-data` serves the workbook for the page's preview; `/download`
+  serves it as a file.
 
 ## Data sources
 
@@ -34,12 +41,21 @@ concentration math.
 
 ## Templates
 
-`templates/`:
-- `mergermeter_analysis.html`, `mergermeter_report.html`,
-  `analysis_template.html`, `goals_calculator.html`
-- `partials/` — `_analysis_head.html`, `_analysis_main.html`,
-  `_analysis_scripts.html`, `_analysis_scripts_footer.html`,
-  `_analysis_template_footer.html`, etc.
+`templates/mergermeter_analysis.html` extends the shared `app_page.html`.
+`templates/partials/`: `mergermeter_controls.html` (1 Geography / assessment
+areas, 2 Acquirer and target, 3 Years, 4 Options) and
+`mergermeter_report_template.html` (the workbook preview).
+`goals_calculator.html` is the Goals Calculator page.
+
+Scripts are in `justdata/shared/web/static/js/mergermeter/`: `mm_banks.js`
+(bank search), `mm_areas.js` (assessment areas), `mm_page.js` (validation,
+the form posted to `/analyze`, AppRun) and `mm_report.js` (SheetJS workbook
+preview). Styles: `shared/web/static/css/mergermeter.css`.
+
+The page posts exactly the form fields the former page did, so the
+analysis, its cache key and the workbook are unchanged by the page.
+`mergermeter_ops.py` still defines a standalone Flask app; it is not
+served anywhere.
 
 ## Notes
 
