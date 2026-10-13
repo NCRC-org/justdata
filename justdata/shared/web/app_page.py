@@ -33,7 +33,8 @@ def app_page_context(app_key: str, *, form_id: str,
                      caveats: Sequence[str] = (),
                      shows_juxtaposition: bool = True,
                      exclusion_note: Optional[str] = None,
-                     idle_message: Optional[str] = None) -> dict:
+                     idle_message: Optional[str] = None,
+                     results_link: Optional[dict] = None) -> dict:
     """Context for app_page.html and its partials.
 
     sources: [{"name", "vintage", "url" (optional)}], the datasets this
@@ -49,6 +50,8 @@ def app_page_context(app_key: str, *, form_id: str,
         code that drops them can be named (spec 04 decision 2, 2026-10-07).
     idle_message: replaces the default idle text; apps with a lender step
         pass one (spec 04 decision 4).
+    results_link: {"id", "label", "href"}, a link in the results toolbar
+        (shown after a successful run) to another page for the same run.
     """
     exports = tuple(exports)
     unknown = set(exports) - set(KNOWN_EXPORTS)
@@ -69,4 +72,5 @@ def app_page_context(app_key: str, *, form_id: str,
         "shows_juxtaposition": shows_juxtaposition,
         "exclusion_note": exclusion_note,
         "idle_message": idle_message,
+        "results_link": results_link,
     }

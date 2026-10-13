@@ -119,3 +119,12 @@ def test_step_clock_times_each_progress_step():
     clock.mark("saving")
     assert [s["stage"] for s in perf_stages()] == ["step:querying_hmda_data_for_bank_a", "step:generating_excel_report"]
     assert all(isinstance(s["ms"], int) for s in perf_stages())
+
+
+def test_goals_calculator_is_linked_from_the_results_toolbar(client):
+    html = _page(client)
+    actions = html[html.index('id="resultsActions"'):]
+    actions = actions[:actions.index("</div>")]
+    assert 'id="mmGoalsLink" href="/mergermeter/goals-calculator">Goals calculator →</a>' in actions
+    js = (JS / "mm_page.js").read_text()
+    assert "goals.href = BASE + '/goals-calculator?job_id=' + encodeURIComponent(jobId)" in js

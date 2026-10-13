@@ -60,3 +60,18 @@ def test_rate_limit_is_named_not_quoted(run):
     entry = perf_stages()[-1]
     assert entry["failure"] == "rate_limit"
     assert "secret" not in str(entry)
+
+
+def test_reply_within_10_percent_of_its_limit_is_flagged(run, capsys):
+    run.return_value.messages.create.return_value = _reply("end_turn", output_tokens=810)  # of 900
+    Analyzer().generate_market_concentration_discussion()
+    entry = perf_stages()[-1]
+    assert entry["ok"] is True and entry["near_limit"] is True
+    assert "WARNING ai:market_concentration_discussion used 810 of 900 output tokens" in capsys.readouterr().out
+
+
+def test_reply_well_under_its_limit_is_not_flagged(run, capsys):
+    run.return_value.messages.create.return_value = _reply("end_turn", output_tokens=800)  # 88.9%
+    Analyzer().generate_market_concentration_discussion()
+    assert perf_stages()[-1]["near_limit"] is False
+    assert "WARNING" not in capsys.readouterr().out

@@ -136,6 +136,8 @@
       url: root.AppRun.reportUrl(jobId)
     } });
     $('resultsTitle').textContent = names.join(' + ') || 'Results';
+    var goals = $('mmGoalsLink');
+    if (goals) goals.href = BASE + '/goals-calculator?job_id=' + encodeURIComponent(jobId);
     // The controls column is long; bring the results into view if they are
     // above the screen (the Run button is at the bottom of the controls).
     var results = $('results');

@@ -33,8 +33,8 @@ the spec 04 audit matrix for each app's fields): a JSON body for the Sight
 apps, form fields for MergerMeter (list or object values are JSON-encoded, as
 its page does for assessment areas). force_refresh is set by the script.
 
-MergerMeter currently never writes results to the analysis cache (audit
-finding), so its "cached" runs are recomputed; cache_hit records that.
+MergerMeter writes its runs to the analysis cache since #214 (a run whose
+workbook reached GCS); cache_hit records whether a run was served from it.
 """
 
 import argparse
