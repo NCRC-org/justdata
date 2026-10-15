@@ -1,10 +1,6 @@
 /* MergerMeter page (spec 04 Part B): only what app.css does not cover.
    Tokens only; every selector is prefixed .mm- (or scoped to #mmForm). */
 
-/* The controls are long (two banks, two sets of assessment areas, filters),
-   so the column scrolls with the page instead of sticking. */
-.app-controls:has(#mmForm) { position: static; }
-
 /* Assessment areas */
 .mm-area { border: 1px solid var(--color-border); padding: var(--s-3); margin-top: var(--s-3); }
 .mm-modes { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin-bottom: var(--s-3); }
@@ -16,9 +12,11 @@
 .mm-status--ok { background: var(--color-success-bg); color: var(--color-success-text); }
 .mm-status--warn { background: var(--color-warning-bg); color: var(--color-warning-text); }
 .mm-status--error { background: var(--color-danger-bg); color: var(--color-danger-text); }
-.mm-preview { max-height: 280px; overflow-y: auto; margin-top: var(--s-2); }
+.mm-preview { margin: var(--s-2) 0 0; }
 .mm-area-item { border: 0; border-left: 3px solid var(--color-bg-accent); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-2); background: var(--color-bg-muted); }
-.mm-area-item legend { font-weight: var(--fw-semibold); font-size: var(--fs-body-sm); padding: 0; }
+/* Area names are not step headings: undo .app-step legend's eyebrow style */
+.app-step .mm-area-item > legend { float: none; display: block; width: auto; font-family: inherit; text-transform: none;
+  letter-spacing: normal; color: var(--color-fg); font-weight: var(--fw-semibold); font-size: var(--fs-body-sm); padding: 0; margin: 0; }
 .mm-county { display: inline-flex; align-items: center; gap: var(--s-1); margin: var(--s-1) var(--s-2) 0 0; font-size: var(--fs-caption); }
 .mm-county input:not(:checked) + span { text-decoration: line-through; color: var(--color-fg-subtle); }
 

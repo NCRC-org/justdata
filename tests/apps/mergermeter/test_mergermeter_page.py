@@ -31,10 +31,11 @@ def _page(client, path="/mergermeter/"):
 def test_standard_skeleton_and_step_order(client):
     html = _page(client)
     assert 'class="app-header"' in html and 'id="runBtn">Run analysis</button>' in html and 'form="mmForm"' in html
-    steps = [html.index(s) for s in ("</span>Geography</legend>", "</span>Acquirer and target</legend>",
-                                     "</span>Years</legend>", "</span>Options</legend>")]
+    # Banks before geography: "From branches" needs the bank (approved exception to spec 04's order)
+    steps = [html.index(s) for s in ("1</span>Acquirer and target</legend>", "2</span>Geography</legend>",
+                                     "3</span>Years</legend>", "4</span>Options</legend>")]
     assert steps == sorted(steps)
-    for m in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js",
+    for m in ("app_states.js", "app_progress.js", "app_report.js", "app_run.js", "app_choices.js",
               "mergermeter/mm_report.js", "mergermeter/mm_banks.js", "mergermeter/mm_areas.js", "mergermeter/mm_page.js"):
         assert m in html, m
     assert "jquery" not in html.lower() and "select2" not in html.lower()
@@ -128,3 +129,19 @@ def test_goals_calculator_is_linked_from_the_results_toolbar(client):
     assert 'id="mmGoalsLink" href="/mergermeter/goals-calculator">Goals calculator →</a>' in actions
     js = (JS / "mm_page.js").read_text()
     assert "goals.href = BASE + '/goals-calculator?job_id=' + encodeURIComponent(jobId)" in js
+
+
+def test_long_lists_are_collapsed(client):
+    """County lists and the 16 HMDA filter options sit in closed app-choices lists."""
+    html = _page(client)
+    for bank in ("acquirer", "target"):
+        tag = re.search(rf'<details[^>]*id="{bank}AreaPreview"[^>]*>', html).group(0)
+        assert 'class="app-choices mm-preview"' in tag and 'data-noun="counties"' in tag and " open" not in tag
+        assert f'id="{bank}AreaList"' in html
+    filters = html[html.index('id="mmFilters"'):]
+    filters = filters[:filters.index("</details>")]
+    assert filters.count('type="checkbox"') == 16
+    assert all(f'id="{name}"' in filters for name in
+               ("action_taken", "occupancy_type", "total_units", "construction_method", "not_reverse"))
+    areas = (JS / "mm_areas.js").read_text()
+    assert "AppChoices.update(preview)" in areas and "in step 1 first" in areas

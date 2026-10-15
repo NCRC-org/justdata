@@ -109,7 +109,7 @@ def _page(job_id=None):
         help_url=None,
         exports=('xlsx',) if user_permissions.get('can_export', False) else (),
         shows_juxtaposition=True,
-        idle_message='Choose the assessment areas, the acquirer and the target, then run the analysis.',
+        idle_message='Choose the acquirer and the target, then their assessment areas, then run the analysis.',
         # The Goals Calculator for the run shown (mm_page.js sets the job id)
         results_link={'id': 'mmGoalsLink', 'label': 'Goals calculator →',
                       'href': url_for('mergermeter.goals_calculator')},
