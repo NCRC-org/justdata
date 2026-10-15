@@ -13,6 +13,7 @@ from pathlib import Path
 from justdata.main.auth import require_access, get_user_permissions, login_required
 from justdata.shared.utils.unified_env import get_unified_config
 from .config import TEMPLATES_DIR, STATIC_DIR
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from .version import __version__
 
 # FDIC BankFind Suite has required an API key on every request since 2026-09-08
@@ -87,7 +88,8 @@ def index():
                          app_name='BranchMapper',
                          breadcrumb_items=breadcrumb_items,
                          mapbox_token=mapbox_token,
-                         mapbox_style=mapbox_style)
+                         mapbox_style=mapbox_style,
+                         sod_year=SOD_LATEST_YEAR)
 
 
 @branchmapper_bp.route('/counties')
@@ -934,7 +936,7 @@ def api_branches_by_bank():
     """Return all branches for a specific bank nationwide."""
     try:
         bank_name = request.args.get('bank_name', '').strip()
-        year = int(request.args.get('year', '2025'))
+        year = int(request.args.get('year', SOD_LATEST_YEAR))
 
         if not bank_name:
             return jsonify({'error': 'bank_name parameter is required'}), 400
@@ -989,7 +991,7 @@ def api_branches_in_bounds():
         sw_lng = float(request.args.get('sw_lng', 0))
         ne_lat = float(request.args.get('ne_lat', 0))
         ne_lng = float(request.args.get('ne_lng', 0))
-        year = int(request.args.get('year', '2025'))
+        year = int(request.args.get('year', SOD_LATEST_YEAR))
 
         if sw_lat == 0 and ne_lat == 0:
             return jsonify({'error': 'Bounding box parameters required'}), 400

@@ -16,6 +16,7 @@ import pandas as pd
 from typing import Dict, Optional, List, Tuple
 import re
 from justdata.apps.mergermeter.config import PROJECT_ID
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 
 logger = logging.getLogger(__name__)
 
@@ -1020,7 +1021,7 @@ def _populate_notes_sheet(
     
     ws.cell(row, 2, "Sourced from FDIC Summary of Deposits (SOD) database")
     row += 1
-    ws.cell(row, 2, "Year: 2025 (most recent available)")
+    ws.cell(row, 2, f"Year: {SOD_LATEST_YEAR} (most recent available)")
     row += 1
     
     # Branch counts

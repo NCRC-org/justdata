@@ -14,6 +14,7 @@ from justdata.shared.reporting.excel.helpers import (
     NCRC_BLUE,
 )
 
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from justdata.shared.reporting.excel.computations import (
     _calculate_mortgage_cbsa_total,
     _calculate_mortgage_grand_total,
@@ -116,7 +117,7 @@ def _create_notes_sheet(
     row += 1
     ws.cell(row, 1, f"Small Business Years Analyzed: {sb_years_str}")
     row += 1
-    ws.cell(row, 1, "Branch Data Year: 2025")
+    ws.cell(row, 1, f"Branch Data Year: {SOD_LATEST_YEAR}")
     row += 2
 
     # Filters Applied section
@@ -147,7 +148,8 @@ def _create_notes_sheet(
     row += 1
 
     ws.cell(row, 1, "Peer Definition:")
-    ws.cell(row, 2, "Lenders making 50% to 200% of subject bank's application volume in a given year in a CBSA (for mortgage and SB data). For branch data, subject bank compared to all other banks in the CBSA in 2025.")
+    ws.cell(row, 2, "Lenders making 50% to 200% of subject bank's application volume in a given year in a CBSA (for mortgage and SB data). "
+                    f"For branch data, subject bank compared to all other banks in the CBSA in {SOD_LATEST_YEAR}.")
     row += 2
 
     # Calculations section

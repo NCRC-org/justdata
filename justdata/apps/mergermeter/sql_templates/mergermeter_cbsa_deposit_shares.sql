@@ -14,7 +14,7 @@
         SELECT 
             CAST(b.geoid5 AS STRING) as geoid5,
             SUM(b.deposits_000s * 1000) as bank_deposits  -- Convert from thousands to actual amount
-        FROM `{PROJECT_ID}.branchsight.sod` b
+        FROM {SOD_ALL_YEARS} b
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL

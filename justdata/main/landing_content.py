@@ -4,16 +4,18 @@ and the figures strip.
 Every value here was checked against the code and BigQuery on 2026-10-07
 (spec 02 audit, L5 Projects/JustData Frontend Specs/02-landing-page). Do not
 add a row or a figure that has not been verified the same way; if a value
-cannot be confirmed, leave it out. HMDA years are read from
-shared/core/hmda_years.py so they move with the platform's own setting.
+cannot be confirmed, leave it out. HMDA and SOD years are read from
+shared/core/hmda_years.py and shared/core/sod_years.py so they move with the
+platform's own settings.
 """
 
 from justdata.shared.core.hmda_years import EARLIEST_HMDA_YEAR, LATEST_HMDA_YEAR
+from justdata.shared.core.sod_years import SOD_EARLIEST_YEAR, SOD_LATEST_YEAR
 
 # FDIC Summary of Deposits as BranchSight queries it: branchsight.sod_legacy
-# (2017 to 2024) plus branchsight.sod (2025). DataExplorer reads only the
-# 2025 table; see Workflow ticket 13229492694.
-SOD_FIRST_YEAR, SOD_LAST_YEAR = 2017, 2025
+# (earlier years) plus branchsight.sod (the latest year). DataExplorer reads
+# only branchsight.sod; see Workflow ticket 13229492694.
+SOD_FIRST_YEAR, SOD_LAST_YEAR = SOD_EARLIEST_YEAR, SOD_LATEST_YEAR
 
 # CRA small business years BizSight's analysis actually runs (blueprint.py
 # hardcodes 2020 to 2024; its config says 2019 to 2023). Ticket 13229487819.

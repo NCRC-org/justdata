@@ -10,6 +10,8 @@
     <script>
         // Base URL for API calls (handles blueprint prefix)
         const APP_BASE_URL = '{{ app_base_url|default("/branchmapper") }}';
+        // FDIC Summary of Deposits year shown (SOD_LATEST_YEAR)
+        const SOD_YEAR = {{ sod_year|tojson }};
 
         // Mapbox configuration
         const MAPBOX_TOKEN = '{{ mapbox_token|default("pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg", true) }}';
@@ -357,7 +359,7 @@
         async function loadBankBranches(bank) {
             try {
                 const response = await fetch(
-                    `${APP_BASE_URL}/api/branches-by-bank?bank_name=${encodeURIComponent(bank.name)}&year=2025`
+                    `${APP_BASE_URL}/api/branches-by-bank?bank_name=${encodeURIComponent(bank.name)}&year=${SOD_YEAR}`
                 );
                 const data = await response.json();
                 if (data.success) {
@@ -650,7 +652,7 @@
                 if (currentViewMode === 'sod') {
                     const response = await fetch(
                         `${APP_BASE_URL}/api/branches-in-bounds?sw_lat=${padded.sw.lat}&sw_lng=${padded.sw.lng}` +
-                        `&ne_lat=${padded.ne.lat}&ne_lng=${padded.ne.lng}&year=2025`
+                        `&ne_lat=${padded.ne.lat}&ne_lng=${padded.ne.lng}&year=${SOD_YEAR}`
                     );
                     const data = await response.json();
                     if (data.success) {
@@ -950,7 +952,7 @@
                     const count = currentViewMode === 'sod' ? b.branches.length : b.oscrEvents.length;
                     return `<span style="color: ${b.color}; font-weight: 600;">${b.name}</span> (${count})`;
                 }).join(' | ');
-                const modeLabel = currentViewMode === 'sod' ? 'SOD June 30, 2025' : 'FDIC structural changes';
+                const modeLabel = currentViewMode === 'sod' ? `SOD June 30, ${SOD_YEAR}` : 'FDIC structural changes';
                 ctx.innerHTML = `<p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;"><i class="fas fa-info-circle"></i> ${bankList} &mdash; ${modeLabel}</p>`;
             }
             updateMapTitle();
@@ -1497,7 +1499,7 @@
 
             switch (selection) {
                 case 'since_sod':
-                    return { start: '2025-06-30', end: today };
+                    return { start: `${SOD_YEAR}-06-30`, end: today };
                 case '12months':
                     const oneYearAgo = new Date();
                     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -3127,7 +3129,7 @@
                 const params = `sw_lat=${sw.lat - latPad}&sw_lng=${sw.lng - lngPad}&ne_lat=${ne.lat + latPad}&ne_lng=${ne.lng + lngPad}`;
                 const dateRange = getOSCRDateRange();
                 loadPromises.push(
-                    fetch(`${APP_BASE_URL}/api/branches-in-bounds?${params}&year=2025`)
+                    fetch(`${APP_BASE_URL}/api/branches-in-bounds?${params}&year=${SOD_YEAR}`)
                         .then(r => r.json()).then(d => { if (d.success) allBanksBranches = d.branches || []; }).catch(() => {})
                 );
                 loadPromises.push(

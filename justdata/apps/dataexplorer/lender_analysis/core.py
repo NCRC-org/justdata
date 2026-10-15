@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from justdata.apps.dataexplorer.config import PROJECT_ID
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from justdata.apps.dataexplorer.data_utils import get_peer_lenders, validate_years
 from justdata.apps.dataexplorer.lender_report_builder import build_lender_report
 from justdata.apps.lendsight.core import load_sql_template
@@ -284,14 +285,14 @@ def run_lender_analysis(
             try:
                 available_years_result = execute_query(client, available_years_query)
                 if available_years_result and available_years_result[0]:
-                    branch_year = int(available_years_result[0].get('year_str', '2025'))
+                    branch_year = int(available_years_result[0].get('year_str', SOD_LATEST_YEAR))
                     logger.info(f"Found available branch year in SOD25: {branch_year}")
                 else:
-                    branch_year = 2025  # Default to 2025 if query fails
-                    logger.warning(f"Could not determine available branch year, defaulting to 2025")
+                    branch_year = SOD_LATEST_YEAR  # Default if the query fails
+                    logger.warning(f"Could not determine available branch year, defaulting to {SOD_LATEST_YEAR}")
             except Exception as e:
-                logger.warning(f"Error finding available branch year: {e}, defaulting to 2025")
-                branch_year = 2025
+                logger.warning(f"Error finding available branch year: {e}, defaulting to {SOD_LATEST_YEAR}")
+                branch_year = SOD_LATEST_YEAR
             
             # RSSD in SOD25 is stored as STRING - try both padded and unpadded formats
             rssd_original = str(subject_rssd).strip()
