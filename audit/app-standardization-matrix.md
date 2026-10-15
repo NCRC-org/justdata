@@ -152,6 +152,17 @@ can name the code that does the excluding.
 - Stage timings (step clock around the progress updates): locally the
   Mortgage Goals query is the slowest step (10.1 s of a 42 s run), the one
   to note for a later optimization ticket.
+- Cache and usage writes (found 2026-10-15): every MergerMeter write to
+  `analysis_cache` and `usage_log` failed with 403 `bigquery.tables.updateData`,
+  on testing (`cache_testing`, since at least 2026-10-08) and on production
+  (`cache.usage_log`, runs on 09-17, 09-23 and 09-28).
+  `mergermeter@justdata-ncrc.iam.gserviceaccount.com` had `dataViewer` and
+  `jobUser` only. Jad is granting `roles/bigquery.dataEditor` on the `cache` and
+  `cache_testing` datasets only; staging (`JUSTDATA_ENV=staging`) and
+  production both write `cache`, so no third dataset needs it.
+- Correction: the 15-second second MergerMeter run on 2026-10-13 was not an
+  analysis-cache hit. No MergerMeter cache row could be written, and the
+  10/13 logs show the store failing.
 
 ### BranchSight (refactor/branchsight-standard)
 
