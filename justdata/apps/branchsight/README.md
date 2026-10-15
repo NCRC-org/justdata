@@ -4,6 +4,8 @@ FDIC bank branch analysis. Counts branches by geography, computes
 demographic exposure of each bank's network, and produces an AI-narrated
 web report plus PDF/Excel exports.
 
+Standard conformance: on the spec 04 analysis-app standard since 2026-10-13 (PR #212, merged into `testing`).
+
 ## Blueprint
 
 - URL prefix: `/branchsight`

@@ -5,6 +5,8 @@ HMDA mortgage lending, Section 1071 small business lending, branch
 networks, and assessment-area overlap. Produces a multi-tab Excel
 goal-setting report.
 
+Standard conformance: on the spec 04 analysis-app standard since 2026-10-13 (PR #217, merged into `testing`).
+
 ## Blueprint
 
 - URL prefix: `/mergermeter`
