@@ -5,5 +5,5 @@
   {"app": "bizsight", "payload": "scripts/timing_payloads/bizsight-lowndes.json", "label": "lowndes-uncached", "runs": 2},
   {"app": "branchsight", "payload": "scripts/timing_payloads/branchsight-cook.json", "label": "cook-uncached", "runs": 2},
   {"app": "branchsight", "payload": "scripts/timing_payloads/branchsight-lowndes.json", "label": "lowndes-uncached", "runs": 2},
-  {"app": "mergermeter", "payload": "scripts/timing_payloads/mergermeter-atlantic-union-synovus.json", "label": "atlantic-synovus-uncached", "runs": 2, "timeout": 1800}
+  {"app": "mergermeter", "payload": "scripts/timing_payloads/mergermeter-pinnacle-united-community.json", "label": "pinnacle-ucb-uncached", "runs": 2, "timeout": 1800}
 ]
