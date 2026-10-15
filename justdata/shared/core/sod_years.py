@@ -20,7 +20,8 @@ from typing import List
 SOD_EARLIEST_YEAR = 2017
 
 # The year in branchsight.sod: June 30 branch locations and deposits.
-# 2026: ticket 13277163649 (L5: Projects/JustData Frontend Specs/06-sod-2026-load.md).
+# 2026 promoted 2026-10-15, ticket 13277163649 (L5: Projects/JustData Frontend
+# Specs/06-sod-2026-load.md).
 SOD_LATEST_YEAR = 2026
 
 # BranchSight's analysis window: the most recent five years.
