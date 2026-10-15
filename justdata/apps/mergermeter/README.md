@@ -1,7 +1,7 @@
 # MergerMeter
 
 Two-bank merger impact analyzer. Compares an acquiring and target bank's
-HMDA mortgage lending, Section 1071 small business lending, branch
+HMDA mortgage lending, CRA small business lending, branch
 networks, and assessment-area overlap. Produces a multi-tab Excel
 goal-setting report.
 
@@ -25,9 +25,11 @@ Standard conformance: on the spec 04 analysis-app standard since 2026-10-13 (PR 
 ## Data sources
 
 BigQuery (`justdata-ncrc.*`):
-- `branchsight.sod` — FDIC Summary of Deposits
+- `branchsight.sod` and `branchsight.sod_legacy` — FDIC Summary of Deposits
+  (year from `shared/core/sod_years.py`)
 - `shared.de_hmda` — denormalized HMDA
-- `bizsight.sb_county_summary` — Section 1071
+- `bizsight.sb_county_summary` — FFIEC CRA small business disclosure
+  (not Section 1071)
 - `shared.cbsa_to_county` — geography crosswalk
 
 SQL templates in `sql_templates/`. `query_builders.py` and
