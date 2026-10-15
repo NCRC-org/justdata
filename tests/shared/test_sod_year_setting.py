@@ -122,3 +122,10 @@ def test_mergermeter_cache_key_carries_the_sod_year():
 def test_dotlender_reads_the_latest_census_year():
     sql = (APP / 'apps/dotlender/sql_templates/tract_race_shares.sql').read_text()
     assert 'WHERE year = (SELECT MAX(year) FROM `justdata-ncrc.shared.census`)' in sql
+
+
+def test_dataexplorer_target_counties_read_every_sod_year():
+    import inspect
+    from justdata.apps.dataexplorer.data_utils import get_lender_target_counties
+    src = inspect.getsource(get_lender_target_counties)
+    assert 'FROM {sod_all_years(PROJECT_ID)}' in src
