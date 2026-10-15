@@ -6,7 +6,8 @@ from justdata.apps.branchsight.core import parse_web_parameters
 
 def test_five_most_recent_sod_years():
     assert config.SOD_YEARS == list(range(config.SOD_LATEST_YEAR - 4, config.SOD_LATEST_YEAR + 1))
-    assert config.SOD_LATEST_YEAR == 2025  # latest year in branchsight.sod (checked 2026-10-07)
+    # That SOD_LATEST_YEAR is the year in branchsight.sod is checked against the
+    # table by tests/shared/test_sod_year_live.py (make test-network).
 
 
 def test_all_means_sod_years():

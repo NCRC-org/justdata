@@ -180,6 +180,29 @@ can name the code that does the excluding.
   ACS county-median basis. Methods' MMCT definition says "50% or more",
   which is what the flags do.
 
+### FDIC SOD 2026 and FFIEC census 2026 (Workflow ticket 13277163649)
+
+- Promoted 2026-10-15 (hdma1-242116 at 20:21 UTC, justdata-ncrc at 20:23 UTC),
+  one transaction per project. `sod` holds 2026 only (75,859); `sod_legacy`
+  2017 to 2025 (740,974). `geo.census` and `shared.census` hold the FFIEC 2026
+  file only (87,276); `geo.census_legacy` and the new `shared.census_legacy`
+  2018 to 2025 (652,634). Each justdata-ncrc table matches its hdma1 twin by
+  fingerprint. Record: L5 Projects/JustData Frontend Specs/06-sod-2026-load.md.
+- Years: `shared/core/sod_years.py` (`SOD_LATEST_YEAR = 2026`) is the single
+  source. BranchSight runs 2022 to 2026; MergerMeter, BranchMapper and
+  DataExplorer read 2026. First run per county (BranchSight) or bank pair
+  (MergerMeter) after the deploy is uncached.
+- MergerMeter reference pair from 2026: Pinnacle Bank / United Community Bank
+  (Synovus merged into Pinnacle Bank 2026-01-02).
+- Staging tables, drop on 2026-10-22 (promotion + 7 days):
+  `hdma1-242116.branches.sod_stg_2026`, `hdma1-242116.branches.sod_stg_2026_raw`,
+  `hdma1-242116.geo.census_stg_2026`, `justdata-ncrc.branchsight.sod_stg_2026`,
+  `justdata-ncrc.shared.census_stg_2026`. Kept permanently:
+  `sod_2026_tract_method` in both projects.
+- `justdata-ncrc.branchsight.branch_hhi_summary` still holds 2025 aggregates.
+  Nothing reads it; whether to delete it is a decision for the consolidation
+  work, not this load.
+
 ## Findings that matter before testers
 
 These were live on the testing site at audit time. Items 1 to 5 are fixed in

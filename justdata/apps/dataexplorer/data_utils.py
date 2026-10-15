@@ -6,6 +6,7 @@ Includes input validation, deterministic queries, and proper error handling.
 
 from typing import List, Dict, Any, Optional
 from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string, execute_query
+from justdata.shared.core.sod_years import sod_all_years
 from justdata.apps.dataexplorer.config import (
     PROJECT_ID, MAX_YEARS, MAX_GEOIDS, MAX_LENDERS
 )
@@ -259,7 +260,7 @@ def get_lender_target_counties(
         query = f"""
         SELECT DISTINCT
             geoid5 as geoid
-        FROM `{PROJECT_ID}.branchsight.sod`
+        FROM {sod_all_years(PROJECT_ID)}
         WHERE (rssd = '{escaped_rssd_unpadded}' OR rssd = '{escaped_rssd_padded}')
           AND CAST(year AS STRING) = '{validated_year}'
         ORDER BY geoid5
