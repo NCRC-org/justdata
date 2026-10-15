@@ -16,16 +16,23 @@ that label. Runs recorded before the labels existed fall back to the app's
 service account and the run's UTC window, which would also count concurrent
 traffic.
 
-Credentials come only from the environment (TEST_EMAIL, TEST_PASSWORD) and
-are never printed or written. Uncached runs send force_refresh, which the
-server honours only for staff roles; the script records whether each run was
-in fact a cache hit, so a refused bypass is visible.
+Sign-in is one of two ways, and neither is ever printed or written:
+  - TEST_EMAIL and TEST_PASSWORD from the environment (accounts with a password);
+  - --cookie-file PATH: the site's `session` cookie, copied from a signed-in
+    browser, for accounts that sign in with Google or Microsoft only. The file
+    must be chmod 600 and outside the repository; the script deletes it when
+    the runs end, whether they completed or failed.
+Uncached runs send force_refresh, which the server honours only for staff
+roles; the script records whether each run was in fact a cache hit, so a
+refused bypass is visible.
 
     set -a; source ~/.justdata-test.env; set +a
     python scripts/time_analysis.py run --app lendsight --payload payloads/cook.json \\
         --runs 3 --label cook-cached --out timings.jsonl
     python scripts/time_analysis.py run --app lendsight --payload payloads/cook.json \\
         --runs 2 --uncached --label cook-uncached --out timings.jsonl      # staff only
+    python scripts/time_analysis.py run --batch scripts/timing_payloads/uncached-batch.json \
+        --uncached --cookie-file ~/justdata-cookie.txt --out timings.jsonl  # staff, one cookie
     python scripts/time_analysis.py bytes --in timings.jsonl                # needs bq access
 
 The payload file holds the fields the app's own page posts to /analyze (see
@@ -43,6 +50,8 @@ import os
 import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import urlparse
 
 # This script times runs on a deployed site and must never call the AI
 # itself or write AI usage from this machine (env_utils.ai_disabled).
@@ -57,6 +66,9 @@ APPS = ("lendsight", "bizsight", "branchsight", "mergermeter")
 # Service account each app's BigQuery jobs run under (justdata-ncrc).
 SERVICE_ACCOUNTS = {app: f"{app}@justdata-ncrc.iam.gserviceaccount.com" for app in APPS}
 CACHE_HIT_STEP = "(from cache)"
+STAFF_ROLES = ("staff", "senior_executive", "admin")
+COOKIE_NAME = "session"  # Flask's session cookie (justdata/main/app.py)
+REPO = Path(__file__).resolve().parents[1]
 
 
 def utc_now():
@@ -147,26 +159,91 @@ def one_run(session, base_url, app, payload, uncached, timeout):
     return record
 
 
+def cookie_file_path(path):
+    """The cookie file, checked before it is read: outside the repository (so
+    it can never be committed) and readable by its owner only."""
+    p = Path(path).expanduser().resolve()
+    if p == REPO or REPO in p.parents:
+        sys.exit(f"--cookie-file must be outside the repository ({REPO}). Move it and run again.")
+    if not p.is_file():
+        sys.exit(f"--cookie-file {p} does not exist.")
+    if p.stat().st_mode & 0o077:
+        sys.exit(f"--cookie-file {p} must be readable by you only. Run: chmod 600 {p}")
+    return p
+
+
+def cookie_session(base_url, path):
+    """A requests.Session carrying the browser's session cookie, and the role
+    /api/auth/status reports for it. The cookie value is never printed."""
+    value = path.read_text().strip()
+    if value.startswith(COOKIE_NAME + "="):
+        value = value[len(COOKIE_NAME) + 1:]
+    if not value:
+        sys.exit("The cookie file is empty.")
+    session = requests.Session()
+    session.cookies.set(COOKIE_NAME, value, domain=urlparse(base_url).hostname, path="/")
+    resp = session.get(f"{base_url}/api/auth/status", timeout=60)
+    body = resp.json() if resp.headers.get("Content-Type", "").startswith("application/json") else {}
+    if resp.status_code != 200 or not body.get("authenticated"):
+        sys.exit("The site did not accept the session cookie (signed out, expired, or copied from "
+                 "another site). Sign in again in the browser and copy a fresh value.")
+    return session, body.get("user_type")
+
+
+def load_jobs(args):
+    """What to time: one --app/--payload/--label, or every entry of --batch."""
+    if args.batch:
+        if args.app or args.payload or args.label:
+            sys.exit("Use --batch or --app/--payload/--label, not both.")
+        with open(args.batch) as f:
+            jobs = json.load(f)
+    elif args.app and args.payload and args.label:
+        jobs = [{"app": args.app, "payload": args.payload, "label": args.label}]
+    else:
+        sys.exit("Give --app, --payload and --label, or --batch.")
+    for job in jobs:
+        if job.get("app") not in APPS or not job.get("payload") or not job.get("label"):
+            sys.exit(f"Each batch entry needs app (one of {', '.join(APPS)}), payload and label: {job}")
+        with open(job["payload"]) as f:
+            job["body"] = json.load(f)
+    return jobs
+
+
+def time_jobs(args, jobs, session, user_type, base_url):
+    print(f"Signed in; role reported by the site: {user_type}")
+    if args.uncached and user_type not in STAFF_ROLES:
+        print("WARNING: force_refresh is honoured only for staff roles; these runs may hit the cache.")
+    with open(args.out, "a") as out:
+        for job in jobs:
+            runs, timeout = job.get("runs", args.runs), job.get("timeout", args.timeout)
+            for i in range(1, runs + 1):
+                rec = one_run(session, base_url, job["app"], job["body"], args.uncached, timeout)
+                rec.update(app=job["app"], label=job["label"], run=i, mode="uncached" if args.uncached else "cached",
+                           role=user_type, base_url=base_url)
+                out.write(json.dumps(rec) + "\n")
+                out.flush()
+                print(f"{job['app']} {job['label']} run {i}: done={rec.get('done_s')}s "
+                      f"report={rec.get('report_ready_s')}s cache_hit={rec.get('cache_hit')} error={rec.get('error')}")
+
+
 def cmd_run(args):
+    jobs = load_jobs(args)
+    base_url = args.base_url.rstrip("/")
+    if args.cookie_file:
+        path = cookie_file_path(args.cookie_file)
+        try:
+            session, user_type = cookie_session(base_url, path)
+            time_jobs(args, jobs, session, user_type, base_url)
+        finally:
+            # Completed, failed or interrupted (Ctrl-C): the cookie does not outlive the run.
+            path.unlink(missing_ok=True)
+            print(f"Deleted the cookie file {path}.")
+        return
     email, password = os.environ.get("TEST_EMAIL"), os.environ.get("TEST_PASSWORD")
     if not email or not password:
-        sys.exit("TEST_EMAIL and TEST_PASSWORD must both be set in the environment.")
-    with open(args.payload) as f:
-        payload = json.load(f)
-    base_url = args.base_url.rstrip("/")
+        sys.exit("Set TEST_EMAIL and TEST_PASSWORD in the environment, or pass --cookie-file.")
     session, user_type = signed_in_session(base_url, email, password)
-    print(f"Signed in; role reported by /api/auth/login: {user_type}")
-    if args.uncached and user_type not in ("staff", "senior_executive", "admin"):
-        print("WARNING: force_refresh is honoured only for staff roles; these runs may hit the cache.")
-
-    with open(args.out, "a") as out:
-        for i in range(1, args.runs + 1):
-            rec = one_run(session, base_url, args.app, payload, args.uncached, args.timeout)
-            rec.update(app=args.app, label=args.label, run=i, mode="uncached" if args.uncached else "cached",
-                       role=user_type, base_url=base_url)
-            out.write(json.dumps(rec) + "\n")
-            print(f"run {i}: done={rec.get('done_s')}s report={rec.get('report_ready_s')}s "
-                  f"cache_hit={rec.get('cache_hit')} error={rec.get('error')}")
+    time_jobs(args, jobs, session, user_type, base_url)
 
 
 def cmd_bytes(args):
@@ -209,11 +286,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="cmd", required=True)
     run = sub.add_parser("run", help="time N analysis runs")
-    run.add_argument("--app", choices=APPS, required=True)
-    run.add_argument("--payload", required=True, help="JSON file: the body the app's page posts to /analyze")
+    run.add_argument("--app", choices=APPS)
+    run.add_argument("--payload", help="JSON file: the body the app's page posts to /analyze")
+    run.add_argument("--label", help="e.g. cook-cached; ties rows to the matrix")
+    run.add_argument("--batch", help="JSON list of {app, payload, label, runs?, timeout?}, run in order "
+                                     "in place of --app/--payload/--label")
     run.add_argument("--runs", type=int, default=3)
     run.add_argument("--uncached", action="store_true", help="send force_refresh (staff only)")
-    run.add_argument("--label", required=True, help="e.g. cook-cached; ties rows to the matrix")
+    run.add_argument("--cookie-file", help="file holding the site's session cookie (chmod 600, outside the "
+                                           "repository); deleted when the runs end")
     run.add_argument("--out", default="timings.jsonl")
     run.add_argument("--timeout", type=int, default=600, help="seconds per run before giving up")
     run.add_argument("--base-url", default=DEFAULT_BASE_URL)

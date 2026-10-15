@@ -22,32 +22,63 @@ stay comparable.
 
 Uncached runs send `force_refresh`, which the server honours only for staff,
 and which now also turns off BigQuery's own result cache (`use_query_cache=False`,
-label `refresh=forced`). The script signs in with Firebase email and password
-from `TEST_EMAIL` / `TEST_PASSWORD`, so the account must have a password
-(a Google-only sign-in will fail at "Firebase sign-in failed").
+label `refresh=forced`). `uncached-batch.json` lists all seven payloads (two
+runs each; MergerMeter with a 30 minute limit), so one command does them all.
+
+The script signs in one of two ways:
+
+- **Password accounts:** `TEST_EMAIL` / `TEST_PASSWORD` in the environment.
+- **Google or Microsoft sign-in (no password):** `--cookie-file`, holding the
+  site's `session` cookie copied from a signed-in browser. The file must be
+  `chmod 600` and outside the repository, or the script refuses it. The value
+  is never printed or written anywhere else, and the script deletes the file
+  when the runs end, whether they completed, failed or were stopped with
+  Ctrl-C. Deleting the file does not sign the browser out. The copied value
+  works until the browser session expires, so never paste it anywhere else.
+
+### Copying the session cookie (Chrome or Edge)
+
+1. Open the testing site
+   (https://justdata-testing-854699313651.us-east1.run.app/) and sign in
+   with the staff account.
+2. Open the developer tools: on a Mac, press Cmd+Option+I. On Windows, press
+   F12.
+3. In the row of tabs at the top of the panel, click **Application**. If you
+   can't see it, click **»** to show the hidden tabs.
+4. In the left column, under **Storage**, open **Cookies** and click the
+   site's address (`https://justdata-testing-854699313651.us-east1.run.app`).
+5. In the table, click the row whose **Name** is `session`. Its value appears
+   under the table as **Cookie Value**. Don't tick "Show URL-decoded".
+6. Double-click the value in the table's **Value** column. Press Cmd+A
+   (Ctrl+A on Windows), then Cmd+C (Ctrl+C) to copy it.
+7. In Terminal, write the clipboard to a file only you can read, then clear
+   the clipboard. The value never appears on screen or in your shell history:
+
+```bash
+( umask 077; pbpaste > ~/justdata-cookie.txt ); pbcopy < /dev/null
+```
+
+Then run the batch straight away, from the repository:
 
 ```bash
 cd /Users/jadedlebi/justdata
-set -a; source ~/.justdata-staff.env; set +a     # TEST_EMAIL / TEST_PASSWORD for a staff account
 mkdir -p audit/timings
-
-.venv/bin/python scripts/time_analysis.py run --app lendsight   --payload scripts/timing_payloads/lendsight-cook.json      --runs 2 --uncached --label cook-uncached    --out audit/timings/uncached.jsonl
-.venv/bin/python scripts/time_analysis.py run --app lendsight   --payload scripts/timing_payloads/lendsight-lowndes.json   --runs 2 --uncached --label lowndes-uncached --out audit/timings/uncached.jsonl
-.venv/bin/python scripts/time_analysis.py run --app bizsight    --payload scripts/timing_payloads/bizsight-cook.json       --runs 2 --uncached --label cook-uncached    --out audit/timings/uncached.jsonl
-.venv/bin/python scripts/time_analysis.py run --app bizsight    --payload scripts/timing_payloads/bizsight-lowndes.json    --runs 2 --uncached --label lowndes-uncached --out audit/timings/uncached.jsonl
-.venv/bin/python scripts/time_analysis.py run --app branchsight --payload scripts/timing_payloads/branchsight-cook.json    --runs 2 --uncached --label cook-uncached    --out audit/timings/uncached.jsonl
-.venv/bin/python scripts/time_analysis.py run --app branchsight --payload scripts/timing_payloads/branchsight-lowndes.json --runs 2 --uncached --label lowndes-uncached --out audit/timings/uncached.jsonl
-.venv/bin/python scripts/time_analysis.py run --app mergermeter --payload scripts/timing_payloads/mergermeter-atlantic-union-synovus.json --runs 2 --uncached --label atlantic-synovus-uncached --timeout 1800 --out audit/timings/uncached.jsonl
+.venv/bin/python scripts/time_analysis.py run --batch scripts/timing_payloads/uncached-batch.json --uncached --cookie-file ~/justdata-cookie.txt --out audit/timings/uncached.jsonl
 
 # Bytes billed per run, matched by the job label (needs bigquery.jobs.listAll on justdata-ncrc)
 .venv/bin/python scripts/time_analysis.py bytes --in audit/timings/uncached.jsonl
 ```
 
-That is 12 analyses with narratives. Check as they run:
+With a password account, use `set -a; source ~/.justdata-staff.env; set +a`
+and leave out `--cookie-file`. A single payload still runs with
+`--app`, `--payload` and `--label` in place of `--batch`.
 
-- Each command prints `Signed in; role reported by /api/auth/login: staff`.
+That is 14 analyses (12 with narratives, plus two MergerMeter workbooks). Check as they run:
+
+- The command prints `Signed in; role reported by the site: staff`.
   Any other role prints a WARNING, and the runs may be cache hits.
 - Each run line shows `cache_hit=False`.
+- The last line is `Deleted the cookie file …`.
 - In the `bytes` output, `matched_by` reads `job label` and `bq_cache_hits`
   is 0. If it reads `service account + window`, the labels did not attach.
 
