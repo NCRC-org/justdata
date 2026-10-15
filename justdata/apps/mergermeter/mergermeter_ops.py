@@ -49,6 +49,7 @@ from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_uni
 
 # Use absolute imports from repo root (like other apps) - avoids issues with gunicorn
 from justdata.apps.mergermeter.config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from justdata.apps.mergermeter.version import __version__
 
 # GCS storage for persistent file storage across Cloud Run instances
@@ -815,12 +816,12 @@ def _perform_analysis(job_id, form_data):
         bank_a_branch_details = pd.DataFrame()
         if acquirer_rssd and acquirer_geoids:
             # Get subject bank aggregated branch data
-            query = build_branch_query(acquirer_rssd, acquirer_geoids, year=2025)
+            query = build_branch_query(acquirer_rssd, acquirer_geoids, year=SOD_LATEST_YEAR)
             results = execute_query(client, query)
             subject_branch = pd.DataFrame(results) if results else pd.DataFrame()
             
             # Get market (all other banks) aggregated branch data
-            query_market = build_branch_market_query(acquirer_rssd, acquirer_geoids, year=2025)
+            query_market = build_branch_market_query(acquirer_rssd, acquirer_geoids, year=SOD_LATEST_YEAR)
             results_market = execute_query(client, query_market)
             market_branch = pd.DataFrame(results_market) if results_market else pd.DataFrame()
             
@@ -871,7 +872,7 @@ def _perform_analysis(job_id, form_data):
                 bank_a_branch['pct_mmct'] = 0
             
             # Get individual branch details
-            query_details = build_branch_details_query(acquirer_rssd, acquirer_geoids, year=2025)
+            query_details = build_branch_details_query(acquirer_rssd, acquirer_geoids, year=SOD_LATEST_YEAR)
             results_details = execute_query(client, query_details)
             if results_details:
                 bank_a_branch_details = pd.DataFrame(results_details)
@@ -883,12 +884,12 @@ def _perform_analysis(job_id, form_data):
         bank_b_branch_details = pd.DataFrame()
         if target_rssd and target_geoids:
             # Get subject bank aggregated branch data
-            query = build_branch_query(target_rssd, target_geoids, year=2025)
+            query = build_branch_query(target_rssd, target_geoids, year=SOD_LATEST_YEAR)
             results = execute_query(client, query)
             subject_branch = pd.DataFrame(results) if results else pd.DataFrame()
             
             # Get market (all other banks) aggregated branch data
-            query_market = build_branch_market_query(target_rssd, target_geoids, year=2025)
+            query_market = build_branch_market_query(target_rssd, target_geoids, year=SOD_LATEST_YEAR)
             results_market = execute_query(client, query_market)
             market_branch = pd.DataFrame(results_market) if results_market else pd.DataFrame()
             
@@ -939,7 +940,7 @@ def _perform_analysis(job_id, form_data):
                 bank_b_branch['pct_mmct'] = 0
             
             # Get individual branch details
-            query_details = build_branch_details_query(target_rssd, target_geoids, year=2025)
+            query_details = build_branch_details_query(target_rssd, target_geoids, year=SOD_LATEST_YEAR)
             results_details = execute_query(client, query_details)
             if results_details:
                 bank_b_branch_details = pd.DataFrame(results_details)
@@ -956,7 +957,7 @@ def _perform_analysis(job_id, form_data):
                     county_geoids=all_geoids,
                     acquirer_rssd=acquirer_rssd,
                     target_rssd=target_rssd,
-                    year=2025
+                    year=SOD_LATEST_YEAR
                 )
                 print(f"[HHI] HHI calculation completed - {len(hhi_df)} counties with data")
             except Exception as e:
@@ -1703,7 +1704,7 @@ def generate_assessment_areas_from_branches():
         rssd = data.get('rssd', '').strip()
         lei = data.get('lei', '').strip()  # LEI needed for 'loans' method
         bank_type = data.get('bank_type', 'acquirer')  # 'acquirer' or 'target'
-        year = int(data.get('year', 2025))
+        year = int(data.get('year', SOD_LATEST_YEAR))
         method = data.get('method', 'all_branches')  # 'all_branches', 'deposits', or 'loans'
         min_share = float(data.get('min_share', 0.01))  # Minimum share threshold (default 1%)
         

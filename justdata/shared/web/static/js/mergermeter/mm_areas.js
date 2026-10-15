@@ -2,7 +2,7 @@
  * MergerMeter assessment areas, per bank. Same behaviour as the former page:
  *   Enter:         name + counties (one per line, or MSA codes/names), any number
  *   Upload file:   JSON or CSV to /api/upload-assessment-areas
- *   From branches: /api/generate-assessment-areas-from-branches (RSSD, SOD 2025)
+ *   From branches: /api/generate-assessment-areas-from-branches (RSSD, the SOD year)
  * An uploaded or generated list is shown collapsed ("84 counties selected in
  * 21 areas", app_choices.js) and opens to a checkbox per county; unticking a
  * county drops it (and an area with none left). What is sent is that list
@@ -15,7 +15,7 @@
 
   var CFG = root.MERGERMETER || {};
   var BASE = CFG.baseUrl || '/mergermeter';
-  var BRANCH_YEAR = 2025;  // the year the former page sent
+  var BRANCH_YEAR = CFG.sodYear;  // SOD_LATEST_YEAR, from the page
   var esc = root.AppReport.esc;
   var stored = { acquirer: null, target: null };    // as returned
   var filtered = { acquirer: [], target: [] };      // after unticked counties

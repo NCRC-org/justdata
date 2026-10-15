@@ -17,7 +17,7 @@
             CAST(b.rssd AS STRING) as rssd,
             CAST(b.geoid5 AS STRING) as geoid5,
             b.uninumbr
-        FROM `{PROJECT_ID}.branchsight.sod` b
+        FROM {SOD_ALL_YEARS} b
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL

@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Dict, List, Tuple, Optional
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 from justdata.apps.mergermeter.config import PROJECT_ID
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR, sod_all_years
 
 
 def calculate_hhi(deposits_by_bank: Dict[str, float]) -> float:
@@ -62,7 +63,7 @@ def get_county_deposit_data(
     county_geoids: List[str],
     acquirer_rssd: str,
     target_rssd: str,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> pd.DataFrame:
     """
     Query BigQuery for branch deposit data in counties where both banks have branches.
@@ -71,7 +72,7 @@ def get_county_deposit_data(
         county_geoids: List of GEOID5 codes (5-digit strings) for counties
         acquirer_rssd: RSSD ID of acquiring bank
         target_rssd: RSSD ID of target bank
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
         
     Returns:
         DataFrame with columns: geoid5, county_state, rssd, bank_name, total_deposits
@@ -91,7 +92,7 @@ def get_county_deposit_data(
             CAST(b.rssd AS STRING) as rssd,
             b.bank_name,
             SUM(b.deposits_000s * 1000) as total_deposits  -- Convert from thousands to actual amount
-        FROM `justdata-ncrc.branchsight.sod` b
+        FROM {sod_all_years()} b
         LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
             ON CAST(b.geoid5 AS STRING) = CAST(c.geoid5 AS STRING)
         WHERE CAST(b.year AS STRING) = '{year}'
@@ -196,7 +197,7 @@ def calculate_hhi_by_county(
     county_geoids: List[str],
     acquirer_rssd: str,
     target_rssd: str,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> pd.DataFrame:
     """
     Calculate HHI for each county where both banks have branches.
@@ -205,7 +206,7 @@ def calculate_hhi_by_county(
         county_geoids: List of GEOID5 codes for counties in assessment areas
         acquirer_rssd: RSSD ID of acquiring bank
         target_rssd: RSSD ID of target bank
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
         
     Returns:
         DataFrame with columns:

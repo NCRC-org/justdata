@@ -12,6 +12,8 @@ from justdata.apps.mergermeter.config import PROJECT_ID
 import pandas as pd
 import os
 from justdata.apps.mergermeter.sql_loader import load_sql
+from justdata.shared.core.hmda_years import LATEST_HMDA_YEAR
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR, sod_all_years
 
 # Get PROJECT_ID - handle both relative and absolute imports
 # PROJECT_ID is also available via environment variable
@@ -36,14 +38,14 @@ except Exception:
 
 def get_all_branches_for_bank(
     rssd: str,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> pd.DataFrame:
     """
     Query all branch locations for a bank, regardless of assessment area.
     
     Args:
         rssd: Bank's RSSD ID (string)
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
     
     Returns:
         DataFrame with columns: geoid5, county_state, cbsa_code, cbsa_name, branch_count
@@ -51,7 +53,8 @@ def get_all_branches_for_bank(
     if not rssd or not rssd.strip():
         return pd.DataFrame()
     
-    query = load_sql("mergermeter_all_branches_for_bank.sql").format(PROJECT_ID=PROJECT_ID, rssd=rssd, year=year)
+    query = load_sql("mergermeter_all_branches_for_bank.sql").format(
+        PROJECT_ID=PROJECT_ID, SOD_ALL_YEARS=sod_all_years(PROJECT_ID), rssd=rssd, year=year)
     
     try:
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
@@ -72,14 +75,14 @@ def get_all_branches_for_bank(
 
 def get_cbsa_deposit_shares(
     rssd: str,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> Tuple[pd.DataFrame, float]:
     """
     Get deposit data by CBSA and calculate the bank's deposit share of its national total.
     
     Args:
         rssd: Bank's RSSD ID (string)
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
     
     Returns:
         Tuple of (DataFrame, total_national_deposits)
@@ -89,7 +92,8 @@ def get_cbsa_deposit_shares(
     if not rssd or not rssd.strip():
         return pd.DataFrame(), 0.0
     
-    query = load_sql("mergermeter_cbsa_deposit_shares.sql").format(PROJECT_ID=PROJECT_ID, rssd=rssd, year=year)
+    query = load_sql("mergermeter_cbsa_deposit_shares.sql").format(
+        PROJECT_ID=PROJECT_ID, SOD_ALL_YEARS=sod_all_years(PROJECT_ID), rssd=rssd, year=year)
     
     try:
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
@@ -286,7 +290,7 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
 
 def generate_assessment_areas_from_branches(
     rssd: str,
-    year: int = 2025,
+    year: int = SOD_LATEST_YEAR,
     method: str = 'all_branches',
     min_share: float = 0.01,
     lei: str = None
@@ -303,7 +307,7 @@ def generate_assessment_areas_from_branches(
     
     Args:
         rssd: Bank's RSSD ID (string)
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
         method: Method to use - 'all_branches', 'deposits', or 'loans' (default: 'all_branches')
         min_share: Minimum share threshold (as decimal, e.g., 0.01 for 1%) for deposits/loans methods
     
@@ -395,8 +399,10 @@ def generate_assessment_areas_from_branches(
                 print(f"  Error: LEI is required for 'loans' method. RSSD cannot be used to query HMDA data.")
                 return []
             
-            # Get loan data by CBSA
-            query = load_sql("mergermeter_assessment_areas_from_branches.sql").format(PROJECT_ID=PROJECT_ID, lei=lei, year=year)
+            # Get loan data by CBSA. HMDA has its own latest year; the SOD
+            # year can be newer than any loaded HMDA year.
+            query = load_sql("mergermeter_assessment_areas_from_branches.sql").format(
+                PROJECT_ID=PROJECT_ID, lei=lei, year=min(year, LATEST_HMDA_YEAR))
             
             results = execute_query(client, query)
             
@@ -442,14 +448,14 @@ def generate_assessment_areas_from_branches(
 
 def get_branch_count_by_county(
     rssd: str,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> Dict[str, int]:
     """
     Get branch count for each county where the bank has branches.
     
     Args:
         rssd: Bank's RSSD ID (string)
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
     
     Returns:
         Dictionary mapping GEOID5 to branch count

@@ -22,6 +22,7 @@ from justdata.shared.utils.analysis_cache import store_cached_result
 from justdata.shared.utils.progress_tracker import get_progress, update_progress
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from .version import __version__
 from justdata.shared.utils.gcs_storage import download_json
 from justdata.shared.web.app_page import app_page_context
@@ -80,7 +81,6 @@ HMDA_FILTERS = (
     {'name': 'not_reverse', 'label': 'Reverse mortgage', 'options': (
         ('1', 'Not reverse (1)', True), ('2', 'Reverse mortgage (2)', False))},
 )
-SOD_BRANCH_YEAR = 2025  # the year the analysis and branch-generated areas query
 
 
 def _page(job_id=None):
@@ -99,12 +99,12 @@ def _page(job_id=None):
         'mergermeter',
         form_id='mmForm',
         data_vintage=(f'HMDA {min(hmda_years)} to {max(hmda_years)}; CRA small business '
-                      f'{sb_years[0]} to {sb_years[-1]}; FDIC Summary of Deposits {SOD_BRANCH_YEAR}'),
+                      f'{sb_years[0]} to {sb_years[-1]}; FDIC Summary of Deposits {SOD_LATEST_YEAR}'),
         sources=[
             {'name': 'HMDA', 'vintage': f'{min(hmda_years)} to {max(hmda_years)}, the years selected for the run; '
                                          'mortgage lending by the acquirer, the target and their peers'},
             {'name': 'CRA small business', 'vintage': f'{sb_years[0]} to {sb_years[-1]}, the years selected for the run'},
-            {'name': 'FDIC Summary of Deposits', 'vintage': f'{SOD_BRANCH_YEAR}, branch locations and deposits as of June 30'},
+            {'name': 'FDIC Summary of Deposits', 'vintage': f'{SOD_LATEST_YEAR}, branch locations and deposits as of June 30'},
         ],
         help_url=None,
         exports=('xlsx',) if user_permissions.get('can_export', False) else (),
@@ -127,6 +127,7 @@ def _page(job_id=None):
         can_force_refresh=bool(user_permissions.get('executive_tools')),
         app_base_url=url_for('mergermeter.index').rstrip('/'),
         job_id=job_id,
+        sod_year=SOD_LATEST_YEAR,
         breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}],
     ))
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
@@ -230,7 +231,9 @@ def analyze():
 
         # For cache key, normalize the year ranges
         cache_params = form_data.copy()
-        # Cache key includes all year parameters (analysis + baseline)
+        # Cache key includes all year parameters (analysis + baseline), and the
+        # SOD year the branch and HHI queries read, so a new SOD year is a new key
+        cache_params['sod_year'] = str(SOD_LATEST_YEAR)
 
         cached = lookup_cached_analysis(
             'mergermeter', cache_params, caller,
@@ -459,7 +462,7 @@ def api_generate_assessment_areas():
         data = request.get_json()
         rssd = data.get('rssd', '').strip()
         bank_type = data.get('bank_type', 'acquirer')
-        year = int(data.get('year', 2025))
+        year = int(data.get('year', SOD_LATEST_YEAR))
         
         if not rssd:
             return jsonify({
@@ -864,7 +867,7 @@ def api_generate():
             rssd_a = (bank_a.get('rssd') or '').strip()
             if rssd_a:
                 try:
-                    areas_a = _generate_assessment_areas(rssd=rssd_a, year=2025, method='deposits', min_share=0.01)
+                    areas_a = _generate_assessment_areas(rssd=rssd_a, year=SOD_LATEST_YEAR, method='deposits', min_share=0.01)
                     if areas_a:
                         acquirer_areas = areas_a
                 except Exception as e:
@@ -874,7 +877,7 @@ def api_generate():
                 rssd_b = (bank_b.get('rssd') or '').strip()
                 if rssd_b:
                     try:
-                        areas_b = _generate_assessment_areas(rssd=rssd_b, year=2025, method='deposits', min_share=0.01)
+                        areas_b = _generate_assessment_areas(rssd=rssd_b, year=SOD_LATEST_YEAR, method='deposits', min_share=0.01)
                         if areas_b:
                             target_areas = areas_b
                     except Exception as e:

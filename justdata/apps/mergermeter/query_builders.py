@@ -11,6 +11,8 @@ When USE_SUMMARY_TABLES is enabled:
 
 import os
 
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR, sod_all_years
+
 # Configuration for hybrid routing
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
@@ -713,7 +715,7 @@ ORDER BY year, state_code, cbsa_code
 def build_branch_query(
     subject_rssd: str,
     assessment_area_geoids: list,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> str:
     """
     Build branch query for a subject bank by assessment area.
@@ -721,7 +723,7 @@ def build_branch_query(
     Args:
         subject_rssd: Bank's RSSD ID (string)
         assessment_area_geoids: List of GEOID5 codes (5-digit strings) for assessment area counties
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
     
     Returns:
         SQL query string ready for BigQuery
@@ -769,7 +771,7 @@ filtered_branches AS (
         b.br_lmi,
         b.br_minority as cr_minority,
         b.uninumbr
-    FROM `justdata-ncrc.branchsight.sod` b
+    FROM {sod_all_years()} b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -841,7 +843,7 @@ ORDER BY group_key
 def build_branch_market_query(
     subject_rssd: str,
     assessment_area_geoids: list,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> str:
     """
     Build branch query for all OTHER banks (market) in the same CBSAs as the subject bank.
@@ -849,7 +851,7 @@ def build_branch_market_query(
     Args:
         subject_rssd: Subject bank's RSSD ID (string) - will be excluded
         assessment_area_geoids: List of GEOID5 codes (5-digit strings) for assessment area counties
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
     
     Returns:
         SQL query string ready for BigQuery that returns aggregated branch data for all other banks
@@ -892,7 +894,7 @@ filtered_branches AS (
         b.br_lmi,
         b.br_minority as cr_minority,
         b.uninumbr
-    FROM `justdata-ncrc.branchsight.sod` b
+    FROM {sod_all_years()} b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -963,7 +965,7 @@ ORDER BY group_key
 def build_branch_details_query(
     subject_rssd: str,
     assessment_area_geoids: list,
-    year: int = 2025
+    year: int = SOD_LATEST_YEAR
 ) -> str:
     """
     Build query for individual branch details (address, city, state, zip, etc.).
@@ -971,7 +973,7 @@ def build_branch_details_query(
     Args:
         subject_rssd: Bank's RSSD ID (string)
         assessment_area_geoids: List of GEOID5 codes (5-digit strings) for assessment area counties
-        year: Year for branch data (default: 2025)
+        year: SOD year for branch data (default: SOD_LATEST_YEAR)
     
     Returns:
         SQL query string ready for BigQuery that returns individual branch records
@@ -1016,7 +1018,7 @@ filtered_branches AS (
         CAST(b.geoid5 AS STRING) as geoid5,
         c.county_state,
         b.uninumbr
-    FROM `justdata-ncrc.branchsight.sod` b
+    FROM {sod_all_years()} b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'

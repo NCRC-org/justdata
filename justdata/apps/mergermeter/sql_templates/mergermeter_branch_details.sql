@@ -32,7 +32,7 @@ filtered_branches AS (
         CAST(b.geoid5 AS STRING) as geoid5,
         c.county_state,
         b.uninumbr
-    FROM `justdata-ncrc.branchsight.sod` b
+    FROM (SELECT * FROM `justdata-ncrc.branchsight.sod` UNION ALL SELECT * FROM `justdata-ncrc.branchsight.sod_legacy`) b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
