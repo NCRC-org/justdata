@@ -1,5 +1,5 @@
 -- Per-tract race share percentages for a given geography.
--- Source: justdata-ncrc.shared.census (2025 FFIEC vintage). Joined back to
+-- Source: justdata-ncrc.shared.census (latest FFIEC year; the table holds one year). Joined back to
 -- the same geo predicate the other DotLender templates use; the CTE
 -- aliases the 11-char `geoid` to a derived `geoid5` so unqualified
 -- `geoid5` in the injected predicate resolves correctly here too.
@@ -31,7 +31,7 @@ WITH c AS (
     total_nh_opi,
     total_white
   FROM `justdata-ncrc.shared.census`
-  WHERE year = '2025'
+  WHERE year = (SELECT MAX(year) FROM `justdata-ncrc.shared.census`)
     AND total_persons >= 10
 )
 SELECT

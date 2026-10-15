@@ -189,7 +189,7 @@ def get_race_shares(
     geo_params: List[ScalarQueryParameter],
     race_field: str,
 ) -> List[dict]:
-    """Per-tract race share percentages from shared.census (2025 vintage).
+    """Per-tract race share percentages from shared.census (latest FFIEC year).
 
     Returns [{geoid, pct}] for all tracts >= 10 persons in the geography.
     pct is 0-100 scale, matching the existing minority_population convention
