@@ -396,9 +396,10 @@ def get_available_years() -> List[int]:
     """
     try:
         client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
-        query = """
+        from justdata.shared.core.sod_years import sod_all_years
+        query = f"""
         SELECT DISTINCT year
-        FROM branchsight.sod
+        FROM {sod_all_years(PROJECT_ID)}
         WHERE year IS NOT NULL
         ORDER BY year DESC
         """
@@ -409,8 +410,9 @@ def get_available_years() -> List[int]:
         return years
     except Exception as e:
         print(f"BigQuery not available for years: {e}")
-        # Return fallback years
-        return list(range(2025, 2016, -1))  # 2025 down to 2017
+        # Return fallback years, newest first
+        from justdata.shared.core.sod_years import sod_available_years
+        return sorted(sod_available_years(), reverse=True)
 
 
 # ACS 5-year vintage for the Geography Context table (the page states it).

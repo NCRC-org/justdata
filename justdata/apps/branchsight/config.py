@@ -46,11 +46,12 @@ DATASET_ID = "branchsight"
 TABLE_ID = "sod"
 
 # Report Configuration
-# FDIC Summary of Deposits years the analysis runs. 2025 is the latest year
-# loaded (branchsight.sod); 2017 to 2024 are in branchsight.sod_legacy.
+# FDIC Summary of Deposits years the analysis runs, from the platform-wide
+# setting (justdata/shared/core/sod_years.py): the latest year is in
+# branchsight.sod, earlier years in branchsight.sod_legacy.
 # The page, header vintage, request and cache key all read SOD_YEARS.
-SOD_LATEST_YEAR = 2025
-SOD_YEARS = list(range(SOD_LATEST_YEAR - 4, SOD_LATEST_YEAR + 1))
+from justdata.shared.core.sod_years import SOD_LATEST_YEAR, sod_analysis_years
+SOD_YEARS = sod_analysis_years()
 DEFAULT_YEARS = SOD_YEARS
 MAX_BANKS_DISPLAY = 10
 

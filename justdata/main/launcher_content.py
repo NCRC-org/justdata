@@ -10,6 +10,7 @@ Analysis years are what each app runs today, not what the platform holds
 """
 
 from justdata.shared.core.hmda_years import EARLIEST_HMDA_YEAR, LATEST_HMDA_YEAR
+from justdata.shared.core.sod_years import sod_analysis_years
 
 APP_DESCRIPTIONS = {
     "lendsight": (
@@ -52,8 +53,8 @@ ANALYSIS_YEARS = {
     # apps/bizsight/blueprint.py runs 2020 to 2024 (config says 2019 to 2023).
     # Workflow ticket 13229487819.
     "bizsight": "CRA 2020 to 2024",
-    # Fixed in apps/branchsight/core.py.
-    "branchsight": "FDIC SOD 2021 to 2025",
+    # BranchSight's window, from shared/core/sod_years.py.
+    "branchsight": f"FDIC SOD {sod_analysis_years()[0]} to {sod_analysis_years()[-1]}",
     # HMDA years are selectable (shared/core/hmda_years.py). Small business
     # years left off until verified.
     "mergermeter": f"HMDA {EARLIEST_HMDA_YEAR} to {LATEST_HMDA_YEAR}",
