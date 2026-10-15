@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 NOT_REPORTS = {"https://ncrc.org/membership/", "https://ncrc.org/contact/"}
 
 
+@pytest.mark.network
 @pytest.mark.parametrize("report", NCRC_REPORTS, ids=lambda r: r.key)
 def test_every_report_url_returns_200(report):
     """A direct 200, no redirect: a moved report should be updated in the list."""
