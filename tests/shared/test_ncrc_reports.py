@@ -14,13 +14,49 @@ ROOT = Path(__file__).resolve().parents[2]
 NOT_REPORTS = {"https://ncrc.org/membership/", "https://ncrc.org/contact/"}
 
 
+def _get(url):
+    """GET once more after a 5xx, a timeout or a dropped connection, so a
+    transient server error does not read as a dead link. A 4xx or a redirect
+    is an answer and is not retried."""
+    for attempt in (1, 2):
+        try:
+            resp = requests.get(url, timeout=30, allow_redirects=False,
+                                headers={"User-Agent": "NCRC JustData link check"})
+        except (requests.Timeout, requests.ConnectionError):
+            if attempt == 2:
+                raise
+            continue
+        if resp.status_code < 500 or attempt == 2:
+            return resp
+
+
 @pytest.mark.network
 @pytest.mark.parametrize("report", NCRC_REPORTS, ids=lambda r: r.key)
 def test_every_report_url_returns_200(report):
     """A direct 200, no redirect: a moved report should be updated in the list."""
-    resp = requests.get(report.url, timeout=30, allow_redirects=False,
-                        headers={"User-Agent": "NCRC JustData link check"})
+    resp = _get(report.url)
     assert resp.status_code == 200, f"{report.key}: {report.url} returned {resp.status_code}"
+
+
+def test_link_check_retries_a_server_error_once(monkeypatch):
+    answers = iter([503, 200])
+    calls = []
+
+    def fake_get(url, **kw):
+        calls.append(url)
+        return type("R", (), {"status_code": next(answers)})()
+    monkeypatch.setattr(requests, "get", fake_get)
+    assert _get("https://ncrc.org/x/").status_code == 200 and len(calls) == 2
+
+
+def test_link_check_does_not_retry_a_missing_page(monkeypatch):
+    calls = []
+
+    def fake_get(url, **kw):
+        calls.append(url)
+        return type("R", (), {"status_code": 404})()
+    monkeypatch.setattr(requests, "get", fake_get)
+    assert _get("https://ncrc.org/x/").status_code == 404 and len(calls) == 1
 
 
 def test_entries_are_complete_and_unique():
