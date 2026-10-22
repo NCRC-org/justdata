@@ -1,6 +1,8 @@
 """Background jobs and the SSE progress stream."""
 
+import itertools
 import json
+import time
 from unittest.mock import patch
 
 import pytest
@@ -35,11 +37,12 @@ def test_run_in_background_runs_the_work():
 
 
 class TestProgressStream:
-    def _stream(self, app, progress_values):
-        with patch("justdata.backend.jobs.get_progress", side_effect=progress_values), \
-             patch("justdata.backend.jobs.time.sleep"):
+    def _stream(self, app, progress_values, clock=None, **kw):
+        with patch("justdata.backend.jobs.find_progress", side_effect=progress_values), \
+             patch("justdata.backend.jobs.time.sleep"), \
+             patch("justdata.backend.jobs._clock", side_effect=clock or itertools.repeat(0.0)):
             with app.test_request_context():
-                resp = sse_response("job-1")
+                resp = sse_response("job-1", **kw)
                 return "".join(
                     chunk.decode() if isinstance(chunk, bytes) else chunk
                     for chunk in resp.response
@@ -115,3 +118,83 @@ class TestProgressStream:
         events = _events(body)
         assert events[-1]["done"] is True
         assert events[-1]["error"] == "down"
+
+
+class TestStreamAlwaysEnds:
+    """Each open stream holds a gunicorn thread, and Cloud Run keeps it open
+    after the browser leaves. On 2026-10-20 four streams for a made-up job id
+    ran for an hour each and the testing site stopped answering."""
+
+    def _read(self, chunks, limit_s=2.0):
+        """Read a streamed body, failing (not hanging) if it outlives limit_s."""
+        started = time.monotonic()
+        body = ""
+        for chunk in chunks:
+            body += chunk.decode() if isinstance(chunk, bytes) else chunk
+            assert time.monotonic() - started < limit_s, f"stream still open: {body!r}"
+        return body, time.monotonic() - started
+
+    def test_unknown_job_ends_with_an_error_and_reference(self, app):
+        with app.test_request_context():
+            resp = sse_response(new_job_id())
+            body, seconds = self._read(resp.response)
+        events = _events(body)
+        assert seconds < 1
+        assert len(events) == 1 and events[0]["done"] is True
+        assert events[0]["error"].startswith("This report is no longer available.")
+        assert " Reference: " in events[0]["error"]
+
+    @pytest.mark.parametrize("client_name", ["lendsight_client", "bizsight_client", "branchsight_client"])
+    def test_unknown_job_route_closes_within_a_second(self, request, sign_in, client_name):
+        client = request.getfixturevalue(client_name)
+        sign_in(client, "member")
+        resp = client.get(f"/progress/{new_job_id()}", buffered=False)
+        body, seconds = self._read(resp.response)
+        assert seconds < 1
+        assert " Reference: " in _events(body)[-1]["error"]
+
+    def test_a_job_recorded_by_analyze_is_not_unknown(self, app):
+        """/analyze creates the tracker before it returns the id, so the
+        stream finds the job even before the worker's first update."""
+        from justdata.shared.utils.progress_tracker import (
+            create_progress_tracker, find_progress, progress_store)
+        job_id = new_job_id()
+        try:
+            create_progress_tracker(job_id)
+            assert find_progress(job_id)["done"] is False
+        finally:
+            progress_store.pop(job_id, None)
+
+    def test_record_that_vanishes_gets_ten_seconds(self, app):
+        running = {"percent": 40, "step": "Querying data...", "done": False}
+        # One clock reading per second; the record is gone after the first poll.
+        body = TestProgressStream()._stream(
+            app, [running] + [None] * 30, clock=itertools.count(0.0, 1.0))
+        events = _events(body)
+        assert events[0]["step"] == "Querying data..."
+        assert events[-1]["error"].startswith("This report is no longer available.")
+        assert len(events) == 2
+
+    def test_record_that_comes_back_keeps_the_stream(self, app):
+        running = {"percent": 40, "step": "Querying data...", "done": False}
+        body = TestProgressStream()._stream(
+            app, [running, None, None, {"percent": 100, "step": "Complete", "done": True}],
+            clock=itertools.count(0.0, 1.0))
+        events = _events(body)
+        assert events[-1] == {"percent": 100, "step": "Complete", "done": True, "error": None}
+
+    def test_stream_ends_at_the_run_cap_plus_a_minute(self, app):
+        running = {"percent": 88, "step": "Building charts and narrative", "done": False}
+        # Each poll reads the clock twice at most; 30 s per reading passes the
+        # 600 + 60 s cap well inside 100 polls.
+        body = TestProgressStream()._stream(
+            app, itertools.repeat(running), clock=itertools.count(0.0, 30.0))
+        events = _events(body)
+        assert events[-1]["error"].startswith("The analysis did not finish in time.")
+
+    def test_cap_follows_the_app(self, app):
+        running = {"percent": 88, "step": "Building charts and narrative", "done": False}
+        clock = itertools.chain([0.0], itertools.repeat(1859.0, 3), itertools.repeat(1860.0))
+        body = TestProgressStream()._stream(
+            app, itertools.repeat(running), clock=clock, max_run_seconds=1800)
+        assert _events(body)[-1]["error"].startswith("The analysis did not finish in time.")

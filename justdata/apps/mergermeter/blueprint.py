@@ -171,7 +171,9 @@ def goals_calculator():
 @login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
-    return sse_response(job_id)
+    # The page allows MergerMeter runs 30 minutes (MAX_RUN_S in mm_page.js);
+    # the stream's cap follows it.
+    return sse_response(job_id, max_run_seconds=1800)
 
 
 @mergermeter_bp.route('/analyze', methods=['POST'])
