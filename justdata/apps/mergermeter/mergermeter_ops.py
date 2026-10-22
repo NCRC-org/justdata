@@ -53,7 +53,7 @@ from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from justdata.apps.mergermeter.version import __version__
 
 # GCS storage for persistent file storage across Cloud Run instances
-from justdata.shared.utils.gcs_storage import download_file, download_json, upload_file, upload_json
+from justdata.shared.utils.gcs_storage import blob_exists, download_file, download_json, upload_file, upload_json
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
 from justdata.apps.mergermeter.statistical_analysis import STAT_UNAVAILABLE
 
@@ -3130,6 +3130,13 @@ def ensure_local_excel(job_id: str):
         excel_file.parent.mkdir(parents=True, exist_ok=True)
         download_file(f'mergermeter/{excel_file.name}', str(excel_file))
     return excel_file if excel_file.exists() else None
+
+
+def workbook_in_storage(job_id: str) -> bool:
+    """Whether the job's workbook is in GCS, which a cache hit needs. False
+    when GCS could not be asked, so the analysis runs again rather than
+    serving a report that cannot load."""
+    return bool(blob_exists(f'mergermeter/{get_excel_filename(job_id)}'))
 
 
 def get_excel_filename(job_id: str) -> str:

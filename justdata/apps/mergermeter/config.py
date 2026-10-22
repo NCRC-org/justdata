@@ -20,6 +20,13 @@ STATIC_DIR = str(JUSTDATA_BASE / 'shared' / 'web' / 'static')
 # Cloud Run containers have read-only filesystems except for /tmp
 OUTPUT_DIR = Path(tempfile.gettempdir()) / 'mergermeter_output'
 
+# The workbook bucket (gs://justdata-mergermeter-output, set outside this repo)
+# deletes objects 7 days after creation. A MergerMeter cache entry expires an
+# hour before its workbook can go, so a hit never points at a deleted file
+# (spec 05, 2026-10-22). tests/apps/test_mergermeter_cache.py checks the
+# bucket's rule against this value when run with the network marker.
+WORKBOOK_RETENTION_DAYS = 7
+
 # Excel template file path (for matching original merger report format)
 # Support multiple path options for flexibility across different environments
 # 1. Check environment variable first (for CI/CD, Docker, etc.)
