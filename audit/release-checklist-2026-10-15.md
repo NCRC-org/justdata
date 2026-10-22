@@ -110,7 +110,7 @@ Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 | Line | Result | Evidence |
 |---|---|---|
 | Keyboard: drawer opens, traps focus, closes on Escape; modals close on Escape | PASS | Focus moves to the first drawer item on open; 25 Tabs stay inside; Escape closes and returns focus to the menu button. The auth modal closes on Escape |
-| Keyboard: tab order on a closed drawer | FIXED | The closed drawer was only moved off-screen, so Tab went through its 10 links (invisible) before reaching the page. Now `visibility: hidden` when closed (after the slide-out). Checked with the new CSS swapped in on the live page, both motion settings: the first six stops are menu, brand, account, breadcrumb, Reset, State; focus trap and Escape unchanged |
+| Keyboard: tab order on a closed drawer | FIXED (#233) | The closed drawer was only moved off-screen, so Tab went through its 10 links (invisible) before reaching the page. Now `visibility: hidden` when closed (after the slide-out). Split into #233, live 2026-10-22, both motion settings: closed drawer `visibility: hidden`; the first six stops are menu, brand, account, breadcrumb (Home), Reset, State; with the drawer open, 25 Tabs stay inside it; Escape closes it and returns focus to the menu button |
 | Keyboard: controls and Run in order | PASS | LendSight: Reset, State, County, years, Options, Run analysis, then the footer links |
 | Focus ring on every interactive element reached | PASS | Every element reached in 40 Tabs on LendSight shows an outline or ring |
 | Contrast | PASS | Lighthouse accessibility 100 on `/` and on the three app pages |
@@ -128,7 +128,7 @@ Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 | lorem / TODO / FIXME / placeholder | PASS | Remaining hits are template comments, the Analytics "--" loading placeholders (staff page, filled on load) and archived ElectWatch |
 | Secrets in templates and static JS | PASS | Only the Firebase web API key in `auth.js` (public by design) |
 | Line limits | PASS | CI file-size-check passes; every file over a limit is on CI's existing allowlist |
-| `platform_version` 0.10.0 | FIXED | Bumped in `shared/utils/versions.py` (Jad, 2026-10-15). Shown in the footer, drawer and `/health` after deploy: recheck after merge |
+| `platform_version` 0.10.0 | FIXED (#233) | Bumped in `shared/utils/versions.py` (Jad, 2026-10-15); split out of this PR into #233 at Jad's request, merged and deployed 2026-10-22 (7f2a15b). Live: `/health` reports 0.10.0, and the footer and drawer show 0.10.0 (member, LendSight) |
 | ARCHITECTURE.md coverage | FIXED | Added the registry and testing overlay, `hmda_years`/`sod_years`, `app.css`, the state partials, `app_choices.js`, `perf.py` and the opt-in network tests; corrected the CI branch list |
 | README conformance dates | FIXED | LendSight and BizSight 2026-10-07 (#210, #211); BranchSight and MergerMeter 2026-10-13 (#212, #217). The MergerMeter README also called its small business data Section 1071; corrected to the CRA disclosure summary it reads |
 
