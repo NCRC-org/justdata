@@ -34,13 +34,20 @@ else
     MODULE="run_${APP_NAME}:app"
 fi
 
+# Request threads. Each open progress stream holds one for the length of a
+# run, so 4 let four viewers fill the instance (testing outage, 2026-10-20).
+# The deploy workflow sets GUNICORN_THREADS=16 for justdata-testing only, with
+# a matching Cloud Run concurrency; other services keep 4 (Jad, 2026-10-22).
+GUNICORN_THREADS=${GUNICORN_THREADS:-4}
+
 # Start gunicorn with the appropriate app
 # Use --preload to load the app before forking workers
-# Cloud Run handles scaling, so we use 1-2 workers
+# One worker: progress, results fallback and running analyses live in this
+# process's memory, so a second worker would split them.
 exec gunicorn \
     --bind "0.0.0.0:${PORT}" \
     --workers 1 \
-    --threads 4 \
+    --threads "${GUNICORN_THREADS}" \
     --timeout 300 \
     --preload \
     --access-logfile - \
