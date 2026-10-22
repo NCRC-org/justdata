@@ -8,7 +8,8 @@ from typing import Optional
 
 from flask import Response, g, has_request_context
 
-from justdata.shared.utils.progress_tracker import get_progress
+from justdata.shared.utils.error_ref import user_error
+from justdata.shared.utils.progress_tracker import find_progress
 from justdata.shared.utils.query_context import set_query_context
 
 # How often the SSE loop polls the progress store, and how often it emits a
@@ -27,6 +28,24 @@ _HEARTBEAT = "event: heartbeat\ndata: {}\n\n"
 # a few times before giving up rather than either quitting at once or, as
 # MergerMeter's version did, retrying forever on a permanent failure.
 _MAX_CONSECUTIVE_READ_ERRORS = 5
+
+# A stream must end on its own: Cloud Run keeps it open to the container after
+# the browser leaves, and each open stream holds one of gunicorn's threads. On
+# 2026-10-20 four streams for a made-up job id each ran to the 3,600 s request
+# timeout and the testing site answered nothing for an hour (Jad, 2026-10-22).
+# - A job with no progress record when the stream opens does not exist here:
+#   /analyze records the job before it returns the id. The stream ends at once.
+# - A record that disappears mid-run (evicted) gets _MISSING_GRACE_SECONDS to
+#   come back.
+# - Every stream ends by the app's run cap plus _CAP_MARGIN_SECONDS. The
+#   default cap matches MAX_RUN_S in app_states.js; an app with a longer client
+#   cap (MergerMeter) passes it.
+_MISSING_GRACE_SECONDS = 10
+DEFAULT_MAX_RUN_SECONDS = 600
+_CAP_MARGIN_SECONDS = 60
+_NOT_FOUND = "This report is no longer available. Run the analysis again to rebuild it."
+_TOO_LONG = "The analysis did not finish in time. Your filters are saved; try again in a moment."
+_clock = time.monotonic
 
 
 def new_job_id() -> str:
@@ -66,18 +85,45 @@ def _event(percent, step, done, error) -> str:
     return f"data: {payload}\n\n"
 
 
-def sse_response(job_id: str) -> Response:
+def _failed(message: str, job_id: str, why: str) -> str:
+    """The terminal error event, with a reference id logged next to the cause."""
+    shown, _ref = user_error(message, context=f"progress stream job={job_id}: {why}")
+    return _event(0, 'Error', True, shown)
+
+
+def sse_response(job_id: str, max_run_seconds: int = DEFAULT_MAX_RUN_SECONDS) -> Response:
     """Stream a job's progress as Server-Sent Events until it finishes."""
     def stream():
         last = None
         idle_polls = 0
         read_errors = 0
+        started = _clock()
+        missing_since = None
+        first_read = True
+        last_progress = {}
         yield ": connected\n\n"
 
         while True:
             try:
-                progress = get_progress(job_id) or {}
+                if _clock() - started >= max_run_seconds + _CAP_MARGIN_SECONDS:
+                    yield _failed(_TOO_LONG, job_id, f"stream reached {max_run_seconds} s cap")
+                    break
+                progress = find_progress(job_id)
                 read_errors = 0
+                if progress is None:
+                    if first_read:
+                        yield _failed(_NOT_FOUND, job_id, "no progress record")
+                        break
+                    if missing_since is None:
+                        missing_since = _clock()
+                    elif _clock() - missing_since >= _MISSING_GRACE_SECONDS:
+                        yield _failed(_NOT_FOUND, job_id, "progress record gone")
+                        break
+                    progress = last_progress
+                else:
+                    missing_since = None
+                    last_progress = progress
+                first_read = False
                 percent = progress.get('percent', 0)
                 step = progress.get('step', 'Starting...')
                 done = progress.get('done', False)

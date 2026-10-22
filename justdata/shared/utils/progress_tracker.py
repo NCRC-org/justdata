@@ -36,7 +36,19 @@ class ProgressTracker:
             'finalizing': {'name': 'Finalizing...', 'percent': 95},
             'completed': {'name': 'Analysis completed!', 'percent': 100}
         }
-    
+
+        # Record the job now, while /analyze still holds the request: the
+        # progress stream treats a job with no record as one that does not
+        # exist, and the worker's first update can land after the client has
+        # already opened the stream.
+        if self.progress_callback:
+            self.progress_callback(self.job_id, {
+                'step': self.current_step,
+                'percent': 0,
+                'done': False,
+                'error': None
+            })
+
     def update_progress(self, step: str, percent: Optional[int] = None, message: Optional[str] = None):
         """Update progress for a specific step.
 
@@ -301,10 +313,28 @@ def _cleanup_old_jobs():
 
 def get_progress(job_id: str) -> Dict[str, Any]:
     """Get current progress for a job."""
+    progress = find_progress(job_id)
+    if progress is None:
+        # Job not found - return a "processing" state instead of "initializing"
+        # This indicates the job might be running but progress was lost
+        return {
+            'step': 'Processing...',
+            'percent': 0,
+            'done': False,
+            'error': None
+        }
+    return progress
+
+def find_progress(job_id: str) -> Optional[Dict[str, Any]]:
+    """A job's progress, or None when this instance has no record of it.
+
+    get_progress reports an unknown job as still processing; the progress
+    stream (backend/jobs.py) needs to tell the two apart.
+    """
     # Periodically clean up old jobs (every 10th call)
     if len(progress_store) > 0 and hash(job_id) % 10 == 0:
         _cleanup_old_jobs()
-    
+
     # First check in-memory store
     job_data = progress_store.get(job_id)
     
@@ -315,17 +345,10 @@ def get_progress(job_id: str) -> Dict[str, Any]:
             # Restore to memory store
             progress_store[job_id] = file_data
             job_data = file_data
-    
+
     if job_data is None:
-        # Job not found - return a "processing" state instead of "initializing"
-        # This indicates the job might be running but progress was lost
-        return {
-            'step': 'Processing...',
-            'percent': 0,
-            'done': False,
-            'error': None
-        }
-    
+        return None
+
     # Handle both old format (direct dict) and new format (with timestamp)
     if isinstance(job_data, dict) and 'data' in job_data:
         return job_data['data']
