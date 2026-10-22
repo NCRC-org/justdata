@@ -49,7 +49,8 @@ def sanitize_nan_values(data: Any, precision: int = 4) -> Any:
         data: The data to sanitize
         precision: Number of decimal places to round floats to (default: 4)
                    Using 4 instead of 6 to avoid BigQuery PARSE_JSON issues with
-                   numbers like 37.181006 that can't round-trip through string representation
+                   numbers like 37.181006 that can't round-trip through string representation.
+                   None leaves finite floats as they are.
     """
     import math
 
@@ -61,7 +62,7 @@ def sanitize_nan_values(data: Any, precision: int = 4) -> Any:
         if math.isnan(data) or math.isinf(data):
             return None
         # Round to avoid BigQuery JSON parsing issues with long decimals
-        return round(data, precision)
+        return data if precision is None else round(data, precision)
     elif data is None:
         return None
     else:
@@ -72,7 +73,7 @@ def sanitize_nan_values(data: Any, precision: int = 4) -> Any:
                 if np.isnan(data) or np.isinf(data):
                     return None
                 if isinstance(data, np.floating):
-                    return round(float(data), precision)
+                    return float(data) if precision is None else round(float(data), precision)
                 return int(data)
             elif isinstance(data, np.ndarray):
                 return sanitize_nan_values(data.tolist(), precision)
@@ -198,6 +199,18 @@ def generate_cache_key(app_name: str, params: Dict[str, Any]) -> str:
     cache_string = json.dumps(normalized, sort_keys=True, default=str)
     cache_key = hashlib.sha256(cache_string.encode('utf-8')).hexdigest()
     return f"{app_name.lower()}_{cache_key}"
+
+
+def _json_for_bigquery(value: Any) -> str:
+    """JSON text that PARSE_JSON accepts.
+
+    json.dumps writes NaN and infinity as bare NaN/Infinity, which BigQuery
+    rejects. Every BranchSight write to cache_testing failed that way on its
+    raw_data section (2026-10), leaving orphaned sections and no cache entry.
+    Non-finite numbers become null here for every section, so one app's
+    uncleaned frame cannot break the write; other values are kept as they are.
+    """
+    return json.dumps(sanitize_nan_values(value, precision=None), default=str, allow_nan=False)
 
 
 def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -1084,7 +1097,7 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
             bigquery.ScalarQueryParameter("job_id", "STRING", job_id),
             bigquery.ScalarQueryParameter("app_name", "STRING", app_name.lower()),
             bigquery.ScalarQueryParameter("cache_key", "STRING", cache_key),
-            bigquery.ScalarQueryParameter("result_summary", "STRING", json.dumps(result_summary)),
+            bigquery.ScalarQueryParameter("result_summary", "STRING", _json_for_bigquery(result_summary)),
             bigquery.ScalarQueryParameter("sections_summary", "STRING", json.dumps(sections_summary)),
             bigquery.ScalarQueryParameter("user_type", "STRING", user_type),
             bigquery.ScalarQueryParameter("duration", "FLOAT64", metadata.get('duration_seconds', 0.0) if metadata else 0.0),
@@ -1121,8 +1134,8 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
                     bigquery.ScalarQueryParameter("section_type", "STRING", section['section_type']),
                     bigquery.ScalarQueryParameter("section_name", "STRING", section['section_name']),
                     bigquery.ScalarQueryParameter("section_category", "STRING", section.get('section_category')),
-                    bigquery.ScalarQueryParameter("section_data", "STRING", json.dumps(section['section_data'], default=str)),
-                    bigquery.ScalarQueryParameter("section_metadata", "STRING", json.dumps(section.get('section_metadata', {}))),
+                    bigquery.ScalarQueryParameter("section_data", "STRING", _json_for_bigquery(section['section_data'])),
+                    bigquery.ScalarQueryParameter("section_metadata", "STRING", _json_for_bigquery(section.get('section_metadata', {}))),
                     bigquery.ScalarQueryParameter("display_order", "INT64", section.get('display_order', 0)),
                 ]
             )
