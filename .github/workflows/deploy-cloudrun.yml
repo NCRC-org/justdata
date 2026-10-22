@@ -130,6 +130,18 @@ jobs:
             OPTIONAL_ARGS+=(--update-secrets "$OPTIONAL_SECRETS_UPDATE")
           fi
 
+          # justdata-testing only (Jad, 2026-10-22, Workflow 13360117508):
+          # 16 gunicorn threads with concurrency 16, so Cloud Run starts another
+          # instance instead of queueing on a busy one; session affinity, since
+          # progress lives on the instance that ran the job; and a 1,920 s
+          # request timeout, just above the longest progress stream (1,860 s).
+          # justdata-test and justdata keep their current flags.
+          RUN_TIMEOUT=3600
+          if [ "${{ env.DEPLOY_SERVICE_NAME }}" = "justdata-testing" ]; then
+            RUN_TIMEOUT=1920
+            OPTIONAL_ARGS+=(--concurrency 16 --session-affinity --set-env-vars "GUNICORN_THREADS=16")
+          fi
+
           gcloud run deploy ${{ env.DEPLOY_SERVICE_NAME }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }} \
             --platform managed \
@@ -137,7 +149,7 @@ jobs:
             --allow-unauthenticated \
             --memory 2Gi \
             --cpu 2 \
-            --timeout 3600 \
+            --timeout "$RUN_TIMEOUT" \
             --max-instances 10 \
             --min-instances 0 \
             --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
