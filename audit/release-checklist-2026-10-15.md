@@ -18,7 +18,14 @@ ID that does not exist (to reach the error state) left four `/progress`
 streams open for the full 3,600 s request timeout. With gunicorn at 1 worker
 and 4 threads, and Cloud Run concurrency at 160, the testing site answered
 nothing from about 17:40 to 18:35 UTC. It recovered by itself when the first
-stream timed out; no restart or redeploy. Ticket draft 9 in the matrix.
+stream timed out; no restart or redeploy. Ticket draft 9 in the matrix
+(Workflow 13360099262); hotfix #227.
+
+**Open PRs from this pass (2026-10-22), all into `testing`:** #227 progress
+stream ends for an unknown job; #229 BranchSight reaches the analysis cache and
+the cache write is one statement (gate work for the login build); #230
+`/admin/users` 500 (Jay round 2 #1); #231 every lender table names its year
+(Jay round 2 #11).
 
 Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 
@@ -73,7 +80,8 @@ Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 | Loading state | PASS | All six runs: stage text, elapsed time and Cancel shown; `#results` `aria-busy="true"` |
 | Success state | PASS | `aria-busy="false"` after; summary strip is the first element; reloading the report URL brings the report back |
 | Empty state | PASS | BranchSight, Alpine County, CA: "No bank branches are reported for this county in 2022 to 2026." LendSight with a county code that has no records (the test rewrote the request): "No loan originations match…" |
-| Error state | HELD | Not reached. A made-up job ID returns the page to idle (the page waits on a stream that never ends; ticket 9). To reach it without the live site: the local `/dev/app-states` route |
+| Error state (local) | PASS | Local `/dev/app-states` with debug on, staff session (the page is debug-only and the testing gate admits no member to `/dev`; the component does not vary by role), 2026-10-22. Shows "We couldn't complete this analysis", the message, "Reference: devref01", Try again and Report a problem; `aria-busy="false"`; export bar hidden; no horizontal scroll at 1024 or 390; no page errors. Report a problem opens `/contact?ref=devref01`, which shows the reference. Accepted as the local line by Jad, 2026-10-22 |
+| Error state (live) | HELD | After #227 deploys: open a report with an unknown job ID on testing and confirm the error state within seconds |
 | Error reference to `/contact?ref=` | PASS | `/contact?ref=qa1234ab` shows "Reference: qa1234ab" |
 | Summary strip, tables, chart colors | PASS | Summary strip on all six; numeric `.app-table` cells use tabular numerals; charts present |
 | Sources block, juxtaposition note, "Methods →" | PASS | Sources block present with "Correlation is not causation"; "Methods →" resolves to its section on the page |
@@ -84,6 +92,9 @@ Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 | Jay round 1: "originated" wording | PASS | LendSight results say "originated"; "applications" appears only in Methods, describing what HMDA covers |
 | Jay round 1: statewide HHI | PASS | On the page, in Excel and in the PDF, LendSight and BizSight |
 | Jay round 1: BizSight PDF matches the web | PASS, NOTE | Sections 1 to 5 match. The PDF has no Methods section, only the AI disclosure |
+| Jay round 2 #1: `/admin/users` renders | FIXED (#230) | 500 reproduced locally as admin: the page rendered through a bare Jinja environment without the `ncrc_contact` global the footer has read since #217. Now `render_template`; admin 200, staff and member still refused. Recheck on testing after merge; function is Part 2 line 3 |
+| Jay round 2 #11: lender tables name their year | FIXED (#231) | Web titles (LendSight, BranchSight; BizSight already did), PDF headings and intros, and Excel sheet names. Recheck on testing after merge |
+| Jay round 2 #10: minority-borrower summary card | NOTE | Not a regression: git history shows LendSight never had one (the pre-standard `populateSummaryCards` was BranchSight's branch-count code, never called). Adding one is Jad's content decision (Workflow 13360195998) |
 | TTFB, member (app pages) | PASS | Median / p95: LendSight 156 / 174 ms, BizSight 147 / 155 ms, BranchSight 155 / 176 ms |
 | Lighthouse desktop, member | PASS | Performance / Accessibility / Best Practices: LendSight 97 / 100 / 100, BizSight 97 to 98 / 100 / 100, BranchSight 98 / 100 / 100 |
 | Time to interactive | PASS | 0.94 to 1.04 s on the three app pages |
