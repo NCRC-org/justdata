@@ -96,7 +96,7 @@ Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 | Jay round 2 #11: lender tables name their year | FIXED (#231, merged 2026-10-22) | Web titles (LendSight, BranchSight; BizSight already did), PDF headings and intros, and Excel sheet names. Live on testing, member, Wake County, NC runs: LendSight "Section 3: Top Lenders by Total Loans (2025)" and "Table 1: … (2025)"; BranchSight "Table 1: Top Banks by Branch Count (2026)" |
 | Jay round 2 #10: minority-borrower summary card | NOTE | Not a bug (Jad, 2026-10-22): LendSight never had one (the pre-standard `populateSummaryCards` was BranchSight's branch-count code, never called). Moved to the feature backlog (L5 item 9, after the gate); the content questions, which groups and which denominator, are Jay's (Workflow 13360195998, now Low) |
 | Analysis cache after #229 | PASS | 2026-10-22, member, Wake County, NC (never cached before). Cache write (sections, result row, cache row, one statement each): LendSight 4.9 s with 24 sections, BranchSight 6.5 s with 11 sections including `raw_data`; was 62 to 82 s and 10 to 20 s (and BranchSight always failed). BranchSight repeat run: cache hit, done in 6.7 s (uncached run 21.3 s). LendSight run total 120 s: BigQuery 27.4 s, narrative about 70 s in sequence (Workflow 13360117162). 96 orphaned BranchSight section rows deleted from `cache_testing` (Jad approved); 0 remain |
-| Outage scenario after #232 | HELD | Four unknown-job report tabs at once while polling `/health`, after the testing settings PR (#232) deploys |
+| Outage scenario after #232 | PASS | 2026-10-22 17:42 to 17:44 UTC on revision `justdata-testing-00042-psz` (image fd1cff4, 100% traffic; concurrency 16, timeout 1,920 s, session affinity on, `GUNICORN_THREADS=16`, 2 GiB; `justdata-test` and `justdata` unchanged at 160 and 3,600 s). Four report tabs on unknown job IDs opened at once (LendSight twice, BizSight, BranchSight): each showed the error state 2.5 s after opening; the request log shows each `/progress` stream closing in 10 to 19 ms (3,601 s on 2026-10-20). `/health` polled once a second: 52 of 52 returned 200, median 166 ms, max 233 ms |
 | TTFB, member (app pages) | PASS | Median / p95: LendSight 156 / 174 ms, BizSight 147 / 155 ms, BranchSight 155 / 176 ms |
 | Lighthouse desktop, member | PASS | Performance / Accessibility / Best Practices: LendSight 97 / 100 / 100, BizSight 97 to 98 / 100 / 100, BranchSight 98 / 100 / 100 |
 | Time to interactive | PASS | 0.94 to 1.04 s on the three app pages |
@@ -134,7 +134,15 @@ Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 
 ## Part 2 (Jad: admin, in a browser)
 
-Not started. The 17 lines and expected results are in spec 05. Line 12: the
+Lines 15 and 16 run from this session on 2026-10-22 with the one test account, which Jad switched in the admin page (labels: Registered = `public_registered`, Institutional = `non_member_org`):
+
+| Line | Result | Evidence |
+|---|---|---|
+| 15, `public_registered` | PASS (request not submitted) | `check_tester_gate.py --role public_registered`: 16 of 16 PASS (redirect row skipped by design for this role). `/apps`: LendSight, BizSight and BranchSight locked and tagged "Members", request-access panel with "Request member access"; only the two analysis groups. Drawer: the three apps locked with "Members". Landing CTA "Request member access". The request was not submitted, because that creates a real member request; Jad checks the pending state in Part 2 if wanted |
+| 16, `non_member_org` | PASS | `check_tester_gate.py --role non_member_org`: 17 of 17 PASS including the https redirect row. The three app pages render with Run analysis; `/mergermeter/`, `/branchmapper/`, `/dataexplorer/`, `/dotlender/`, `/status`, `/analytics/` and `/admin/users` redirect to `/`. `/apps` and the drawer: the three apps unlocked, no request panel, no Staff tools or In consolidation. Landing CTA "Open the apps" |
+| Back to member | PASS | `check_tester_gate.py --role member`: 17 of 17 PASS |
+
+The other lines are Jad's, in one browser sitting. The 17 lines and expected results are in spec 05. Line 12: the
 `cache_testing` grant was in before MergerMeter run 1 (2026-10-20); the two
 Pinnacle / UCB runs left one cache row, one result row and one usage row per
 run. Lines 15 and 16 use the one test account, moved
