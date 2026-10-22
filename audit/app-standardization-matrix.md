@@ -406,7 +406,11 @@ the hygiene PR #208 (merged 2026-10-07); the rest are tracked above or in the de
 
 ## Ticket drafts: analysis speed and cost (2026-10-20, for the Workflow board)
 
-From the uncached batch above. Jad creates the tickets. These are cost and speed
+From the uncached batch above. Created on the Workflow board 2026-10-22:
+1 = 13360124454, 2 = 13360117509, 3 = 13360118475, 4 = 13360119798,
+5 = 13360117507, 6 = 13360117255, 7 = 13360117162, 8 = 13360119391,
+9 = 13360099262, plus 13360117508 for the gunicorn and Cloud Run settings.
+Fixes in review: 1 and 2 in #229, 9 in #227. These are cost and speed
 findings, except ticket 2, which is a defect. Spec 05 changes no queries. Byte
 estimates marked "measured" come from one query run on 2026-10-20 with the
 proposed filter (label `purpose=spec05-bytes-estimate`). The rest are estimates
