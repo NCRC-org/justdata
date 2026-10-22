@@ -44,6 +44,7 @@ from justdata.shared.pdf.styles import (
     build_table_style, markdown_to_reportlab,
 )
 from justdata.shared.pdf.components import (
+    latest_year,
     build_data_table, build_key_findings,
     build_source_caption,
     ai_narrative_to_flowables,
@@ -885,9 +886,12 @@ def generate_bizsight_pdf(result_data, metadata):
     if s5_has:
         story.append(NextPageTemplate('landscape'))
         story.append(PageBreak())  # PageBreak #3
-        story.append(_h1('Section 4: Top Lenders'))
+        lender_year = latest_year(metadata.get('years', ''))
+        story.append(_h1(f'Section 4: Top Lenders ({lender_year})' if lender_year else 'Section 4: Top Lenders'))
         story.append(Paragraph(
-            f'Top {lender_count} lenders by total loan volume. Percentage columns show the share '
+            f'Top {lender_count} lenders by total loan volume'
+            + (f' in {lender_year}, the most recent year in this report' if lender_year else '')
+            + '. Percentage columns show the share '
             'of each lender\u2019s lending in that category. Full lender list available in Excel export.',
             _COMPACT_CAPTION,
         ))
