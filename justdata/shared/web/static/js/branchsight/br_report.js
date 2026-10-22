@@ -120,6 +120,7 @@
 
   function bankTable(rows, years, place) {
     var first = years[0], last = years[years.length - 1];
+    if (last) fill('bank-year', last);
     var columns = [
       { key: 'Bank Name', label: 'Bank' },
       { key: 'Total Branches', label: 'Branches', numeric: true, format: fmtInt },

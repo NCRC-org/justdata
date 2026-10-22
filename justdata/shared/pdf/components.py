@@ -426,3 +426,17 @@ def narrative_paragraphs(text, style=None):
             converted = converted.replace('\n', '<br/>')
             paragraphs.append(Paragraph(converted, style))
     return paragraphs
+
+
+def latest_year(years):
+    """The last year of a run, as text, for headings ('' if unknown).
+
+    Lender and bank tables cover only the most recent year of the run, and
+    each states it beside the table (Jay round 2 #11). `years` is the run
+    metadata's value: a list, a comma-separated string or one year.
+    """
+    if isinstance(years, str):
+        years = [y for y in years.split(',') if y.strip()]
+    elif not isinstance(years, (list, tuple)):
+        years = [years] if years else []
+    return max((str(y).strip() for y in years), default='')

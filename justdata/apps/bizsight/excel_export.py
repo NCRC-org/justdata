@@ -271,12 +271,12 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             # Top Lenders - Number of Loans
             if number_cols:
                 number_df = lenders_df[number_cols].copy()
-                number_df.to_excel(writer, sheet_name=sanitize_sheet_name('Top Lenders - Number'), index=False)
+                number_df.to_excel(writer, sheet_name=sanitize_sheet_name(f'Top Lenders - Number ({max(years)})'), index=False)
             
             # Top Lenders - Amount of Loans
             if amount_cols:
                 amount_df = lenders_df[amount_cols].copy()
-                amount_df.to_excel(writer, sheet_name=sanitize_sheet_name('Top Lenders - Amount'), index=False)
+                amount_df.to_excel(writer, sheet_name=sanitize_sheet_name(f'Top Lenders - Amount ({max(years)})'), index=False)
         
         # Section 5: HHI by Year
         if hhi_by_year:

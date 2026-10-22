@@ -216,7 +216,7 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         if raw_df is not None:
             top_lenders_table = create_top_lenders_table_for_excel(raw_df, years)
             if not top_lenders_table.empty:
-                top_lenders_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
+                top_lenders_table.to_excel(writer, sheet_name=sanitize_sheet_name(f'Section 3 - Top Lenders ({max(years)})'), index=False)
 
             # Section 3b: Top 10 Lenders Over Time - Excel Export Only
             # Guard to the exposed HMDA year range (see shared/core/hmda_years.py).
@@ -236,7 +236,7 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
             if isinstance(top_lenders_detailed, list):
                 top_lenders_detailed = pd.DataFrame(top_lenders_detailed)
             if not top_lenders_detailed.empty:
-                top_lenders_detailed.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
+                top_lenders_detailed.to_excel(writer, sheet_name=sanitize_sheet_name(f'Section 3 - Top Lenders ({max(years)})'), index=False)
         
         # Section 4: county and statewide HHI by year and loan purpose
         counties_meta = (metadata or {}).get('counties') or []

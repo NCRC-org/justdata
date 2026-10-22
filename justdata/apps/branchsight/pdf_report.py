@@ -39,6 +39,7 @@ from justdata.shared.pdf.styles import (
     build_table_style, markdown_to_reportlab,
 )
 from justdata.shared.pdf.components import (
+    latest_year,
     build_data_table, build_key_findings, build_source_caption,
     ai_narrative_to_flowables, format_change_cell,
 )
@@ -695,10 +696,13 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
             story.append(Spacer(1, 24))
 
         bank_count = min(20, len(_df_to_dicts(bank_df)))
+        bank_year = latest_year(metadata.get('years', ''))
         story.append(KeepTogether([
             _h1('Section 2: Bank Networks'),
             Paragraph(
-                f'Top {bank_count} banks by branch count in the selected geography. '
+                f'Top {bank_count} banks by branch count in the selected geography'
+                + (f' in {bank_year}, the most recent year in this report' if bank_year else '')
+                + '. '
                 'Deposits are in millions of dollars. LMI Only, MMCT Only, and Both '
                 'columns show counts with percentages in parentheses. Net Change is '
                 'the difference in total branches between the first and last year.',
