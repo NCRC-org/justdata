@@ -4,6 +4,8 @@ Small business lending analysis from FFIEC CRA small business disclosure data
 (not Section 1071, which is not yet in force). Generates county-level
 analyses with AI narrative, web report, and PDF/Excel exports.
 
+Standard conformance: on the spec 04 analysis-app standard since 2026-10-07 (PR #211, merged into `testing`).
+
 ## Blueprint
 
 - URL prefix: `/bizsight`
