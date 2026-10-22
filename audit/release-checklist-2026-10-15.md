@@ -142,7 +142,23 @@ Lines 15 and 16 run from this session on 2026-10-22 with the one test account, w
 | 16, `non_member_org` | PASS | `check_tester_gate.py --role non_member_org`: 17 of 17 PASS including the https redirect row. The three app pages render with Run analysis; `/mergermeter/`, `/branchmapper/`, `/dataexplorer/`, `/dotlender/`, `/status`, `/analytics/` and `/admin/users` redirect to `/`. `/apps` and the drawer: the three apps unlocked, no request panel, no Staff tools or In consolidation. Landing CTA "Open the apps" |
 | Back to member | PASS | `check_tester_gate.py --role member`: 17 of 17 PASS |
 
-The other lines are Jad's, in one browser sitting. The 17 lines and expected results are in spec 05. Line 12: the
+Jad's browser pass, admin account, 2026-10-22 (results as Jad reported them):
+
+| Line | Result | Evidence |
+|---|---|---|
+| 1, drawer | PASS | Groups and order as expected; no locks |
+| 2, `/apps` | PASS, NOTE | Same groups and order as the drawer; In consolidation note present; no request panel. Jad: Staff tools and In consolidation "should only be available to admin". Today the access matrix also shows them to staff roles; changing that is an access-policy decision, open for Jad |
+| 3, `/status`, `/analytics/`, `/admin/users` | PASS | All three open for admin (first admin view of `/admin/users` on testing since #230). Chrome hides the scheme in the address bar and shows the connection as secure; the gate script's redirect row confirms https |
+| 4, `/admin/users` at three widths | PASS | |
+| 5, `/analytics/` at three widths | PASS | Data and charts, no console errors |
+| 6, MergerMeter page | PASS | Steps and the SOD 2026 hint as expected |
+| 7, Pinnacle and UCB from branches | PASS | About 76 areas / 142 counties and 48 / 103, collapsed with Change |
+| 8, controls column scroll | PASS | |
+| 9, run analysis | FAIL | `/analyze` returned a cache hit, job `b823163c` (Pinnacle / UCB from Jad's 2026-10-15 batch), so no loading stages ran; `/report-data` then returned 404 eight times. Cause from the testing request log (revision 00043): every read of that job's metadata and workbook in `gs://justdata-mergermeter-output` got **403 Forbidden**. The objects exist (created 2026-10-15 22:21 UTC). The bucket's only non-project binding is `roles/storage.objectCreator` for `firebase-adminsdk-fbsvc@justdata-ncrc.iam.gserviceaccount.com`, so the service can write workbooks but not read them back; a MergerMeter cache hit can only load on the instance that wrote the file. Second issue: the bucket deletes objects after 7 days, while the cache row has no expiry, so after 7 days a cache hit points at a deleted workbook. The browser console's `contentscript.js` warnings come from an extension, not the site |
+| 10 to 14, 17 | HELD | After line 9 is fixed and re-run |
+| 15, 16 | PASS | See gate runs above |
+
+The 17 lines and expected results are in spec 05. Line 12: the
 `cache_testing` grant was in before MergerMeter run 1 (2026-10-20); the two
 Pinnacle / UCB runs left one cache row, one result row and one usage row per
 run. Lines 15 and 16 use the one test account, moved
