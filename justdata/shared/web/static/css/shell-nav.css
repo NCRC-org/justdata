@@ -38,7 +38,11 @@
     background: var(--color-bg);
     border-right: 1px solid var(--color-border);
     transform: translateX(-100%);
-    transition: transform var(--dur-base) var(--ease);
+    /* Closed, the drawer is hidden as well as off-screen, so its links leave
+       the tab order and the accessibility tree. visibility waits for the
+       slide-out to finish, and turns on at once when the drawer opens. */
+    visibility: hidden;
+    transition: transform var(--dur-base) var(--ease), visibility 0s linear var(--dur-base);
     z-index: 1000;
     overflow-y: auto;
     display: flex;
@@ -47,6 +51,8 @@
 
 .nav-sidebar.active {
     transform: translateX(0);
+    visibility: visible;
+    transition: transform var(--dur-base) var(--ease), visibility 0s;
 }
 
 .nav-sidebar-header {
