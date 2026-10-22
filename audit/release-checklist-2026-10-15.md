@@ -156,7 +156,13 @@ Jad's browser pass, admin account, 2026-10-22 (results as Jad reported them):
 | 8, controls column scroll | PASS | |
 | 9, run analysis | FAIL | `/analyze` returned a cache hit, job `b823163c` (Pinnacle / UCB from Jad's 2026-10-15 batch), so no loading stages ran; `/report-data` then returned 404 eight times. Cause from the testing request log (revision 00043): every read of that job's metadata and workbook in `gs://justdata-mergermeter-output` got **403 Forbidden**. The objects exist (created 2026-10-15 22:21 UTC). The bucket's only non-project binding is `roles/storage.objectCreator` for `firebase-adminsdk-fbsvc@justdata-ncrc.iam.gserviceaccount.com`, so the service can write workbooks but not read them back; a MergerMeter cache hit can only load on the instance that wrote the file. Second issue: the bucket deletes objects after 7 days, while the cache row has no expiry, so after 7 days a cache hit points at a deleted workbook. The browser console's `contentscript.js` warnings come from an extension, not the site |
 | 9, fix | DONE | Jad granted `roles/storage.objectViewer` on `gs://justdata-mergermeter-output` to `firebase-adminsdk-fbsvc@justdata-ncrc.iam.gserviceaccount.com` (2026-10-22). The cached report then loaded for Jad; the request log shows `/mergermeter/report-data` 200 at 18:08:57 UTC with the metadata and workbook downloaded from GCS. With Jad's approval the stale Pinnacle / UCB entry (`b823163c`, files due for the bucket's 7-day deletion) was removed from `cache_testing`: 1 cache row and 1 result row (no section rows; usage rows kept), so the re-run of line 9 is fresh |
-| 10 to 14, 17 | HELD | With the re-run of line 9 |
+| 9, re-run | PASS | Jad, admin, Pinnacle / UCB from branches: fresh run with stage text, elapsed counter and Cancel, no raw error. Server-recorded response time 70.4 s (`cache_testing.usage_log`, job `13d14420`, 18:12 UTC) |
+| 10, results | PASS | |
+| 11, report URL in a new tab | PASS | |
+| 12, identical run again | PASS | Cache hit, server-recorded 5.3 s (18:15 UTC). `cache_testing`: one MergerMeter cache row (`13d14420`, access count 1) and one usage row per run (cache_hit false, then true). Expiry follow-up: #234 (a hit needs its workbook; entries expire with it; Workflow 13361333217) |
+| 13, three widths | PASS | |
+| 14, BranchMapper, DotLender, DataExplorer | PASS | Old footer known and out of scope |
+| 17, VoiceOver | SKIPPED | Jad's choice |
 | 15, 16 | PASS | See gate runs above |
 
 The 17 lines and expected results are in spec 05. Line 12: the
