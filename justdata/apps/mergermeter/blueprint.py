@@ -6,7 +6,7 @@ Converts the standalone MergerMeter app into a blueprint.
 from flask import Blueprint, render_template, request, jsonify, send_file, session, url_for, make_response
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import time
 import json
@@ -21,7 +21,7 @@ from justdata.backend import (
 from justdata.shared.utils.analysis_cache import store_cached_result
 from justdata.shared.utils.progress_tracker import get_progress, update_progress
 from justdata.shared.utils.error_ref import GENERIC_ERROR, REQUEST_ERROR, user_error
-from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
+from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID, WORKBOOK_RETENTION_DAYS
 from justdata.shared.core.sod_years import SOD_LATEST_YEAR
 from .version import __version__
 from justdata.shared.utils.gcs_storage import download_json
@@ -237,9 +237,11 @@ def analyze():
         # SOD year the branch and HHI queries read, so a new SOD year is a new key
         cache_params['sod_year'] = str(SOD_LATEST_YEAR)
 
+        from .mergermeter_ops import workbook_in_storage
         cached = lookup_cached_analysis(
             'mergermeter', cache_params, caller,
             force_refresh_requested=request.form.get('force_refresh', '0') == '1',
+            still_available=workbook_in_storage,
         )
 
         if cached:
@@ -278,7 +280,8 @@ def analyze():
                             job_id=job_id,
                             result_data=result,
                             user_type=user_type,
-                            metadata=metadata
+                            metadata=metadata,
+                            expires_in=timedelta(days=WORKBOOK_RETENTION_DAYS) - timedelta(hours=1),
                         )
                     except Exception as cache_error:
                         print(f"Warning: Failed to store in cache: {cache_error}")

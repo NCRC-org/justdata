@@ -9,7 +9,7 @@ import hashlib
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Any, List
 from google.cloud import bigquery
 from justdata.shared.utils.bigquery_client import get_bigquery_client
@@ -999,7 +999,8 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
 def store_cached_result(app_name: str, params: Dict[str, Any],
                        job_id: str, result_data: Dict[str, Any],
                        user_type: str = 'public',
-                       metadata: Optional[Dict[str, Any]] = None) -> None:
+                       metadata: Optional[Dict[str, Any]] = None,
+                       expires_in: Optional[timedelta] = None) -> None:
     """
     Store analysis result in BigQuery with section-based storage.
     If a cache entry with the same cache_key already exists (e.g., force_refresh),
@@ -1106,7 +1107,7 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     VALUES
     (@cache_key, @app_name, @job_id, @params_hash, PARSE_JSON(@params_json),
      CURRENT_TIMESTAMP(), @user_type, CURRENT_TIMESTAMP(), 0,
-     @result_size, 0.0, NULL)
+     @result_size, 0.0, @expires_at)
     """
     
     # Insert into results table
@@ -1130,6 +1131,12 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
             bigquery.ScalarQueryParameter("params_json", "STRING", json.dumps(normalized_params)),
             bigquery.ScalarQueryParameter("user_type", "STRING", user_type),
             bigquery.ScalarQueryParameter("result_size", "INT64", total_size),
+            # None for results held wholly in BigQuery; an app whose result
+            # is a file with its own retention passes that retention, so a
+            # hit never outlives the file (get_cached_result skips expired).
+            bigquery.ScalarQueryParameter(
+                "expires_at", "TIMESTAMP",
+                datetime.now(timezone.utc) + expires_in if expires_in else None),
         ]
     )
     
