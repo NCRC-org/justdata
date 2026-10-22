@@ -410,7 +410,14 @@ From the uncached batch above. Created on the Workflow board 2026-10-22:
 1 = 13360124454, 2 = 13360117509, 3 = 13360118475, 4 = 13360119798,
 5 = 13360117507, 6 = 13360117255, 7 = 13360117162, 8 = 13360119391,
 9 = 13360099262, plus 13360117508 for the gunicorn and Cloud Run settings.
-Fixes in review: 1 and 2 in #229, 9 in #227. These are cost and speed
+Fixes in review: 1 and 2 in #229, 9 in #227. All three merged 2026-10-22.
+Measured on testing after #229 (member, Wake County, NC, never cached): the
+cache write took 4.9 s for LendSight (24 sections) and 6.5 s for BranchSight
+(11 sections, `raw_data` included), from the BigQuery job history; the
+BranchSight repeat run was a cache hit, done in 6.7 s. Ticket 10's settings
+(13360117508) are in #232: memory stays 2 GiB, as the peak hourly p99 on
+testing from 2026-10-15 to 2026-10-20 was 59.0% (the uncached batch), under
+Jad's 60% line. These are cost and speed
 findings, except ticket 2, which is a defect. Spec 05 changes no queries. Byte
 estimates marked "measured" come from one query run on 2026-10-20 with the
 proposed filter (label `purpose=spec05-bytes-estimate`). The rest are estimates
@@ -451,6 +458,10 @@ Bug, priority High.**
   - Consider not storing `raw_data` at all: `/download` rebuilds the frames.
   - Delete the orphaned section rows (`analysis_result_sections` rows whose
     `job_id` has no `analysis_results` row) once the fix is live.
+- Done 2026-10-22 (Jad approved): fixed in #229. The cleanup `DELETE` on
+  `cache_testing.analysis_result_sections` (BranchSight rows with no result
+  row, older than one hour) removed **96 rows from 16 jobs**, created
+  2026-10-08 to 2026-10-20. A recount afterwards found 0 orphaned rows.
 
 **3. LendSight HMDA query reads a whole year per county. Priority Medium.**
 - Tables: `dataexplorer.de_hmda` (partitioned on `activity_year`, clustered
