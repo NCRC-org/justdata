@@ -526,9 +526,14 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         if 'summary' in report_data and not report_data['summary'].empty:
             report_data['summary'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 1: Yearly Breakdown'), index=False)
         
-        # Section 2: Analysis by Bank
+        # Section 2: Analysis by Bank. Branch counts are for the last year of
+        # the run, which the sheet name states (Jay round 2 #11); the name
+        # stays within Excel's 31 characters.
         if 'by_bank' in report_data and not report_data['by_bank'].empty:
-            report_data['by_bank'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 2: Analysis by Bank'), index=False)
+            run_years = (metadata or {}).get('years') or []
+            bank_year = max((str(y) for y in run_years), default='') if isinstance(run_years, (list, tuple)) else str(run_years)
+            bank_sheet = f'Section 2: Banks ({bank_year})' if bank_year else 'Section 2: Analysis by Bank'
+            report_data['by_bank'].to_excel(writer, sheet_name=sanitize_sheet_name(bank_sheet), index=False)
         
         # Section 3: County by County Analysis (only if multiple counties)
         if 'by_county' in report_data and not report_data['by_county'].empty:

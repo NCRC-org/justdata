@@ -43,7 +43,7 @@ def test_excel_from_cached_lists_names_the_county(client):
     assert resp.status_code == 200, resp.get_json()
     assert "Lowndes_County_Alabama" in resp.headers["Content-Disposition"]
     wb = load_workbook(io.BytesIO(resp.data))
-    assert {"Section 1- Yearly Breakdown", "Section 2- Analysis by Bank", "Raw Data"} <= set(wb.sheetnames)
+    assert {"Section 1- Yearly Breakdown", "Section 2- Banks (2025)", "Raw Data"} <= set(wb.sheetnames)
     methods = {r[0]: r[1] for r in wb["Methods & Definitions"].iter_rows(values_only=True)}
     assert "BankFind" not in methods["Data Source"]
     assert "excludes" not in methods["Branch Count"]

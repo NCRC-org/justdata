@@ -45,6 +45,7 @@ from justdata.shared.pdf.styles import (
     build_table_style, markdown_to_reportlab,
 )
 from justdata.shared.pdf.components import (
+    latest_year,
     build_data_table, build_key_findings,
     build_source_caption,
     ai_narrative_to_flowables,
@@ -1332,9 +1333,13 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if s3_has:
         story.append(NextPageTemplate('landscape'))
         story.append(PageBreak())                          # PageBreak #3
-        story.append(_h1('Section 3: Top Mortgage Lenders'))
+        lender_year = latest_year(metadata.get('years', ''))
+        story.append(_h1(f'Section 3: Top Mortgage Lenders ({lender_year})' if lender_year
+                         else 'Section 3: Top Mortgage Lenders'))
         story.append(Paragraph(
-            f'Top {lender_count} lenders by total loan volume. Demographic columns show % of each '
+            f'Top {lender_count} lenders by total loan volume'
+            + (f' in {lender_year}, the most recent year in this report' if lender_year else '')
+            + '. Demographic columns show % of each '
             'lender\u2019s originations. Full lender list available in Excel export.',
             _COMPACT_CAPTION,
         ))

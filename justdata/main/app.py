@@ -520,29 +520,17 @@ def create_app():
     def admin_users():
         """Admin user management page - requires admin access."""
         from justdata.main.auth import VALID_USER_TYPES
-        from jinja2 import Environment, FileSystemLoader, select_autoescape
-        from flask import url_for
 
         user_type = get_user_type()
-
-        permissions = get_user_permissions(user_type)
-
-        # Create Jinja2 environment with Flask's url_for function
-        env = Environment(
-            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
-        env.globals['url_for'] = url_for
-
-        template = env.get_template('admin-users.html')
-        # Raw Environment skips context processors, so pass the shell context
-        # (nav_groups, secondary_pages, platform_version) explicitly.
-        return template.render(
+        # render_template, not a bare Jinja Environment: the bare one had no
+        # app globals, so the shell footer's `ncrc_contact` (added in #217)
+        # was undefined and the page returned 500 (Jay round 2 #1).
+        return render_template(
+            'admin-users.html',
             user_type=user_type,
-            permissions=permissions,
+            permissions=get_user_permissions(user_type),
             valid_user_types=VALID_USER_TYPES,
             current_user=get_current_user(),
-            **inject_shell()
         )
 
     return app
