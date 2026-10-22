@@ -213,6 +213,47 @@ def _json_for_bigquery(value: Any) -> str:
     return json.dumps(sanitize_nan_values(value, precision=None), default=str, allow_nan=False)
 
 
+# All of a run's sections in one statement. Each DML statement takes 1 to 2.5 s,
+# and one per section made the write 10 to 82 s of every uncached run (spec 05,
+# 2026-10-20). BigQuery refuses a request over 10 MB; a run's sections came to
+# at most 0.8 MB on cache_testing, so a batch is closed at 4 MB of JSON.
+SECTIONS_INSERT = f"""
+INSERT INTO `{SECTIONS_TABLE}`
+(section_id, job_id, app_name, section_type, section_name, section_category,
+ section_data, section_metadata, display_order, created_at, updated_at)
+SELECT s.section_id, @job_id, @app_name, s.section_type, s.section_name, s.section_category,
+       PARSE_JSON(s.section_data), PARSE_JSON(s.section_metadata), s.display_order,
+       CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+FROM UNNEST(@sections) AS s
+"""
+_SECTION_BATCH_CHARS = 4_000_000
+
+
+def _section_batches(sections: List[Dict[str, Any]]) -> List[List[Any]]:
+    """The sections as STRUCT parameters, in order, split by JSON size."""
+    batches, batch, size = [], [], 0
+    for section in sections:
+        data = _json_for_bigquery(section['section_data'])
+        meta = _json_for_bigquery(section.get('section_metadata', {}))
+        if batch and size + len(data) + len(meta) > _SECTION_BATCH_CHARS:
+            batches.append(batch)
+            batch, size = [], 0
+        batch.append(bigquery.StructQueryParameter(
+            None,
+            bigquery.ScalarQueryParameter("section_id", "STRING", str(uuid.uuid4())),
+            bigquery.ScalarQueryParameter("section_type", "STRING", section['section_type']),
+            bigquery.ScalarQueryParameter("section_name", "STRING", section['section_name']),
+            bigquery.ScalarQueryParameter("section_category", "STRING", section.get('section_category')),
+            bigquery.ScalarQueryParameter("section_data", "STRING", data),
+            bigquery.ScalarQueryParameter("section_metadata", "STRING", meta),
+            bigquery.ScalarQueryParameter("display_order", "INT64", section.get('display_order', 0)),
+        ))
+        size += len(data) + len(meta)
+    if batch:
+        batches.append(batch)
+    return batches
+
+
 def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Extract sections from result data based on app structure.
@@ -1114,37 +1155,16 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
         # report-data endpoint. If we insert results first, the frontend can query
         # via LEFT JOIN and get partial data before all sections are stored.
         print(f"[DEBUG] Storing {len(sections)} sections to BigQuery...")
-        for idx, section in enumerate(sections):
-            section_id = str(uuid.uuid4())
-            section_insert = f"""
-            INSERT INTO `{SECTIONS_TABLE}`
-            (section_id, job_id, app_name, section_type, section_name, section_category,
-             section_data, section_metadata, display_order, created_at, updated_at)
-            VALUES
-            (@section_id, @job_id, @app_name, @section_type, @section_name, @section_category,
-             PARSE_JSON(@section_data), PARSE_JSON(@section_metadata), @display_order,
-             CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
-            """
-
-            section_config = bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter("section_id", "STRING", section_id),
+        for batch in _section_batches(sections):
+            try:
+                client.query(SECTIONS_INSERT, job_config=bigquery.QueryJobConfig(query_parameters=[
                     bigquery.ScalarQueryParameter("job_id", "STRING", job_id),
                     bigquery.ScalarQueryParameter("app_name", "STRING", app_name.lower()),
-                    bigquery.ScalarQueryParameter("section_type", "STRING", section['section_type']),
-                    bigquery.ScalarQueryParameter("section_name", "STRING", section['section_name']),
-                    bigquery.ScalarQueryParameter("section_category", "STRING", section.get('section_category')),
-                    bigquery.ScalarQueryParameter("section_data", "STRING", _json_for_bigquery(section['section_data'])),
-                    bigquery.ScalarQueryParameter("section_metadata", "STRING", _json_for_bigquery(section.get('section_metadata', {}))),
-                    bigquery.ScalarQueryParameter("display_order", "INT64", section.get('display_order', 0)),
-                ]
-            )
-
-            try:
-                client.query(section_insert, job_config=section_config).result()
-                print(f"  [OK] Stored section {idx+1}/{len(sections)}: {section['section_name']}")
+                    bigquery.ArrayQueryParameter("sections", "STRUCT", batch),
+                ])).result()
+                print(f"  [OK] Stored {len(batch)} sections")
             except Exception as section_error:
-                print(f"  [ERROR] Failed to store section {section['section_name']}: {section_error}")
+                print(f"  [ERROR] Failed to store {len(batch)} sections: {section_error}")
                 raise
 
         # Now insert result summary (with status='completed') - all sections exist at this point
