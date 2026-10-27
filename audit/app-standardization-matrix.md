@@ -4,6 +4,12 @@ Input to spec 04 Part B (L5 `Projects/JustData Frontend Specs/04-app-standardiza
 Scope: LendSight, BizSight, BranchSight, then MergerMeter last (MergerMeter is
 staff-only on every deploy). Audited on `testing` at 4f9d8ee, 2026-10-07.
 
+**Deliberate access changes in this workstream** (both by Jad):
+1. **MergerMeter staff-only on every deploy** (D2, 2026-10-07). It was hidden from every non-staff role and is not a tester app.
+2. **Staff tools and In consolidation admin-only** (spec 05 Part 2 line 2, 2026-10-27, #235). `ACCESS_MATRIX` hides MergerMeter, Analytics, BranchMapper, DotLender and DataExplorer from staff and senior_executive; Administration already was admin-only. Those roles no longer see the apps in the drawer, on `/apps` or in the landing roster, and the routes refuse them. DotLender and Analytics moved from `staff_required` to `require_access` so their routes follow the matrix.
+
+Where this matrix says "staff" for MergerMeter or the In consolidation tools, read "admin" from 2026-10-27.
+
 **Who produced each row** (the `Source` column):
 - **Code (Claude):** read from templates, JS and blueprints. File:line references are in the per-app notes below.
 - **Code (Claude), not observed:** what the code does, never seen rendered. The shared PR's `/dev/app-states` route (FLASK_DEBUG only) is where these states will be visible.
@@ -213,6 +219,8 @@ a proposal.
 | Cached re-run | <= 2 s | see cached runs | see cached runs | see cached runs | n/a (staff) |
 
 ## Pending fixes (scope for the shared PR or the named per-app PR)
+
+- **MergerMeter cache entries and the 7-day workbook deletion** (Jad's decision, 2026-10-22, #234, Workflow 13361333217, High). A cache hit now checks that the workbook is still in `gs://justdata-mergermeter-output`. If it is gone, or the check cannot run, the hit counts as a miss and the analysis reruns. New entries expire one hour before the bucket's 7-day lifecycle deletes the file, and a network test compares the two. No other app stores files outside BigQuery.
 
 | Fix | Where | Status |
 |---|---|---|

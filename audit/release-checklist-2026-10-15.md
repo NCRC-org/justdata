@@ -147,7 +147,8 @@ Jad's browser pass, admin account, 2026-10-22 (results as Jad reported them):
 | Line | Result | Evidence |
 |---|---|---|
 | 1, drawer | PASS | Groups and order as expected; no locks |
-| 2, `/apps` | PASS, NOTE | Same groups and order as the drawer; In consolidation note present; no request panel. Jad: Staff tools and In consolidation "should only be available to admin". Today the access matrix also shows them to staff roles; changing that is an access-policy decision, open for Jad |
+| 2, `/apps` | PASS, NOTE | Same groups and order as the drawer; In consolidation note present; no request panel. Jad: Staff tools and In consolidation "should only be available to admin". Decision (Jad, 2026-10-27): both groups admin-only before sign-off. #235 hides MergerMeter, Analytics, BranchMapper, DotLender and DataExplorer from staff and senior_executive in `ACCESS_MATRIX` (Administration already was) and moves the DotLender and Analytics routes from `staff_required` to `require_access`. This is the second deliberate access change in this workstream, after MergerMeter went staff-only (D2, 2026-10-07) |
+| 2, role table after #235 | PENDING | Jad switches the test account to Staff, Senior Executive and Administrator; drawer, `/apps`, landing roster and the six routes checked live for each |
 | 3, `/status`, `/analytics/`, `/admin/users` | PASS | All three open for admin (first admin view of `/admin/users` on testing since #230). Chrome hides the scheme in the address bar and shows the connection as secure; the gate script's redirect row confirms https |
 | 4, `/admin/users` at three widths | PASS | |
 | 5, `/analytics/` at three widths | PASS | Data and charts, no console errors |
@@ -159,7 +160,7 @@ Jad's browser pass, admin account, 2026-10-22 (results as Jad reported them):
 | 9, re-run | PASS | Jad, admin, Pinnacle / UCB from branches: fresh run with stage text, elapsed counter and Cancel, no raw error. Server-recorded response time 70.4 s (`cache_testing.usage_log`, job `13d14420`, 18:12 UTC) |
 | 10, results | PASS | |
 | 11, report URL in a new tab | PASS | |
-| 12, identical run again | PASS | Cache hit, server-recorded 5.3 s (18:15 UTC). `cache_testing`: one MergerMeter cache row (`13d14420`, access count 1) and one usage row per run (cache_hit false, then true). Expiry follow-up: #234 (a hit needs its workbook; entries expire with it; Workflow 13361333217) |
+| 12, identical run again | PASS | Cache hit, server-recorded 5.3 s (18:15 UTC). `cache_testing`: one MergerMeter cache row (`13d14420`, access count 1) and one usage row per run (cache_hit false, then true). Expiry fix (Jad's decision 1, 2026-10-22): #234. On a MergerMeter cache hit the workbook must still be in storage, or the hit counts as a miss and the analysis reruns; new entries expire one hour before the bucket's 7-day deletion. MergerMeter is the only app that stores files outside BigQuery. Workflow 13361333217 |
 | 13, three widths | PASS | |
 | 14, BranchMapper, DotLender, DataExplorer | PASS | Old footer known and out of scope |
 | 17, VoiceOver | SKIPPED | Jad's choice |
