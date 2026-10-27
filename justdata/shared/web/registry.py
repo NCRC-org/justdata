@@ -9,7 +9,8 @@ Do not add access rules to this file; change the matrix instead.
 Testing-site overlay: on JUSTDATA_ENV=testing, get_access_row() applies
 main/auth/access_overlay.py, which limits non-staff users to the three Sight
 apps (LendSight, BizSight, BranchSight). MergerMeter is staff-only on every
-deploy (D2, resolved 2026-10-07). This file does not special-case either;
+deploy (D2, resolved 2026-10-07), and since 2026-10-27 admin-only, with the
+rest of both staff groups (spec 05 line 2). This file does not special-case either;
 it just reads the overlaid rows.
 
 `sources` names only datasets the app's code actually queries (checked
@@ -64,8 +65,10 @@ NAV_GROUPS = (
                  "Where are banks opening and closing branches, and how many serve "
                  "low- and moderate-income and majority-minority neighborhoods?"),
     )),
-    # MergerMeter is staff-only on every deploy (D2, resolved 2026-10-07).
-    NavGroup("Staff tools", (
+    # Admin-only on every deploy (Jad, 2026-10-27, spec 05 line 2): ACCESS_MATRIX
+    # hides MergerMeter, Analytics and Administration from staff and
+    # senior_executive. MergerMeter was staff-only before (D2, 2026-10-07).
+    NavGroup("Admin tools", (
         AppEntry("mergermeter", "MergerMeter", "/mergermeter",
                  "What a proposed merger means for the markets it touches.",
                  ("HMDA", "CRA small business", "FDIC SOD"),
@@ -77,7 +80,7 @@ NAV_GROUPS = (
     ), staff_only=True),
     # Being consolidated into one application named BranchMapper (L5 "JustData --
     # App portfolio and consolidation"). Usable by staff meanwhile, but not
-    # presented as peer products.
+    # presented as peer products. Admin-only since 2026-10-27 (spec 05 line 2).
     NavGroup("In consolidation", (
         AppEntry("branchmapper", "BranchMapper", "/branchmapper",
                  "Map a bank's branch network against neighborhood data.",
@@ -89,7 +92,7 @@ NAV_GROUPS = (
                  "Build your own query across platform datasets.",
                  ("HMDA", "CRA small business", "FDIC SOD", "Census ACS")),
     ), staff_only=True,
-        note="Being merged into a single branch and lending map tool. Available to staff in the meantime."),
+        note="Being merged into a single branch and lending map tool. Available to administrators in the meantime."),
 )
 
 # /privacy and /terms are left out until their content exists (they 404).

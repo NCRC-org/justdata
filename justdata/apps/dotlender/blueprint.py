@@ -21,7 +21,7 @@ from justdata.apps.dotlender.data.queries import (
     get_summary_stats,
     lender_search,
 )
-from justdata.main.auth import staff_required
+from justdata.main.auth import require_access
 
 
 dotlender_bp = Blueprint(
@@ -37,7 +37,7 @@ dotlender_bp = Blueprint(
 
 
 @dotlender_bp.route("/")
-@staff_required
+@require_access('dotlender', 'full')
 def index():
     """Filter page — DotLender main view."""
     mapbox_token = os.environ.get("MAPBOX_ACCESS_TOKEN", "")
@@ -99,14 +99,14 @@ def _resolve_year_range(body: dict, max_year: int) -> tuple:
 
 
 @dotlender_bp.route("/api/max-year")
-@staff_required
+@require_access('dotlender', 'full')
 def api_max_year():
     """Return the current max activity_year in de_hmda."""
     return jsonify({"max_year": get_max_year()})
 
 
 @dotlender_bp.route("/api/lender-search")
-@staff_required
+@require_access('dotlender', 'full')
 def api_lender_search():
     """Typeahead endpoint. GET ?q=<term>&year_start=<int>&year_end=<int>"""
     q = request.args.get("q", "").strip()
@@ -120,7 +120,7 @@ def api_lender_search():
 
 
 @dotlender_bp.route("/api/cbsa-search")
-@staff_required
+@require_access('dotlender', 'full')
 def api_cbsa_search():
     """Typeahead for metropolitan CBSAs. GET ?q=<term>"""
     q = request.args.get("q", "").strip()
@@ -130,7 +130,7 @@ def api_cbsa_search():
 
 
 @dotlender_bp.route("/api/cbsa-counties/<cbsa_code>")
-@staff_required
+@require_access('dotlender', 'full')
 def api_cbsa_counties(cbsa_code):
     """List of counties (geoid5 + label) for a 5-digit CBSA code."""
     if not cbsa_code.isdigit() or len(cbsa_code) != 5:
@@ -139,7 +139,7 @@ def api_cbsa_counties(cbsa_code):
 
 
 @dotlender_bp.route("/api/state-counties/<state_fips>")
-@staff_required
+@require_access('dotlender', 'full')
 def api_state_counties(state_fips):
     """List of counties (geoid5 + label) for a 2-digit state FIPS."""
     if not state_fips.isdigit() or len(state_fips) != 2:
@@ -175,7 +175,7 @@ def _prep_request(body):
 
 
 @dotlender_bp.route("/api/map-data", methods=["POST"])
-@staff_required
+@require_access('dotlender', 'full')
 def api_map_data():
     """Choropleth + dot-density payload for a geography/filter combination.
 
@@ -222,7 +222,7 @@ def api_map_data():
 
 
 @dotlender_bp.route("/api/race-choropleth", methods=["POST"])
-@staff_required
+@require_access('dotlender', 'full')
 def api_race_choropleth():
     """Per-tract race share percentages for the selected geography.
 
@@ -250,7 +250,7 @@ def api_race_choropleth():
 
 
 @dotlender_bp.route("/api/summary-stats", methods=["POST"])
-@staff_required
+@require_access('dotlender', 'full')
 def api_summary_stats():
     """Same POST body as /api/map-data. Returns summary statistics dict."""
     body = request.get_json(silent=True) or {}

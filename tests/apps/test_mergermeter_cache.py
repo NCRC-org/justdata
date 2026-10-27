@@ -27,7 +27,7 @@ def test_successful_run_is_stored_in_the_analysis_cache(monkeypatch):
     app.config["TESTING"] = True
     client = app.test_client()
     with client.session_transaction() as s:
-        s["user_type"] = "staff"
+        s["user_type"] = "admin"
         s["firebase_user"] = {"uid": "t", "email": "t@example.org", "email_verified": True}
     resp = client.post("/mergermeter/analyze", data={"acquirer_lei": "A" * 20, "target_lei": "B" * 20})
     assert resp.status_code == 200, resp.get_data(as_text=True)
@@ -81,7 +81,7 @@ def _client(monkeypatch):
     app.config["TESTING"] = True
     client = app.test_client()
     with client.session_transaction() as s:
-        s["user_type"] = "staff"
+        s["user_type"] = "admin"
         s["firebase_user"] = {"uid": "t", "email": "t@example.org", "email_verified": True}
     return client
 

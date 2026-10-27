@@ -11,7 +11,7 @@
             <div class="shell-footer-col">
                 <p class="shell-footer-heading">Apps</p>
                 <ul class="shell-footer-list">
-                    {# Staff-only groups (staff tools, tools in consolidation) are not listed as products. #}
+                    {# Staff-only groups (Admin tools, tools in consolidation) are not listed as products. #}
                     {% for group in nav_groups if group.label and not group.staff_only %}
                         {% for item in group['items'] %}
                         <li><a href="{{ item.url if item.state == 'available' else '/apps' }}">{{ item.name }}</a></li>
