@@ -1,6 +1,7 @@
 """NCRC report links live in one list and every one answers (Workflow 13277128272)."""
 
 import re
+import warnings
 from datetime import date
 from pathlib import Path
 
@@ -17,17 +18,20 @@ NOT_REPORTS = {"https://ncrc.org/membership/", "https://ncrc.org/contact/"}
 def _get(url):
     """GET once more after a 5xx, a timeout or a dropped connection, so a
     transient server error does not read as a dead link. A 4xx or a redirect
-    is an answer and is not retried."""
+    is an answer and is not retried. A retry is reported as a warning, so a
+    run records which link flaked even when the second try passes."""
     for attempt in (1, 2):
         try:
             resp = requests.get(url, timeout=30, allow_redirects=False,
                                 headers={"User-Agent": "NCRC JustData link check"})
-        except (requests.Timeout, requests.ConnectionError):
+        except (requests.Timeout, requests.ConnectionError) as exc:
             if attempt == 2:
                 raise
+            warnings.warn(f"link check retried {url} after {type(exc).__name__}")
             continue
         if resp.status_code < 500 or attempt == 2:
             return resp
+        warnings.warn(f"link check retried {url} after HTTP {resp.status_code}")
 
 
 @pytest.mark.network
@@ -46,7 +50,8 @@ def test_link_check_retries_a_server_error_once(monkeypatch):
         calls.append(url)
         return type("R", (), {"status_code": next(answers)})()
     monkeypatch.setattr(requests, "get", fake_get)
-    assert _get("https://ncrc.org/x/").status_code == 200 and len(calls) == 2
+    with pytest.warns(UserWarning, match=r"retried https://ncrc.org/x/ after HTTP 503"):
+        assert _get("https://ncrc.org/x/").status_code == 200 and len(calls) == 2
 
 
 def test_link_check_does_not_retry_a_missing_page(monkeypatch):
