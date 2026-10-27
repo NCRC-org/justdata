@@ -6,7 +6,7 @@ staff-only on every deploy). Audited on `testing` at 4f9d8ee, 2026-10-07.
 
 **Deliberate access changes in this workstream** (both by Jad):
 1. **MergerMeter staff-only on every deploy** (D2, 2026-10-07). It was hidden from every non-staff role and is not a tester app.
-2. **Staff tools and In consolidation admin-only** (spec 05 Part 2 line 2, 2026-10-27, #235). `ACCESS_MATRIX` hides MergerMeter, Analytics, BranchMapper, DotLender and DataExplorer from staff and senior_executive; Administration already was admin-only. Those roles no longer see the apps in the drawer, on `/apps` or in the landing roster, and the routes refuse them. DotLender and Analytics moved from `staff_required` to `require_access` so their routes follow the matrix.
+2. **Staff tools and In consolidation admin-only** (spec 05 Part 2 line 2, 2026-10-27, #235). `ACCESS_MATRIX` hides MergerMeter, Analytics, BranchMapper, DotLender and DataExplorer from staff and senior_executive; Administration already was admin-only. Those roles no longer see the apps in the drawer, on `/apps` or in the landing roster, and the routes refuse them. DotLender and Analytics moved from `staff_required` to `require_access` so their routes follow the matrix. Every app's progress stream now has the same `require_access` as its run route (a test fails if a stream is ever more permissive). The Staff tools group is renamed **Admin tools**.
 
 Where this matrix says "staff" for MergerMeter or the In consolidation tools, read "admin" from 2026-10-27.
 
