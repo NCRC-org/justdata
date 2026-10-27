@@ -6,7 +6,7 @@ research activity maps, and coalition-building opportunities.
 """
 
 from flask import Blueprint, jsonify, request, render_template, Response
-from justdata.main.auth import login_required, admin_required, staff_required
+from justdata.main.auth import login_required, admin_required, require_access
 import io
 import os
 from datetime import datetime
@@ -61,7 +61,7 @@ def get_context(breadcrumb_items=None):
 
 @analytics_bp.route('/')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def dashboard():
     """Main analytics dashboard."""
     # Trigger incremental sync on dashboard load (rate-limited to once per hour)
@@ -78,7 +78,7 @@ def dashboard():
 
 @analytics_bp.route('/user-map')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def user_map():
     """User locations map view."""
     breadcrumbs = [
@@ -90,7 +90,7 @@ def user_map():
 
 @analytics_bp.route('/research-map')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def research_map():
     """Research activity map view."""
     breadcrumbs = [
@@ -102,7 +102,7 @@ def research_map():
 
 @analytics_bp.route('/lender-map')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def lender_map():
     """Lender interest map view."""
     breadcrumbs = [
@@ -114,7 +114,7 @@ def lender_map():
 
 @analytics_bp.route('/coalitions')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def coalitions():
     """Coalition opportunities table view."""
     breadcrumbs = [
@@ -126,7 +126,7 @@ def coalitions():
 
 @analytics_bp.route('/users')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def users():
     """Users tab view."""
     breadcrumbs = [
@@ -138,7 +138,7 @@ def users():
 
 @analytics_bp.route('/costs')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def costs():
     """BigQuery costs monitoring view."""
     breadcrumbs = [
@@ -154,7 +154,7 @@ def costs():
 
 @analytics_bp.route('/api/summary')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_summary():
     """Get summary metrics for dashboard."""
     try:
@@ -167,7 +167,7 @@ def api_summary():
 
 @analytics_bp.route('/api/user-locations')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_user_locations():
     """Get user location clusters."""
     try:
@@ -189,7 +189,7 @@ def api_user_locations():
 
 @analytics_bp.route('/api/research-activity')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_research_activity():
     """Get research activity by county."""
     try:
@@ -213,7 +213,7 @@ def api_research_activity():
 
 @analytics_bp.route('/api/lender-interest')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_lender_interest():
     """Get lender interest data."""
     try:
@@ -235,7 +235,7 @@ def api_lender_interest():
 
 @analytics_bp.route('/api/coalition-opportunities')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_coalition_opportunities():
     """Get coalition-building opportunities."""
     try:
@@ -256,7 +256,7 @@ def api_coalition_opportunities():
 
 @analytics_bp.route('/api/entity-users')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_entity_users():
     """Get users researching a specific entity (county or lender)."""
     try:
@@ -280,7 +280,7 @@ def api_entity_users():
 
 @analytics_bp.route('/api/timeline')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_timeline():
     """Get activity timeline data."""
     try:
@@ -293,7 +293,7 @@ def api_timeline():
 
 @analytics_bp.route('/lender-interest/<lender_id>')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def lender_detail(lender_id):
     """Lender detail page showing reports and researchers for a specific lender."""
     breadcrumbs = [
@@ -306,7 +306,7 @@ def lender_detail(lender_id):
 
 @analytics_bp.route('/api/lender-detail/<lender_id>')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_lender_detail(lender_id):
     """Get detailed data for a specific lender including reports and researchers."""
     try:
@@ -320,7 +320,7 @@ def api_lender_detail(lender_id):
 
 @analytics_bp.route('/api/users')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_users():
     """Get list of users with activity summary."""
     try:
@@ -335,7 +335,7 @@ def api_users():
 
 @analytics_bp.route('/api/users/<user_id>/activity')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_user_activity(user_id):
     """Get detailed activity for a specific user."""
     try:
@@ -349,7 +349,7 @@ def api_user_activity(user_id):
 
 @analytics_bp.route('/api/user-types')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_user_types():
     """Get list of distinct user types for filtering."""
     try:
@@ -376,7 +376,7 @@ def health():
 
 @analytics_bp.route('/api/costs')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_costs():
     """
     Get BigQuery cost summary for the cost monitoring dashboard.
@@ -401,7 +401,7 @@ def api_costs():
 
 @analytics_bp.route('/api/ai-costs')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_ai_costs():
     """
     Get AI API cost summary (Claude usage).
@@ -456,7 +456,7 @@ def api_force_sync():
 
 @analytics_bp.route('/api/lookup-county-fips')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_lookup_county_fips():
     """
     Look up county FIPS code from county name and state.
@@ -505,7 +505,7 @@ def api_lookup_county_fips():
 
 @analytics_bp.route('/api/export')
 @login_required
-@staff_required
+@require_access('analytics', 'full')
 def api_export():
     """
     Export analytics data to Excel with multiple joinable sheets.

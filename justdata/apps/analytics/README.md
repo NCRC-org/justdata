@@ -1,7 +1,7 @@
 # Analytics
 
 Internal staff dashboard for JustData usage patterns, research activity maps,
-and coalition-building opportunities. Admin/staff only.
+and coalition-building opportunities. Admin only (staff and senior_executive lost access 2026-10-27).
 
 ## Blueprint
 
