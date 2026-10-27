@@ -68,7 +68,7 @@ NAV_GROUPS = (
     # Admin-only on every deploy (Jad, 2026-10-27, spec 05 line 2): ACCESS_MATRIX
     # hides MergerMeter, Analytics and Administration from staff and
     # senior_executive. MergerMeter was staff-only before (D2, 2026-10-07).
-    NavGroup("Staff tools", (
+    NavGroup("Admin tools", (
         AppEntry("mergermeter", "MergerMeter", "/mergermeter",
                  "What a proposed merger means for the markets it touches.",
                  ("HMDA", "CRA small business", "FDIC SOD"),

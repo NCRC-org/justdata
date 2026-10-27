@@ -1,6 +1,6 @@
 """Both staff groups are admin-only (Jad, 2026-10-27, spec 05 line 2).
 
-MergerMeter, Analytics and Administration (Staff tools) and BranchMapper,
+MergerMeter, Analytics and Administration (Admin tools) and BranchMapper,
 DotLender and DataExplorer (In consolidation) are hidden from plain staff and
 senior_executive: not in the drawer, on /apps or in the landing roster, and
 their routes refuse those roles. Admin keeps all six. Checked on every deploy
@@ -77,3 +77,12 @@ def test_admin_keeps_all_six(platform_app):
 def test_plain_staff_api_calls_are_refused(platform_app, method, path):
     resp = getattr(_client(platform_app, "staff"), method)(path, json={} if method == "post" else None)
     assert resp.status_code in (302, 403), resp.status_code
+
+
+def test_admin_tools_heading_on_every_surface(platform_app):
+    """Renamed from Staff tools when both groups went admin-only (Jad, 2026-10-27)."""
+    client = _client(platform_app, "admin")
+    for path in ("/apps", "/"):
+        html = client.get(path).get_data(as_text=True)
+        assert "Admin tools" in html, path
+        assert "Staff tools" not in html, path

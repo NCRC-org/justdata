@@ -26,7 +26,7 @@ REGISTRY_APP_KEYS = [
 def test_staff_only_groups_hold_the_consolidation_and_staff_tools():
     groups = {g.label: [e.key for e in g.items] for g in NAV_GROUPS if g.staff_only}
     assert groups == {
-        "Staff tools": ["mergermeter", "analytics", "admin"],
+        "Admin tools": ["mergermeter", "analytics", "admin"],
         "In consolidation": ["branchmapper", "dotlender", "dataexplorer"],
     }
 
