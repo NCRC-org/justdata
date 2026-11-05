@@ -106,6 +106,9 @@ GRACE_PERIOD_VALUES = ['GRACE PERIOD']
 PRIVILEGED_ROLES = ['staff', 'senior_executive', 'admin']
 
 # Access matrix matching the User Access Matrix
+# Admin-only since 2026-10-27 (Jad, spec 05 line 2): MergerMeter, Analytics,
+# Administration, BranchMapper, DotLender and DataExplorer are hidden from
+# staff and senior_executive. Routes read these rows through require_access.
 # Format: app_name: {user_type: access_level}
 ACCESS_MATRIX = {
     # ========================================
@@ -167,8 +170,8 @@ ACCESS_MATRIX = {
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
-        'staff': 'full',
-        'senior_executive': 'full',
+        'staff': 'hidden',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
     # ========================================
@@ -180,8 +183,8 @@ ACCESS_MATRIX = {
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
-        'staff': 'full',
-        'senior_executive': 'full',
+        'staff': 'hidden',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
     'dataexplorer': {
@@ -190,8 +193,8 @@ ACCESS_MATRIX = {
         'member': 'locked',
         'member_premium': 'full',
         'non_member_org': 'full',
-        'staff': 'full',
-        'senior_executive': 'full',
+        'staff': 'hidden',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
     'dotlender': {
@@ -200,8 +203,8 @@ ACCESS_MATRIX = {
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
-        'staff': 'full',
-        'senior_executive': 'full',
+        'staff': 'hidden',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
 
@@ -215,7 +218,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'hidden',
-        'senior_executive': 'full',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
     'admin': {

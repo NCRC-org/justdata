@@ -88,11 +88,19 @@ def test_testers_see_four_open_tools_and_no_panel(platform_app, user_type):
     assert str(escape(HEADER_LINES["tester"])) in html
 
 
-def test_staff_get_rows_and_no_panel(platform_app):
-    html = _get(platform_app, "/apps", "staff")
-    assert 'class="apps-rows"' in html
+@pytest.mark.parametrize("user_type", ("staff", "senior_executive"))
+def test_plain_staff_get_no_rows_and_no_panel(platform_app, user_type):
+    """Both staff groups are admin-only since 2026-10-27 (spec 05 line 2)."""
+    html = _get(platform_app, "/apps", user_type)
+    assert 'class="apps-rows"' not in html
     assert 'id="request-access"' not in html
     assert str(escape(HEADER_LINES["staff"])) in html
+
+
+def test_admin_gets_rows_and_no_panel(platform_app):
+    html = _get(platform_app, "/apps", "admin")
+    assert 'class="apps-rows"' in html
+    assert 'id="request-access"' not in html
 
 
 def test_staff_only_groups_are_rows_and_only_sight_apps_are_cards(platform_app):
@@ -103,7 +111,7 @@ def test_staff_only_groups_are_rows_and_only_sight_apps_are_cards(platform_app):
     assert [k for cls, k in cards if "is-featured" in cls] == ["lendsight", "branchsight"]
     rows = re.findall(r'class="apps-row" data-card="(\w+)"', main)
     assert rows == ["mergermeter", "analytics", "admin", "branchmapper", "dotlender", "dataexplorer"]
-    assert "Being merged into a single branch and lending map tool. Available to staff in the meantime." in main
+    assert "Being merged into a single branch and lending map tool. Available to administrators in the meantime." in main
 
 
 def test_pending_request_replaces_the_button(platform_app, monkeypatch):

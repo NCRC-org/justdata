@@ -2,8 +2,8 @@
 
 Platform note: justdata/main/app.py has a global before_request handler
 (check_privileged_access) that returns the access_restricted page with
-status 200 for any non-privileged user, and the route's staff_required
-decorator requires `firebase_user` in the session. These tests set both
+status 200 for any non-privileged user, and the route's require_access
+decorator reads the ACCESS_MATRIX row (admin-only since 2026-10-27). These tests set both
 session keys when impersonating privileged users, and differentiate
 authorized vs. restricted responses by checking the body for a marker
 that only appears on the real DotLender page.
@@ -41,19 +41,19 @@ def test_dotlender_index_unauthenticated(unified_client):
 
 
 def test_dotlender_index_staff(unified_client):
-    """Staff user can access DotLender."""
+    """Staff user is refused: DotLender is admin-only since 2026-10-27."""
     _authed_session(unified_client, "staff")
     resp = unified_client.get("/dotlender/")
-    assert resp.status_code == 200
-    assert DOTLENDER_PAGE_MARKER in resp.data
+    assert resp.status_code == 302
+    assert DOTLENDER_PAGE_MARKER not in resp.data
 
 
 def test_dotlender_index_senior_executive(unified_client):
-    """Senior executive can access DotLender."""
+    """Senior executive is refused: DotLender is admin-only since 2026-10-27."""
     _authed_session(unified_client, "senior_executive")
     resp = unified_client.get("/dotlender/")
-    assert resp.status_code == 200
-    assert DOTLENDER_PAGE_MARKER in resp.data
+    assert resp.status_code == 302
+    assert DOTLENDER_PAGE_MARKER not in resp.data
 
 
 def test_dotlender_index_admin(unified_client):

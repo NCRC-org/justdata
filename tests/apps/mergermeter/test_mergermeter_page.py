@@ -17,7 +17,7 @@ def client():
     app.config["TESTING"] = True
     c = app.test_client()
     with c.session_transaction() as s:
-        s["user_type"] = "staff"
+        s["user_type"] = "admin"
         s["firebase_user"] = {"uid": "t", "email": "t@example.org", "email_verified": True}
     return c
 

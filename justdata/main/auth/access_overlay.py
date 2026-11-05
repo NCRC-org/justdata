@@ -7,8 +7,9 @@ JUSTDATA_ENV == "testing". Every access check goes through
 get_access_row() in main/auth/__init__.py, which calls overlay_row(), so the
 route gate, the nav drawer and the /apps launcher cannot disagree.
 
-D2 is resolved (Jad, 2026-10-07): MergerMeter is staff-only on every deploy.
-The overlay does not touch it; ACCESS_MATRIX already hides it from non-staff.
+D2 is resolved (Jad, 2026-10-07): MergerMeter is staff-only on every deploy;
+since 2026-10-27 it is admin-only (spec 05 line 2). The overlay does not touch
+it; ACCESS_MATRIX already hides it from everyone but admin.
 
 The global staff-only gate (check_privileged_access in main/app.py) reads
 testing_gate_admits() below: on the testing deploy it also admits TESTER_ROLES,
@@ -28,7 +29,8 @@ deploy (TESTING_REGISTERED_PATHS), to see the locked tools and request access.
 
 import os
 
-# The three Sight apps. MergerMeter is staff-only (D2) and is not a tester app.
+# The three Sight apps. MergerMeter is admin-only (D2, then spec 05 line 2) and
+# is not a tester app.
 TESTER_APPS = ("lendsight", "bizsight", "branchsight")
 
 # Non-staff roles admitted as external testers. non_member_org is included
