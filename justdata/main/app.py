@@ -260,7 +260,7 @@ def create_app():
         registry (nav_groups, resolved against ACCESS_MATRIX plus the testing
         overlay), so the launcher, drawer and landing roster always agree.
 
-        Staff-only registry groups (staff tools, tools in consolidation) render
+        Staff-only registry groups (Admin tools, tools in consolidation) render
         as compact rows. access_level: "staff" (staff roles), "tester" (tester roles on the
         testing deploy) or "free" (a signed-in public_registered user on the
         testing deploy, who sees every tool locked plus the request panel).

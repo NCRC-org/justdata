@@ -7,7 +7,7 @@
             <span class="apps-group-count">{{ count_words(group_items|length) }} tool{{ 's' if group_items|length != 1 }}</span>
         </div>
         {% if group.note %}<p class="apps-group-note">{{ group.note }}</p>{% endif %}
-        {# Staff-only groups (staff tools, tools in consolidation) are compact rows,
+        {# Staff-only groups (Admin tools, tools in consolidation) are compact rows,
            not cards, so they are not presented as peer products. #}
         {% if group.staff_only %}
         <ul class="apps-rows">

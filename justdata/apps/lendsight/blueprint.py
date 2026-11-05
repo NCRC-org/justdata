@@ -211,6 +211,7 @@ def progress_status():
 
 @lendsight_bp.route('/progress/<job_id>')
 @login_required
+@require_access('lendsight', 'limited')
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
     return sse_response(job_id)
