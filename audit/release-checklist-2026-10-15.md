@@ -148,7 +148,7 @@ Jad's browser pass, admin account, 2026-10-22 (results as Jad reported them):
 |---|---|---|
 | 1, drawer | PASS | Groups and order as expected; no locks |
 | 2, `/apps` | PASS, NOTE | Same groups and order as the drawer; In consolidation note present; no request panel. Jad: Staff tools and In consolidation "should only be available to admin". Decision (Jad, 2026-10-27): both groups admin-only before sign-off. #235 hides MergerMeter, Analytics, BranchMapper, DotLender and DataExplorer from staff and senior_executive in `ACCESS_MATRIX` (Administration already was) and moves the DotLender and Analytics routes from `staff_required` to `require_access`. Added on Jad's review: every progress stream is gated like its run route, and Staff tools is renamed Admin tools. This is the second deliberate access change in this workstream, after MergerMeter went staff-only (D2, 2026-10-07) |
-| 2, role table after #235 | PENDING | Jad switches the test account to Staff, Senior Executive and Administrator; drawer, `/apps`, landing roster and the six routes checked live for each |
+| 2, role table after #235 | PASS | Checked live on 2026-11-05, revision `justdata-testing-00045-zgk` (image 6e3eac6, the #235 merge, which includes #234). Jad switched the one test account to Staff, Senior Executive and Administrator; each run signed in, confirmed the role from `/api/auth/login`, then read the drawer, `/apps`, the landing roster, the six admin-only routes and the MergerMeter and DataExplorer progress streams (made-up job ID, no analysis run). 14 of 14 checks pass for each role. See the role table below |
 | 3, `/status`, `/analytics/`, `/admin/users` | PASS | All three open for admin (first admin view of `/admin/users` on testing since #230). Chrome hides the scheme in the address bar and shows the connection as secure; the gate script's redirect row confirms https |
 | 4, `/admin/users` at three widths | PASS | |
 | 5, `/analytics/` at three widths | PASS | Data and charts, no console errors |
@@ -165,6 +165,18 @@ Jad's browser pass, admin account, 2026-10-22 (results as Jad reported them):
 | 14, BranchMapper, DotLender, DataExplorer | PASS | Old footer known and out of scope |
 | 17, VoiceOver | SKIPPED | Jad's choice |
 | 15, 16 | PASS | See gate runs above |
+
+Line 2 role table, 2026-11-05 (revision 00045, after #234 and #235):
+
+| Check | Staff | Senior Executive | Administrator |
+|---|---|---|---|
+| Drawer | LendSight, BizSight, BranchSight; none locked | Same as Staff | The three Sight apps, then MergerMeter, Analytics, Administration, BranchMapper, DotLender, DataExplorer; none locked |
+| `/apps` groups | Analyze lending, Analyze branches | Same as Staff | Analyze lending, Analyze branches, Admin tools, In consolidation |
+| `/apps` apps | The three Sight apps | Same as Staff | All nine, matching the drawer |
+| Landing roster | Analyze lending, Analyze branches; the three Sight apps | Same as Staff | All four groups; all nine apps |
+| `/mergermeter/`, `/analytics/`, `/admin/users`, `/branchmapper/`, `/dotlender/`, `/dataexplorer/` | Each 302 to `/` | Each 302 to `/` | Each 200 |
+| `/mergermeter/progress/<job>`, `/dataexplorer/progress/<job>` | Each 302 to `/` | Each 302 to `/` | Each 200 `text/event-stream` |
+| Result | 14 of 14 PASS | 14 of 14 PASS | 14 of 14 PASS |
 
 The 17 lines and expected results are in spec 05. Line 12: the
 `cache_testing` grant was in before MergerMeter run 1 (2026-10-20); the two
