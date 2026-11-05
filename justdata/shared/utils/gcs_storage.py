@@ -102,6 +102,17 @@ def download_json(blob_path: str, bucket_name: Optional[str] = None) -> Optional
         return None
 
 
+def blob_exists(blob_path: str, bucket_name: Optional[str] = None) -> Optional[bool]:
+    """Whether the blob exists: True or False when GCS answers, None when it
+    could not be asked (no permission, network). Callers that must not serve a
+    missing file treat None as missing."""
+    try:
+        return get_bucket(bucket_name).blob(blob_path).exists()
+    except Exception as e:
+        print(f"[GCS] Could not check {blob_path}: {e}")
+        return None
+
+
 def upload_file(blob_path: str, local_path: str, bucket_name: Optional[str] = None) -> bool:
     """
     Upload a local file to GCS.

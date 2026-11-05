@@ -2,7 +2,7 @@
 
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from flask import g, has_app_context, request, session
 
@@ -59,8 +59,14 @@ def identify_caller() -> Caller:
 
 
 def lookup_cached_analysis(app_name: str, params: Dict[str, Any], caller: Caller,
-                           force_refresh_requested: bool = False) -> Optional[CachedAnalysis]:
+                           force_refresh_requested: bool = False,
+                           still_available: Optional[Callable[[str], bool]] = None,
+                           ) -> Optional[CachedAnalysis]:
     """Return a completed cached analysis, or None to run a fresh one.
+
+    An app whose result lives outside BigQuery (MergerMeter's workbook in GCS)
+    passes `still_available(job_id)`; a hit whose result is gone is a miss, so
+    the analysis runs again instead of serving a report that cannot load.
 
     A cache bypass is honoured only for privileged users: regenerating costs a
     full BigQuery scan plus the AI narrative calls, so it stays staff-gated
@@ -79,6 +85,9 @@ def lookup_cached_analysis(app_name: str, params: Dict[str, Any], caller: Caller
 
     cached = get_cached_result(app_name, params, caller.user_type)
     if not cached:
+        return None
+    if still_available is not None and not still_available(cached['job_id']):
+        print(f"[INFO] {app_name}: cached job {cached['job_id']} has no stored result; running again")
         return None
 
     return CachedAnalysis(
