@@ -6,12 +6,13 @@ serving `testing` at 5ea2248 (#226) during these checks. Accounts by role only:
 "signed out", "member" (the test account in `~/.justdata-test.env`), "admin"
 (Jad, Part 2).
 
-Status: **in progress.** Analysis lines run 2026-10-20 as member on Cook
-County, IL and Lowndes County, GA (BranchSight also Alpine County, CA for the
-empty state). Timings, bytes and nine ticket drafts are in
-`audit/app-standardization-matrix.md` ("Analysis timings and bytes" and
-"Ticket drafts: analysis speed and cost"). Still open in Part 1: the error
-state (see below). Part 2 is Jad's.
+Status: **complete, 2026-11-05.** Part 1 passes; analysis lines ran
+2026-10-20 as member on Cook County, IL and Lowndes County, GA (BranchSight
+also Alpine County, CA for the empty state). Timings, bytes and nine ticket
+drafts are in `audit/app-standardization-matrix.md` ("Analysis timings and
+bytes" and "Ticket drafts: analysis speed and cost"). Part 2: lines 1 to 16
+pass (line 9 after a storage fix), line 17 skipped by Jad's choice, and the
+line 2 role table passes for Staff, Senior Executive and Administrator.
 
 **Outage caused by these checks, 2026-10-20.** Opening report pages for a job
 ID that does not exist (to reach the error state) left four `/progress`
@@ -21,11 +22,15 @@ nothing from about 17:40 to 18:35 UTC. It recovered by itself when the first
 stream timed out; no restart or redeploy. Ticket draft 9 in the matrix
 (Workflow 13360099262); hotfix #227.
 
-**Open PRs from this pass (2026-10-22), all into `testing`:** #227 progress
-stream ends for an unknown job; #229 BranchSight reaches the analysis cache and
-the cache write is one statement (gate work for the login build); #230
+**PRs from this pass, all into `testing`, all merged:** #227 progress stream
+ends for an unknown job; #229 BranchSight reaches the analysis cache and the
+cache write is one statement (gate work for the login build); #230
 `/admin/users` 500 (Jay round 2 #1); #231 every lender table names its year
-(Jay round 2 #11).
+(Jay round 2 #11); #232 server settings for `justdata-testing`; #233 version
+0.10.0 and the drawer tab order (all 2026-10-22); #234 MergerMeter cache hits
+need their workbook, entries expire with it; #235 Admin tools and In
+consolidation admin-only, progress streams gated like their run routes (both
+2026-11-05, live on revision 00045).
 
 Key: PASS, FAIL, FIXED (failed, fixed in this PR), HELD (not run yet), NOTE.
 
