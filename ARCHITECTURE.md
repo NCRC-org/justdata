@@ -145,6 +145,25 @@ loads them through a small `_load_sql()` / `sql_loader.py` helper. About
 95% of queries elsewhere in the codebase are still inline f-strings; see
 follow-up `chore/externalize-sql-fstrings`.
 
+**Shell and app registry** — `justdata/shared/web/registry.py` (`NAV_GROUPS`)
+is the one list of apps. The nav drawer, the `/apps` launcher, the landing
+roster and the footer all render from it through `inject_shell()` in
+`justdata/main/app.py`, using the shell partials in
+`shared/web/templates/partials/` (`_header.html`, `_nav.html`,
+`_footer.html`, `_auth_modal.html`). The registry decides presentation only.
+Who can open what is `ACCESS_MATRIX` in `justdata/main/auth/`, read through
+`get_access_row()`. On the testing deploy (`JUSTDATA_ENV=testing`),
+`main/auth/access_overlay.py` rewrites a row at read time: non-staff see only
+LendSight, BizSight and BranchSight. `scripts/check_tester_gate.py --role ...`
+checks the deployed gate for one account.
+
+**Data years** — `justdata/shared/core/hmda_years.py` and
+`justdata/shared/core/sod_years.py` are the only places an HMDA or SOD year is
+set. SOD is read from `branchsight.sod` (latest year) and `sod_legacy`
+(earlier years) together, through `sod_all_years()`.
+`tests/shared/test_sod_year_setting.py` fails on an SOD year typed into app
+code.
+
 **Shared web templates** — `justdata/shared/web/templates/` holds the
 chrome used by every app: `shared_header.html`, `shared_footer.html`,
 `base_app.html`, `nav_menu.html`, plus the generic landing, admin, and
@@ -157,7 +176,7 @@ name collision.
 
 **Analysis-app page (spec 04)** — LendSight, BizSight, BranchSight and MergerMeter
 extend `app_page.html`, rendered with `app_page_context(...)` from
-`justdata/shared/web/app_page.py`. The page loads four shared modules from
+`justdata/shared/web/app_page.py`. The page loads five shared modules from
 `justdata/shared/web/static/js/`, in this order:
 
 - `app_states.js` (AppStates) owns the results column's states: idle,
@@ -171,6 +190,16 @@ extend `app_page.html`, rendered with `app_page_context(...)` from
 - `app_run.js` (AppRun) owns the run itself: posting `/analyze`, following
   progress, loading `/report-data`, exports, the shareable
   `/<app>/report?job_id=` URL, and the state-then-county picker.
+- `app_choices.js` (AppChoices) collapses a step's list of more than about
+  eight options to a one-line summary that opens in place. MergerMeter is
+  the only app with such a list today.
+
+Styles are `shared/web/static/css/app.css`, scoped to `.app-*`. The page's
+parts are partials in `shared/web/templates/partials/`: `app_header.html`,
+`app_results_toolbar.html`, `app_sources.html` and the `app_state_*.html`
+states (cloned client-side from `app_state_templates.html`). Stage timings come
+from `justdata/shared/utils/perf.py`: `timed("bq:<name>")` around each query
+and narrative call writes a `justdata.perf` log line and the run's `perf` list.
 
 Each app adds only its own controls and report body (for example
 `js/branchsight/br_page.js` and `br_report.js`). AppRun posts JSON, or a
@@ -180,7 +209,8 @@ long runs sets `maxRunSeconds` (MergerMeter: 30 minutes; the default is 10).
 **NCRC report links** — every ncrc.org report URL used in a prompt or template is in
 `justdata/shared/ncrc_reports.py` (title, URL, last checked). When NCRC publishes a new
 edition, update its entry there; `tests/shared/test_ncrc_reports.py` fails on any link
-that does not return 200.
+that does not return 200. It is a `network` test, skipped unless pytest gets
+`--run-network` (`make test-network`); CI does not run it.
 
 **Auth** — `justdata/main/auth/` provides `login_required`,
 `require_access`, `admin_required`, and `staff_required` decorators on top
@@ -201,9 +231,13 @@ level such as `partial` silently admits every role).
 - Per-app: `pytest tests/apps/test_branchsight/ -v`
 
 The test tree mirrors the app tree under `tests/apps/`. As of Phase 6:
-**58 tests passing, zero pyflakes errors.**
+**58 tests passing, zero pyflakes errors.** On `testing` at 2026-10-15:
+904 passed, 10 skipped (the skipped include the `network` tests).
 
-CI runs on PRs targeting `test`, `staging`, and `main` via
+- Network tests (live ncrc.org links, the SOD year against BigQuery):
+  `make test-network`, or `pytest -m network --run-network`.
+
+CI runs on PRs targeting `testing`, `staging`, and `main` via
 `.github/workflows/ci.yml`.
 
 ## 8. Known follow-up items

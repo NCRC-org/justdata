@@ -4,6 +4,8 @@ HMDA mortgage lending analysis. Generates county- and tract-level reports
 covering income, demographic, and minority-tract lending patterns, with AI
 narrative, web report, and PDF/Excel exports.
 
+Standard conformance: on the spec 04 analysis-app standard since 2026-10-07 (PR #210, merged into `testing`).
+
 ## Blueprint
 
 - URL prefix: `/lendsight`
