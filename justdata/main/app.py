@@ -338,6 +338,18 @@ def create_app():
             app_description='Email verification confirmation for JustData',
         )
 
+    # Where a refused testing-site sign-in lands (spec 08)
+    @app.route('/access-refused')
+    def access_refused():
+        """?reason=unavailable when HubSpot could not be checked; anything else
+        reads as not on the tester list. Says nothing about the account."""
+        reason = 'unavailable' if request.args.get('reason') == 'unavailable' else 'not_listed'
+        return render_template(
+            'access_refused.html',
+            reason=reason,
+            app_description='JustData testing is open to invited testers.',
+        )
+
     # Register blueprints
     register_blueprints(app)
     

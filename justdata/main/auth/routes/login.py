@@ -31,7 +31,10 @@ from justdata.main.auth import (
     create_or_update_user_doc,
     determine_user_type,
     log_activity,
+    is_privileged_user,
 )
+from justdata.main.auth.access_overlay import is_testing_env
+from justdata.main.auth.services.tester_access import UNAVAILABLE_REASONS, admit_or_refuse
 
 login_bp = Blueprint("auth_login", __name__)
 
@@ -111,6 +114,22 @@ def auth_login():
         last_name=last_name
     )
 
+    user_type = firestore_user.get('userType', 'public_registered')
+
+    # Testing site: HubSpot decides who is a tester (spec 08). A refusal keeps
+    # the Firebase account and the user record, and opens no session.
+    if is_testing_env() and not is_privileged_user(user_type):
+        admission, user_type = admit_or_refuse(uid, email, firestore_user, user_type)
+        if not admission.authorized:
+            clear_session_user()
+            reason = 'unavailable' if admission.reason in UNAVAILABLE_REASONS else 'not_listed'
+            return jsonify({
+                'error': 'Not authorized for the testing site',
+                'code': 'tester_not_authorized',
+                'reason': reason,
+                'redirect': f'/access-refused?reason={reason}',
+            }), 403
+
     # Store user in session
     user = {
         'uid': uid,
@@ -122,8 +141,6 @@ def auth_login():
     }
     set_session_user(user)
 
-    # Get user type from Firestore document
-    user_type = firestore_user.get('userType', 'public_registered')
     set_user_type(user_type)
 
     # Log login activity

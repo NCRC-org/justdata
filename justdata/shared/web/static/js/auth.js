@@ -480,6 +480,12 @@ async function notifyBackendLogin(idToken, user) {
                 console.log('User needs to provide organization');
                 showOrganizationPrompt();
             }
+        } else if (data.code === 'tester_not_authorized') {
+            // Testing site (spec 08): not on the tester list, or the list
+            // couldn't be checked. Sign out of Firebase so the next page load
+            // doesn't retry, and keep the account for a later admission.
+            await firebaseAuth.signOut();
+            window.location.href = data.redirect || '/access-refused';
         } else if (data.code === 'firebase_not_configured') {
             console.error('[Auth] Backend: Firebase credentials not set.', data.hint || data.error);
             alert('Sign-in could not complete: server is missing Firebase credentials.\n\n' + (data.hint || data.error));
