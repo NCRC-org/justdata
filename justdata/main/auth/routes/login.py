@@ -10,6 +10,7 @@ Routes:
 """
 
 from datetime import datetime
+from firebase_admin import auth as firebase_auth
 from flask import Blueprint, request, jsonify, session
 
 from justdata.main.auth.services.firebase_client import (
@@ -213,6 +214,17 @@ def handle_email_verified():
 
     if not uid:
         return jsonify({'error': 'Missing user ID'}), 400
+
+    # Read the flag from Firebase itself; the caller's word is not enough
+    if not get_firebase_app():
+        return jsonify({'error': 'Authentication service not available'}), 503
+    try:
+        record = firebase_auth.get_user(uid)
+    except firebase_auth.UserNotFoundError:
+        return jsonify({'error': 'Not authenticated'}), 401
+    if not record.email_verified:
+        return jsonify({'error': 'Email not verified', 'email_verified': False}), 403
+    email = record.email or email
 
     db = get_firestore_client()
     if not db:
