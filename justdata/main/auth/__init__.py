@@ -3,12 +3,13 @@ Access control system for JustData applications.
 Implements user type-based access control based on the access matrix.
 Integrates Firebase Authentication and Firestore for user management.
 
-User Types (8 tiers):
+User Types (9 tiers):
 - public_anonymous: No account, not logged in
 - public_registered: Google sign-in, basic access
 - member: NCRC Member ($900/yr)
 - member_premium: Member Plus tier
 - non_member_org: Institutional/organizational access
+- tester: External tester (spec 08); public_registered access except on the testing site
 - staff: NCRC Staff (@ncrc.org domain)
 - senior_executive: NCRC Senior Executives (additional tools access)
 - admin: Administrator
@@ -71,13 +72,14 @@ SENIOR_EXECUTIVE_EMAILS = [
     'testsenior@justdata.ncrc.org',  # Test Senior Executive (working login)
 ]
 
-# User types matching the 8-tier system
+# User types matching the 9-tier system
 UserType = Literal[
     'public_anonymous',
     'public_registered',
     'member',
     'member_premium',
     'non_member_org',
+    'tester',
     'staff',
     'senior_executive',
     'admin'
@@ -93,6 +95,7 @@ VALID_USER_TYPES = [
     'member',
     'member_premium',
     'non_member_org',
+    'tester',
     'staff',
     'senior_executive',
     'admin'
@@ -268,6 +271,12 @@ ACCESS_MATRIX = {
     }
 }
 
+# External tester (spec 08). Firestore users is shared with production, so on
+# every deploy but testing a tester has exactly public_registered's access; the
+# testing overlay (access_overlay.py) opens the three Sight apps.
+for _row in ACCESS_MATRIX.values():
+    _row['tester'] = _row['public_registered']
+
 # Feature permissions by user type
 FEATURE_PERMISSIONS = {
     'public_anonymous': {
@@ -347,6 +356,11 @@ FEATURE_PERMISSIONS = {
     }
 }
 
+FEATURE_PERMISSIONS['tester'] = {
+    **FEATURE_PERMISSIONS['public_registered'],
+    'description': 'External tester - the three Sight apps on the testing site only',
+}
+
 # Tier pricing information
 TIER_PRICING = {
     'public_anonymous': {'price': 0, 'billing': 'free', 'label': 'Guest'},
@@ -354,6 +368,7 @@ TIER_PRICING = {
     'member': {'price': 900, 'billing': 'yearly', 'label': 'Member'},
     'member_premium': {'price_range': (500, 750), 'billing': 'yearly', 'label': 'Member Premium', 'addon': True},
     'non_member_org': {'price_range': (5000, 15000), 'billing': 'yearly', 'label': 'Institutional'},
+    'tester': {'price': 0, 'billing': 'free', 'label': 'Tester'},
     'staff': {'price': 0, 'billing': 'free', 'label': 'Staff', 'internal': True},
     'senior_executive': {'price': 0, 'billing': 'free', 'label': 'Senior Executive', 'internal': True},
     'admin': {'price': 0, 'billing': 'free', 'label': 'Admin', 'internal': True}
@@ -583,7 +598,7 @@ def determine_user_type(email: str, email_verified: bool = False,
         return 'public_registered'
 
     # If current type is set by admin, don't downgrade
-    if current_type and current_type in ['member', 'member_premium', 'non_member_org',
+    if current_type and current_type in ['member', 'member_premium', 'non_member_org', 'tester',
                                           'staff', 'senior_executive', 'admin']:
         return current_type
 
