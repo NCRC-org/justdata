@@ -103,6 +103,11 @@ jobs:
       - name: Resolve optional secrets
         run: |
           OPTIONAL_SECRETS="FDIC_API_KEY=fdic-api-key"
+          # justdata-testing only (spec 08): the sign-in HubSpot check. Without
+          # it the check refuses sign-ins and logs why, so it stays optional.
+          if [ "${{ env.DEPLOY_SERVICE_NAME }}" = "justdata-testing" ]; then
+            OPTIONAL_SECRETS="$OPTIONAL_SECRETS HUBSPOT_ACCESS_TOKEN=hubspot-access-token"
+          fi
           UPDATE=""
           REMOVE=""
           for pair in $OPTIONAL_SECRETS; do
