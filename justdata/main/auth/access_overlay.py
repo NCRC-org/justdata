@@ -17,6 +17,8 @@ and anyone on the exact TESTING_PUBLIC_PATHS.
 
 On the testing deploy, for every non-staff role:
   - apps outside TESTER_APPS resolve to "hidden" (not shown, not even locked)
+  - tester gets the three TESTER_APPS as "full" (its matrix row elsewhere is
+    public_registered's, so production opens nothing for it)
   - for the public roles (not TESTER_ROLES), all three TESTER_APPS resolve to
     "locked": the global gate never lets them open an app, so the drawer,
     launcher and landing roster must not show one as open (LendSight is
@@ -35,13 +37,15 @@ TESTER_APPS = ("lendsight", "bizsight", "branchsight")
 
 # Non-staff roles admitted as external testers. non_member_org is included
 # because not every tester org (fair-lending orgs, researchers) is an NCRC member.
-TESTER_ROLES = ("member", "member_premium", "non_member_org")
+# tester (spec 08) is the role sign-in gives an admitted tester; its matrix row
+# is public_registered's, so the overlay opens the TESTER_APPS for it.
+TESTER_ROLES = ("member", "member_premium", "non_member_org", "tester")
 
 
 # Paths anyone may open on the testing deploy, matched exactly (never as a
-# prefix: "/" as a prefix would exempt every route). The landing page and the
-# two pages it and the footer link to.
-TESTING_PUBLIC_PATHS = frozenset({"/", "/about", "/contact"})
+# prefix: "/" as a prefix would exempt every route). The landing page, the
+# two pages it and the footer link to, and the page a refused sign-in lands on.
+TESTING_PUBLIC_PATHS = frozenset({"/", "/about", "/contact", "/access-refused"})
 
 # Extra exact paths for a signed-in public_registered user on the testing
 # deploy: the launcher, where every tool shows locked with the request-access
@@ -67,6 +71,8 @@ def overlay_row(app_name: str, row: dict, staff_roles) -> dict:
             continue
         if app_name not in TESTER_APPS:
             out[role] = "hidden"
+        elif role == "tester":
+            out[role] = "full"
         elif role not in TESTER_ROLES:
             out[role] = "locked"
     return out
