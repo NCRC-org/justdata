@@ -1,0 +1,82 @@
+{% extends "base_app.html" %}
+{# Where an unverified password account waits on the testing site (spec 08).
+   The account stays signed in to Firebase, with no JustData session, so this
+   page can resend the link and sign in once the email is verified. The link
+   in the email lands here too (/email-verified renders this page on testing). #}
+{% block title %}Verify your email - JustData{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Verify your email first</h1>
+    <p class="page-subtitle">We sent a link to the address you signed up with.</p>
+</div>
+<section class="about-section">
+    <div class="about-card" id="verifyEmail">
+        <p>Click the link in that email, then come back here and choose Continue.
+            If it hasn't arrived, check your spam folder or send it again.</p>
+        <p>
+            <button type="button" class="btn btn-primary" id="verifyContinueBtn">Continue</button>
+            <button type="button" class="btn btn-secondary" id="verifyResendBtn">Send the link again</button>
+        </p>
+        <p id="verifyStatus" role="status" aria-live="polite"></p>
+        <p>Signed up with the wrong address?
+            <a href="#" id="verifySignOut">Sign out</a> and sign up again. Need help? Email
+            <a href="mailto:{{ ncrc_contact.email }}">{{ ncrc_contact.email }}</a>.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const status = document.getElementById('verifyStatus');
+        const say = (text) => { status.textContent = text; };
+
+        // quiet: the automatic try on page load says nothing if it can't continue yet
+        async function tryContinue(quiet) {
+            const result = await JustDataAuth.continueAfterVerification();
+            if (!result.signedIn) {
+                if (!quiet) say('Sign in with the address you signed up with, then choose Continue.');
+            } else if (!result.verified) {
+                if (!quiet) say("We don't see the verification yet. Click the link in the email, then try again.");
+            } else if (result.admitted) {
+                window.location.href = '/apps';
+            } else if (!quiet) {
+                say('Something went wrong. Please try again.');
+            }
+        }
+
+        document.getElementById('verifyContinueBtn').addEventListener('click', () => tryContinue(false));
+
+        document.getElementById('verifyResendBtn').addEventListener('click', async () => {
+            try {
+                const result = await JustDataAuth.sendVerificationEmail();
+                say(result && result.alreadyVerified
+                    ? 'Your email is already verified. Choose Continue.'
+                    : 'We sent a new link.');
+            } catch (error) {
+                if (error.code === 'auth/too-many-requests') {
+                    say('Too many requests. Wait a few minutes, then try again.');
+                } else if (error.message === 'No user signed in') {
+                    say('Sign in first, then send the link again.');
+                } else {
+                    say("We couldn't send the link. Please try again later.");
+                }
+            }
+        });
+
+        document.getElementById('verifySignOut').addEventListener('click', (event) => {
+            event.preventDefault();
+            JustDataAuth.signOut();
+        });
+
+        // Arriving from the link in the email: continue once Firebase knows who is signed in
+        let tried = false;
+        JustDataAuth.onAuthStateChanged((user) => {
+            if (user && !tried) {
+                tried = true;
+                tryContinue(true);
+            }
+        });
+    });
+</script>
+{% endblock %}

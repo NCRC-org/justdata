@@ -44,8 +44,11 @@ TESTER_ROLES = ("member", "member_premium", "non_member_org", "tester")
 
 # Paths anyone may open on the testing deploy, matched exactly (never as a
 # prefix: "/" as a prefix would exempt every route). The landing page, the
-# two pages it and the footer link to, and the page a refused sign-in lands on.
-TESTING_PUBLIC_PATHS = frozenset({"/", "/about", "/contact", "/access-refused"})
+# two pages it and the footer link to, the page a refused sign-in lands on,
+# and the two verify-your-email pages (an unverified account has no session).
+TESTING_PUBLIC_PATHS = frozenset({
+    "/", "/about", "/contact", "/access-refused", "/verify-email", "/email-verified",
+})
 
 # Extra exact paths for a signed-in public_registered user on the testing
 # deploy: the launcher, where every tool shows locked with the request-access

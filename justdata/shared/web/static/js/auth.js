@@ -20,6 +20,8 @@ let firebaseAuth = null;
 let signInInProgress = false;  // Prevent multiple sign-in attempts
 let authStateCallbacks = [];   // Callbacks for auth state changes
 let lastKnownUser = null;      // Track last known user for new callback registrations
+let signUpInProgress = false;  // Sign-up still sending its verification email
+let verifyRedirectPending = false;  // Backend asked for /verify-email during sign-up
 
 function initFirebase() {
     console.log('[DEBUG] initFirebase called, alreadyInit:', !!firebaseApp, 'path:', window.location.pathname);
@@ -243,6 +245,10 @@ async function signUpWithEmail(email, password, firstName = null, lastName = nul
         return;
     }
 
+    // The auth state change below can bring the backend's /verify-email answer
+    // before the verification email is sent; leaving the page then could cut
+    // the send off, so the redirect waits for the finally block.
+    signUpInProgress = true;
     try {
         // Store registration data in session storage BEFORE creating user
         // (Firebase triggers auth state change immediately on user creation)
@@ -279,6 +285,12 @@ async function signUpWithEmail(email, password, firstName = null, lastName = nul
         sessionStorage.removeItem('pendingUserFirstName');
         sessionStorage.removeItem('pendingUserLastName');
         throw error;
+    } finally {
+        signUpInProgress = false;
+        if (verifyRedirectPending) {
+            verifyRedirectPending = false;
+            window.location.href = '/verify-email';
+        }
     }
 }
 
@@ -326,6 +338,26 @@ async function checkVerificationNeeded() {
         console.error('Error checking verification status:', error);
         return { needs_verification: false };
     }
+}
+
+/**
+ * Testing site (spec 08): sign in to the backend again once the email is
+ * verified. Reloads the Firebase user and forces a fresh ID token, since the
+ * old token still says unverified. A tester-list refusal redirects from
+ * notifyBackendLogin as usual.
+ */
+async function continueAfterVerification() {
+    if (!firebaseAuth || !firebaseAuth.currentUser) {
+        return { signedIn: false };
+    }
+    await firebaseAuth.currentUser.reload();
+    const user = firebaseAuth.currentUser;
+    if (!user.emailVerified) {
+        return { signedIn: true, verified: false };
+    }
+    const idToken = await user.getIdToken(true);
+    const data = await notifyBackendLogin(idToken, user);
+    return { signedIn: true, verified: true, admitted: !!(data && data.success) };
 }
 
 /**
@@ -486,6 +518,17 @@ async function notifyBackendLogin(idToken, user) {
             // doesn't retry, and keep the account for a later admission.
             await firebaseAuth.signOut();
             window.location.href = data.redirect || '/access-refused';
+        } else if (data.code === 'email_not_verified') {
+            // Testing site (spec 08): a password account verifies its email
+            // first. Stay signed in to Firebase so the verify page can resend
+            // the link and continue; that page and the link's landing page
+            // are where this answer is expected, so neither redirects.
+            const onVerifyPage = ['/verify-email', '/email-verified'].includes(window.location.pathname);
+            if (signUpInProgress) {
+                verifyRedirectPending = true;
+            } else if (!onVerifyPage) {
+                window.location.href = data.redirect || '/verify-email';
+            }
         } else if (data.code === 'firebase_not_configured') {
             console.error('[Auth] Backend: Firebase credentials not set.', data.hint || data.error);
             alert('Sign-in could not complete: server is missing Firebase credentials.\n\n' + (data.hint || data.error));
@@ -742,5 +785,6 @@ window.JustDataAuth = {
     onAuthStateChanged,
     sendVerificationEmail,
     checkVerificationNeeded,
-    refreshEmailVerification
+    refreshEmailVerification,
+    continueAfterVerification
 };

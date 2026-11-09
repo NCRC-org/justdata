@@ -119,6 +119,17 @@ def auth_login():
     # Testing site: HubSpot decides who is a tester (spec 08). A refusal keeps
     # the Firebase account and the user record, and opens no session.
     if is_testing_env() and not is_privileged_user(user_type):
+        # A password account proves nothing about the address until it is
+        # verified, so it waits for that before the tester list is checked.
+        # email_verified comes from the signed Firebase token.
+        if auth_provider == 'password' and not email_verified:
+            clear_session_user()
+            print(f"[tester_access] email not verified uid={uid}")
+            return jsonify({
+                'error': 'Email not verified',
+                'code': 'email_not_verified',
+                'redirect': '/verify-email',
+            }), 403
         admission, user_type = admit_or_refuse(uid, email, firestore_user, user_type)
         if not admission.authorized:
             clear_session_user()
