@@ -147,6 +147,10 @@ jobs:
             OPTIONAL_ARGS+=(--concurrency 16 --session-affinity --set-env-vars "GUNICORN_THREADS=16")
           fi
 
+          # SECRET_KEY signs the session cookie, which carries the user's role.
+          # One secret per environment (flask-secret-key-testing, -staging,
+          # -production), required: the app refuses to start without it.
+          # Codex review finding 1, 2026-11-09.
           gcloud run deploy ${{ env.DEPLOY_SERVICE_NAME }} \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }} \
             --platform managed \
@@ -163,6 +167,7 @@ jobs:
             --set-env-vars "JUSTDATA_ENV=${{ env.JUSTDATA_ENV }}" \
             --set-env-vars "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" \
             --set-env-vars "MAPBOX_STYLE=${{ secrets.MAPBOX_STYLE }}" \
+            --update-secrets "SECRET_KEY=flask-secret-key-${{ env.JUSTDATA_ENV }}:latest" \
             --update-secrets "CLAUDE_API_KEY=claude-api-key:latest" \
             --update-secrets "ANTHROPIC_API_KEY=claude-api-key:latest" \
             --update-secrets "CENSUS_API_KEY=census-api-key:latest" \
