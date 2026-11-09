@@ -23,6 +23,7 @@ EXEMPT_PATHS = [
     '/static/',
     '/shared/',
     '/api/auth/',  # Auth routes for login/logout
+    '/verify-email',  # An unverified password account has no session yet (spec 08)
     '/api/platform-stats',  # Public homepage stats (no auth; avoids 127.0.0.1 vs localhost cookie mismatch)
     '/mergermeter/api/generate',  # API key auth, not Firebase — used by codebot
     '/mergermeter/api/search-banks-ext',  # API key auth — used by codebot for entity resolution
@@ -342,7 +343,7 @@ def create_app():
             app_description='Email verification confirmation for JustData',
         )
 
-    # Where an unverified password account waits on the testing site (spec 08)
+    # Where an unverified password account waits (spec 08; see auth_login)
     @app.route('/verify-email')
     def verify_email():
         return render_template(

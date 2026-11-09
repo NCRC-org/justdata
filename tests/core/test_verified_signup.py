@@ -135,3 +135,52 @@ def test_email_verified_page_is_unchanged_off_testing(unified_client, monkeypatc
     page = unified_client.get("/email-verified").get_data(as_text=True)
     assert "Checking Verification" in page
     assert "Verify your email first" not in page
+
+
+# ---------------------------------------------------------------------------
+# Admin and senior executive lists (every deploy)
+# ---------------------------------------------------------------------------
+
+from justdata.main.auth import ADMIN_EMAILS, SENIOR_EXECUTIVE_EMAILS, determine_user_type
+
+LISTED = [(ADMIN_EMAILS[0], "admin"), (SENIOR_EXECUTIVE_EMAILS[0], "senior_executive")]
+
+
+@pytest.mark.parametrize("email, role", LISTED)
+def test_lists_grant_their_role_only_to_a_verified_address(email, role):
+    assert determine_user_type(email, True, auth_provider="password") == role
+    assert determine_user_type(email, True, auth_provider="google.com") == role
+    unverified = determine_user_type(email, False, auth_provider="password")
+    assert unverified not in ("admin", "senior_executive", "staff")
+    # A record already holding the role loses it while the address is unverified
+    assert determine_user_type(email, False, current_type=role, auth_provider="password") == unverified
+
+
+@pytest.mark.parametrize("env", ["production", "staging", "testing"])
+@pytest.mark.parametrize("email, role", LISTED)
+def test_unverified_password_account_on_a_listed_address_waits(unified_client, signin, monkeypatch, env, email, role):
+    monkeypatch.setenv("JUSTDATA_ENV", env)
+    signin.email = email
+    signin.user_doc = {"userType": role}
+    resp = _post_login(unified_client)
+    assert resp.status_code == 403
+    assert resp.get_json()["code"] == "email_not_verified"
+    with unified_client.session_transaction() as sess:
+        assert "firebase_user" not in sess and "user_type" not in sess
+
+
+@pytest.mark.parametrize("email, role", LISTED)
+def test_verified_listed_address_signs_in_with_its_role(unified_client, signin, monkeypatch, email, role):
+    monkeypatch.setenv("JUSTDATA_ENV", "production")
+    signin.email, signin.verified = email, True
+    signin.user_doc = {"userType": role}
+    resp = _post_login(unified_client)
+    assert resp.status_code == 200
+    assert resp.get_json()["user_type"] == role
+
+
+@pytest.mark.parametrize("env", ["production", "staging"])
+def test_verify_page_opens_signed_out_on_every_deploy(unified_client, monkeypatch, env):
+    monkeypatch.setenv("JUSTDATA_ENV", env)
+    page = unified_client.get("/verify-email").get_data(as_text=True)
+    assert "Verify your email first" in page

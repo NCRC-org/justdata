@@ -45,9 +45,10 @@ TESTER_ROLES = ("member", "member_premium", "non_member_org", "tester")
 # Paths anyone may open on the testing deploy, matched exactly (never as a
 # prefix: "/" as a prefix would exempt every route). The landing page, the
 # two pages it and the footer link to, the page a refused sign-in lands on,
-# and the two verify-your-email pages (an unverified account has no session).
+# and the verification email's landing page (an unverified account has no
+# session). /verify-email is open on every deploy (EXEMPT_PATHS in main/app.py).
 TESTING_PUBLIC_PATHS = frozenset({
-    "/", "/about", "/contact", "/access-refused", "/verify-email", "/email-verified",
+    "/", "/about", "/contact", "/access-refused", "/email-verified",
 })
 
 # Extra exact paths for a signed-in public_registered user on the testing

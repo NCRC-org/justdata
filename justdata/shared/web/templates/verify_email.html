@@ -1,5 +1,7 @@
 {% extends "base_app.html" %}
-{# Where an unverified password account waits on the testing site (spec 08).
+{# Where an unverified password account waits (spec 08): on the testing site
+   for anyone not staff, and on every deploy for an admin or senior executive
+   address.
    The account stays signed in to Firebase, with no JustData session, so this
    page can resend the link and sign in once the email is verified. The link
    in the email lands here too (/email-verified renders this page on testing). #}
