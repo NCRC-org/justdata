@@ -1,0 +1,33 @@
+{% extends "base_app.html" %}
+
+{# Where a refused testing-site sign-in lands (spec 08). The two messages never
+   say whether an account or HubSpot contact exists. #}
+
+{% block title %}Testing access - JustData{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    {% if reason == 'unavailable' %}
+    <h1>We couldn't check the tester list</h1>
+    <p class="page-subtitle">Sign-in is paused for a moment. Your account is fine.</p>
+    {% else %}
+    <h1>You're not on the tester list yet</h1>
+    <p class="page-subtitle">JustData testing is open to invited testers.</p>
+    {% endif %}
+</div>
+
+<section class="about-section">
+    <div class="about-card" id="accessRefused" data-reason="{{ reason }}">
+        {% if reason == 'unavailable' %}
+        <p>Please try signing in again in a few minutes. If it keeps happening, email
+            <a href="mailto:{{ ncrc_contact.email }}">{{ ncrc_contact.email }}</a>.</p>
+        {% else %}
+        <p>If you were invited to test JustData, email
+            <a href="mailto:{{ ncrc_contact.email }}">{{ ncrc_contact.email }}</a>
+            from the address you signed in with, and we'll check your invitation.
+            You won't need to sign up again: once you're added, sign in the same way.</p>
+        {% endif %}
+        <p><a href="/">Back to the JustData home page</a></p>
+    </div>
+</section>
+{% endblock %}
