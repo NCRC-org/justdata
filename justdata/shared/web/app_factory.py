@@ -7,13 +7,41 @@ from flask import Flask, jsonify
 from jinja2 import ChoiceLoader, FileSystemLoader
 from datetime import datetime
 import os
+import secrets
 
 from justdata.shared.utils.name_utils import strip_trailing_punctuation
 
 
-# Shared fallback secret key for all JustData apps (consistent across instances)
-# In production, SECRET_KEY should ALWAYS be set via environment variable
-_FALLBACK_SECRET_KEY = 'justdata-shared-secret-key-set-SECRET_KEY-in-production'
+# Defaults that once shipped in this repo. They are public, so a key equal to
+# one of them signs nothing safely.
+_PUBLIC_DEFAULT_KEYS = frozenset({
+    'justdata-shared-secret-key-set-SECRET_KEY-in-production',
+    'justdata-secret-key-change-in-production',
+    'justdata-secret-key-change-this',
+    'change-this-secret',
+    'change-in-production',
+})
+
+
+def resolve_secret_key() -> str:
+    """The key that signs session cookies, which carry the user's role.
+
+    Outside FLASK_DEBUG the app refuses to start without SECRET_KEY, or with
+    a key this repo once shipped as a default. Under FLASK_DEBUG a random key
+    is used instead, so local sessions end when the process restarts.
+    """
+    key = os.environ.get('SECRET_KEY')
+    if key and key not in _PUBLIC_DEFAULT_KEYS:
+        return key
+    if os.getenv('FLASK_DEBUG', '').lower() in ('1', 'true'):
+        print("WARNING: SECRET_KEY not set; using a random key for this process (FLASK_DEBUG).")
+        return secrets.token_hex(32)
+    problem = 'is a public default' if key else 'is not set'
+    raise RuntimeError(
+        f"SECRET_KEY {problem}. It signs the session cookie, which carries the user's "
+        "role, so the app will not start without a private key. Mount it from Secret "
+        "Manager, or set FLASK_DEBUG=1 for local development."
+    )
 
 # Path to shared templates
 SHARED_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
@@ -46,15 +74,7 @@ def create_app(app_name: str, template_folder: str = None, static_folder: str = 
             FileSystemLoader(SHARED_TEMPLATES_DIR)
         ])
 
-    # Get SECRET_KEY from environment - use consistent fallback across all apps
-    # This ensures sessions persist across different apps in the unified platform
-    secret_key = os.environ.get('SECRET_KEY')
-    if secret_key:
-        app.secret_key = secret_key
-    else:
-        app.secret_key = _FALLBACK_SECRET_KEY
-        print(f"[{app_name}] WARNING: SECRET_KEY not set in environment, using fallback. "
-              "Set SECRET_KEY environment variable in production for secure sessions.")
+    app.secret_key = resolve_secret_key()
 
     # Configure session for better persistence
     app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
