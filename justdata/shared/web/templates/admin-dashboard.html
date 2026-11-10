@@ -466,6 +466,7 @@
             }
         }
     </style>
+    <script src="{{ url_for('static', filename='js/escape-html.js') }}"></script>
 </head>
 <body>
     <!-- Header -->
@@ -701,9 +702,9 @@
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = users.map(user => `
                 <tr>
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td>${user.organization || '—'}</td>
+                    <td>${escapeHtml(user.name)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${escapeHtml(user.organization) || '—'}</td>
                     <td><span class="user-type-badge badge-${user.userType}">${getUserTypeLabel(user.userType)}</span></td>
                     <td>${new Date(user.created).toLocaleDateString()}</td>
                     <td>

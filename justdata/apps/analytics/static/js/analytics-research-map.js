@@ -83,7 +83,7 @@ function generateResearchPopup(location) {
     const users = location.unique_users || 0;
     
     return '<div class="aggregated-popup">' +
-        '<div class="popup-title">' + escapeHtml(name) + (state ? ', ' + state : '') + '</div>' +
+        '<div class="popup-title">' + escapeHtml(name) + (state ? ', ' + escapeHtml(state) : '') + '</div>' +
         '<div class="popup-stats">' +
         '<div><span class="stat-value">' + formatNumber(reports) + '</span> reports</div>' +
         (users > 0 ? '<div><span class="stat-value">' + formatNumber(users) + '</span> users</div>' : '') +
@@ -135,7 +135,7 @@ function renderCountyList(data) {
         const item = $('<div class="county-item">')
             .html(
                 '<div class="county-name"><strong>' + escapeHtml(name) + '</strong>' +
-                (state ? ', ' + state : '') + '</div>' +
+                (state ? ', ' + escapeHtml(state) : '') + '</div>' +
                 '<div class="county-stats">' +
                 '<span>' + formatNumber(county.report_count) + ' reports</span> &middot; ' +
                 '<span>' + formatNumber(county.unique_users) + ' users</span>' +

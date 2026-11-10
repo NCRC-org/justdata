@@ -44,6 +44,12 @@ $(document).ready(function() {
     // Handle filter changes
     $('#time-period, #min-users, #entity-type, #state-filter').on('change', loadData);
 
+    // Map popup "View researchers" link carries its entity as a data attribute
+    $('#coalition-map').on('click', '.popup-link a[data-entity]', function(e) {
+        e.preventDefault();
+        showEntityDetail(JSON.parse(this.getAttribute('data-entity')));
+    });
+
     // Close panel when clicking outside
     $(document).on('click', function(e) {
         if (!$(e.target).closest('#entity-detail-panel, .coalition-row').length) {
@@ -294,14 +300,14 @@ function renderTable(data) {
             .data('entity', item)
             .attr('data-entity-type', entityType)
             .attr('data-entity-id', item.entity_id)
-            .append('<td><span class="type-badge ' + entityType + '">' + (entityType === 'county' ? 'County' : 'Lender') + '</span></td>')
+            .append('<td><span class="type-badge ' + escapeHtml(entityType) + '">' + (entityType === 'county' ? 'County' : 'Lender') + '</span></td>')
             .append('<td><strong>' + escapeHtml(entityName) + '</strong>' +
-                    (entityType === 'county' && item.entity_id ? '<br><small class="fips-code">FIPS: ' + item.entity_id + '</small>' : '') +
+                    (entityType === 'county' && item.entity_id ? '<br><small class="fips-code">FIPS: ' + escapeHtml(item.entity_id) + '</small>' : '') +
                     '</td>')
             .append('<td><strong>' + formatNumber(item.unique_users) + '</strong></td>')
             .append('<td>' + orgContent + '</td>')
             .append('<td>' + escapeHtml(stateList) + '<span class="more-indicator">' + moreStates + '</span></td>')
-            .append('<td>' + formatDate(item.last_activity) + '</td>')
+            .append('<td>' + escapeHtml(formatDate(item.last_activity)) + '</td>')
             .on('click', function() {
                 showEntityDetail(item);
             });
@@ -397,7 +403,7 @@ function renderEntityUsers(users, entity) {
                 '<a href="/analytics/users?user=' + encodeURIComponent(user.user_id) + '" class="user-name-link">' +
                 '<i class="fas fa-user"></i> ' + escapeHtml(userName) +
                 '</a>' +
-                (userType ? '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>' : '') +
+                (userType ? '<span class="user-type-badge ' + escapeHtml(userType) + '">' + escapeHtml(userType) + '</span>' : '') +
                 '</div>'
             )
             .append(
@@ -408,7 +414,7 @@ function renderEntityUsers(users, entity) {
             .append(
                 '<div class="user-activity">' +
                 '<span><i class="fas fa-file-alt"></i> ' + formatNumber(reportCount) + ' reports</span>' +
-                (user.last_activity ? '<span><i class="fas fa-clock"></i> ' + formatDate(user.last_activity) + '</span>' : '') +
+                (user.last_activity ? '<span><i class="fas fa-clock"></i> ' + escapeHtml(formatDate(user.last_activity)) + '</span>' : '') +
                 '</div>'
             );
 
@@ -810,7 +816,7 @@ function generateCoalitionPopup(item, type) {
     const lastActivity = item.last_activity ? formatDate(item.last_activity) : '';
 
     let html = '<div class="coalition-popup">';
-    html += '<span class="popup-type ' + type + '">' + (type === 'county' ? 'County' : 'Lender') + '</span>';
+    html += '<span class="popup-type ' + escapeHtml(type) + '">' + (type === 'county' ? 'County' : 'Lender') + '</span>';
     html += '<div class="popup-title">' + escapeHtml(entityName) + '</div>';
 
     html += '<div class="popup-stats">';
@@ -828,12 +834,12 @@ function generateCoalitionPopup(item, type) {
 
     if (lastActivity) {
         html += '<div style="font-size: 0.8rem; color: #888; margin-top: 6px;">';
-        html += '<i class="fas fa-clock"></i> Last activity: ' + lastActivity;
+        html += '<i class="fas fa-clock"></i> Last activity: ' + escapeHtml(lastActivity);
         html += '</div>';
     }
 
     html += '<div class="popup-link">';
-    html += '<a href="#" onclick="showEntityDetail(' + JSON.stringify(item).replace(/"/g, '&quot;') + '); return false;">';
+    html += '<a href="#" data-entity="' + escapeHtml(JSON.stringify(item)) + '">';
     html += '<i class="fas fa-users"></i> View researchers</a>';
     html += '</div>';
 

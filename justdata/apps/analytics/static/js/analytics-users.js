@@ -608,7 +608,7 @@ function formatAppsUsed(apps) {
     });
 
     const tooltip = fullNames.join(', ');
-    return '<span class="apps-used" title="' + escapeHtml(tooltip) + '">' + abbrevs.join(' | ') + '</span>';
+    return '<span class="apps-used" title="' + escapeHtml(tooltip) + '">' + abbrevs.map(escapeHtml).join(' | ') + '</span>';
 }
 
 /**
@@ -637,10 +637,10 @@ function renderUsersTable(data) {
             .addClass(selectedUserId === userId ? 'selected' : '')
             .append('<td title="' + escapeHtml(userId) + '"><div class="' + userDisplay.cssClass + '">' + escapeHtml(userDisplay.display) + '</div></td>')
             .append('<td class="org-cell">' + escapeHtml(org) + '</td>')
-            .append('<td>' + (userType !== '-' ? '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>' : '-') + '</td>')
+            .append('<td>' + (userType !== '-' ? '<span class="user-type-badge ' + escapeHtml(userType) + '">' + escapeHtml(userType) + '</span>' : '-') + '</td>')
             .append('<td><strong>' + formatNumber(reports) + '</strong></td>')
             .append('<td>' + appsUsed + '</td>')
-            .append('<td>' + lastActivity + '</td>');
+            .append('<td>' + escapeHtml(lastActivity) + '</td>');
 
         tbody.append(row);
     });
@@ -717,7 +717,7 @@ function renderUserDetail(data) {
         html += '<div class="detail-item"><span class="label">Email:</span>' + escapeHtml(user.user_email) + '</div>';
     }
     if (user.user_type) {
-        html += '<div class="detail-item"><span class="label">Type:</span><span class="user-type-badge ' + user.user_type + '">' + escapeHtml(user.user_type) + '</span></div>';
+        html += '<div class="detail-item"><span class="label">Type:</span><span class="user-type-badge ' + escapeHtml(user.user_type) + '">' + escapeHtml(user.user_type) + '</span></div>';
     }
     if (user.organization_name) {
         html += '<div class="detail-item"><span class="label">Organization:</span>' + escapeHtml(user.organization_name) + '</div>';
@@ -725,8 +725,8 @@ function renderUserDetail(data) {
     html += '<div class="detail-item"><span class="label">Total Reports:</span><strong>' + formatNumber(user.total_reports || 0) + '</strong></div>';
     html += '<div class="detail-item"><span class="label">Counties:</span>' + formatNumber(user.counties_researched || 0) + '</div>';
     html += '<div class="detail-item"><span class="label">Lenders:</span>' + formatNumber(user.lenders_researched || 0) + '</div>';
-    html += '<div class="detail-item"><span class="label">First Activity:</span>' + formatDate(user.first_activity) + '</div>';
-    html += '<div class="detail-item"><span class="label">Last Activity:</span>' + formatDate(user.last_activity) + '</div>';
+    html += '<div class="detail-item"><span class="label">First Activity:</span>' + escapeHtml(formatDate(user.first_activity)) + '</div>';
+    html += '<div class="detail-item"><span class="label">Last Activity:</span>' + escapeHtml(formatDate(user.last_activity)) + '</div>';
     html += '</div>';
     html += '</div>';
 
@@ -759,7 +759,7 @@ function renderUserDetail(data) {
             const name = county.county_name || county.county_fips;
             const state = county.state || '';
             html += '<div class="entity-item">';
-            html += '<span>' + escapeHtml(name) + (state ? ', ' + state : '') + '</span>';
+            html += '<span>' + escapeHtml(name) + (state ? ', ' + escapeHtml(state) : '') + '</span>';
             html += '<span class="count">' + formatNumber(county.report_count) + ' reports</span>';
             html += '</div>';
         });
@@ -812,7 +812,7 @@ function renderUserDetail(data) {
             if (location) html += '<span><i class="fas fa-map-marker-alt"></i> ' + escapeHtml(location) + '</span>';
             if (lender) html += '<span><i class="fas fa-university"></i> ' + escapeHtml(lender) + '</span>';
             html += '</div>';
-            html += '<div class="recent-date">' + date + '</div>';
+            html += '<div class="recent-date">' + escapeHtml(date) + '</div>';
             html += '</div>';
         });
         html += '</div>';
