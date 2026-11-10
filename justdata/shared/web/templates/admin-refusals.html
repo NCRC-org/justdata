@@ -1,0 +1,66 @@
+{% extends "base_app.html" %}
+{# Refused testing-site sign-ins (spec 08), newest first, from the
+   signin_refusals table: time, UID, reason and source. No email by design;
+   look a UID up on /admin/users. Rows expire after 90 days. #}
+{% set app_name = "Refused sign-ins" %}
+{% block title %}Refused sign-ins - JustData{% endblock %}
+
+{% block extra_css %}
+<style>
+    .refusals-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--fs-body-sm);
+    }
+    .refusals-table th,
+    .refusals-table td {
+        text-align: left;
+        padding: var(--s-3) var(--s-4);
+        border-bottom: 1px solid var(--color-border);
+    }
+    .refusals-table th {
+        color: var(--color-fg-muted);
+        font-weight: 600;
+    }
+    .refusals-table .refusal-uid {
+        font-family: var(--font-mono);
+    }
+    .refusals-wrap {
+        overflow-x: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Refused sign-ins</h1>
+    <p class="page-subtitle">Sign-ins the testing site refused, newest first. Each row expires after 90 days.</p>
+</div>
+<section class="about-section">
+    <div class="about-card" id="signinRefusals">
+        <p><a href="/admin/users">Back to user management</a></p>
+        {% if refusals %}
+        <p>Showing the {{ refusals|length }} most recent{% if refusals|length >= limit %} (the limit){% endif %}. Find a UID on the user list to see who it is.</p>
+        <div class="refusals-wrap">
+            <table class="refusals-table">
+                <thead>
+                    <tr><th>Time (UTC)</th><th>UID</th><th>Reason</th><th>Checked by</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in refusals %}
+                    <tr>
+                        <td>{{ row.refused_at.strftime('%Y-%m-%d %H:%M') if row.refused_at else '' }}</td>
+                        <td class="refusal-uid">{{ row.uid }}</td>
+                        <td>{{ reason_labels.get(row.reason, row.reason) }}</td>
+                        <td>{{ row.source or '' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No refused sign-ins are logged on this deploy.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

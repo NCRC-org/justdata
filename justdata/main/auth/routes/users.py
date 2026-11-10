@@ -101,7 +101,8 @@ def list_users():
                         auth_method = 'google' if 'google.com' in providers else 'email'
                         auth_users[auth_user.uid] = {
                             'authMethod': auth_method,
-                            'providers': providers
+                            'providers': providers,
+                            'emailVerified': bool(auth_user.email_verified),
                         }
                     page = page.get_next_page()
             except Exception as e:
@@ -130,6 +131,12 @@ def list_users():
             # Get auth method from Firebase Auth info
             auth_info = auth_users.get(uid, {})
 
+            # The testing site's HubSpot tester check (spec 08), if one has run
+            tester_access = user_data.get('testerAccess') or {}
+            checked_at = tester_access.get('checkedAt')
+            if checked_at and hasattr(checked_at, 'isoformat'):
+                checked_at = checked_at.isoformat()
+
             users.append({
                 'uid': uid,
                 'email': user_data.get('email'),
@@ -141,10 +148,16 @@ def list_users():
                 'lastLoginAt': last_login,
                 'createdAt': created_at,
                 'loginCount': user_data.get('loginCount', 0),
-                'emailVerified': user_data.get('emailVerified', False),
+                # Firebase's flag is the authority; the Firestore copy can lag
+                'emailVerified': auth_info.get('emailVerified', user_data.get('emailVerified', False)),
                 'pendingActivation': user_data.get('pendingActivation', False),
                 'authMethod': auth_info.get('authMethod', 'email'),
-                'providerData': auth_info.get('providers', [])
+                'providerData': auth_info.get('providers', []),
+                'testerAccess': {
+                    'authorized': tester_access.get('authorized'),
+                    'reason': tester_access.get('reason'),
+                    'checkedAt': checked_at,
+                } if tester_access else None,
             })
 
         return jsonify({
@@ -254,6 +267,12 @@ def update_user(uid: str):
 
         if not update_data:
             return jsonify({'error': 'No valid fields to update'}), 400
+
+        if 'userType' in update_data and update_data['userType'] not in VALID_USER_TYPES:
+            return jsonify({
+                'error': f"Invalid user type: {update_data['userType']}",
+                'valid_types': VALID_USER_TYPES
+            }), 400
 
         update_data['updatedAt'] = datetime.utcnow()
 
