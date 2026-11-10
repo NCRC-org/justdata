@@ -376,6 +376,26 @@
         color: #2563eb;
     }
 
+    /* Spec 08: Firebase verification and the HubSpot tester check */
+    .auth-badge.verified {
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+    }
+
+    .auth-badge.unverified {
+        background: var(--color-danger-bg);
+        color: var(--color-danger-text);
+    }
+
+    .hubspot-status.ok { color: var(--color-success-text); }
+    .hubspot-status.refused { color: var(--color-danger-text); }
+    .hubspot-status.none { color: var(--color-fg-muted); }
+
+    .hubspot-checked {
+        color: var(--color-fg-muted);
+        font-size: var(--fs-caption);
+    }
+
     /* Delete confirmation modal styles */
     .delete-user-list {
         max-height: 200px;
@@ -718,6 +738,7 @@
             <button class="btn-secondary" onclick="syncAllUsers()" id="syncBtn">
                 <i class="fas fa-sync-alt"></i> Sync All Users
             </button>
+            <a class="btn-secondary" href="/admin/sign-in-refusals">Refused sign-ins</a>
             <button class="btn-primary" onclick="openCreateModal()">
                 <i class="fas fa-plus"></i> Create User
             </button>
@@ -735,12 +756,6 @@
                 </div>
                 <select class="filter-select" id="typeFilter" onchange="filterAndRenderUsers()">
                     <option value="">All User Types</option>
-                    <option value="admin">Administrator</option>
-                    <option value="senior_executive">Senior Executive</option>
-                    <option value="staff">Staff</option>
-                    <option value="member">Member</option>
-                    <option value="member_premium">Member Plus</option>
-                    <option value="public_registered">Registered</option>
                 </select>
             </div>
         </div>
@@ -764,8 +779,9 @@
                             User Type <i class="fas fa-sort sort-icon"></i>
                         </th>
                         <th onclick="sortTable('authMethod')">
-                            Auth <i class="fas fa-sort sort-icon"></i>
+                            Sign-in <i class="fas fa-sort sort-icon"></i>
                         </th>
+                        <th>HubSpot</th>
                         <th onclick="sortTable('organization')">
                             Organization <i class="fas fa-sort sort-icon"></i>
                         </th>
@@ -780,7 +796,7 @@
                 </thead>
                 <tbody id="usersTableBody">
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px;">
+                        <td colspan="10" style="text-align: center; padding: 40px;">
                             <div class="loading-spinner"></div>
                             <p style="margin-top: 10px; color: var(--ncrc-gray);">Loading users...</p>
                         </td>
@@ -819,12 +835,6 @@
                     <label for="userType">User Type *</label>
                     <select id="userTypeSelect" name="userType" required>
                         <option value="">Select user type...</option>
-                        <option value="public_registered">Registered</option>
-                        <option value="member">Member</option>
-                        <option value="member_premium">Member Plus</option>
-                        <option value="staff">Staff</option>
-                        <option value="senior_executive">Senior Executive</option>
-                        <option value="admin">Administrator</option>
                     </select>
                 </div>
 
@@ -944,12 +954,16 @@
     let sortDirection = 'desc';
 
     // User type labels
+    // Role choices: the server's VALID_USER_TYPES, shared with the access matrix
+    const VALID_USER_TYPES = {{ valid_user_types|tojson }};
+    const TESTER_REASON_LABELS = {{ tester_reason_labels|tojson }};
     const USER_TYPE_LABELS = {
         'public_anonymous': 'Anonymous',
         'public_registered': 'Registered',
         'member': 'Member',
         'member_premium': 'Member Plus',
         'non_member_org': 'Institutional',
+        'tester': 'Tester',
         'staff': 'Staff',
         'senior_executive': 'Senior Executive',
         'admin': 'Administrator'
@@ -999,7 +1013,7 @@
             showToast('Failed to load users: ' + error.message, 'error');
             document.getElementById('usersTableBody').innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: #dc3545;">
+                    <td colspan="10" style="text-align: center; padding: 40px; color: #dc3545;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
                         <p>Failed to load users. Please try again.</p>
                         <button class="btn-secondary" onclick="fetchUsers()" style="margin-top: 10px;">
@@ -1066,7 +1080,7 @@
         if (users.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
+                    <td colspan="10" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
                         <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px;"></i>
                         <p>No users found</p>
                     </td>
@@ -1078,9 +1092,6 @@
         tbody.innerHTML = users.map(user => {
             const isAdmin = user.userType === 'admin';
             const isGoogleAuth = user.authMethod === 'google' || (user.providerData && user.providerData.includes('google.com'));
-            const authMethodDisplay = isGoogleAuth
-                ? '<span class="auth-badge google"><i class="fab fa-google"></i> Google</span>'
-                : '<span class="auth-badge email"><i class="fas fa-envelope"></i> Email</span>';
 
             return `
             <tr data-uid="${user.uid}">
@@ -1097,12 +1108,11 @@
                 <td>${user.displayName || '—'}</td>
                 <td>
                     <select class="type-dropdown" onchange="updateUserType('${user.uid}', this.value, this)" data-original="${user.userType}">
-                        ${Object.entries(USER_TYPE_LABELS).map(([value, label]) =>
-                            `<option value="${value}" ${user.userType === value ? 'selected' : ''}>${label}</option>`
-                        ).join('')}
+                        ${roleOptionsHtml(user.userType)}
                     </select>
                 </td>
-                <td>${authMethodDisplay}</td>
+                <td>${signInCell(user)}</td>
+                <td>${hubspotCell(user)}</td>
                 <td>${user.organization || '—'}</td>
                 <td>${formatDate(user.lastLoginAt) || '<span style="color: var(--ncrc-gray);">Never</span>'}</td>
                 <td style="text-align: center;">${user.loginCount || 0}</td>
@@ -1619,4 +1629,5 @@
         }, 500);
     });
 </script>
+<script src="{{ url_for('static', filename='js/admin-users-access.js') }}"></script>
 {% endblock %}

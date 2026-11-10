@@ -50,6 +50,16 @@ TOKEN_MISSING = "token_missing"
 HUBSPOT_UNAVAILABLE = "hubspot_unavailable"
 UNAVAILABLE_REASONS = (TOKEN_MISSING, HUBSPOT_UNAVAILABLE)
 
+# How /admin/users and the refusals page name each reason
+REASON_LABELS = {
+    AUTHORIZED: "Authorized",
+    NO_CONTACT: "No HubSpot contact",
+    NOT_AUTHORIZED: "Box not ticked",
+    TOKEN_MISSING: "HubSpot token missing",
+    HUBSPOT_UNAVAILABLE: "HubSpot unavailable",
+}
+REFUSALS_SHOWN = 500
+
 
 @dataclass
 class AdmissionResult:
@@ -215,6 +225,28 @@ def log_refusal(uid: str, result: AdmissionResult) -> None:
             logger.warning("Tester check: refusal log insert errors: %s", errors)
     except Exception as e:
         logger.warning("Tester check: could not log the refusal: %s", e)
+
+
+def recent_refusals(limit: int = REFUSALS_SHOWN) -> list:
+    """Newest refusals first: time, UID, reason and source. Empty when the
+    table doesn't exist yet (no refusal on this deploy) or can't be read."""
+    from google.api_core.exceptions import NotFound
+    from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
+    from justdata.shared.utils.bigquery_client import get_bigquery_client
+
+    sql = (f"SELECT refused_at, uid, reason, source FROM `{_refusal_table()}` "
+           "ORDER BY refused_at DESC LIMIT @limit")
+    job_config = QueryJobConfig(query_parameters=[ScalarQueryParameter("limit", "INT64", limit)])
+    try:
+        client = get_bigquery_client(project_id=_project_id())
+        rows = client.query(sql, job_config=job_config).result()
+        return [{"refused_at": r["refused_at"], "uid": r["uid"], "reason": r["reason"],
+                 "source": r["source"]} for r in rows]
+    except NotFound:
+        return []
+    except Exception as e:
+        logger.warning("Tester check: could not read refusals: %s", e)
+        return []
 
 
 def admit_or_refuse(uid: str, email: str, user_doc: dict, user_type: str) -> tuple:

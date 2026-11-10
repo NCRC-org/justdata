@@ -102,6 +102,23 @@ def directory(monkeypatch):
 # The user list
 # ---------------------------------------------------------------------------
 
+def test_user_list_shows_the_tester_check_and_firebase_flags(admin_client, directory):
+    body = admin_client.get("/api/auth/users").get_json()
+    by_uid = {u["uid"]: u for u in body["users"]}
+
+    tester = by_uid["u-tester"]
+    assert tester["testerAccess"] == {"authorized": True, "reason": ta.AUTHORIZED,
+                                      "checkedAt": CHECKED.isoformat()}
+    # Firebase's flag wins over the stale Firestore copy
+    assert tester["emailVerified"] is True
+    assert tester["providerData"] == ["password"]
+
+    plain = by_uid["u-plain"]
+    assert plain["testerAccess"] is None
+    assert plain["emailVerified"] is False
+    assert plain["providerData"] == ["google.com", "password"]
+
+
 @pytest.mark.parametrize("role", VALID_USER_TYPES)
 def test_role_editor_accepts_every_valid_role(admin_client, directory, role):
     resp = admin_client.put("/api/auth/users/u-plain", json={"userType": role})
@@ -115,3 +132,80 @@ def test_role_editor_refuses_anything_else(admin_client, directory, role):
     assert resp.status_code == 400
     assert resp.get_json()["valid_types"] == VALID_USER_TYPES
     assert directory.updates == []
+
+
+def test_admin_page_takes_its_roles_from_the_server_list(admin_client, monkeypatch):
+    monkeypatch.setenv("JUSTDATA_ENV", "production")
+    page = admin_client.get("/admin/users").get_data(as_text=True)
+    assert "const VALID_USER_TYPES = [" in page
+    for role in VALID_USER_TYPES:
+        assert f'"{role}"' in page
+    assert "admin-users-access.js" in page
+    assert 'href="/admin/sign-in-refusals"' in page
+    # No hand-written role options left in the page
+    assert '<option value="staff">' not in page
+
+
+# ---------------------------------------------------------------------------
+# Refused sign-ins
+# ---------------------------------------------------------------------------
+
+def test_refusals_page_lists_uid_time_and_reason_without_email(admin_client, monkeypatch):
+    rows = [{"refused_at": CHECKED, "uid": "uid-refused-1", "reason": ta.NOT_AUTHORIZED, "source": "hubspot_api"},
+            {"refused_at": CHECKED, "uid": "uid-refused-2", "reason": ta.NO_CONTACT, "source": "hubspot_api"}]
+    monkeypatch.setattr(ta, "recent_refusals", lambda limit=ta.REFUSALS_SHOWN: rows)
+    page = admin_client.get("/admin/sign-in-refusals").get_data(as_text=True)
+    assert "uid-refused-1" in page and "uid-refused-2" in page
+    assert "Box not ticked" in page and "No HubSpot contact" in page
+    assert "2026-11-10 15:00" in page
+    assert "@" not in page.split('id="signinRefusals"')[1].split("</section>")[0].replace("mailto:", "")
+
+
+def test_refusals_page_with_nothing_logged(admin_client, monkeypatch):
+    monkeypatch.setattr(ta, "recent_refusals", lambda limit=ta.REFUSALS_SHOWN: [])
+    page = admin_client.get("/admin/sign-in-refusals").get_data(as_text=True)
+    assert "No refused sign-ins are logged on this deploy." in page
+
+
+@pytest.mark.parametrize("role", ["staff", "senior_executive", "tester", "public_registered"])
+def test_refusals_page_is_admin_only(unified_client, monkeypatch, role):
+    monkeypatch.setattr(ta, "recent_refusals", lambda limit=ta.REFUSALS_SHOWN: [
+        {"refused_at": CHECKED, "uid": "secret-uid", "reason": ta.NO_CONTACT, "source": "x"}])
+    with unified_client.session_transaction() as sess:
+        sess["user_type"] = role
+        sess["firebase_user"] = {"uid": "u", "email": "u@example.org", "email_verified": True}
+    page = unified_client.get("/admin/sign-in-refusals").get_data(as_text=True)
+    assert "secret-uid" not in page
+
+
+def test_recent_refusals_reads_newest_first_from_the_env_table(monkeypatch):
+    captured = SimpleNamespace(sql=None, limit=None)
+
+    class FakeClient:
+        def query(self, sql, job_config):
+            captured.sql = sql
+            captured.limit = job_config.query_parameters[0].value
+            return SimpleNamespace(result=lambda: [
+                {"refused_at": CHECKED, "uid": "u1", "reason": ta.NO_CONTACT, "source": "hubspot_api"}])
+
+    monkeypatch.setenv("JUSTDATA_ENV", "testing")
+    monkeypatch.setattr("justdata.shared.utils.bigquery_client.get_bigquery_client",
+                        lambda project_id=None, app_name=None: FakeClient())
+    rows = ta.recent_refusals(limit=50)
+    assert "cache_testing.signin_refusals" in captured.sql
+    assert "ORDER BY refused_at DESC" in captured.sql
+    assert captured.limit == 50
+    assert rows == [{"refused_at": CHECKED, "uid": "u1", "reason": ta.NO_CONTACT, "source": "hubspot_api"}]
+    assert "email" not in captured.sql
+
+
+def test_recent_refusals_is_empty_before_the_first_refusal(monkeypatch):
+    from google.api_core.exceptions import NotFound
+
+    class MissingTable:
+        def query(self, sql, job_config):
+            raise NotFound("table not found")
+
+    monkeypatch.setattr("justdata.shared.utils.bigquery_client.get_bigquery_client",
+                        lambda project_id=None, app_name=None: MissingTable())
+    assert ta.recent_refusals() == []

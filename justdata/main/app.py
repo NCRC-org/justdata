@@ -551,12 +551,31 @@ def create_app():
         # render_template, not a bare Jinja Environment: the bare one had no
         # app globals, so the shell footer's `ncrc_contact` (added in #217)
         # was undefined and the page returned 500 (Jay round 2 #1).
+        from justdata.main.auth.services.tester_access import REASON_LABELS
+
         return render_template(
             'admin-users.html',
             user_type=user_type,
             permissions=get_user_permissions(user_type),
             valid_user_types=VALID_USER_TYPES,
+            tester_reason_labels=REASON_LABELS,
             current_user=get_current_user(),
+        )
+
+    # Refused testing-site sign-ins (spec 08): UID, time and reason, no email
+    @app.route('/admin/sign-in-refusals')
+    @login_required
+    @admin_required
+    def admin_signin_refusals():
+        from justdata.main.auth.services.tester_access import (
+            REASON_LABELS, REFUSALS_SHOWN, recent_refusals,
+        )
+        return render_template(
+            'admin-refusals.html',
+            refusals=recent_refusals(),
+            reason_labels=REASON_LABELS,
+            limit=REFUSALS_SHOWN,
+            app_description='Refused sign-ins on the testing site',
         )
 
     return app
