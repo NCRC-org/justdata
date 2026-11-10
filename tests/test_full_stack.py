@@ -155,7 +155,7 @@ def test_frontend():
     with app.test_client() as client:
         static_files = [
             ('/static/css/style.css', 'text/css'),
-            ('/static/js/app.js', 'application/javascript'),
+            ('/static/js/escape-html.js', 'application/javascript'),
         ]
         
         for path, expected_type in static_files:

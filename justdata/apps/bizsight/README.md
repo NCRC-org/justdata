@@ -36,7 +36,6 @@ multi-section report. Excel export via `excel_export.py`; PDF via
 - `partials/bizsight_controls.html` — steps 1 Geography, 2 Years, 3 Options (staff)
 - `partials/bizsight_report_template.html`, `bizsight_methods.html`,
   `bizsight_narrative.html` — the report body, cloned into the results column
-- `pdf_report_template.html`
 
 Page scripts live in `shared/web/static/js/bizsight/` (`bs_page.js`,
 `bs_report.js`) on the shared AppRun and AppReport modules, and styles in

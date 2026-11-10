@@ -45,7 +45,6 @@ the AI narrative.
 - `partials/lendsight_controls.html` — steps 1 Geography, 2 Years, 3 Options
 - `partials/lendsight_report_template.html`, `lendsight_methods.html`,
   `lendsight_narrative.html` — the report body, cloned into the results column
-- `pdf_report_template.html`
 
 Page scripts live in `shared/web/static/js/lendsight/` (`ls_page.js`,
 `ls_report.js`, `ls_tables.js`, `ls_charts.js`) and styles in
