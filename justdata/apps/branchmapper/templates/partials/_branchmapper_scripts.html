@@ -232,6 +232,17 @@
                 if (e.key === 'Escape') hideSearchResults();
             });
 
+            // Bank names ride in data-* attributes, never inside an onclick
+            // handler, where the browser decodes them back into script
+            document.getElementById('bankSearchResults').addEventListener('click', function(e) {
+                const item = e.target.closest('[data-bank-name]');
+                if (item) addBank(item.dataset.bankName);
+            });
+            document.getElementById('bankChipsContainer').addEventListener('click', function(e) {
+                const chip = e.target.closest('[data-remove-bank]');
+                if (chip) removeBank(chip.dataset.removeBank);
+            });
+
             // Close search results on click outside
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('#bankSearchInput') && !e.target.closest('#bankSearchResults')) {
@@ -252,7 +263,7 @@
                 container.innerHTML = '<div class="bank-search-item" style="color: #999;">No matches found</div>';
             } else {
                 container.innerHTML = filtered.map(name =>
-                    `<div class="bank-search-item" onclick="addBank('${name.replace(/'/g, "\\'")}')">${name}</div>`
+                    `<div class="bank-search-item" data-bank-name="${escapeHtml(name)}">${escapeHtml(name)}</div>`
                 ).join('');
             }
             container.style.display = 'block';
@@ -350,8 +361,8 @@
             container.innerHTML = selectedBanks.map(bank => {
                 const count = currentViewMode === 'sod' ? bank.branches.length : bank.oscrEvents.length;
                 return `<span class="bank-chip" style="background: ${bank.color};">
-                    ${bank.name} (${count})
-                    <span class="chip-remove" onclick="removeBank('${bank.name.replace(/'/g, "\\'")}')">&times;</span>
+                    ${escapeHtml(bank.name)} (${count})
+                    <span class="chip-remove" data-remove-bank="${escapeHtml(bank.name)}">&times;</span>
                 </span>`;
             }).join('');
         }
