@@ -12,6 +12,7 @@ from justdata.main.auth import (
 )
 from justdata.main.auth.access_overlay import is_tester, testing_gate_admits
 from justdata.main.config import MainConfig
+from justdata.shared.web.app_factory import resolve_secret_key
 import os
 import re
 
@@ -53,7 +54,7 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
     
     # Configuration
-    app.secret_key = MainConfig.SECRET_KEY
+    app.secret_key = resolve_secret_key()  # refuses to start without a private key
     app.config['DEBUG'] = MainConfig.DEBUG
     app.config['SESSION_PERMANENT'] = True
 
