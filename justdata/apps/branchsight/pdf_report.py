@@ -36,7 +36,7 @@ from justdata.shared.pdf.styles import (
     TABLE_HEADER_TEXT, TABLE_CELL_TEXT, TABLE_CELL_NUMBER,
     NAVY, RULE_COLOR, BODY_FONT, BODY_FONT_BOLD, BODY_FONT_ITALIC,
     HEADLINE_FONT_BOLD, HEADER_BG, ALT_ROW_BG, MEDIUM_GRAY,
-    build_table_style, markdown_to_reportlab,
+    build_table_style, markdown_to_reportlab, pdf_text,
 )
 from justdata.shared.pdf.components import (
     latest_year,
@@ -421,7 +421,7 @@ def _build_bank_table(bank_data, max_rows=20):
             if val is None:
                 val = ''
             if col == 'Bank Name':
-                cells.append(Paragraph(str(val), _bank_name))
+                cells.append(Paragraph(pdf_text(val), _bank_name))
             elif col == 'Net Change':
                 cells.append(_fmt_change(val))
             else:
@@ -502,7 +502,7 @@ def _build_county_table(county_data):
         for col in col_order:
             val = row.get(col, '')
             if col == 'County':
-                cells.append(Paragraph(str(val), _METRIC_CELL))
+                cells.append(Paragraph(pdf_text(val), _METRIC_CELL))
             else:
                 cells.append(str(val) if val is not None else '')
         table_data.append(cells)
