@@ -26,7 +26,7 @@ from justdata.shared.pdf.styles import (
     CENSUS_CALLOUT_BG, CENSUS_CALLOUT_BORDER,
     LIGHT_GRAY, MEDIUM_GRAY,
     BODY_FONT, BODY_FONT_BOLD,
-    build_table_style, markdown_to_reportlab,
+    build_table_style, markdown_to_reportlab, pdf_text,
 )
 from justdata.shared.pdf.base_report import USABLE_WIDTH
 
@@ -200,7 +200,7 @@ def build_data_table(data_rows, col_order, col_widths, header_labels=None,
             if value is None:
                 value = ''
             if i == 0 and use_paragraph_col0:
-                row.append(Paragraph(str(value), TABLE_CELL_TEXT))
+                row.append(Paragraph(pdf_text(value), TABLE_CELL_TEXT))
             else:
                 row.append(str(value))
         table_data.append(row)

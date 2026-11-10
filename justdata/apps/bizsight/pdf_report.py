@@ -41,7 +41,7 @@ from justdata.shared.pdf.styles import (
     TABLE_HEADER_TEXT,
     NAVY, RULE_COLOR, BODY_FONT, BODY_FONT_BOLD, BODY_FONT_ITALIC,
     HEADLINE_FONT_BOLD, HEADER_BG, ALT_ROW_BG, MEDIUM_GRAY,
-    build_table_style, markdown_to_reportlab,
+    build_table_style, markdown_to_reportlab, pdf_text,
 )
 from justdata.shared.pdf.components import (
     latest_year,
@@ -555,7 +555,7 @@ def _build_top_lenders_table(data_rows, max_rows=20):
             if val is None:
                 val = ''
             if col == 'Lender Name':
-                cells.append(Paragraph(str(val), _lender_name))
+                cells.append(Paragraph(pdf_text(val), _lender_name))
             elif col == 'Num Total':
                 cells.append(_fmt_int(val))
             elif col == 'Amt Total (in $000s)':
@@ -726,7 +726,7 @@ def generate_bizsight_pdf(result_data, metadata):
     story.append(_h1('Section 1: Introduction'))
     story.append(Paragraph(
         f'This report provides a comprehensive analysis of small business lending activity in '
-        f'{county_display} ({date_range}). The analysis is based on data collected under the '
+        f'{pdf_text(county_display)} ({date_range}). The analysis is based on data collected under the '
         f'Community Reinvestment Act (CRA), which requires large banks to report the small business '
         f'loans they originate or purchase. Small business loans are defined as loans with original '
         f'amounts of $1 million or less for commercial and industrial purposes.',
@@ -1094,7 +1094,7 @@ def generate_bizsight_pdf(result_data, metadata):
     gen_date = datetime.now().strftime('%B %d, %Y')
     meth_elements.append(Paragraph(
         f'National Community Reinvestment Coalition. "Small Business Lending Analysis: '
-        f'{county_display}." BizSight Report, NCRC JustData Platform, {gen_date}.',
+        f'{pdf_text(county_display)}." BizSight Report, NCRC JustData Platform, {gen_date}.',
         _METHODS_COMPACT))
 
     # Abbreviations

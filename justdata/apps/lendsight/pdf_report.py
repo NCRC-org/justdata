@@ -42,7 +42,7 @@ from justdata.shared.pdf.styles import (
     TABLE_HEADER_TEXT,
     NAVY, RULE_COLOR, BODY_FONT, BODY_FONT_BOLD, BODY_FONT_ITALIC,
     HEADLINE_FONT_BOLD, HEADER_BG, ALT_ROW_BG, MEDIUM_GRAY,
-    build_table_style, markdown_to_reportlab,
+    build_table_style, markdown_to_reportlab, pdf_text,
 )
 from justdata.shared.pdf.components import (
     latest_year,
@@ -943,7 +943,7 @@ def _build_top_lenders_table(data, max_rows=20):
             if val is None:
                 val = ''
             if col == 'Lender Name':
-                cells.append(Paragraph(str(val), _lender_name))
+                cells.append(Paragraph(pdf_text(val), _lender_name))
             elif col == 'Total Loans':
                 cells.append(_fmt_val(val, is_total_row=True))
             elif col == 'Lender Type':
