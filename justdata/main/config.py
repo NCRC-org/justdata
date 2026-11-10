@@ -20,7 +20,6 @@ class MainConfig:
     TEMPLATES_DIR = str(TEMPLATES_DIR)
     STATIC_DIR = str(STATIC_DIR)
     
-    SECRET_KEY = os.getenv('SECRET_KEY', 'justdata-secret-key-change-in-production')
     DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
     PORT = int(os.getenv('PORT', 8000))
     HOST = os.getenv('HOST', '0.0.0.0')

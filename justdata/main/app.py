@@ -11,6 +11,7 @@ from justdata.main.auth import (
 )
 from justdata.main.config import MainConfig
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from justdata.shared.web.app_factory import resolve_secret_key
 import os
 
 
@@ -39,7 +40,7 @@ def create_app():
     )
     
     # Configuration
-    app.secret_key = MainConfig.SECRET_KEY
+    app.secret_key = resolve_secret_key()  # refuses to start without a private key
     app.config['DEBUG'] = MainConfig.DEBUG
     app.config['SESSION_PERMANENT'] = True
 
