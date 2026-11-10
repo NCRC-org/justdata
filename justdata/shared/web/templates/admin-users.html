@@ -976,7 +976,7 @@
         toast.className = `toast ${type}`;
         toast.innerHTML = `
             <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            ${message}
+            ${escapeHtml(message)}
         `;
         container.appendChild(toast);
 
@@ -1094,7 +1094,7 @@
             const isGoogleAuth = user.authMethod === 'google' || (user.providerData && user.providerData.includes('google.com'));
 
             return `
-            <tr data-uid="${user.uid}">
+            <tr data-uid="${escapeHtml(user.uid)}">
                 <td class="checkbox-cell">
                     <input type="checkbox" class="user-checkbox"
                         ${isAdmin ? 'disabled title="Admins cannot be deleted"' : ''}
@@ -1103,17 +1103,17 @@
                 </td>
                 <td>
                     ${user.pendingActivation ? '<span class="status-dot pending" title="Pending Activation"></span>' : '<span class="status-dot active" title="Active"></span>'}
-                    ${user.email || '—'}
+                    ${escapeHtml(user.email) || '—'}
                 </td>
-                <td>${user.displayName || '—'}</td>
+                <td>${escapeHtml(user.displayName) || '—'}</td>
                 <td>
-                    <select class="type-dropdown" onchange="updateUserType('${user.uid}', this.value, this)" data-original="${user.userType}">
+                    <select class="type-dropdown" onchange="updateUserType('${user.uid}', this.value, this)" data-original="${escapeHtml(user.userType)}">
                         ${roleOptionsHtml(user.userType)}
                     </select>
                 </td>
                 <td>${signInCell(user)}</td>
                 <td>${hubspotCell(user)}</td>
-                <td>${user.organization || '—'}</td>
+                <td>${escapeHtml(user.organization) || '—'}</td>
                 <td>${formatDate(user.lastLoginAt) || '<span style="color: var(--ncrc-gray);">Never</span>'}</td>
                 <td style="text-align: center;">${user.loginCount || 0}</td>
                 <td>
@@ -1122,7 +1122,7 @@
                             <i class="fas fa-edit"></i>
                         </button>
                         ${!isGoogleAuth ? `
-                        <button class="btn-icon reset" onclick="openResetPasswordModal('${user.uid}', '${user.email}')" title="Reset Password">
+                        <button class="btn-icon reset" onclick="openResetPasswordModal('${user.uid}')" title="Reset Password">
                             <i class="fas fa-key"></i>
                         </button>
                         ` : ''}
@@ -1442,8 +1442,8 @@
         document.getElementById('deleteCountText').textContent = `${usersToDelete.length} user(s)`;
         document.getElementById('deleteUserList').innerHTML = usersToDelete.map(u => `
             <div class="delete-user-item">
-                <span>${u.email}</span>
-                <span style="color: var(--ncrc-gray);">${u.displayName || ''}</span>
+                <span>${escapeHtml(u.email)}</span>
+                <span style="color: var(--ncrc-gray);">${escapeHtml(u.displayName)}</span>
             </div>
         `).join('');
 
@@ -1516,7 +1516,11 @@
     // RESET PASSWORD
     // ============================================
 
-    function openResetPasswordModal(uid, email) {
+    function openResetPasswordModal(uid) {
+        // The email is looked up, not passed in onclick: a quote in an address
+        // would end the handler's string (escaping can't help inside onclick)
+        const user = allUsers.find(u => u.uid === uid);
+        const email = user ? user.email : '';
         document.getElementById('resetPasswordUid').value = uid;
         document.getElementById('resetPasswordEmail').textContent = email;
         document.getElementById('newPasswordInput').value = '';

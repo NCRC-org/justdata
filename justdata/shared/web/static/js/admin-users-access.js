@@ -17,12 +17,6 @@ const PROVIDER_LABELS = {
     'microsoft.com': 'Microsoft'
 };
 
-function adminEscape(value) {
-    return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
 function roleLabel(role) {
     return USER_TYPE_LABELS[role] || role;
 }
@@ -30,7 +24,7 @@ function roleLabel(role) {
 /** <option> tags for every valid role, the current one selected. */
 function roleOptionsHtml(selected) {
     return VALID_USER_TYPES.map(role =>
-        `<option value="${adminEscape(role)}" ${role === selected ? 'selected' : ''}>${adminEscape(roleLabel(role))}</option>`
+        `<option value="${escapeHtml(role)}" ${role === selected ? 'selected' : ''}>${escapeHtml(roleLabel(role))}</option>`
     ).join('');
 }
 
@@ -48,7 +42,7 @@ function signInCell(user) {
     const verified = user.emailVerified
         ? '<span class="auth-badge verified" title="Firebase emailVerified is true">Verified</span>'
         : '<span class="auth-badge unverified" title="Firebase emailVerified is false">Unverified</span>';
-    return `<span class="auth-badge email">${adminEscape(names)}</span> ${verified}`;
+    return `<span class="auth-badge email">${escapeHtml(names)}</span> ${verified}`;
 }
 
 function hubspotCell(user) {
@@ -59,8 +53,8 @@ function hubspotCell(user) {
     const label = TESTER_REASON_LABELS[access.reason] || access.reason;
     const when = access.checkedAt ? formatCheckTime(access.checkedAt) : '';
     const cls = access.authorized ? 'ok' : 'refused';
-    return `<span class="hubspot-status ${cls}">${adminEscape(label)}</span>`
-        + (when ? `<div class="hubspot-checked">${adminEscape(when)}</div>` : '');
+    return `<span class="hubspot-status ${cls}">${escapeHtml(label)}</span>`
+        + (when ? `<div class="hubspot-checked">${escapeHtml(when)}</div>` : '');
 }
 
 function formatCheckTime(iso) {
