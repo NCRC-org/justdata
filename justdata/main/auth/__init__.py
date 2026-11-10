@@ -557,6 +557,14 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
         }
 
 
+def is_allowlisted_email(email: str) -> bool:
+    """True if the address is on the admin or senior executive list."""
+    if not email:
+        return False
+    listed = {e.lower() for e in ADMIN_EMAILS + SENIOR_EXECUTIVE_EMAILS}
+    return email.lower() in listed
+
+
 def determine_user_type(email: str, email_verified: bool = False,
                          current_type: str = None, auth_provider: str = None,
                          membership_result: 'MembershipLookupResult' = None) -> UserType:
@@ -578,13 +586,17 @@ def determine_user_type(email: str, email_verified: bool = False,
 
     email_lower = email.lower()
 
-    # Check admin list first
-    if email_lower in [e.lower() for e in ADMIN_EMAILS]:
-        return 'admin'
+    # The admin and senior executive lists grant a role by address alone, so
+    # the address must be verified first (Google sign-in arrives verified).
+    # An unverified account on a listed address falls through to the rules below.
+    if email_verified:
+        # Check admin list first
+        if email_lower in [e.lower() for e in ADMIN_EMAILS]:
+            return 'admin'
 
-    # Check senior executive list
-    if email_lower in [e.lower() for e in SENIOR_EXECUTIVE_EMAILS]:
-        return 'senior_executive'
+        # Check senior executive list
+        if email_lower in [e.lower() for e in SENIOR_EXECUTIVE_EMAILS]:
+            return 'senior_executive'
 
     # Check NCRC domain
     if email_lower.endswith('@ncrc.org'):

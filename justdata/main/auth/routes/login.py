@@ -32,6 +32,7 @@ from justdata.main.auth import (
     determine_user_type,
     log_activity,
     is_privileged_user,
+    is_allowlisted_email,
 )
 from justdata.main.auth.access_overlay import is_testing_env
 from justdata.main.auth.services.tester_access import UNAVAILABLE_REASONS, admit_or_refuse
@@ -115,6 +116,22 @@ def auth_login():
     )
 
     user_type = firestore_user.get('userType', 'public_registered')
+
+    # A password account proves nothing about the address until it is
+    # verified (email_verified comes from the signed Firebase token). Until
+    # then it gets no session: on every deploy for an admin or senior
+    # executive address, and on the testing site for anyone not staff,
+    # before the tester list is checked.
+    if auth_provider == 'password' and not email_verified and (
+            is_allowlisted_email(email)
+            or (is_testing_env() and not is_privileged_user(user_type))):
+        clear_session_user()
+        print(f"[auth] email not verified uid={uid}")
+        return jsonify({
+            'error': 'Email not verified',
+            'code': 'email_not_verified',
+            'redirect': '/verify-email',
+        }), 403
 
     # Testing site: HubSpot decides who is a tester (spec 08). A refusal keeps
     # the Firebase account and the user record, and opens no session.

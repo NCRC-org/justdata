@@ -10,7 +10,7 @@ from justdata.main.auth import (
     auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
     login_required, admin_required
 )
-from justdata.main.auth.access_overlay import is_tester, testing_gate_admits
+from justdata.main.auth.access_overlay import is_tester, is_testing_env, testing_gate_admits
 from justdata.main.config import MainConfig
 from justdata.shared.web.app_factory import resolve_secret_key
 import os
@@ -24,6 +24,7 @@ EXEMPT_PATHS = [
     '/static/',
     '/shared/',
     '/api/auth/',  # Auth routes for login/logout
+    '/verify-email',  # An unverified password account has no session yet (spec 08)
     '/api/platform-stats',  # Public homepage stats (no auth; avoids 127.0.0.1 vs localhost cookie mismatch)
     '/mergermeter/api/generate',  # API key auth, not Firebase — used by codebot
     '/mergermeter/api/search-banks-ext',  # API key auth — used by codebot for entity resolution
@@ -333,10 +334,22 @@ def create_app():
         Landing page after user clicks email verification link.
         Firebase handles the actual verification - this page just
         prompts the user to refresh their session.
+        On the testing site the link lands on the verify page instead, which
+        signs the user in once Firebase reports the email verified (spec 08).
         """
+        if is_testing_env():
+            return verify_email()
         return render_template(
             'email_verified.html',
             app_description='Email verification confirmation for JustData',
+        )
+
+    # Where an unverified password account waits (spec 08; see auth_login)
+    @app.route('/verify-email')
+    def verify_email():
+        return render_template(
+            'verify_email.html',
+            app_description='Verify your email to sign in to JustData testing.',
         )
 
     # Where a refused testing-site sign-in lands (spec 08)

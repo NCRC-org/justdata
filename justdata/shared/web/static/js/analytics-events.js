@@ -56,18 +56,12 @@ function logAnalyticsEvent(eventName, params = {}) {
             enrichedParams.user_type = window.justDataUserType;
         }
         
-        // Add Firebase Auth user info if signed in
+        // Add the Firebase UID if signed in. Never the email or display name:
+        // GA4 is no place for personal information (spec 08).
         try {
             const currentUser = firebase.auth && firebase.auth().currentUser;
             if (currentUser) {
                 enrichedParams.firebase_uid = currentUser.uid;
-                // Add email for user identification (hashed for privacy in analytics)
-                if (currentUser.email) {
-                    enrichedParams.user_email = currentUser.email;
-                }
-                if (currentUser.displayName) {
-                    enrichedParams.user_display_name = currentUser.displayName;
-                }
             }
         } catch (e) {
             // Ignore - user might not be signed in
