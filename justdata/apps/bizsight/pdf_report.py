@@ -40,7 +40,7 @@ from justdata.shared.pdf.styles import (
     TABLE_HEADER_TEXT,
     NAVY, RULE_COLOR, BODY_FONT, BODY_FONT_BOLD, BODY_FONT_ITALIC,
     HEADLINE_FONT_BOLD, HEADER_BG, ALT_ROW_BG, MEDIUM_GRAY,
-    build_table_style, markdown_to_reportlab,
+    build_table_style, markdown_to_reportlab, pdf_text,
 )
 from justdata.shared.pdf.components import (
     build_data_table, build_key_findings,
@@ -553,7 +553,7 @@ def _build_top_lenders_table(data_rows, max_rows=20):
             if val is None:
                 val = ''
             if col == 'Lender Name':
-                cells.append(Paragraph(str(val), _lender_name))
+                cells.append(Paragraph(pdf_text(val), _lender_name))
             elif col == 'Num Total':
                 cells.append(_fmt_int(val))
             elif col == 'Amt Total (in $000s)':
@@ -1045,7 +1045,7 @@ def generate_bizsight_pdf(result_data, metadata):
     gen_date = datetime.now().strftime('%B %d, %Y')
     meth_elements.append(Paragraph(
         f'National Community Reinvestment Coalition. "Small Business Lending Analysis: '
-        f'{county_display}." BizSight Report, NCRC JustData Platform, {gen_date}.',
+        f'{pdf_text(county_display)}." BizSight Report, NCRC JustData Platform, {gen_date}.',
         _METHODS_COMPACT))
 
     # Abbreviations
