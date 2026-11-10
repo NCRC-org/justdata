@@ -424,7 +424,7 @@ function renderSummary(data) {
             const state = county.state || '';
             const li = $('<li class="clickable-item">')
                 .html(
-                    '<span class="item-name">' + escapeHtml(name) + (state ? ', ' + state : '') + '</span>' +
+                    '<span class="item-name">' + escapeHtml(name) + (state ? ', ' + escapeHtml(state) : '') + '</span>' +
                     '<span class="item-value">' + formatNumber(county.total_reports) + ' reports</span>'
                 )
                 .on('click', function() {
@@ -625,7 +625,7 @@ function renderCoalitionPreview(data) {
             $('<li>').html(
                 '<div class="entity-name">' + escapeHtml(name) + '</div>' +
                 '<div class="entity-meta">' +
-                '<span class="type-badge ' + item.entity_type + '">' + type + '</span> ' +
+                '<span class="type-badge ' + escapeHtml(item.entity_type) + '">' + type + '</span> ' +
                 users + ' users from ' + orgs + ' organizations' +
                 '</div>'
             )
@@ -815,7 +815,7 @@ function renderDashboardResearchers(researchers) {
                 '<a href="/analytics/users?user=' + encodeURIComponent(user.user_id) + '" class="user-name-link">' +
                 '<i class="fas fa-user"></i> ' + escapeHtml(displayName) +
                 '</a>' +
-                (userType ? '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>' : '') +
+                (userType ? '<span class="user-type-badge ' + escapeHtml(userType) + '">' + escapeHtml(userType) + '</span>' : '') +
                 '</div>'
             )
             .append(
@@ -827,7 +827,7 @@ function renderDashboardResearchers(researchers) {
             .append(
                 '<div class="user-activity">' +
                 '<span><i class="fas fa-file-alt"></i> ' + formatNumber(reportCount) + ' reports</span>' +
-                (user.last_activity ? '<span><i class="fas fa-clock"></i> ' + formatDate(user.last_activity) + '</span>' : '') +
+                (user.last_activity ? '<span><i class="fas fa-clock"></i> ' + escapeHtml(formatDate(user.last_activity)) + '</span>' : '') +
                 '</div>'
             );
 

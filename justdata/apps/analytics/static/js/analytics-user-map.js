@@ -34,6 +34,12 @@ $(document).ready(function() {
     // Handle filter changes
     $('#time-period, #state-filter').on('change', loadData);
 
+    // Popup "View Researchers" button carries its location as a data attribute
+    $(document).on('click', '.btn-view-researchers[data-location]', function(e) {
+        e.preventDefault();
+        showLocationDetail(JSON.parse(this.getAttribute('data-location')));
+    });
+
     // Close detail panel when clicking outside
     $(document).on('click', function(e) {
         if (!$(e.target).closest('#location-detail-panel, .location-item, .mapboxgl-popup, .mapbox-circle-marker').length) {
@@ -290,7 +296,7 @@ function generateClickablePopup(location) {
 
     // View Researchers button
     html += '<div class="popup-actions">';
-    html += '<button class="btn-view-researchers" onclick="showLocationDetail(' + JSON.stringify(location).replace(/"/g, '&quot;') + '); return false;">';
+    html += '<button class="btn-view-researchers" data-location="' + escapeHtml(JSON.stringify(location)) + '">';
     html += '<i class="fas fa-users"></i> View Researchers';
     html += '</button>';
     html += '</div>';
@@ -415,7 +421,7 @@ function renderLocationResearchers(researchers, location) {
                 '<a href="/analytics/users?user=' + encodeURIComponent(user.user_id) + '" class="user-name-link">' +
                 '<i class="fas fa-user"></i> ' + escapeHtml(displayName) +
                 '</a>' +
-                (userType ? '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>' : '') +
+                (userType ? '<span class="user-type-badge ' + escapeHtml(userType) + '">' + escapeHtml(userType) + '</span>' : '') +
                 '</div>'
             )
             .append(
@@ -426,7 +432,7 @@ function renderLocationResearchers(researchers, location) {
             .append(
                 '<div class="user-activity">' +
                 '<span><i class="fas fa-file-alt"></i> ' + formatNumber(reportCount) + ' reports</span>' +
-                (user.last_activity ? '<span><i class="fas fa-clock"></i> ' + formatDate(user.last_activity) + '</span>' : '') +
+                (user.last_activity ? '<span><i class="fas fa-clock"></i> ' + escapeHtml(formatDate(user.last_activity)) + '</span>' : '') +
                 '</div>'
             );
 
