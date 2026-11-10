@@ -147,3 +147,18 @@ def test_every_page_loads_the_helper_before_its_own_scripts(unified_client, monk
     page = _admin_page(unified_client, monkeypatch)
     assert page.index("js/escape-html.js") < page.index("function renderTable")
 
+
+ANALYTICS_JS = Path(__file__).resolve().parents[2] / "justdata/apps/analytics/static/js"
+
+
+def test_analytics_builds_no_inline_handlers_from_data():
+    """Escaping can't protect a value inside onclick; the analytics popups
+    carry their data in data-* attributes instead."""
+    for path in sorted(ANALYTICS_JS.glob("*.js")):
+        source = path.read_text()
+        assert not re.search(r"""on(click|change)=["'][^"']*['"]\s*\+""", source), path.name
+        assert "JSON.stringify(" not in source or "onclick" not in source.split("JSON.stringify(")[0][-200:], path.name
+
+
+def test_analytics_has_no_competing_global_helper_in_maps():
+    assert "function escapeHtml" not in (ANALYTICS_JS / "analytics-maps.js").read_text()

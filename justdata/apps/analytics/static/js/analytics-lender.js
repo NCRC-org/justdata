@@ -31,6 +31,12 @@ $(document).ready(function() {
     // Handle filter changes
     $('#time-period, #min-users').on('change', loadData);
 
+    // Popup "View All Researchers" button carries its state as a data attribute
+    $(document).on('click', '.btn-view-researchers[data-state]', function(e) {
+        e.preventDefault();
+        showStateResearchers(this.getAttribute('data-state'));
+    });
+
     // Close detail panel when clicking outside
     $(document).on('click', function(e) {
         if (!$(e.target).closest('#state-detail-panel, .mapboxgl-popup, .mapbox-circle-marker, .btn-view-researchers').length) {
@@ -257,7 +263,7 @@ function renderTable(data) {
             .append('<td>' + formatNumber(lender.unique_users) + '</td>')
             .append('<td>' + formatNumber(lender.event_count) + '</td>')
             .append('<td class="locations-cell">' + locationPillsHtml + '</td>')
-            .append('<td>' + formatDate(lender.last_activity) + '</td>');
+            .append('<td>' + escapeHtml(formatDate(lender.last_activity)) + '</td>');
 
         // Make entire row clickable (except for direct link clicks)
         row.on('click', function(e) {
@@ -619,7 +625,7 @@ function generateLenderMapPopup(info) {
 
     // Add View All Researchers button
     html += '<div class="popup-actions">';
-    html += '<button class="btn-view-researchers" onclick="showStateResearchers(\'' + escapeHtml(info.state) + '\'); return false;">';
+    html += '<button class="btn-view-researchers" data-state="' + escapeHtml(info.state) + '">';
     html += '<i class="fas fa-users"></i> View All Researchers';
     html += '</button>';
     html += '</div>';
@@ -889,7 +895,7 @@ function renderStateResearchers(researchers, stateAbbr) {
         headerHtml += '<i class="fas fa-user"></i> ' + escapeHtml(displayName);
         headerHtml += '</a>';
         if (userType) {
-            headerHtml += '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>';
+            headerHtml += '<span class="user-type-badge ' + escapeHtml(userType) + '">' + escapeHtml(userType) + '</span>';
         }
         headerHtml += '</div>';
         userCard.append(headerHtml);
@@ -927,7 +933,7 @@ function renderStateResearchers(researchers, stateAbbr) {
         let activityHtml = '<div class="user-activity">';
         activityHtml += '<span><i class="fas fa-university"></i> ' + formatNumber(lenderCount) + ' lenders</span>';
         if (user.last_activity) {
-            activityHtml += '<span><i class="fas fa-clock"></i> ' + formatDate(user.last_activity) + '</span>';
+            activityHtml += '<span><i class="fas fa-clock"></i> ' + escapeHtml(formatDate(user.last_activity)) + '</span>';
         }
         activityHtml += '</div>';
         userCard.append(activityHtml);

@@ -587,21 +587,6 @@ function formatNumber(num) {
 }
 
 /**
- * Escape HTML
- */
-function escapeHtml(text) {
-    if (!text) return '';
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.toString().replace(/[&<>"']/g, m => map[m]);
-}
-
-/**
  * Format date for display
  */
 function formatDate(dateStr) {
@@ -769,7 +754,7 @@ function generateAggregatedPopup(location) {
     }
 
     if (lastActivity) {
-        html += '<div class="popup-activity">Last activity: ' + lastActivity + '</div>';
+        html += '<div class="popup-activity">Last activity: ' + escapeHtml(lastActivity) + '</div>';
     }
 
     html += '<div class="popup-note"><em>Researcher details coming soon</em></div>';
@@ -808,7 +793,7 @@ function generateUserProfilePopup(user) {
     if (organization) html += '<div class="popup-row"><i class="fas fa-building"></i> ' + escapeHtml(organization) + '</div>';
     if (location) html += '<div class="popup-row"><i class="fas fa-map-marker-alt"></i> ' + escapeHtml(location) + '</div>';
     if (eventCount > 0) html += '<div class="popup-row"><i class="fas fa-chart-bar"></i> ' + formatNumber(eventCount) + ' events</div>';
-    if (lastActivity) html += '<div class="popup-row"><i class="fas fa-clock"></i> Last active: ' + lastActivity + '</div>';
+    if (lastActivity) html += '<div class="popup-row"><i class="fas fa-clock"></i> Last active: ' + escapeHtml(lastActivity) + '</div>';
     html += '</div>';
 
     html += '<div class="popup-hubspot">';
