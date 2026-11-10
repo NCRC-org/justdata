@@ -634,7 +634,7 @@ function renderAppBreakdown(apps) {
                 <td>
                     <div class="app-name">
                         <span class="app-icon ${iconClass}">${icon}</span>
-                        ${formatAppName(appName)}
+                        ${escapeHtml(formatAppName(appName))}
                     </div>
                 </td>
                 <td>${formatNumber(app.query_count || 0)}</td>
@@ -862,10 +862,10 @@ function getAppIcon(name) {
 
 function showError(message) {
     document.getElementById('app-breakdown-body').innerHTML = `
-        <tr><td colspan="4" class="no-data" style="color: #ef4444;">${message}</td></tr>
+        <tr><td colspan="4" class="no-data" style="color: #ef4444;">${escapeHtml(message)}</td></tr>
     `;
     document.getElementById('daily-chart').innerHTML = `
-        <div class="no-data" style="color: #ef4444;">${message}</div>
+        <div class="no-data" style="color: #ef4444;">${escapeHtml(message)}</div>
     `;
 }
 </script>
