@@ -505,7 +505,7 @@
                 </div>
                 <div class="lender-stat">
                     <i class="fas fa-calendar"></i>
-                    Active Since: <strong>${firstActivity}</strong>
+                    Active Since: <strong>${escapeHtml(firstActivity)}</strong>
                 </div>
             </div>
         `);
@@ -574,7 +574,7 @@
             }
 
             const row = $('<tr>')
-                .append('<td>' + formatDate(report.event_timestamp) + '</td>')
+                .append('<td>' + escapeHtml(formatDate(report.event_timestamp)) + '</td>')
                 .append('<td><span class="report-type-badge ' + badgeClass + '">' + escapeHtml(displayName) + '</span></td>')
                 .append('<td>' + roleDisplay + '</td>')
                 .append('<td>' + partnerDisplay + '</td>')
@@ -650,7 +650,7 @@
 
             html += '<div class="researcher-meta">';
             html += '<span><i class="fas fa-file-alt"></i> ' + formatNumber(reportCount) + ' reports</span>';
-            html += '<span><i class="fas fa-clock"></i> ' + lastActive + '</span>';
+            html += '<span><i class="fas fa-clock"></i> ' + escapeHtml(lastActive) + '</span>';
             html += '</div>';
             html += '</div>';
 
