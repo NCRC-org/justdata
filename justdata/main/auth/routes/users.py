@@ -255,6 +255,12 @@ def update_user(uid: str):
         if not update_data:
             return jsonify({'error': 'No valid fields to update'}), 400
 
+        if 'userType' in update_data and update_data['userType'] not in VALID_USER_TYPES:
+            return jsonify({
+                'error': f"Invalid user type: {update_data['userType']}",
+                'valid_types': VALID_USER_TYPES
+            }), 400
+
         update_data['updatedAt'] = datetime.utcnow()
 
         # Log what we're updating for debugging
