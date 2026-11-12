@@ -5,6 +5,7 @@ Defines all ParagraphStyle, TableStyle, color constants, and font constants
 used by the shared PDF report framework.
 """
 
+import html
 import os
 import re
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -393,10 +394,25 @@ def build_table_style(
 # ---------------------------------------------------------------------------
 # Markdown to ReportLab markup converter
 # ---------------------------------------------------------------------------
+def pdf_text(value):
+    """Plain text made safe for a ReportLab Paragraph.
+
+    Paragraph reads its own HTML-like tags (<b>, <a>, <img>), so a lender,
+    bank or county name, or AI narrative, that contains <, > or & has to be
+    escaped first or it breaks the build or renders as markup.
+    """
+    if value is None:
+        return ''
+    return html.escape(str(value))
+
+
 def markdown_to_reportlab(text):
     """
     Convert basic markdown to ReportLab paragraph markup.
     Handles: **bold**, *italic*, bullet lists, ## headers, [links](url)
+
+    The text is escaped first, so only the markup added here is live.
+    Links must be https; any other scheme keeps its words and loses the link.
     """
     if not text:
         return ''
@@ -404,14 +420,17 @@ def markdown_to_reportlab(text):
     # Remove ## headers (we add section titles separately)
     text = re.sub(r'^##\s+.*', '', text, flags=re.MULTILINE)
 
+    text = pdf_text(text)
+
     # Bold: **text** → <b>text</b>
     text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
 
     # Italic: *text* → <i>text</i>
     text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', text)
 
-    # Links: [text](url) → <a href="url">text</a>
-    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" color="#1a8fc9">\1</a>', text)
+    # Links: [text](https://...) → <a href="url">text</a>; other schemes → text
+    text = re.sub(r'\[([^\]]+)\]\((https://[^)\s]+)\)', r'<a href="\2" color="#1a8fc9">\1</a>', text)
+    text = re.sub(r'\[([^\]]+)\]\((?:[^()]|\([^()]*\))*\)', r'\1', text)
 
     # Bullet points: lines starting with "• " or "- " or "* "
     text = re.sub(r'^[\-\*•]\s+', '&bull; ', text, flags=re.MULTILINE)
