@@ -166,8 +166,7 @@ code.
 
 **Shared web templates** — `justdata/shared/web/templates/` holds the
 chrome used by every app: `shared_header.html`, `shared_footer.html`,
-`base_app.html`, `nav_menu.html`, plus the generic landing, admin, and
-report templates. Apps use `ChoiceLoader` so their own templates win on
+`base_app.html`, plus the generic landing and admin templates. Apps use `ChoiceLoader` so their own templates win on
 name collision.
 
 **Shared JS** — `justdata/shared/web/static/js/` includes the global
@@ -247,11 +246,9 @@ debt items were carried forward as named branches/tickets:
 
 - `chore/fix-blueprint-static-url-paths` — several apps register a
   `static_url_path` that doubles the prefix; still needs cleanup.
-- `refactor/split-shared-templates` — four shared templates remain over
+- `refactor/split-shared-templates` — three shared templates remain over
   1,000 lines: `shared_header.html`, `justdata_landing_page.html`,
-  `admin-users.html`, `report_template.html`.
-- `refactor/split-shared-app-js` — the `app.js` trio in `shared/web`,
-  `lendsight/`, and `bizsight/` is still oversized.
+  `admin-users.html`.
 - `refactor/modularize-analytics-pages` — analytics page JS still ships
   as monolithic per-page bundles.
 - `chore/externalize-sql-fstrings` — most SQL outside `sql_templates/`

@@ -59,17 +59,9 @@ APP_ROOTS = sorted({
 APP_HREF_RE = re.compile(r'href="(' + "|".join(re.escape(u) for u in APP_ROOTS) + r')/?"')
 DATA_APP_RE = re.compile(r'data-app="([a-z]+)"')
 
-# TODO(spec 04): delete nav_menu.html and shared analysis_template.html, then
-# remove this allowlist entirely. It must not outlive that removal.
-# Dead legacy markup, not rendered by any route.
-# nav_menu.html is only included by shared analysis_template.html, which the
-# MergerMeter template loader shadows with its own analysis_template.html.
-HARDCODED_NAV_ALLOWLIST = {"nav_menu.html"}
-
-
 def _guarded_templates():
     for name, files in sorted(TEMPLATES.items()):
-        if name == "partials/_nav.html" or name in HARDCODED_NAV_ALLOWLIST:
+        if name == "partials/_nav.html":
             continue
         for f in files:
             yield pytest.param(f, id=f.relative_to(ROOT).as_posix())

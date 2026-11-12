@@ -109,7 +109,6 @@ jobs:
             "justdata/apps/dataexplorer/templates/partials/_wizard_head.html"
             "justdata/shared/web/templates/admin-users.html"
             "justdata/apps/mergermeter/templates/partials/_analysis_template_scripts.html"
-            "justdata/shared/web/templates/report_template.html"
             "justdata/apps/branchsight/templates/partials/_branchsight_report_scripts.html"
             "justdata/shared/web/templates/shared_header.html"
             "justdata/apps/mergermeter/templates/mergermeter_analysis.html"
@@ -145,13 +144,9 @@ jobs:
       - name: Check JavaScript file sizes (limit 500 lines)
         run: |
           # Allowlist: JS files that legitimately exceed 500 lines as of Phase 6.
-          # The shared/lendsight/bizsight app.js trio and analytics-*.js files are
-          # tracked under refactor/split-shared-app-js and
+          # The analytics-*.js files are tracked under
           # refactor/modularize-analytics-pages.
           ALLOWLIST=(
-            "justdata/shared/web/static/js/app.js"
-            "justdata/apps/lendsight/static/js/app.js"
-            "justdata/apps/bizsight/static/js/app.js"
             "justdata/apps/dataexplorer/static/js/wizard/dataexplorer_wizard_step_lender.js"
             "justdata/apps/analytics/static/js/analytics-lender.js"
             "justdata/apps/analytics/static/js/analytics-dashboard.js"
