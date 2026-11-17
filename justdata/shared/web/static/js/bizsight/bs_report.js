@@ -23,15 +23,18 @@
 
   function $(id) { return document.getElementById(id); }
 
+  // No data is an em dash; a missing year is a gap (Jad, 2026-11-17).
+  var NO_DATA = '\u2014';
+
   function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
 
-  function fmtInt(v) { var n = num(v); return n === null ? '-' : Math.round(n).toLocaleString(); }
-  function fmtPct(v, digits) { var n = num(v); return n === null ? '-' : n.toFixed(digits === undefined ? 1 : digits) + '%'; }
+  function fmtInt(v) { var n = num(v); return n === null ? NO_DATA : Math.round(n).toLocaleString(); }
+  function fmtPct(v, digits) { var n = num(v); return n === null ? NO_DATA : n.toFixed(digits === undefined ? 1 : digits) + '%'; }
   /** amounts in thousands of dollars */
-  function fmtThousands(v) { var n = num(v); return n === null ? '-' : '$' + Math.round(n).toLocaleString(); }
+  function fmtThousands(v) { var n = num(v); return n === null ? NO_DATA : '$' + Math.round(n).toLocaleString(); }
   function fmtDollars(v) {
     var n = num(v);
-    if (n === null) return '-';
+    if (n === null) return NO_DATA;
     if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
     return '$' + Math.round(n).toLocaleString();
   }
@@ -75,8 +78,10 @@
       { figure: fmtDollars(amount === null ? null : amount * 1000), label: 'Amount of loans, ' + last, note: changeNote(pctChange(amount, amount0), first) },
       { figure: fmtDollars(avg), label: 'Average loan amount, ' + last, note: changeNote(pctChange(avg, avg0), first) },
       { figure: fmtDollars(sb === null ? null : sb * 1000), label: 'To businesses under $1M revenue, ' + last, note: changeNote(pctChange(sb, sb0), first) },
-      { figure: lmi ? fmtDollars(lmi * 1000) : '$0', label: 'In LMI tracts, ' + last,
-        note: lmi ? changeNote(pctChange(lmi, lmi0), first) : 'No LMI tracts in county' }
+      // A zero here is zero LMI-tract dollars, not proof the county has no
+      // LMI tracts (BZ-039), so no note is drawn from it.
+      { figure: fmtDollars(lmi === null ? null : lmi * 1000), label: 'In LMI tracts, ' + last,
+        note: changeNote(pctChange(lmi, lmi0), first) }
     ];
     $('bsSummary').innerHTML = items.map(function (i) {
       return '<div><p class="app-summary-figure">' + esc(i.figure) + '</p><p class="app-summary-label">' + esc(i.label) + '</p>' +
@@ -104,7 +109,7 @@
   /** "Total Loan Amount (in millions)" holds thousands; shown in millions as before. */
   function millions(v) {
     var n = num(v);
-    return n === null ? '-' : '$' + (n / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    return n === null ? NO_DATA : '$' + (n / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   }
 
   function countyValue(variable, v) {
@@ -116,9 +121,9 @@
 
   function countyChange(variable, a, b) {
     a = num(a); b = num(b);
-    if (a === null || b === null) return '-';
+    if (a === null || b === null) return NO_DATA;
     if (variable.indexOf('%') >= 0) { var pp = b - a; return (pp >= 0 ? '+' : '') + pp.toFixed(2) + ' pp'; }
-    if (!a) return '-';
+    if (!a) return NO_DATA;
     var pc = (b - a) / a * 100;
     return (pc >= 0 ? '+' : '') + pc.toFixed(1) + '%';
   }
@@ -139,7 +144,7 @@
   function comparisonValue(metric, v) {
     if (metric.indexOf('%') >= 0) return fmtPct(v);
     if (metric === 'Total Loans') return fmtInt(v);
-    if (metric.indexOf('Total Loan Amount') >= 0) { var n = num(v); return n === null ? '-' : fmtDollars(n * 1000); }
+    if (metric.indexOf('Total Loan Amount') >= 0) { var n = num(v); return n === null ? NO_DATA : fmtDollars(n * 1000); }
     return fmtInt(v);
   }
 
@@ -179,7 +184,7 @@
   function hhiCompare(data, place) {
     var withState = data.filter(function (d) { return num(d.state_hhi_value) !== null; });
     if (!withState.length) return;
-    var fmt = function (v) { var n = num(v); return n === null ? '-' : Math.round(n).toLocaleString(); };
+    var fmt = function (v) { var n = num(v); return n === null ? NO_DATA : Math.round(n).toLocaleString(); };
     var table = $('bsHhiCompare');
     table.tHead.innerHTML = '<tr><th scope="col">Market</th>' + data.map(function (d) { return '<th scope="col" class="num">' + esc(String(Math.round(d.year))) + '</th>'; }).join('') + '</tr>';
     table.tBodies[0].innerHTML = [[place || 'County', 'hhi_value'], [(withState[0].state_name || 'State') + ' (statewide)', 'state_hhi_value']].map(function (r) {
@@ -195,12 +200,13 @@
     $('section5').hidden = false;
     hhiCompare(data, place);
     var C = R.charts, blue = C.token('--ncrc-blue-500');
-    var values = data.map(function (d) { return num(d.hhi_value) || 0; });
+    var values = data.map(function (d) { return num(d.hhi_value); });   // null stays a gap
+    var present = values.filter(function (v) { return v !== null; });
     return C.ready().then(function () {
       C.draw($('bsHhiChart'), {
         type: 'line',
         data: { labels: data.map(function (d) { return String(Math.round(d.year)); }),
-                datasets: [{ label: 'HHI', data: values, borderColor: blue, backgroundColor: blue, tension: 0.2, pointRadius: 4 }] },
+                datasets: [{ label: 'HHI', data: values, borderColor: blue, backgroundColor: blue, tension: 0, spanGaps: false, pointRadius: 4 }] },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: {
@@ -211,7 +217,7 @@
               { value: 2500, label: 'High (2,500)', color: C.token('--ncrc-red') }
             ])
           },
-          scales: { y: { beginAtZero: true, max: Math.max(Math.max.apply(null, values.concat([2500])) * 1.15, 3000),
+          scales: { y: { beginAtZero: true, max: Math.max(Math.max.apply(null, present.concat([2500])) * 1.15, 3000),
                          title: { display: true, text: 'HHI' }, ticks: { callback: function (v) { return v.toLocaleString(); } } },
                     x: { title: { display: true, text: 'Year' } } }
         }

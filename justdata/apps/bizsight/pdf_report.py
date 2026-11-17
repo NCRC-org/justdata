@@ -22,6 +22,8 @@ import re
 from io import BytesIO
 from datetime import datetime
 
+from justdata.shared.utils.no_data import NO_DATA, is_missing
+
 import pandas as pd
 from reportlab.platypus import (
     Spacer, NextPageTemplate, PageBreak, Paragraph,
@@ -269,7 +271,9 @@ def _df_to_dicts(df_or_list):
 
 
 def _fmt_int(val):
-    """Format an integer value with commas."""
+    """Format an integer value with commas; no data is the em dash."""
+    if is_missing(val):
+        return NO_DATA
     try:
         v = int(float(val))
         return f'{v:,}'
@@ -278,7 +282,9 @@ def _fmt_int(val):
 
 
 def _fmt_pct(val):
-    """Format a percentage value to one decimal place."""
+    """Format a percentage value to one decimal place; no data is the em dash."""
+    if is_missing(val):
+        return NO_DATA
     try:
         v = float(val)
         return f'{v:.1f}%'
@@ -298,7 +304,9 @@ def _fmt_dollars(val):
 
 
 def _fmt_millions(val):
-    """Format dollar amount (in thousands) as millions."""
+    """Format dollar amount (in thousands) as millions; no data is the em dash."""
+    if is_missing(val):
+        return NO_DATA
     try:
         v = float(val) / 1000.0  # Convert from thousands to millions
         return f'${v:,.1f}M'
@@ -352,10 +360,11 @@ def _build_county_summary_table(data_rows):
 
         is_total = 'total loans' in variable.lower()
         is_amount = 'total loan amount' in variable.lower()
-        is_pct = '(% of total)' in variable.lower() or '% of total' in variable.lower()
+        # Every share row, including the LMI rows (% of Classified ...)
+        is_pct = '%' in variable
 
         for yc in year_cols:
-            val = row.get(yc, 0)
+            val = row.get(yc)
             if is_total:
                 cells.append(_fmt_int(val))
             elif is_amount:
@@ -448,8 +457,8 @@ def _build_comparison_table(data_rows):
             val = row.get(col, '')
             if 'change' in col.lower():
                 # Format % change
-                if val is None:
-                    cells.append('\u2014')
+                if is_missing(val):
+                    cells.append(NO_DATA)
                 else:
                     try:
                         v = float(val)
@@ -687,7 +696,9 @@ def generate_bizsight_pdf(result_data, metadata):
                 year_cols = sorted([k for k in row.keys()
                                     if k != 'Variable' and str(k).strip().isdigit()])
                 if year_cols:
-                    latest = row.get(year_cols[-1], 0)
+                    latest = row.get(year_cols[-1])
+                    if is_missing(latest):
+                        continue
                     measure = ('of loan dollars with a tract income classification' if var.lower().startswith('amount')
                                else 'of loans with a tract income classification')
                     key_findings_parts.append(
@@ -978,7 +989,7 @@ def generate_bizsight_pdf(result_data, metadata):
     if state_rows:
         hhi_years = [d for d in hhi_by_year if d.get('year') is not None]
         year_cols = [str(int(float(d['year']))) for d in hhi_years]
-        fmt = lambda v: f'{round(float(v)):,}' if v is not None else ''
+        fmt = lambda v: NO_DATA if is_missing(v) else f'{round(float(v)):,}'
         state_label = f"{state_rows[0].get('state_name') or 'State'} (statewide)"
         table_rows = [
             dict({'Market': metadata.get('county_name') or 'County'}, **{c: fmt(d.get('hhi_value')) for c, d in zip(year_cols, hhi_years)}),

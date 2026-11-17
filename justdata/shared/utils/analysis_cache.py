@@ -34,7 +34,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # results stored before may lack Sections 3 and 4 (2026-10-13).
 # LendSight 3: results stored between the #215 and #216 deploys lack key
 # findings (a 400-token ceiling, raised in #216) (2026-10-13).
-REPORT_REVISIONS = {'bizsight': 2, 'lendsight': 3}
+# BizSight 3: no data is None (an em dash), never 0.0; missing years are gaps
+# (2026-11-17).
+REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 3}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 

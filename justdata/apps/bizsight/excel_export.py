@@ -14,6 +14,9 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+from justdata.shared.utils.no_data import dash_missing
+
+
 
 def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
     """
@@ -218,12 +221,12 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             # County Summary - Number of Loans
             if number_rows:
                 number_df = pd.DataFrame(number_rows)
-                number_df.to_excel(writer, sheet_name=sanitize_sheet_name('County Summary - Number'), index=False)
+                dash_missing(number_df).to_excel(writer, sheet_name=sanitize_sheet_name('County Summary - Number'), index=False)
             
             # County Summary - Amount of Loans
             if amount_rows:
                 amount_df = pd.DataFrame(amount_rows)
-                amount_df.to_excel(writer, sheet_name=sanitize_sheet_name('County Summary - Amount'), index=False)
+                dash_missing(amount_df).to_excel(writer, sheet_name=sanitize_sheet_name('County Summary - Amount'), index=False)
         
         # Section 3: Comparison Table - Split into Number and Amount tabs
         if comparison_table:
@@ -244,12 +247,12 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             # Comparison - Number of Loans
             if number_rows:
                 number_df = pd.DataFrame(number_rows)
-                number_df.to_excel(writer, sheet_name=sanitize_sheet_name('Comparison - Number'), index=False)
+                dash_missing(number_df).to_excel(writer, sheet_name=sanitize_sheet_name('Comparison - Number'), index=False)
             
             # Comparison - Amount of Loans
             if amount_rows:
                 amount_df = pd.DataFrame(amount_rows)
-                amount_df.to_excel(writer, sheet_name=sanitize_sheet_name('Comparison - Amount'), index=False)
+                dash_missing(amount_df).to_excel(writer, sheet_name=sanitize_sheet_name('Comparison - Amount'), index=False)
         
         # Section 4: Top Lenders - Split into Number and Amount tabs
         if top_lenders_table:
@@ -271,12 +274,12 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             # Top Lenders - Number of Loans
             if number_cols:
                 number_df = lenders_df[number_cols].copy()
-                number_df.to_excel(writer, sheet_name=sanitize_sheet_name(f'Top Lenders - Number ({max(years)})'), index=False)
+                dash_missing(number_df).to_excel(writer, sheet_name=sanitize_sheet_name(f'Top Lenders - Number ({max(years)})'), index=False)
             
             # Top Lenders - Amount of Loans
             if amount_cols:
                 amount_df = lenders_df[amount_cols].copy()
-                amount_df.to_excel(writer, sheet_name=sanitize_sheet_name(f'Top Lenders - Amount ({max(years)})'), index=False)
+                dash_missing(amount_df).to_excel(writer, sheet_name=sanitize_sheet_name(f'Top Lenders - Amount ({max(years)})'), index=False)
         
         # Section 5: HHI by Year
         if hhi_by_year:
@@ -289,7 +292,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
                 hhi_df = hhi_df[columns].rename(columns={
                     'year': 'Year', 'hhi_value': 'County HHI', 'concentration_level': 'County concentration',
                     'state_name': 'State', 'state_hhi_value': 'Statewide HHI'})
-                hhi_df.to_excel(writer, sheet_name=sanitize_sheet_name('HHI by Year'), index=False)
+                dash_missing(hhi_df).to_excel(writer, sheet_name=sanitize_sheet_name('HHI by Year'), index=False)
         
         # Raw Data sheet (if available)
         if not aggregate_df.empty:

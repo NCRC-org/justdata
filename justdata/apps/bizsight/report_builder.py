@@ -118,19 +118,19 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
             lmi_tract_amount = 0.0
         
         classified_num, classified_amt = classified_totals(year_data)
-        lmi_tract_pct = (lmi_tract_loans / classified_num * 100) if classified_num > 0 else 0.0
-        amt_lmi_tract_pct = (lmi_tract_amount / classified_amt * 100) if classified_amt > 0 else 0.0
+        lmi_tract_pct = (lmi_tract_loans / classified_num * 100) if classified_num > 0 else None
+        amt_lmi_tract_pct = (lmi_tract_amount / classified_amt * 100) if classified_amt > 0 else None
         
         # Calculate percentages
-        num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
-        num_100k_250k_pct = (num_100k_250k / num_total * 100) if num_total > 0 else 0.0
-        num_250k_1m_pct = (num_250k_1m / num_total * 100) if num_total > 0 else 0.0
-        numsb_under_1m_pct = (numsbrev_under_1m / num_total * 100) if num_total > 0 else 0.0
+        num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else None
+        num_100k_250k_pct = (num_100k_250k / num_total * 100) if num_total > 0 else None
+        num_250k_1m_pct = (num_250k_1m / num_total * 100) if num_total > 0 else None
+        numsb_under_1m_pct = (numsbrev_under_1m / num_total * 100) if num_total > 0 else None
         
-        amt_under_100k_pct = (amt_under_100k / amt_total * 100) if amt_total > 0 else 0.0
-        amt_100k_250k_pct = (amt_100k_250k / amt_total * 100) if amt_total > 0 else 0.0
-        amt_250k_1m_pct = (amt_250k_1m / amt_total * 100) if amt_total > 0 else 0.0
-        amtsb_under_1m_pct = (amtsbrev_under_1m / amt_total * 100) if amt_total > 0 else 0.0
+        amt_under_100k_pct = (amt_under_100k / amt_total * 100) if amt_total > 0 else None
+        amt_100k_250k_pct = (amt_100k_250k / amt_total * 100) if amt_total > 0 else None
+        amt_250k_1m_pct = (amt_250k_1m / amt_total * 100) if amt_total > 0 else None
+        amtsb_under_1m_pct = (amtsbrev_under_1m / amt_total * 100) if amt_total > 0 else None
         
         # Store year data in local dict
         year_data_dict[year] = {
@@ -179,7 +179,8 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
                 value = year_data_dict[year].get(var_key, 0)
                 row[str(year)] = value
             else:
-                row[str(year)] = 0
+                # A missing year is a gap, never 0 (no-data decision, 2026-11-17)
+                row[str(year)] = None
         table_rows.append(row)
     
     result_df = pd.DataFrame(table_rows)
@@ -290,27 +291,27 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
         county_upper_income_amount = float(county_2024['midu_income_amount'].fillna(0).sum()) if 'midu_income_amount' in county_2024.columns else 0.0
     
     # Calculate percentages
-    county_pct_under_100k = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
-    county_pct_100k_250k = (num_100k_250k / num_total * 100) if num_total > 0 else 0.0
-    county_pct_250k_1m = (num_250k_1m / num_total * 100) if num_total > 0 else 0.0
-    county_pct_sb_under_1m = (numsb_under_1m / num_total * 100) if num_total > 0 else 0.0
+    county_pct_under_100k = (num_under_100k / num_total * 100) if num_total > 0 else None
+    county_pct_100k_250k = (num_100k_250k / num_total * 100) if num_total > 0 else None
+    county_pct_250k_1m = (num_250k_1m / num_total * 100) if num_total > 0 else None
+    county_pct_sb_under_1m = (numsb_under_1m / num_total * 100) if num_total > 0 else None
     classified_num, classified_amt = classified_totals(county_2024)
-    county_pct_lmi_tract = (lmi_tract_loans / classified_num * 100) if classified_num > 0 else 0.0
+    county_pct_lmi_tract = (lmi_tract_loans / classified_num * 100) if classified_num > 0 else None
     
-    county_pct_amt_under_100k = (amt_under_100k / amt_total * 100) if amt_total > 0 else 0.0
-    county_pct_amt_100k_250k = (amt_100k_250k / amt_total * 100) if amt_total > 0 else 0.0
-    county_pct_amt_250k_1m = (amt_250k_1m / amt_total * 100) if amt_total > 0 else 0.0
-    county_pct_amt_sb_under_1m = (amtsb_under_1m / amt_total * 100) if amt_total > 0 else 0.0
+    county_pct_amt_under_100k = (amt_under_100k / amt_total * 100) if amt_total > 0 else None
+    county_pct_amt_100k_250k = (amt_100k_250k / amt_total * 100) if amt_total > 0 else None
+    county_pct_amt_250k_1m = (amt_250k_1m / amt_total * 100) if amt_total > 0 else None
+    county_pct_amt_sb_under_1m = (amtsb_under_1m / amt_total * 100) if amt_total > 0 else None
     
-    county_pct_loans_low_income = (county_low_income_loans / classified_num * 100) if classified_num > 0 else 0.0
-    county_pct_loans_moderate_income = (county_moderate_income_loans / classified_num * 100) if classified_num > 0 else 0.0
-    county_pct_loans_middle_income = (county_middle_income_loans / classified_num * 100) if classified_num > 0 else 0.0
-    county_pct_loans_upper_income = (county_upper_income_loans / classified_num * 100) if classified_num > 0 else 0.0
+    county_pct_loans_low_income = (county_low_income_loans / classified_num * 100) if classified_num > 0 else None
+    county_pct_loans_moderate_income = (county_moderate_income_loans / classified_num * 100) if classified_num > 0 else None
+    county_pct_loans_middle_income = (county_middle_income_loans / classified_num * 100) if classified_num > 0 else None
+    county_pct_loans_upper_income = (county_upper_income_loans / classified_num * 100) if classified_num > 0 else None
     
-    county_pct_amount_low_income = (county_low_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
-    county_pct_amount_moderate_income = (county_moderate_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
-    county_pct_amount_middle_income = (county_middle_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
-    county_pct_amount_upper_income = (county_upper_income_amount / classified_amt * 100) if classified_amt > 0 else 0.0
+    county_pct_amount_low_income = (county_low_income_amount / classified_amt * 100) if classified_amt > 0 else None
+    county_pct_amount_moderate_income = (county_moderate_income_amount / classified_amt * 100) if classified_amt > 0 else None
+    county_pct_amount_middle_income = (county_middle_income_amount / classified_amt * 100) if classified_amt > 0 else None
+    county_pct_amount_upper_income = (county_upper_income_amount / classified_amt * 100) if classified_amt > 0 else None
     
     # Get state and national values (with defaults). The source reports middle
     # and upper income tracts together (midu): the benchmark files hold that
@@ -318,43 +319,43 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     # pct_*_upper_income, and the county "upper" variables hold midu.
     state_total = state_benchmarks.get('total_loans', 0)
     state_amount = state_benchmarks.get('total_amount', 0.0)
-    state_pct_under_100k = state_benchmarks.get('pct_loans_under_100k', 0.0)
-    state_pct_100k_250k = state_benchmarks.get('pct_loans_100k_250k', 0.0)
-    state_pct_250k_1m = state_benchmarks.get('pct_loans_250k_1m', 0.0)
-    state_pct_sb_under_1m = state_benchmarks.get('pct_loans_sb_under_1m', 0.0)
-    state_pct_lmi_tract = state_benchmarks.get('pct_loans_lmi_tract', 0.0)
-    state_pct_amt_under_100k = state_benchmarks.get('pct_amount_under_100k', 0.0)
-    state_pct_amt_100k_250k = state_benchmarks.get('pct_amount_100k_250k', 0.0)
-    state_pct_amt_250k_1m = state_benchmarks.get('pct_amount_250k_1m', 0.0)
-    state_pct_amt_sb_under_1m = state_benchmarks.get('pct_amount_sb_under_1m', 0.0)
-    state_pct_loans_low_income = state_benchmarks.get('pct_loans_low_income', 0.0)
-    state_pct_loans_moderate_income = state_benchmarks.get('pct_loans_moderate_income', 0.0)
-    state_pct_loans_middle_income = state_benchmarks.get('pct_loans_middle_income', 0.0)
-    state_pct_loans_upper_income = state_benchmarks.get('pct_loans_middle_upper_income', state_benchmarks.get('pct_loans_upper_income', 0.0))
-    state_pct_amount_low_income = state_benchmarks.get('pct_amount_low_income', 0.0)
-    state_pct_amount_moderate_income = state_benchmarks.get('pct_amount_moderate_income', 0.0)
-    state_pct_amount_middle_income = state_benchmarks.get('pct_amount_middle_income', 0.0)
-    state_pct_amount_upper_income = state_benchmarks.get('pct_amount_middle_upper_income', state_benchmarks.get('pct_amount_upper_income', 0.0))
+    state_pct_under_100k = state_benchmarks.get('pct_loans_under_100k', None)
+    state_pct_100k_250k = state_benchmarks.get('pct_loans_100k_250k', None)
+    state_pct_250k_1m = state_benchmarks.get('pct_loans_250k_1m', None)
+    state_pct_sb_under_1m = state_benchmarks.get('pct_loans_sb_under_1m', None)
+    state_pct_lmi_tract = state_benchmarks.get('pct_loans_lmi_tract', None)
+    state_pct_amt_under_100k = state_benchmarks.get('pct_amount_under_100k', None)
+    state_pct_amt_100k_250k = state_benchmarks.get('pct_amount_100k_250k', None)
+    state_pct_amt_250k_1m = state_benchmarks.get('pct_amount_250k_1m', None)
+    state_pct_amt_sb_under_1m = state_benchmarks.get('pct_amount_sb_under_1m', None)
+    state_pct_loans_low_income = state_benchmarks.get('pct_loans_low_income', None)
+    state_pct_loans_moderate_income = state_benchmarks.get('pct_loans_moderate_income', None)
+    state_pct_loans_middle_income = state_benchmarks.get('pct_loans_middle_income', None)
+    state_pct_loans_upper_income = state_benchmarks.get('pct_loans_middle_upper_income', state_benchmarks.get('pct_loans_upper_income', None))
+    state_pct_amount_low_income = state_benchmarks.get('pct_amount_low_income', None)
+    state_pct_amount_moderate_income = state_benchmarks.get('pct_amount_moderate_income', None)
+    state_pct_amount_middle_income = state_benchmarks.get('pct_amount_middle_income', None)
+    state_pct_amount_upper_income = state_benchmarks.get('pct_amount_middle_upper_income', state_benchmarks.get('pct_amount_upper_income', None))
     
     national_total = national_benchmarks.get('total_loans', 0)
     national_amount = national_benchmarks.get('total_amount', 0.0)
-    national_pct_under_100k = national_benchmarks.get('pct_loans_under_100k', 0.0)
-    national_pct_100k_250k = national_benchmarks.get('pct_loans_100k_250k', 0.0)
-    national_pct_250k_1m = national_benchmarks.get('pct_loans_250k_1m', 0.0)
-    national_pct_sb_under_1m = national_benchmarks.get('pct_loans_sb_under_1m', 0.0)
-    national_pct_lmi_tract = national_benchmarks.get('pct_loans_lmi_tract', 0.0)
-    national_pct_amt_under_100k = national_benchmarks.get('pct_amount_under_100k', 0.0)
-    national_pct_amt_100k_250k = national_benchmarks.get('pct_amount_100k_250k', 0.0)
-    national_pct_amt_250k_1m = national_benchmarks.get('pct_amount_250k_1m', 0.0)
-    national_pct_amt_sb_under_1m = national_benchmarks.get('pct_amount_sb_under_1m', 0.0)
-    national_pct_loans_low_income = national_benchmarks.get('pct_loans_low_income', 0.0)
-    national_pct_loans_moderate_income = national_benchmarks.get('pct_loans_moderate_income', 0.0)
-    national_pct_loans_middle_income = national_benchmarks.get('pct_loans_middle_income', 0.0)
-    national_pct_loans_upper_income = national_benchmarks.get('pct_loans_middle_upper_income', national_benchmarks.get('pct_loans_upper_income', 0.0))
-    national_pct_amount_low_income = national_benchmarks.get('pct_amount_low_income', 0.0)
-    national_pct_amount_moderate_income = national_benchmarks.get('pct_amount_moderate_income', 0.0)
-    national_pct_amount_middle_income = national_benchmarks.get('pct_amount_middle_income', 0.0)
-    national_pct_amount_upper_income = national_benchmarks.get('pct_amount_middle_upper_income', national_benchmarks.get('pct_amount_upper_income', 0.0))
+    national_pct_under_100k = national_benchmarks.get('pct_loans_under_100k', None)
+    national_pct_100k_250k = national_benchmarks.get('pct_loans_100k_250k', None)
+    national_pct_250k_1m = national_benchmarks.get('pct_loans_250k_1m', None)
+    national_pct_sb_under_1m = national_benchmarks.get('pct_loans_sb_under_1m', None)
+    national_pct_lmi_tract = national_benchmarks.get('pct_loans_lmi_tract', None)
+    national_pct_amt_under_100k = national_benchmarks.get('pct_amount_under_100k', None)
+    national_pct_amt_100k_250k = national_benchmarks.get('pct_amount_100k_250k', None)
+    national_pct_amt_250k_1m = national_benchmarks.get('pct_amount_250k_1m', None)
+    national_pct_amt_sb_under_1m = national_benchmarks.get('pct_amount_sb_under_1m', None)
+    national_pct_loans_low_income = national_benchmarks.get('pct_loans_low_income', None)
+    national_pct_loans_moderate_income = national_benchmarks.get('pct_loans_moderate_income', None)
+    national_pct_loans_middle_income = national_benchmarks.get('pct_loans_middle_income', None)
+    national_pct_loans_upper_income = national_benchmarks.get('pct_loans_middle_upper_income', national_benchmarks.get('pct_loans_upper_income', None))
+    national_pct_amount_low_income = national_benchmarks.get('pct_amount_low_income', None)
+    national_pct_amount_moderate_income = national_benchmarks.get('pct_amount_moderate_income', None)
+    national_pct_amount_middle_income = national_benchmarks.get('pct_amount_middle_income', None)
+    national_pct_amount_upper_income = national_benchmarks.get('pct_amount_middle_upper_income', national_benchmarks.get('pct_amount_upper_income', None))
     
     # Calculate % change since 2020 (baseline year)
     def calc_pct_change(current, base):
@@ -678,35 +679,35 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
             middle_income_num = 0
             upper_income_num = safe_int(lender_df['midu_income_loans'].fillna(0).sum()) if 'midu_income_loans' in lender_df.columns else 0
             lmi_num = low_income_num + moderate_income_num
-            lmi_tract_pct = (lmi_num / classified_num * 100) if classified_num > 0 else 0.0
+            lmi_tract_pct = (lmi_num / classified_num * 100) if classified_num > 0 else None
         if 'low_income_amount' in lender_df.columns:
             low_income_amt = safe_float(lender_df['low_income_amount'].fillna(0).sum())
             moderate_income_amt = safe_float(lender_df['moderate_income_amount'].fillna(0).sum()) if 'moderate_income_amount' in lender_df.columns else 0.0
             middle_income_amt = 0.0
             upper_income_amt = safe_float(lender_df['midu_income_amount'].fillna(0).sum()) if 'midu_income_amount' in lender_df.columns else 0.0
             lmi_amt = low_income_amt + moderate_income_amt
-            lmi_tract_amt_pct = (lmi_amt / classified_amt * 100) if classified_amt > 0 else 0.0
+            lmi_tract_amt_pct = (lmi_amt / classified_amt * 100) if classified_amt > 0 else None
         
         # Calculate percentages
-        num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
-        num_100k_250k_pct = (num_100k_250k / num_total * 100) if num_total > 0 else 0.0
-        num_250k_1m_pct = (num_250k_1m / num_total * 100) if num_total > 0 else 0.0
-        numsb_under_1m_pct = (numsbrev_under_1m / num_total * 100) if num_total > 0 else 0.0
+        num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else None
+        num_100k_250k_pct = (num_100k_250k / num_total * 100) if num_total > 0 else None
+        num_250k_1m_pct = (num_250k_1m / num_total * 100) if num_total > 0 else None
+        numsb_under_1m_pct = (numsbrev_under_1m / num_total * 100) if num_total > 0 else None
         
-        amt_under_100k_pct = (amt_under_100k / amt_total * 100) if amt_total > 0 else 0.0
-        amt_100k_250k_pct = (amt_100k_250k / amt_total * 100) if amt_total > 0 else 0.0
-        amt_250k_1m_pct = (amt_250k_1m / amt_total * 100) if amt_total > 0 else 0.0
-        amtsb_under_1m_pct = (amtsbrev_under_1m / amt_total * 100) if amt_total > 0 else 0.0
+        amt_under_100k_pct = (amt_under_100k / amt_total * 100) if amt_total > 0 else None
+        amt_100k_250k_pct = (amt_100k_250k / amt_total * 100) if amt_total > 0 else None
+        amt_250k_1m_pct = (amt_250k_1m / amt_total * 100) if amt_total > 0 else None
+        amtsb_under_1m_pct = (amtsbrev_under_1m / amt_total * 100) if amt_total > 0 else None
         
-        low_income_pct = (low_income_num / classified_num * 100) if classified_num > 0 else 0.0
-        moderate_income_pct = (moderate_income_num / classified_num * 100) if classified_num > 0 else 0.0
-        middle_income_pct = (middle_income_num / classified_num * 100) if classified_num > 0 else 0.0
-        upper_income_pct = (upper_income_num / classified_num * 100) if classified_num > 0 else 0.0
+        low_income_pct = (low_income_num / classified_num * 100) if classified_num > 0 else None
+        moderate_income_pct = (moderate_income_num / classified_num * 100) if classified_num > 0 else None
+        middle_income_pct = (middle_income_num / classified_num * 100) if classified_num > 0 else None
+        upper_income_pct = (upper_income_num / classified_num * 100) if classified_num > 0 else None
         
-        low_income_amt_pct = (low_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
-        moderate_income_amt_pct = (moderate_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
-        middle_income_amt_pct = (middle_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
-        upper_income_amt_pct = (upper_income_amt / classified_amt * 100) if classified_amt > 0 else 0.0
+        low_income_amt_pct = (low_income_amt / classified_amt * 100) if classified_amt > 0 else None
+        moderate_income_amt_pct = (moderate_income_amt / classified_amt * 100) if classified_amt > 0 else None
+        middle_income_amt_pct = (middle_income_amt / classified_amt * 100) if classified_amt > 0 else None
+        upper_income_amt_pct = (upper_income_amt / classified_amt * 100) if classified_amt > 0 else None
         
         # Clean lender name (abbreviate common suffixes)
         cleaned_lender_name = clean_lender_name(lender_name)
