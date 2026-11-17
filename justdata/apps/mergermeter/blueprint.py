@@ -3,7 +3,8 @@ MergerMeter Blueprint for main JustData app.
 Converts the standalone MergerMeter app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, send_file, session, Response, url_for
+import re
+from flask import Blueprint, render_template, request, jsonify, send_file, session, Response, url_for, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
@@ -93,6 +94,12 @@ def index():
 @require_access('mergermeter', 'full')
 def report():
     """Report display page - renders Goals Calculator directly"""
+    job_id = request.args.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('mergermeter.index'))
     try:
         from .mergermeter_ops import goals_calculator as goals_calc_func
         # Call the goals calculator function which handles all the data loading
@@ -266,7 +273,7 @@ def excel_data():
     try:
         from .mergermeter_ops import get_excel_filename
 
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
 
@@ -292,7 +299,7 @@ def download():
     try:
         from .mergermeter_ops import get_excel_filename, generate_filename
         
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
         

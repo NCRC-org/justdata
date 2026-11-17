@@ -31,6 +31,8 @@ from typing import Optional, Literal, Dict, List, TYPE_CHECKING
 import firebase_admin
 from firebase_admin import credentials, auth as firebase_auth, firestore
 
+from justdata.main.auth.session_keys import clear_app_session
+
 # Firebase client wrappers (extracted into services module)
 from justdata.main.auth.services.firebase_client import (
     init_firebase,
@@ -719,9 +721,10 @@ def set_session_user(user_data: dict):
 
 
 def clear_session_user():
-    """Clear user data from session on logout."""
+    """Clear the user and every app's page state from the session."""
     session.pop('firebase_user', None)
     session.pop('user_type', None)
+    clear_app_session()
 
 
 def is_authenticated() -> bool:

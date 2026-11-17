@@ -32,6 +32,7 @@ from justdata.main.auth import (
     determine_user_type,
     log_activity,
 )
+from justdata.main.auth.session_keys import clear_app_session
 
 login_bp = Blueprint("auth_login", __name__)
 
@@ -120,6 +121,9 @@ def auth_login():
         'email_verified': email_verified,
         'provider': auth_provider
     }
+    # A new sign-in starts with no page state from whoever used this browser
+    # before (BZ-022).
+    clear_app_session()
     set_session_user(user)
 
     # Get user type from Firestore document
