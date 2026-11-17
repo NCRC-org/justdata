@@ -309,7 +309,6 @@ export const cards = {
             <div class="card-body">
                 <div class="disclaimer-box">
                     <h4><i class="fas fa-exclamation-triangle"></i> Important Notice</h4>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
                     <div class="disclaimer-checkbox">
                         <input type="checkbox" id="disclaimerAccept" aria-required="true">
                         <label for="disclaimerAccept">I understand and accept these terms</label>
@@ -378,7 +377,6 @@ export const cards = {
             <div class="card-body">
                 <div class="disclaimer-box">
                     <h4><i class="fas fa-exclamation-triangle"></i> Important Notice</h4>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
                     <div class="disclaimer-checkbox">
                         <input type="checkbox" id="disclaimerAcceptB" aria-required="true">
                         <label for="disclaimerAcceptB">I understand and accept these terms</label>

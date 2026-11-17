@@ -191,12 +191,14 @@ ACCESS_MATRIX = {
         'senior_executive': 'hidden',
         'admin': 'full'
     },
+    # Admin-only for every role (Jad, 2026-10-27, restated 2026-11-17): not part
+    # of the new JustData, so no other role sees it locked or open.
     'dataexplorer': {
-        'public_anonymous': 'locked',
-        'public_registered': 'locked',
-        'member': 'locked',
-        'member_premium': 'full',
-        'non_member_org': 'full',
+        'public_anonymous': 'hidden',
+        'public_registered': 'hidden',
+        'member': 'hidden',
+        'member_premium': 'hidden',
+        'non_member_org': 'hidden',
         'staff': 'hidden',
         'senior_executive': 'hidden',
         'admin': 'full'
