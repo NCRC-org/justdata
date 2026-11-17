@@ -20,12 +20,15 @@
   var esc = R.esc;
   function BASE() { return (root.BRANCHSIGHT || {}).baseUrl || '/branchsight'; }
 
+  // No data is an em dash; a missing year is a gap (Jad, 2026-11-17).
+  var NO_DATA = '\u2014';
+
   function $(id) { return document.getElementById(id); }
   function num(v) { return v === null || v === undefined || v === '' ? null : R.sortNumber(v); }
-  function fmtInt(v) { var n = num(v); return n === null ? '-' : Math.round(n).toLocaleString(); }
+  function fmtInt(v) { var n = num(v); return n === null ? NO_DATA : Math.round(n).toLocaleString(); }
   function signed(v) {
     var n = num(v);
-    if (n === null) return '-';
+    if (n === null) return NO_DATA;
     return (n > 0 ? '+' : '') + Math.round(n).toLocaleString();
   }
   function trendClass(v) { var n = num(v); return n > 0 ? ' br-up' : n < 0 ? ' br-down' : ''; }
@@ -54,10 +57,10 @@
       var r = rowFor(rows, c[0]);
       if (!r) return '';
       var n = num(r[last]);
-      var share = i && total ? ' (' + (n / total * 100).toFixed(1) + '%)' : '';
+      var share = i && total && n !== null ? ' (' + (n / total * 100).toFixed(1) + '%)' : '';
       return '<div><p class="app-summary-figure">' + esc(fmtInt(n)) + '</p>' +
         '<p class="app-summary-label">' + esc(c[1] + ', ' + last + share) + '</p>' +
-        '<p class="app-summary-note">' + esc(signed(r['Net Change']) + ' since ' + first) + '</p></div>';
+        (num(r['Net Change']) === null ? '' : '<p class="app-summary-note">' + esc(signed(r['Net Change']) + ' since ' + first) + '</p>') + '</div>';
     }).join('');
   }
 
@@ -87,7 +90,7 @@
       $('brGeographyTable').tBodies[0].innerHTML = rows.map(function (r) {
         var x = g[r[1]];
         return '<tr><th scope="row">' + esc(r[0]) + '</th><td class="num">' + x.tracts.toLocaleString() + '</td><td class="num">' +
-          x.population.toLocaleString() + '</td><td class="num">' + (totalPop ? (x.population / totalPop * 100).toFixed(1) + '%' : '-') + '</td></tr>';
+          x.population.toLocaleString() + '</td><td class="num">' + (totalPop ? (x.population / totalPop * 100).toFixed(1) + '%' : NO_DATA) + '</td></tr>';
       }).join('');
       $('brGeographyCaption').textContent = 'Source: FFIEC census data' + (res.body.ffiec_year ? ', ' + res.body.ffiec_year : '') + ', compiled by NCRC. ' +
         'LMI tracts are FFIEC low- or moderate-income tracts (median family income below 80% of the area median); ' +
@@ -153,7 +156,8 @@
     if (!data.length) return Promise.resolve();
     $('brSection3').hidden = false;
     var C = R.charts, blue = C.token('--ncrc-blue-500');
-    var values = data.map(function (d) { return num(d.hhi_value) || 0; });
+    var values = data.map(function (d) { return num(d.hhi_value); });   // null stays a gap
+    var present = values.filter(function (v) { return v !== null; });
     return C.ready().then(function () {
       C.draw($('brHhiChart'), {
         type: 'bar',
@@ -169,7 +173,7 @@
               { value: 2500, label: 'High (2,500)', color: C.token('--ncrc-red') }
             ])
           },
-          scales: { y: { beginAtZero: true, max: Math.max(Math.max.apply(null, values.concat([2500])) * 1.15, 3000),
+          scales: { y: { beginAtZero: true, max: Math.max(Math.max.apply(null, present.concat([2500])) * 1.15, 3000),
                          title: { display: true, text: 'HHI' }, ticks: { callback: function (v) { return v.toLocaleString(); } } },
                     x: { title: { display: true, text: 'Year' } } }
         }

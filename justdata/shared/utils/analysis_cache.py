@@ -38,7 +38,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # (2026-11-17).
 # LendSight 4: no data is an em dash, not 0.0% or 0.0pp; missing years are
 # gaps (2026-11-17).
-REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4}
+# BranchSight 1: first revision; no data is an em dash and a missing year a
+# gap, not zero branches, and HHI keeps every requested year (2026-11-17).
+REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4, 'branchsight': 1}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
@@ -114,6 +116,7 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
     }
     
     if app_name.lower() == 'branchsight':
+        normalized['revision'] = REPORT_REVISIONS['branchsight']
         counties = params.get('counties', '')
         if isinstance(counties, str):
             counties_list = [c.strip().lower() for c in counties.split(';') if c.strip()]

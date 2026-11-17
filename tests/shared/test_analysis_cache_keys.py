@@ -105,3 +105,18 @@ def test_mergermeter_key_covers_every_setting_that_changes_the_workbook():
                          ('peer_group', 'all_banks'), ('use_national_data', '1'), ('loan_purpose', '1'),
                          ('target_sb_id', '0000000001')):
         assert generate_cache_key('mergermeter', dict(MERGERMETER_FORM, **{field: value})) != base, field
+
+
+def test_branchsight_key_carries_its_report_revision():
+    """BranchSight results cached before the no-data change (zeros for missing
+    years, HHI years dropped) are not reused (2026-11-17)."""
+    from justdata.shared.utils import analysis_cache
+    assert normalize_parameters('branchsight', BRANCHSIGHT_PARAMS)['revision'] == analysis_cache.REPORT_REVISIONS['branchsight'] >= 1
+    current = generate_cache_key('branchsight', BRANCHSIGHT_PARAMS)
+    old = dict(analysis_cache.REPORT_REVISIONS)
+    try:
+        analysis_cache.REPORT_REVISIONS['branchsight'] = 0
+        assert generate_cache_key('branchsight', BRANCHSIGHT_PARAMS) != current
+    finally:
+        analysis_cache.REPORT_REVISIONS.clear()
+        analysis_cache.REPORT_REVISIONS.update(old)

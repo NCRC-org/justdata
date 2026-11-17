@@ -47,6 +47,7 @@ from justdata.apps.branchsight.pdf_charts import (
     render_branch_trend_chart, render_hhi_chart, chart_to_image,
 )
 from justdata.apps.branchsight.version import __version__
+from justdata.shared.utils.no_data import NO_DATA, is_missing
 
 
 # ---------------------------------------------------------------------------
@@ -215,8 +216,8 @@ def _df_to_dicts(df_or_list):
 
 def _fmt_int(val):
     """Format an integer with comma separators."""
-    if val is None or val == '':
-        return '\u2014'
+    if is_missing(val) or val == '' or val == NO_DATA:
+        return NO_DATA
     try:
         return f'{int(float(str(val).replace(",", ""))):,}'
     except (ValueError, TypeError):
@@ -225,15 +226,15 @@ def _fmt_int(val):
 
 def _fmt_deposits(val):
     """Format deposits string (already in millions from report_builder)."""
-    if val is None or val == '' or val == 'N/A':
-        return 'N/A'
+    if is_missing(val) or val in ('', 'N/A', NO_DATA):
+        return NO_DATA
     return f'${val}M' if not str(val).startswith('$') else val
 
 
 def _fmt_pct(val):
     """Format a percentage to 1 decimal place."""
-    if val is None or val == '':
-        return '\u2014'
+    if is_missing(val) or val == '' or val == NO_DATA:
+        return NO_DATA
     try:
         return f'{float(val):.1f}%'
     except (ValueError, TypeError):
@@ -242,8 +243,8 @@ def _fmt_pct(val):
 
 def _fmt_change(val):
     """Format a change value with sign."""
-    if val is None or val == '':
-        return '\u2014'
+    if is_missing(val) or val == '' or val == NO_DATA:
+        return NO_DATA
     try:
         v = int(float(str(val).replace(',', '')))
         if v > 0:
