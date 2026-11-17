@@ -3,7 +3,8 @@ LendSight Blueprint for main JustData app.
 Converts the standalone LendSight app into a blueprint with cache integration.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for
+import re
+from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
@@ -545,6 +546,12 @@ def analyze():
 @require_access('lendsight', 'partial')
 def report():
     """Report display page"""
+    job_id = request.args.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('lendsight.index'))
     app_base_url = url_for('lendsight.index').rstrip('/')
     breadcrumb_items = [
         {'name': 'LendSight', 'url': '/lendsight'},
@@ -566,7 +573,7 @@ def report_data():
     """Return the analysis report data for web display"""
     try:
         # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         
         if not job_id:
             return jsonify({
@@ -663,7 +670,7 @@ def download():
     try:
         format_type = request.args.get('format', 'excel').lower()
         # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400

@@ -3,7 +3,8 @@ BizSight Blueprint for main JustData app.
 Converts the standalone BizSight app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for
+import re
+from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import sys
@@ -629,8 +630,11 @@ def get_tract_boundaries_endpoint(geoid5):
 def report():
     """Report display page."""
     job_id = request.args.get('job_id')
-    if not job_id:
-        return jsonify({'error': 'Job ID required'}), 400
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('bizsight.index'))
 
     # Pass app_base_url so template can correctly construct API URLs
     app_base_url = url_for('bizsight.index').rstrip('/')
@@ -656,7 +660,7 @@ def report_data():
     """Return the analysis report data for web display."""
     try:
         # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
 
         if not job_id:
             return jsonify({
@@ -747,7 +751,7 @@ def download():
     """Download analysis results."""
     try:
         # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         format_type = request.args.get('format', 'excel')  # excel, pdf, powerpoint
 
         if not job_id:
@@ -778,9 +782,14 @@ def download():
             return jsonify({'error': 'Result not found'}), 404
 
         # Get metadata
+        # From the stored result only, never the session (BZ-022)
+        stored = result.get('metadata') or {}
+        counties = stored.get('counties') or []
+        county_data = counties[0] if counties else {}
         metadata = {
-            'county_data': session.get('county_data'),
-            'years': session.get('years'),
+            'county_data': county_data,
+            'county_name': stored.get('county_name') or (county_data.get('name') if isinstance(county_data, dict) else None),
+            'years': stored.get('years'),
             'job_id': job_id
         }
 
