@@ -95,9 +95,11 @@ NON_ADMIN = ("public_registered", "member", "member_premium", "non_member_org",
 @pytest.mark.parametrize("user_type", NON_ADMIN)
 def test_dataexplorer_refuses_every_non_admin_role(platform_app, user_type):
     """DataExplorer is out of the new JustData (Jay, 2026-11-13) and admin-only.
-    Its matrix row still says 'full' for member_premium and non_member_org;
-    the global staff gate and the testing overlay are what refuse them, so pin
+    Its matrix row once said 'full' for member_premium and non_member_org,
+    behind the global staff gate and the testing overlay; pin the matrix and
     the outcome for every role, not just plain staff."""
+    # The matrix itself says hidden, not only the gates in front of it.
+    assert get_app_access("dataexplorer", user_type) == "hidden"
     client = _client(platform_app, user_type)
     for path in ("/dataexplorer/", "/dataexplorer/api/states"):
         resp = client.get(path)
