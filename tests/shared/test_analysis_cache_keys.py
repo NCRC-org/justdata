@@ -66,7 +66,8 @@ def test_bizsight_key_carries_its_report_revision():
     """BizSight results cached before the classified-loan denominator are not reused."""
     from justdata.shared.utils import analysis_cache
     params = {'county_data': {'geoid5': '17031'}, 'years': '2020,2021,2022,2023,2024'}
-    assert normalize_parameters('bizsight', params)['revision'] == 2
+    # 2: classified-loan denominator; 3: no data is an em dash, not 0.0 (2026-11-17)
+    assert normalize_parameters('bizsight', params)['revision'] == analysis_cache.REPORT_REVISIONS['bizsight'] >= 3
     current = generate_cache_key('bizsight', params)
     old = dict(analysis_cache.REPORT_REVISIONS)
     try:

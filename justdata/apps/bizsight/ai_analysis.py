@@ -5,6 +5,8 @@ Generates AI-powered narratives for BizSight reports.
 """
 
 import json
+
+from justdata.shared.utils.no_data import pct_change as pct_change_of
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -403,7 +405,7 @@ class BizSightAnalyzer:
             first_hhi = hhi_values[first_year]['value']
             last_hhi = hhi_values[last_year]['value']
             hhi_change = last_hhi - first_hhi
-            pct_change = ((last_hhi - first_hhi) / first_hhi * 100) if first_hhi > 0 else 0
+            pct_change = pct_change_of(last_hhi, first_hhi)  # None on a zero base
         else:
             first_year = None
             last_year = None
@@ -426,7 +428,7 @@ class BizSightAnalyzer:
         Key Trends:
         - First year (2020) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
-        - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
+        - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({f'{pct_change:.1f}% change' if pct_change is not None else 'percent change not available'})
         - Baseline (2020) HHI: {baseline_hhi if baseline_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
 

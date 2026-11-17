@@ -63,26 +63,31 @@ def render_hhi_chart(hhi_by_year):
     if not hhi_by_year:
         return None
 
+    # A missing year stays on the axis as a gap, never a zero or a dropped
+    # year (no-data decision, 2026-11-17).
     years = []
     values = []
     for item in hhi_by_year:
         yr = item.get('year')
+        if yr is None:
+            continue
         val = item.get('hhi_value')
-        if yr is not None and val is not None:
-            years.append(str(yr))
-            values.append(float(val))
+        years.append(str(int(float(yr))))
+        values.append(float(val) if val is not None else None)
 
-    if not values:
+    present = [v for v in values if v is not None]
+    if not present:
         return None
 
     fig, ax = plt.subplots(figsize=(4.5, 2.6), dpi=150)
     _apply_base_style(ax, fig)
 
     x = np.arange(len(years))
-    ax.bar(x, values, color=BAR_COLOR, width=0.5, edgecolor='none')
+    bar_x = [i for i, v in enumerate(values) if v is not None]
+    ax.bar(bar_x, present, color=BAR_COLOR, width=0.5, edgecolor='none')
 
     # Threshold lines
-    max_val = max(values) if values else 500
+    max_val = max(present)
     y_max = max(max_val * 1.3, 2800)
     ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=1.0, alpha=0.7)
     ax.text(len(years) - 0.5, 1530, 'Moderate (1,500)', fontsize=7,
@@ -93,7 +98,9 @@ def render_hhi_chart(hhi_by_year):
 
     # Value labels on bars
     for i, v in enumerate(values):
-        if v > 0:
+        if v is None:
+            ax.text(i, max_val * 0.03, '\u2014', ha='center', fontsize=8, color='#666666')
+        elif v > 0:
             ax.text(i, v + max_val * 0.03, f'{round(v):,}', ha='center',
                     fontsize=8, fontweight='bold')
 
