@@ -86,3 +86,23 @@ def test_admin_tools_heading_on_every_surface(platform_app):
         html = client.get(path).get_data(as_text=True)
         assert "Admin tools" in html, path
         assert "Staff tools" not in html, path
+
+
+NON_ADMIN = ("public_registered", "member", "member_premium", "non_member_org",
+             "tester", "staff", "senior_executive")
+
+
+@pytest.mark.parametrize("user_type", NON_ADMIN)
+def test_dataexplorer_refuses_every_non_admin_role(platform_app, user_type):
+    """DataExplorer is out of the new JustData (Jay, 2026-11-13) and admin-only.
+    Its matrix row still says 'full' for member_premium and non_member_org;
+    the global staff gate and the testing overlay are what refuse them, so pin
+    the outcome for every role, not just plain staff."""
+    client = _client(platform_app, user_type)
+    for path in ("/dataexplorer/", "/dataexplorer/api/states"):
+        resp = client.get(path)
+        body = resp.get_data(as_text=True)
+        refused = resp.status_code in (302, 401, 403) or (
+            resp.status_code == 200 and 'alt="NCRC - National Community Reinvestment Coalition"' in body)
+        assert refused, (user_type, path, resp.status_code)
+    assert 'data-card="dataexplorer"' not in client.get("/apps").get_data(as_text=True)
