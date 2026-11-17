@@ -3,7 +3,7 @@ LendSight Blueprint for main JustData app.
 Converts the standalone LendSight app into a blueprint with cache integration.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, make_response, send_file, url_for
+from flask import Blueprint, render_template, request, jsonify, session, make_response, send_file, url_for, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import re
 import time
@@ -442,9 +442,12 @@ def analyze():
 @require_access('lendsight', 'limited')
 def report():
     """Shareable report URL: the LendSight page with this job's results."""
-    job_id = request.args.get('job_id') or session.get('job_id')
-    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
-        job_id = None
+    job_id = request.args.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('lendsight.index'))
     return _page(job_id=job_id)
 
 
@@ -470,8 +473,8 @@ def _json_safe(obj):
 def report_data():
     """Return the analysis report data for web display"""
     try:
-        # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        # The job id comes from the URL only, never the session (BZ-022)
+        job_id = request.args.get('job_id')
         
         if not job_id:
             return jsonify({
@@ -577,8 +580,8 @@ def download():
     """Download the generated reports"""
     try:
         format_type = request.args.get('format', 'excel').lower()
-        # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        # The job id comes from the URL only, never the session (BZ-022)
+        job_id = request.args.get('job_id')
         
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400

@@ -3,7 +3,7 @@ MergerMeter Blueprint for main JustData app.
 Converts the standalone MergerMeter app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, send_file, session, url_for, make_response
+from flask import Blueprint, render_template, request, jsonify, send_file, session, url_for, make_response, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 from datetime import datetime, timedelta
@@ -147,9 +147,12 @@ def index():
 @require_access('mergermeter', 'full')
 def report():
     """The shareable report URL: the same page, loading this run's workbook."""
-    job_id = request.args.get('job_id') or session.get('job_id')
-    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
-        job_id = None
+    job_id = request.args.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('mergermeter.index'))
     return _page(job_id=job_id)
 
 
@@ -323,7 +326,7 @@ def excel_data():
     try:
         from .mergermeter_ops import ensure_local_excel
 
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
 
@@ -348,7 +351,7 @@ def download():
     try:
         from .mergermeter_ops import ensure_local_excel, generate_filename
         
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
         
@@ -612,7 +615,7 @@ def report_data():
     """Whether a run's workbook is ready, with the run's metadata for the page.
     The page then previews the workbook from /excel-data. 202 while the run is
     still going, 404 if there is no workbook."""
-    job_id = request.args.get('job_id') or session.get('job_id')
+    job_id = request.args.get('job_id')
     if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
         return jsonify({'success': False, 'error': 'Job ID required'}), 400
     try:

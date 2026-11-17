@@ -3,7 +3,7 @@ BizSight Blueprint for main JustData app.
 Converts the standalone BizSight app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for
+from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import io
 import os
@@ -508,9 +508,12 @@ def get_tract_boundaries_endpoint(geoid5):
 @require_access('bizsight', 'limited')
 def report():
     """Shareable report URL: the BizSight page with this job's results."""
-    job_id = request.args.get('job_id') or session.get('job_id')
-    if job_id and not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
-        job_id = None
+    job_id = request.args.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('bizsight.index'))
     return _page(job_id=job_id)
 
 
@@ -520,8 +523,8 @@ def report():
 def report_data():
     """Return the analysis report data for web display."""
     try:
-        # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        # The job id comes from the URL only, never the session (BZ-022)
+        job_id = request.args.get('job_id')
 
         if not job_id:
             return jsonify({
@@ -625,11 +628,11 @@ def report_data():
 
 def _export_metadata(result, job_id):
     """Metadata for the Excel and PDF builders, read from the stored result
-    rather than the session (which is empty for a shared report URL and was
-    missing county_name, so workbooks said "Unknown County")."""
+    only, never the session (empty for a shared report URL, and another
+    account's on a shared browser, BZ-022)."""
     stored = result.get('metadata') or {}
     counties = stored.get('counties') or []
-    county_data = counties[0] if counties else session.get('county_data') or {}
+    county_data = counties[0] if counties else {}
     return {
         'county_data': county_data,
         'county_name': stored.get('county_name') or (county_data.get('name') if isinstance(county_data, dict) else None),
@@ -645,8 +648,8 @@ def _export_metadata(result, job_id):
 def download():
     """Download analysis results."""
     try:
-        # Check for job_id in URL parameters first, then session
-        job_id = request.args.get('job_id') or session.get('job_id')
+        # The job id comes from the URL only, never the session (BZ-022)
+        job_id = request.args.get('job_id')
         format_type = request.args.get('format', 'excel')  # excel, pdf, powerpoint
 
         if not job_id:

@@ -35,6 +35,7 @@ from justdata.main.auth import (
     is_allowlisted_email,
 )
 from justdata.main.auth.access_overlay import is_testing_env
+from justdata.main.auth.session_keys import clear_app_session
 from justdata.main.auth.services.tester_access import UNAVAILABLE_REASONS, admit_or_refuse
 
 login_bp = Blueprint("auth_login", __name__)
@@ -156,6 +157,9 @@ def auth_login():
         'email_verified': email_verified,
         'provider': auth_provider
     }
+    # A new sign-in starts with no page state from whoever used this browser
+    # before (BZ-022).
+    clear_app_session()
     set_session_user(user)
 
     set_user_type(user_type)
