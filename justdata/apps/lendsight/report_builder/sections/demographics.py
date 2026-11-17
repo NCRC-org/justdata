@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import numpy as np
+from justdata.shared.utils.no_data import NO_DATA, fmt_pp_change, fmt_share
 
 def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census_data: Dict = None) -> pd.DataFrame:
     """
@@ -35,6 +36,10 @@ def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census
     yearly_data = []
     for year in sorted(years):
         year_df = df[df['year'] == year].copy()
+        if year_df.empty:
+            # No rows at all: the whole year is no data, an em dash, never 0
+            # (no-data decision, 2026-11-17).
+            continue
         
         # Calculate total loans with demographic data
         # This is the sum of all race/ethnicity originations (may have overlap)
@@ -217,7 +222,7 @@ def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census
             total = year_data['total_originations']
             result_data[str(year)].append(f"{total:,}")
         else:
-            result_data[str(year)].append("0")
+            result_data[str(year)].append(NO_DATA)
     # Population Share column (empty for Total Loans row)
     if population_shares:
         result_data['Population Share (%)'].append("")
@@ -237,13 +242,13 @@ def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census
                 else:
                     change_str = "0.0%"
             else:
-                change_str = "N/A"
+                change_str = NO_DATA
             result_data[f'Change Over Time ({time_span})'].append(change_str)
         else:
-            result_data[f'Change Over Time ({time_span})'].append("N/A")
+            result_data[f'Change Over Time ({time_span})'].append(NO_DATA)
     else:
         if len(years) >= 2:
-            result_data[f'Change Over Time ({time_span})'].append("N/A")
+            result_data[f'Change Over Time ({time_span})'].append(NO_DATA)
     
     # Calculate for each included group (show only percentages, no raw numbers)
     for group in included_groups:
@@ -259,12 +264,12 @@ def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census
                 total_loans = year_data['total_originations']
                 loans_with_demo = year_data['loans_with_demographics']
                 denominator = loans_with_demo if loans_with_demo > 0 else total_loans
-                pct = (count / denominator * 100) if denominator > 0 else 0.0
-                result_data[str(year)].append(f"{pct:.1f}%")
+                pct = (count / denominator * 100) if denominator > 0 else None
+                result_data[str(year)].append(fmt_share(pct))
                 group_changes.append((count, pct))
             else:
-                result_data[str(year)].append("0.0%")
-                group_changes.append((0, 0.0))
+                result_data[str(year)].append(NO_DATA)
+                group_changes.append((None, None))
         
         # Add Population Share column (if Census data available)
         if population_shares:
@@ -275,19 +280,11 @@ def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census
         if len(years) >= 2 and len(group_changes) >= 2:
             first_pct = group_changes[0][1]
             last_pct = group_changes[-1][1]
-            pct_change = last_pct - first_pct
-            
-            # Format change: show only percentage point change
-            if pct_change > 0:
-                change_str = f"+{pct_change:.1f}pp"
-            elif pct_change < 0:
-                change_str = f"{pct_change:.1f}pp"
-            else:
-                change_str = "0.0pp"
+            change_str = fmt_pp_change(first_pct, last_pct)
             result_data[f'Change Over Time ({time_span})'].append(change_str)
         else:
             if len(years) >= 2:
-                result_data[f'Change Over Time ({time_span})'].append("N/A")
+                result_data[f'Change Over Time ({time_span})'].append(NO_DATA)
     
     result = pd.DataFrame(result_data)
     return result

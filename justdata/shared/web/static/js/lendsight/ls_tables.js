@@ -9,6 +9,8 @@
   'use strict';
 
   var esc = root.AppReport.esc;
+  // No data is an em dash (Jad, 2026-11-17); the server sends it as text.
+  var NO_DATA = '\u2014';
 
   function pct(v) {
     if (v === null || v === undefined || v === '') return NaN;
@@ -20,14 +22,14 @@
     if (v === null || v === undefined || v === '') return null;
     var s = String(v).trim();
     var m = s.match(/^([+-]?)(\d+\.?\d*)\s*(pp|%)?$/);
-    if (!m) return { value: 0, unit: 'pp', display: s };
+    if (!m) return null;   // the em dash or any other text: no change to show
     var n = parseFloat(m[2]);
     return { value: m[1] === '-' ? -n : n, unit: m[3] || 'pp', display: s };
   }
 
   function changeCell(v) {
     var c = parseChange(v);
-    if (!c) return '<span class="ls-change">&mdash;</span>';
+    if (!c) return '<span class="ls-change">' + NO_DATA + '</span>';
     if (Math.abs(c.value) < 0.05) return '<span class="ls-change">0.0' + esc(c.unit) + '</span>';
     var up = c.value > 0;
     return '<span class="ls-change ' + (up ? 'is-up' : 'is-down') + '">' +
@@ -113,7 +115,7 @@
       var spark = [];
       years.forEach(function (y) {
         var val = row[y];
-        if (val === null || val === undefined) val = total ? '0' : '0.0%';
+        if (val === null || val === undefined) val = NO_DATA;
         var p = pct(val);
         var heat = '';
         if (!total && !isNaN(p)) {

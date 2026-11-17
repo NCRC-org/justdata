@@ -82,7 +82,8 @@ def test_lendsight_key_carries_its_report_revision():
     """LendSight results stored before the narrative fixes are not reused."""
     params = {'counties': 'Hillsborough County, Florida', 'years': '2021,2022,2023,2024,2025',
               'loan_purpose': ['purchase'], 'selection_type': 'county', 'state_code': '12'}
-    assert normalize_parameters('lendsight', params)['revision'] == 3
+    # 4: no data is an em dash, not 0.0% or 0.0pp (2026-11-17)
+    assert normalize_parameters('lendsight', params)['revision'] == 4
 
 
 MERGERMETER_FORM = {

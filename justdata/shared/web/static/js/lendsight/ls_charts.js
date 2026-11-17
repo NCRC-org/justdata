@@ -109,7 +109,7 @@
       var color = token(PURPOSE_COLORS[purpose] || '--ncrc-blue-500');
       var values = labels.map(function (y) {
         var v = parseFloat(row[y]);
-        v = isNaN(v) ? 0 : v;
+        if (isNaN(v)) return null;   // a missing year is a gap, not a zero bar
         maxHHI = Math.max(maxHHI, v);
         return v;
       });

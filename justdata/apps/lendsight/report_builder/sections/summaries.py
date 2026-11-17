@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import numpy as np
+from justdata.shared.utils.no_data import fmt_share
 
 def create_mortgage_summary_table(df: pd.DataFrame, counties: List[str], years: List[int]) -> pd.DataFrame:
     """
@@ -168,16 +169,16 @@ def create_mortgage_county_summary(df: pd.DataFrame, counties: List[str] = None,
         num_lenders = county_df['lender_name'].nunique()
         
         # Calculate percentages
-        lmib_pct = round((lmib / total_originations * 100), 1) if total_originations > 0 else 0.0
-        mmct_pct = round((mmct / total_originations * 100), 1) if total_originations > 0 else 0.0
-        both_pct = round((both / total_originations * 100), 1) if total_originations > 0 else 0.0
+        lmib_pct = round((lmib / total_originations * 100), 1) if total_originations > 0 else None
+        mmct_pct = round((mmct / total_originations * 100), 1) if total_originations > 0 else None
+        both_pct = round((both / total_originations * 100), 1) if total_originations > 0 else None
         
         county_data.append({
             'County': county,
             'Total Originations': total_originations,
-            'LMI Borrower Only Originations': f"{lmib} ({lmib_pct}%)",
-            'MMCT Only Originations': f"{mmct} ({mmct_pct}%)",
-            'Both LMICT/MMCT Originations': f"{both} ({both_pct}%)",
+            'LMI Borrower Only Originations': f"{lmib} ({fmt_share(lmib_pct)})",
+            'MMCT Only Originations': f"{mmct} ({fmt_share(mmct_pct)})",
+            'Both LMICT/MMCT Originations': f"{both} ({fmt_share(both_pct)})",
             'Number of Lenders': num_lenders
         })
     
