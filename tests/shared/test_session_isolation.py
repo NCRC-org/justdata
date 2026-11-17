@@ -131,10 +131,15 @@ def test_data_and_download_need_the_job_id_in_the_url(platform_app, app_name, en
     target = ("justdata.apps.mergermeter.mergermeter_ops.ensure_local_excel"
               if app_name == "mergermeter"
               else f"justdata.apps.{app_name}.blueprint.get_analysis_result_by_job_id")
-    with patch(target, return_value=None) as lookup:
+    # The progress lookup too: an old route could answer 400 "not complete"
+    # after reading A's job from the session, which a status check alone misses.
+    progress = f"justdata.apps.{app_name}.blueprint.get_progress"
+    with patch(target, return_value=None) as lookup, \
+         patch(progress, return_value={"done": False}, create=True) as progress_lookup:
         resp = client.get(f"/{app_name}/{endpoint}")
     assert resp.status_code == 400, resp.get_data(as_text=True)
     lookup.assert_not_called()
+    progress_lookup.assert_not_called()
 
 
 def test_mergermeter_excel_data_needs_the_job_id_in_the_url(platform_app):
