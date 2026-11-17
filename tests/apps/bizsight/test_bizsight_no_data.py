@@ -31,6 +31,9 @@ def test_helpers():
     assert pct_change(5, 0) is None and pct_change(None, 5) is None and pct_change(5, None) is None
     assert pct_change(15, 10) == 50.0
     assert dash_missing(pd.DataFrame({'a': [1, None]}))['a'].tolist() == [1, NO_DATA]
+    # A real zero is kept; only a missing cell becomes the em dash.
+    assert dash_missing(pd.DataFrame({'a': [0, 0.0, None]}))['a'].tolist() == [0, 0.0, NO_DATA]
+    assert share(0, 10) == 0.0 and pct_change(0, 10) == -100.0
 
 
 def test_missing_year_is_none_not_zero():
@@ -93,3 +96,57 @@ def test_screen_draws_gaps_and_dashes():
     assert 'num(d.hhi_value) || 0' not in js
     assert "? '-'" not in js and "return '-'" not in js
     assert 'No LMI tracts in county' not in js
+
+
+# ---- A whole year is dashed only when it has no data at all -----------------
+
+def _with_a_zero_year():
+    """2023 has a reported row with zero loans; 2021 has no row at all."""
+    df = _loving_like()
+    zero = dict(df.iloc[0].to_dict(), year=2023, num_under_100k=0, amt_under_100k=0.0,
+                numsbrev_under_1m=0, amtsbrev_under_1m=0.0)
+    return pd.concat([df[df['year'] != 2021], pd.DataFrame([zero])], ignore_index=True)
+
+
+def test_a_year_with_no_data_at_all_is_dashed_in_every_cell():
+    table = create_county_summary_table(_with_a_zero_year(), YEARS)
+    assert table['2021'].isna().all()
+
+
+def test_a_year_with_data_and_a_zero_count_shows_zero():
+    table = create_county_summary_table(_with_a_zero_year(), YEARS).set_index('Variable')
+    # Counts and amounts that exist are shown, zero included.
+    assert table.loc['Total Loans', '2023'] == 0
+    assert table.loc['Total Loan Amount (in millions)', '2023'] == 0
+    # Only a share of zero (0 of 0) has no value.
+    assert pd.isna(table.loc['Loans Under $100K (% of Total)', '2023'])
+    # A zero numerator over a real total is a real 0.0 percent.
+    assert share(0, 10) == 0.0
+    assert table.loc['Loans $100K-$250K (% of Total)', '2024'] == 0.0
+
+
+def test_zero_counts_stay_zero_in_pdf_and_excel(tmp_path):
+    from justdata.apps.bizsight.excel_export import save_bizsight_excel_report
+    rows = create_county_summary_table(_with_a_zero_year(), YEARS).to_dict('records')
+    assert _fmt_int(0) == '0' and _fmt_pct(0.0) == '0.0%'
+    table, _ = _build_county_summary_table(rows)
+    header = [str(getattr(c, 'text', c)) for c in table._cellvalues[0]]
+    total_loans = [r for r in table._cellvalues if 'Total Loans' in str(getattr(r[0], 'text', r[0]))][0]
+    assert total_loans[header.index('2023')] == '0'
+    assert total_loans[header.index('2021')] == NO_DATA
+
+    path = tmp_path / 'bs.xlsx'
+    save_bizsight_excel_report({'county_summary_table': rows}, str(path),
+                               {'county_name': 'Loving County', 'state_name': 'Texas', 'years': YEARS})
+    sheet = load_workbook(path)['County Summary - Number']
+    head = [c.value for c in sheet[1]]
+    total = [r for r in sheet.iter_rows(min_row=2, values_only=True) if r[0] == 'Total Loans'][0]
+    assert total[head.index('2023')] == 0
+    assert total[head.index('2021')] == NO_DATA
+
+
+def test_screen_formatters_keep_zero():
+    js = (ROOT / 'justdata/shared/web/static/js/bizsight/bs_report.js').read_text()
+    # num() returns null only for missing values, so 0 formats as "0" and "0.0%".
+    assert "function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }" in js
+    assert "function fmtInt(v) { var n = num(v); return n === null ? NO_DATA" in js
