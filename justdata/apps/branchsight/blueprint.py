@@ -3,7 +3,8 @@ BranchSight Blueprint for main JustData app.
 Converts the standalone BranchSight app into a blueprint for the unified platform.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory
+import re
+from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for, send_from_directory, redirect
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
@@ -241,6 +242,12 @@ def analyze():
 @require_access('branchsight', 'partial')
 def report():
     """Report display page"""
+    job_id = request.args.get('job_id')
+    if not job_id or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', job_id):
+        # A report renders only from the id in its URL, never from the
+        # session, which a second account on this browser would inherit
+        # (BZ-022). Without one, open the form.
+        return redirect(url_for('branchsight.index'))
     from jinja2 import Environment, ChoiceLoader, FileSystemLoader, select_autoescape
     app_base_url = url_for('branchsight.index').rstrip('/')
     # Create a custom Environment that searches branchsight templates FIRST,
@@ -263,9 +270,9 @@ def report():
 def report_data():
     """Return the analysis report data for web display"""
     try:
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         if not job_id:
-            return jsonify({'error': 'No analysis session found'}), 404
+            return jsonify({'error': 'Job ID required'}), 400
 
         # Try BigQuery cache first (works across Cloud Run instances)
         analysis_result = get_analysis_result_by_job_id(job_id)
@@ -337,7 +344,7 @@ def download():
     """Download the generated reports in various formats"""
     try:
         format_type = request.args.get('format', 'excel').lower()
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
 
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
