@@ -60,7 +60,8 @@ def test_no_placeholder_citation_and_no_legacy_scripts(client):
 
 def test_report_url_renders_the_page_with_the_job(client):
     assert 'jobId: "abc-123"' in _page(client, "/bizsight/report?job_id=abc-123")
-    assert "jobId: null" in _page(client, "/bizsight/report?job_id=%3Cscript%3E")
+    # A malformed id opens the form, like a missing one (BZ-022)
+    assert client.get("/bizsight/report?job_id=%3Cscript%3E").status_code == 302
 
 
 def test_bizsight_js_modules_stay_small():

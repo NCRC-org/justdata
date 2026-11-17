@@ -68,10 +68,11 @@ def test_report_url_renders_the_same_page_with_the_job(client):
 
 
 @pytest.mark.parametrize("job_id", ["<script>alert(1)</script>", "a b", "x" * 65])
-def test_report_url_ignores_malformed_job_ids(client, job_id):
-    html = _page(client, f"/lendsight/report?job_id={job_id}")
-    assert "alert(1)" not in html
-    assert "jobId: null" in html
+def test_report_url_sends_malformed_job_ids_to_the_form(client, job_id):
+    # Like a missing id, a malformed one opens the form (BZ-022)
+    resp = client.get(f"/lendsight/report?job_id={job_id}")
+    assert resp.status_code == 302
+    assert "alert(1)" not in resp.get_data(as_text=True)
 
 
 def test_lendsight_js_modules_stay_small():

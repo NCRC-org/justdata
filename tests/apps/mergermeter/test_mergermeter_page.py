@@ -61,7 +61,8 @@ def test_controls_keep_the_former_values(client):
 def test_report_url_renders_the_page_with_the_job(client):
     html = _page(client, "/mergermeter/report?job_id=job_abc-123")
     assert '"job_abc-123"' in html
-    assert '"bad id!"' not in _page(client, "/mergermeter/report?job_id=bad id!")
+    # A malformed id opens the form, like a missing one (BZ-022)
+    assert client.get("/mergermeter/report?job_id=bad id!").status_code == 302
 
 
 def test_report_data_is_a_readiness_check(client, monkeypatch, tmp_path):
