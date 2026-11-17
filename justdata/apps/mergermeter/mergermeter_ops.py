@@ -3186,7 +3186,7 @@ def generate_filename(metadata, extension='.xlsx'):
 def download():
     """Download the generated Excel file"""
     try:
-        job_id = request.args.get('job_id') or session.get('job_id')
+        job_id = request.args.get('job_id')
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
         
@@ -3249,7 +3249,7 @@ def goals_calculator():
     import pandas as pd
     from justdata.shared.analysis.ai_provider import convert_numpy_types
 
-    job_id = request.args.get('job_id') or session.get('job_id')
+    job_id = request.args.get('job_id')
     if not job_id:
         return render_template('goals_calculator.html',
                              mortgage_data={},
