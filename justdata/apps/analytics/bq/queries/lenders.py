@@ -12,6 +12,7 @@ from justdata.apps.analytics.bq.client import (
     _get_cached,
     _set_cached,
     get_bigquery_client,
+    run_query,
     get_valid_user_filter,
 )
 from justdata.apps.analytics.bq.transforms import (
@@ -58,21 +59,20 @@ def get_lender_interest(
         return cached
 
     client = get_bigquery_client()
+    params = {'lender_apps': LENDER_APPS, 'target_apps': TARGET_APPS, 'days': int(days), 'suffix_days': int(days) if days > 0 else 365, 'min_users': int(min_users), 'user_types': list(user_types or exclude_user_types or [])}
 
-    date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # User type filter
     user_type_filter = ""
     if user_types:
-        types_str = "', '".join(user_types)
-        user_type_filter = f" AND user_type IN ('{types_str}')"
+        user_type_filter = f" AND user_type IN UNNEST(@user_types)"
     elif exclude_user_types:
-        types_str = "', '".join(exclude_user_types)
-        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
+        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN UNNEST(@user_types))"
 
     # Query usage_log and join with GA4 page views to get geo data
     # GA4 captures user location via IP automatically
-    date_filter_ga4 = f"AND TIMESTAMP_MICROS(ga.event_timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter_ga4 = f"AND TIMESTAMP_MICROS(ga.event_timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
     
     # Apply valid user filter to exclude test/anonymous users
     user_filter = get_valid_user_filter()
@@ -104,7 +104,7 @@ def get_lender_interest(
                 user_pseudo_id,
                 TIMESTAMP_MICROS(event_timestamp) as event_time
             FROM `justdata-ncrc.analytics_521852976.events_*` ga
-            WHERE _TABLE_SUFFIX >= FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL {days if days > 0 else 365} DAY))
+            WHERE _TABLE_SUFFIX >= FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL @suffix_days DAY))
                 AND event_name = 'page_view'
                 AND (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location') LIKE '%mergermeter%'
                 AND geo.region IS NOT NULL
@@ -126,7 +126,7 @@ def get_lender_interest(
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         raw_events = [dict(row) for row in results]
 
         # Aggregate by lender + geo location from GA4
@@ -205,8 +205,9 @@ def get_lender_detail(
         Dict with lender info, reports, and researchers
     """
     client = get_bigquery_client()
+    params = {'lender_apps': LENDER_APPS, 'target_apps': TARGET_APPS, 'days': int(days), 'lender_id': lender_id}
 
-    date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # User filter for usage_log table (uses different column names than events table)
     user_filter_usage = """
@@ -224,7 +225,7 @@ def get_lender_detail(
     # MergerMeter events store lender_id in parameters_json as acquirer_lei or target_lei
     summary_query = f"""
         SELECT
-            '{lender_id}' AS lender_id,
+            @lender_id AS lender_id,
             COUNT(*) AS total_reports,
             COUNT(DISTINCT user_id) AS unique_researchers,
             MIN(timestamp) AS first_activity,
@@ -232,14 +233,14 @@ def get_lender_detail(
         FROM `justdata-ncrc.cache.usage_log`
         WHERE app_name = 'mergermeter'
             AND error_message IS NULL
-            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
-                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
+            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = @lender_id
+                 OR JSON_VALUE(parameters_json, '$.target_lei') = @lender_id)
             AND {user_filter_usage}
             {date_filter}
     """
 
     # Get all reports for this lender with acquirer/target info from parameters
-    reports_query = load_sql("lender_reports.sql").format(date_filter=date_filter, lender_id=lender_id, user_filter_usage=user_filter_usage)
+    reports_query = load_sql("lender_reports.sql").format(date_filter=date_filter, user_filter_usage=user_filter_usage)
 
     # Get researchers for this lender
     researchers_query = f"""
@@ -252,8 +253,8 @@ def get_lender_detail(
         FROM `justdata-ncrc.cache.usage_log`
         WHERE app_name = 'mergermeter'
             AND error_message IS NULL
-            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
-                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
+            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = @lender_id
+                 OR JSON_VALUE(parameters_json, '$.target_lei') = @lender_id)
             AND {user_filter_usage}
             {date_filter}
         GROUP BY user_id, user_email
@@ -263,9 +264,9 @@ def get_lender_detail(
 
     try:
         # Execute queries
-        summary_result = list(client.query(summary_query).result())
-        reports_result = [dict(row) for row in client.query(reports_query).result()]
-        researchers_result = [dict(row) for row in client.query(researchers_query).result()]
+        summary_result = list(run_query(client, summary_query, params).result())
+        reports_result = [dict(row) for row in run_query(client, reports_query, params).result()]
+        researchers_result = [dict(row) for row in run_query(client, researchers_query, params).result()]
 
         if not summary_result or summary_result[0].total_reports == 0:
             return {'error': 'Lender not found'}

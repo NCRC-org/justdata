@@ -11,6 +11,7 @@ from justdata.apps.analytics.bq.client import (
     _get_cached,
     _set_cached,
     get_bigquery_client,
+    run_query,
     get_valid_user_filter,
 )
 from justdata.apps.analytics.bq.transforms import (
@@ -57,9 +58,10 @@ def get_coalition_opportunities(
         return cached
 
     client = get_bigquery_client()
+    params = {'target_apps': TARGET_APPS, 'apps_3_4': TARGET_APPS[3:5], 'apps_0_2': TARGET_APPS[0:3], 'days': int(days), 'min_users': int(min_users), 'state': state, 'entity_type': entity_type}
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
-    state_filter = f"AND state = '{state}'" if state else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
+    state_filter = f"AND state = @state" if state else ""
 
     # Note: organization_name may not exist in events table - using NULL for now
     # Will be enriched from Firestore user profiles
@@ -75,7 +77,7 @@ def get_coalition_opportunities(
                 state AS researcher_state,
                 event_timestamp
             FROM `{EVENTS_TABLE}`
-            WHERE event_name IN ('{TARGET_APPS[3]}', '{TARGET_APPS[4]}')
+            WHERE event_name IN UNNEST(@apps_3_4)
                 {date_filter}
                 AND lender_id IS NOT NULL
                 {state_filter}
@@ -92,7 +94,7 @@ def get_coalition_opportunities(
                 state AS researcher_state,
                 event_timestamp
             FROM `{EVENTS_TABLE}`
-            WHERE event_name IN ('{TARGET_APPS[0]}', '{TARGET_APPS[1]}', '{TARGET_APPS[2]}')
+            WHERE event_name IN UNNEST(@apps_0_2)
                 {date_filter}
                 AND county_fips IS NOT NULL
                 {state_filter}
@@ -108,19 +110,19 @@ def get_coalition_opportunities(
             MAX(event_timestamp) AS last_activity
         FROM all_research
         GROUP BY entity_type, entity_id
-        HAVING COUNT(DISTINCT user_id) >= {min_users}
+        HAVING COUNT(DISTINCT user_id) >= @min_users
     """
 
     if entity_type:
         query = f"""
             SELECT * FROM ({query})
-            WHERE entity_type = '{entity_type}'
+            WHERE entity_type = @entity_type
         """
 
     query += " ORDER BY unique_users DESC, unique_organizations DESC LIMIT 200"
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         data = [dict(row) for row in results]
 
         # Enrich county entities with coordinates from Census Bureau Gazetteer
@@ -163,13 +165,13 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         return cached
 
     client = get_bigquery_client()
+    params = {'target_apps': TARGET_APPS, 'lender_apps': LENDER_APPS, 'days': int(days)}
 
     # Build app filters
-    target_apps_str = "', '".join(TARGET_APPS)
     lender_apps_str = "', '".join(LENDER_APPS)
 
     # Build date filter
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # NOTE: Don't filter users here - we want to count ALL events for dashboard metrics
 
@@ -179,9 +181,9 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(DISTINCT user_id) AS total_users,
             COUNT(*) AS total_events,
             (SELECT COUNT(DISTINCT lender_id) FROM `{EVENTS_TABLE}`
-             WHERE event_name IN ('{lender_apps_str}') {date_filter} AND lender_id IS NOT NULL) AS total_lenders
+             WHERE event_name IN UNNEST(@lender_apps) {date_filter} AND lender_id IS NOT NULL) AS total_lenders
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             {date_filter}
     """
 
@@ -192,7 +194,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             county_name,
             COUNT(*) AS total_reports
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             {date_filter}
             AND county_fips IS NOT NULL
         GROUP BY county_fips, state, county_name
@@ -206,7 +208,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             lender_name,
             COUNT(*) AS total_events
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{lender_apps_str}')
+        WHERE event_name IN UNNEST(@lender_apps)
             {date_filter}
             AND lender_id IS NOT NULL
         GROUP BY lender_id, lender_name
@@ -220,7 +222,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(*) AS event_count,
             COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             {date_filter}
         GROUP BY event_name
         ORDER BY event_count DESC
@@ -230,10 +232,10 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     # This reduces total time from sum(query_times) to max(query_times)
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    def run_query(query_name, query):
+    def run_named(query_name, query):
         """Execute a single BigQuery query and return results."""
         try:
-            results = list(client.query(query).result())
+            results = list(run_query(client, query, params).result())
             return query_name, results, None
         except Exception as e:
             return query_name, None, str(e)
@@ -247,7 +249,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
 
     results = {}
     with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {executor.submit(run_query, name, q): name for name, q in queries.items()}
+        futures = {executor.submit(run_named, name, q): name for name, q in queries.items()}
         for future in as_completed(futures):
             query_name, data, error = future.result()
             if error:

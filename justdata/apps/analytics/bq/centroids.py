@@ -4,7 +4,7 @@ import csv
 import os
 from typing import Any, Dict, Optional
 
-from justdata.apps.analytics.bq.client import get_bigquery_client
+from justdata.apps.analytics.bq.client import get_bigquery_client, run_query
 
 
 # County and CBSA centroids cache - loaded once from Census Bureau Gazetteer data
@@ -51,7 +51,7 @@ def get_county_centroids() -> Dict[str, Dict[str, float]]:
             FROM `{COUNTY_CENTROIDS_TABLE}`
             WHERE latitude IS NOT NULL AND longitude IS NOT NULL
         """
-        results = client.query(query).result()
+        results = run_query(client, query).result()
 
         for row in results:
             fips = str(row.county_fips).zfill(5)
@@ -135,7 +135,7 @@ def get_cbsa_centroids() -> Dict[str, Dict[str, float]]:
             FROM `{CBSA_CENTROIDS_TABLE}`
             WHERE latitude IS NOT NULL AND longitude IS NOT NULL
         """
-        results = client.query(query).result()
+        results = run_query(client, query).result()
 
         for row in results:
             _cbsa_centroids[str(row.cbsa_code)] = {

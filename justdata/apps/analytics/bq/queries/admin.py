@@ -11,6 +11,7 @@ from justdata.apps.analytics.bq.client import (
     SYNC_CHECK_INTERVAL_SECONDS,
     clear_analytics_cache,
     get_bigquery_client,
+    run_query,
 )
 
 
@@ -67,10 +68,11 @@ def sync_new_events() -> dict:
                 ts_str = last_sync_ts.strftime('%Y-%m-%d %H:%M:%S')
             else:
                 ts_str = str(last_sync_ts)
-            timestamp_filter = f"AND timestamp > TIMESTAMP('{ts_str}')"
+            timestamp_filter = "AND timestamp > TIMESTAMP(@last_sync)"
         else:
             # First sync - get all historical data (no time limit)
             timestamp_filter = ""
+        params = {'last_sync': ts_str if last_sync_ts else None}
 
         # Query usage_log for new entries with report events
         # The actual usage_log schema uses:
@@ -94,7 +96,7 @@ def sync_new_events() -> dict:
                 {timestamp_filter}
         """
 
-        count_result = list(client.query(count_query).result())
+        count_result = list(run_query(client, count_query, params).result())
         new_count = count_result[0].cnt if count_result else 0
 
         if new_count == 0:
@@ -128,7 +130,7 @@ def sync_new_events() -> dict:
         """
 
         try:
-            client.query(insert_query).result()
+            run_query(client, insert_query, params).result()
             synced_count = new_count
         except Exception as e:
             print(f"[ERROR] Analytics: Failed to insert synced events: {e}")
