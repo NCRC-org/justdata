@@ -425,7 +425,7 @@ def render_income_share_chart(data):
         try:
             return float(str(row.get(col, 0)).replace('%', '').replace(',', ''))
         except (ValueError, TypeError):
-            return 0
+            return 0   # the em dash: drawn as an empty bar, labeled below
 
     labels = [first_year, last_year, 'Population']
     lmi_vals = [_pct(categories.get('LMI', {}), first_year),
@@ -447,6 +447,9 @@ def render_income_share_chart(data):
     lefts = [l + m for l, m in zip(lmi_vals, mid_vals)]
     ax.barh(y_pos, upper_vals, height=0.5, left=lefts, label='Upper', color=GREEN, alpha=0.6)
 
+    # A column whose year has no data is an empty bar; say so in its label.
+    labels = [f'{lab} (no data)' if (l + m + u) == 0 else lab
+              for lab, l, m, u in zip(labels, lmi_vals, mid_vals, upper_vals)]
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels, fontsize=6)
     ax.set_title('Income Distribution: Lending vs. Population', fontsize=7,
@@ -487,22 +490,27 @@ def render_hhi_chart(market_concentration_data):
     if all_loans_row is None:
         all_loans_row = market_concentration_data[0]
 
+    # A missing year stays on the axis as a gap with an em dash, never a zero
+    # bar (no-data decision, 2026-11-17).
     values = []
     for yr in year_cols:
-        v = all_loans_row.get(yr, 0)
+        v = all_loans_row.get(yr)
         try:
-            values.append(float(v) if v else 0)
+            values.append(None if v is None or v == '' else float(v))
         except (ValueError, TypeError):
-            values.append(0)
+            values.append(None)
+    present = [v for v in values if v is not None]
+    if not present:
+        return None
 
     fig, ax = plt.subplots(figsize=(5.0, 3.0), dpi=150)
     _apply_base_style(ax, fig)
 
     x = np.arange(len(year_cols))
-    ax.bar(x, values, color=BAR_COLOR, width=0.5, edgecolor='none')
+    ax.bar([i for i, v in enumerate(values) if v is not None], present, color=BAR_COLOR, width=0.5, edgecolor='none')
 
     # Threshold lines — always show both for context
-    max_val = max(values) if values else 500
+    max_val = max(present)
     y_max = max(max_val * 1.3, 2800)
     ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=1.0, alpha=0.7)
     ax.text(len(year_cols) - 0.5, 1530, 'Moderate (1,500)', fontsize=7, color=HHI_MODERATE_COLOR, ha='right')
@@ -511,7 +519,9 @@ def render_hhi_chart(market_concentration_data):
 
     # Value labels on bars
     for i, v in enumerate(values):
-        if v > 0:
+        if v is None:
+            ax.text(i, max_val * 0.03, '\u2014', ha='center', fontsize=8, color='#666666')
+        elif v > 0:
             ax.text(i, v + max_val * 0.03, f"{round(v):,}", ha="center", fontsize=8, fontweight="bold")
 
     ax.set_xticks(x)

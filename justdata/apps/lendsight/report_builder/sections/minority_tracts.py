@@ -9,6 +9,7 @@ from justdata.apps.lendsight.report_builder.sections.income_indicators import (
     calculate_minority_quartiles,
     classify_tract_minority_quartile,
 )
+from justdata.shared.utils.no_data import NO_DATA, fmt_pp_change, fmt_share
 from justdata.apps.lendsight.report_builder.sections.income_tracts import (
     get_tract_population_data_for_counties,
 )
@@ -122,6 +123,10 @@ def create_minority_tracts_table(df: pd.DataFrame, years: List[int],
     yearly_data = []
     for year in sorted(years):
         year_df = df[df['year'] == year].copy()
+        if year_df.empty:
+            # No rows at all: the whole year is no data, an em dash, never 0
+            # (no-data decision, 2026-11-17).
+            continue
         
         total = int(year_df['total_originations'].sum())
         mmct = int(year_df['mmct_originations'].sum())
@@ -192,12 +197,12 @@ def create_minority_tracts_table(df: pd.DataFrame, years: List[int],
                 count = year_data[metric_key]
                 total = year_data['total']
                 # Show percentage of loans
-                pct = (count / total * 100) if total > 0 else 0.0
-                result_data[str(year)].append(f"{pct:.1f}%")
+                pct = (count / total * 100) if total > 0 else None
+                result_data[str(year)].append(fmt_share(pct))
                 metric_changes.append((count, pct))
             else:
-                result_data[str(year)].append("0.0%")
-                metric_changes.append((0, 0.0))
+                result_data[str(year)].append(NO_DATA)
+                metric_changes.append((None, None))
         
         # Add Population Share column
         if quartile_shares:
@@ -210,17 +215,11 @@ def create_minority_tracts_table(df: pd.DataFrame, years: List[int],
         if len(years) >= 2 and len(metric_changes) >= 2:
             first_count, first_pct = metric_changes[0]
             last_count, last_pct = metric_changes[-1]
-            pct_change = last_pct - first_pct
-            if pct_change > 0:
-                change_str = f"+{pct_change:.1f}pp"
-            elif pct_change < 0:
-                change_str = f"{pct_change:.1f}pp"
-            else:
-                change_str = "0.0pp"
+            change_str = fmt_pp_change(first_pct, last_pct)
             result_data['Change'].append(change_str)
         else:
             if len(years) >= 2:
-                result_data['Change'].append("N/A")
+                result_data['Change'].append(NO_DATA)
     
     # Add "Total Loans" row as the first row (before all other metrics)
     total_loans_row = {'Metric': 'Total Loans'}
@@ -229,7 +228,7 @@ def create_minority_tracts_table(df: pd.DataFrame, years: List[int],
         if year_data:
             total_loans_row[str(year)] = f"{year_data['total']:,}"
         else:
-            total_loans_row[str(year)] = "0"
+            total_loans_row[str(year)] = NO_DATA
     
     # Add Population Share column for Total Loans (empty)
     if quartile_shares:
@@ -251,9 +250,9 @@ def create_minority_tracts_table(df: pd.DataFrame, years: List[int],
                 else:
                     total_loans_row['Change'] = "0.0%"
             else:
-                total_loans_row['Change'] = "N/A"
+                total_loans_row['Change'] = NO_DATA
         else:
-            total_loans_row['Change'] = "N/A"
+            total_loans_row['Change'] = NO_DATA
     
     # Insert Total Loans row at the beginning
     result = pd.DataFrame(result_data)

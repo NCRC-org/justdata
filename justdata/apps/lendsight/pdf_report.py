@@ -712,7 +712,7 @@ def _build_visual_table(data, row_order, metric_label='Metric',
 
         if not is_total and any(v is not None for v in spark_vals):
             spark_buf = render_sparkline(
-                [v if v is not None else 0 for v in spark_vals],
+                [v for v in spark_vals if v is not None],   # skip no-data years, never 0
                 width_inches=trend_width / 72 * 0.85,
                 height_inches=0.2,
                 is_downward=_spark_down,
@@ -728,7 +728,7 @@ def _build_visual_table(data, row_order, metric_label='Metric',
             count_vals = [_parse_float(row_dict.get(yc, '')) for yc in year_cols]
             if any(v is not None for v in count_vals):
                 spark_buf = render_sparkline(
-                    [v if v is not None else 0 for v in count_vals],
+                    [v for v in count_vals if v is not None],   # skip no-data years, never 0
                     width_inches=trend_width / 72 * 0.85,
                     height_inches=0.2,
                     color='#666666',

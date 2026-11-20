@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import numpy as np
+from justdata.shared.utils.no_data import NO_DATA, fmt_pct_change, fmt_pp_change, fmt_share
 
 def create_income_neighborhood_indicators_table(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     """
@@ -29,6 +30,10 @@ def create_income_neighborhood_indicators_table(df: pd.DataFrame, years: List[in
     yearly_data = []
     for year in sorted(years):
         year_df = df[df['year'] == year].copy()
+        if year_df.empty:
+            # No rows at all: the whole year is no data, an em dash, never 0
+            # (no-data decision, 2026-11-17).
+            continue
         
         # Sum originations
         total = int(year_df['total_originations'].sum())
@@ -83,16 +88,16 @@ def create_income_neighborhood_indicators_table(df: pd.DataFrame, years: List[in
                     metric_changes.append((count, 100.0))
                 else:
                     # For other rows, show only percentage
-                    pct = (count / total * 100) if total > 0 else 0.0
-                    result_data[str(year)].append(f"{pct:.1f}%")
+                    pct = (count / total * 100) if total > 0 else None
+                    result_data[str(year)].append(fmt_share(pct))
                     metric_changes.append((count, pct))
             else:
                 if metric_key == 'total':
-                    result_data[str(year)].append("0")
-                    metric_changes.append((0, 0.0))
+                    result_data[str(year)].append(NO_DATA)
+                    metric_changes.append((None, None))
                 else:
-                    result_data[str(year)].append("0.0%")
-                    metric_changes.append((0, 0.0))
+                    result_data[str(year)].append(NO_DATA)
+                    metric_changes.append((None, None))
         
         # Calculate change from first to last year
         if len(years) >= 2 and len(metric_changes) >= 2:
@@ -101,30 +106,16 @@ def create_income_neighborhood_indicators_table(df: pd.DataFrame, years: List[in
             
             # For "Loans" row, show percentage change from first to last year
             if metric_key == 'total':
-                if first_count > 0:
-                    pct_change = ((last_count - first_count) / first_count) * 100
-                    if pct_change > 0:
-                        change_str = f"+{pct_change:.1f}%"
-                    elif pct_change < 0:
-                        change_str = f"{pct_change:.1f}%"
-                    else:
-                        change_str = "0.0%"
-                else:
-                    change_str = "N/A"
+                # No percent change on a zero or missing base
+                change_str = fmt_pct_change(first_count, last_count)
             else:
                 # For other rows, show only percentage point change
-                pct_change = last_pct - first_pct
-                if pct_change > 0:
-                    change_str = f"+{pct_change:.1f}pp"
-                elif pct_change < 0:
-                    change_str = f"{pct_change:.1f}pp"
-                else:
-                    change_str = "0.0pp"
+                change_str = fmt_pp_change(first_pct, last_pct)
             
             result_data[f'Change Over Time ({time_span})'].append(change_str)
         else:
             if len(years) >= 2:
-                result_data[f'Change Over Time ({time_span})'].append("N/A")
+                result_data[f'Change Over Time ({time_span})'].append(NO_DATA)
     
     result = pd.DataFrame(result_data)
     return result

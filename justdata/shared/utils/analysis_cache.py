@@ -36,7 +36,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # findings (a 400-token ceiling, raised in #216) (2026-10-13).
 # BizSight 3: no data is None (an em dash), never 0.0; missing years are gaps
 # (2026-11-17).
-REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 3}
+# LendSight 4: no data is an em dash, not 0.0% or 0.0pp; missing years are
+# gaps (2026-11-17).
+REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
