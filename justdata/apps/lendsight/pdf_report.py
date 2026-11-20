@@ -59,6 +59,7 @@ from justdata.apps.lendsight.pdf_charts import (
 )
 from justdata.apps.lendsight.version import __version__
 from justdata.apps.lendsight.report_builder.sections.concentration import HHI_METHOD_SENTENCE, hhi_comparison_rows
+from justdata.shared.utils.no_data import NO_DATA, is_missing
 
 
 # ---------------------------------------------------------------------------
@@ -690,7 +691,7 @@ def _build_visual_table(data, row_order, metric_label='Metric',
         for ci, yc in enumerate(year_cols):
             if is_total:
                 v = _parse_float(row_dict.get(yc, ''))
-                cells.append(f'{int(v):,}' if v is not None else '0')
+                cells.append(f'{int(v):,}' if v is not None else '\u2014')
             else:
                 v = raw_year_vals[ri][ci]
                 cells.append(f'{v:.1f}%' if v is not None else '\u2014')
@@ -1055,11 +1056,14 @@ def _build_hhi_table(data):
 
     for row in sorted_rows:
         for col in year_cols:
-            val = row.get(col, '')
+            val = row.get(col)
+            if val is None or val == '' or is_missing(val):
+                row[col] = NO_DATA
+                continue
             try:
-                row[col] = f'{int(float(val)):,}' if val else ''
+                row[col] = f'{int(float(val)):,}'
             except (ValueError, TypeError):
-                row[col] = str(val) if val else ''
+                row[col] = str(val)
 
     table = build_data_table(
         sorted_rows, col_order, widths,
@@ -1086,7 +1090,7 @@ def _build_hhi_comparison_table(market_conc, states, metadata):
     year_cols = [str(y) for y in sorted(years)]
     for row in rows:
         for col in year_cols:
-            row[col] = f'{row[col]:,}' if row.get(col) is not None else ''
+            row[col] = f'{row[col]:,}' if row.get(col) is not None else '\u2014'
     table = build_data_table(
         rows, ['Market', 'Loan Purpose'] + year_cols,
         [1.9 * inch, 1.1 * inch] + [0.7 * inch] * len(year_cols),

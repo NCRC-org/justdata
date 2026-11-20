@@ -77,3 +77,70 @@ def test_screen_draws_gaps_and_dashes():
     assert "if (!m) return null;" in tables                      # the em dash is never read as 0.0pp
     assert "val = total ? '0' : '0.0%'" not in tables
     assert "v = isNaN(v) ? 0 : v;" not in charts and "if (isNaN(v)) return null;" in charts
+
+
+# Found by the 2026-11-20 run on real data (Loving County, TX, purchase loans):
+# the Excel-only builders and the PDF total rows still wrote 0 for a year with
+# no rows, and missing HHI cells were blank.
+
+RACE = ['hispanic_originations', 'black_originations', 'white_originations', 'asian_originations',
+        'native_american_originations', 'hopi_originations', 'multi_racial_originations']
+
+
+def _demo_df():
+    """No rows for 2023; 2024 has loans but none with demographic data."""
+    rows = []
+    for y in YEARS:
+        if y == 2023:
+            continue
+        r = {c: 0 for c in RACE}
+        r.update(year=y, total_originations=10, loans_with_demographic_data=0 if y == 2024 else 10,
+                 lender_name='FIRST BANK', lei='LEI0000000000000001', lender_type='Bank', geoid5='48301',
+                 county_state='Loving County, Texas', lmib_originations=0, lmict_originations=0,
+                 mmct_originations=0, total_loan_amount=1000000)
+        if y != 2024:
+            r['white_originations'] = 10
+        rows.append(r)
+    return pd.DataFrame(rows)
+
+
+def test_excel_demographic_overview_dashes_only_the_empty_year():
+    from justdata.apps.lendsight.report_builder.excel_export.demographic import (
+        create_demographic_overview_table_for_excel)
+    from justdata.shared.utils.no_data import dash_missing
+    table = dash_missing(create_demographic_overview_table_for_excel(_demo_df(), YEARS)).set_index('Metric')
+    assert (table['2023'] == NO_DATA).all()               # no rows at all
+    assert table.loc['Total Loans', '2024'] == 10          # loans exist
+    assert table.loc['White', '2024'] == NO_DATA           # 0 of 0 with demographic data
+    assert table.loc['White', '2022'] == 100.0
+    assert table.loc['Black', '2022'] == 0.0               # a real zero stays 0
+
+
+def test_excel_workbook_writes_the_dash(tmp_path):
+    from openpyxl import load_workbook
+    from justdata.apps.lendsight.report_builder.excel_export.writer import save_mortgage_excel_report
+    out = tmp_path / 'ls.xlsx'
+    conc = [{'Loan Purpose': 'All Loans', **{str(y): (None if y == 2023 else 2500.0) for y in YEARS}}]
+    save_mortgage_excel_report({'raw_data': _demo_df(), 'market_concentration': conc}, str(out),
+                               {'years': YEARS, 'counties': ['Loving County, Texas']})
+    wb = load_workbook(out)
+    demo = [s for s in wb.sheetnames if s.startswith('Section 1')][0]
+    rows = list(wb[demo].iter_rows(values_only=True))
+    col = rows[0].index('2023')
+    assert all(r[col] == NO_DATA for r in rows[1:])
+    hhi = [s for s in wb.sheetnames if 'HHI' in s][0]
+    rows = list(wb[hhi].iter_rows(values_only=True))
+    assert rows[1][rows[0].index('2023')] == NO_DATA
+
+
+def test_pdf_total_row_and_hhi_cells_dash_an_empty_year():
+    source = (ROOT / 'justdata/apps/lendsight/pdf_report.py').read_text()
+    assert "if v is not None else '0'" not in source
+    from justdata.apps.lendsight import pdf_report
+    from reportlab.platypus import Table
+    data = [{'Loan Purpose': 'All Loans', **{str(y): (None if y == 2023 else 2500.0) for y in YEARS}}]
+    table = pdf_report._build_hhi_table(data)
+    tables = [table] if isinstance(table, Table) else [t for t in table if isinstance(t, Table)]
+    assert tables, 'the HHI table was not built'
+    cells = [str(getattr(c, 'text', c)) for row in tables[0]._cellvalues for c in row]
+    assert NO_DATA in cells and 'nan' not in cells
