@@ -54,7 +54,9 @@ TESTING_PUBLIC_PATHS = frozenset({
 # Extra exact paths for a signed-in public_registered user on the testing
 # deploy: the launcher, where every tool shows locked with the request-access
 # panel. Signed-out visitors stay blocked. Decided by Jad 2026-10-07.
-TESTING_REGISTERED_PATHS = frozenset({"/apps"})
+# A signed-in registered user's own account page and its two actions (spec 14).
+TESTING_REGISTERED_PATHS = frozenset({"/apps", "/account", "/api/account/profile",
+                                      "/api/account/sign-out-everywhere"})
 
 
 def is_testing_env() -> bool:

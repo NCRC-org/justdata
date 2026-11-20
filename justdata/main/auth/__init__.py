@@ -34,6 +34,7 @@ from firebase_admin import credentials, auth as firebase_auth, firestore
 
 from justdata.main.auth.access_overlay import overlay_row
 from justdata.main.auth.session_keys import clear_app_session
+from justdata.main.auth.session_revocation import is_revoked
 
 # Firebase client wrappers (extracted into services module)
 from justdata.main.auth.services.firebase_client import (
@@ -723,6 +724,9 @@ def get_current_user() -> Optional[dict]:
                 'email_verified': decoded.get('email_verified', False),
                 'provider': decoded.get('firebase', {}).get('sign_in_provider', 'unknown')
             }
+            # Sign out of all devices (spec 14): a token issued before the cutoff is refused.
+            if is_revoked(user['uid'], decoded.get('iat')):
+                user = None
 
     # Fall back to session-stored user
     if not user and 'firebase_user' in session:
@@ -730,6 +734,10 @@ def get_current_user() -> Optional[dict]:
         # Validate session user has required fields
         if user and not user.get('uid') and not user.get('email'):
             print(f"[AUTH WARN] Session user missing uid and email: {list(user.keys()) if user else 'None'}")
+        # A session opened before the user signed out of all devices is over.
+        if user and user.get('uid') and is_revoked(user['uid'], user.get('signed_in_at')):
+            clear_session_user()
+            user = None
 
     # Log when no user found for non-static requests (helps debug auth issues)
     if not user and request.endpoint and not request.path.startswith('/static'):

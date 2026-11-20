@@ -1,0 +1,127 @@
+{% extends "base_app.html" %}
+{# Spec 14, phase 1. Sections 1 to 4 and 6, and section 5's statement.
+   No icons. No red: the only red on this page will be the delete section (phase 2). #}
+
+{% block title %}Your account - JustData{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
+
+{% block main_class %} home-main{% endblock %}
+
+{% block content %}
+<section class="home-band home-band--blue home-band--tight account-band" aria-labelledby="account-h">
+    <div class="home-container">
+        <p class="home-eyebrow">Your account</p>
+        <h1 id="account-h" class="home-h2 account-h1" data-account-name>{{ display_name or email }}</h1>
+        <p class="home-lead account-role">{{ role_title }}</p>
+    </div>
+</section>
+
+<div class="home-container account-layout">
+    <nav class="account-rail" aria-label="Account sections">
+        <ul>
+            {% for key, label in sections %}
+            <li><a href="#{{ key }}">{{ label }}</a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+
+    <div class="account-sections">
+        <section id="profile" class="account-section" aria-labelledby="profile-h">
+            <h2 id="profile-h">Profile</h2>
+            <form id="accountNameForm" class="account-form" novalidate>
+                <label for="accountDisplayName">Display name</label>
+                <div class="account-form-row">
+                    <input type="text" id="accountDisplayName" name="display_name" value="{{ display_name }}"
+                           maxlength="{{ name_max }}" autocomplete="name" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+                <p class="account-status" id="accountNameStatus" role="status" aria-live="polite"></p>
+            </form>
+            <dl class="account-facts">
+                <div><dt>Email</dt><dd>{{ email }}</dd></div>
+                {% if organization %}<div><dt>Organization</dt><dd>{{ organization }}</dd></div>{% endif %}
+                <div><dt>Email verified</dt><dd>{{ 'Yes' if email_verified else 'No' }}</dd></div>
+            </dl>
+        </section>
+
+        <section id="access" class="account-section" aria-labelledby="access-h">
+            <h2 id="access-h">Access</h2>
+            <p>{{ role_sentence }}{% if not has_apps %} You can <a href="/apps#request-access">ask for access</a>.{% endif %}</p>
+            {% if access_confirmed %}<p class="account-muted">Access last confirmed {{ access_confirmed }}.</p>{% endif %}
+            {% if is_admin %}<p><a href="/admin/users">Admin tools</a></p>{% endif %}
+        </section>
+
+        <section id="security" class="account-section" aria-labelledby="security-h">
+            <h2 id="security-h">Sign-in and security</h2>
+            {% if providers %}
+            <p>You sign in with {{ providers | join(' and ') }}.</p>
+            {% endif %}
+            {% if has_password %}
+            <div class="account-action">
+                <p>To change your password, we'll email you a link to set a new one.</p>
+                <button type="button" class="btn btn-secondary btn-sm" id="accountResetPassword" data-email="{{ email }}">Email me a reset link</button>
+                <p class="account-status" id="accountResetStatus" role="status" aria-live="polite"></p>
+            </div>
+            {% endif %}
+            {% if microsoft_link %}
+            <div class="account-action">
+                <button type="button" class="btn btn-secondary btn-sm" id="accountLinkMicrosoft">Link Microsoft 365</button>
+            </div>
+            {% endif %}
+            <div class="account-action">
+                <p>Sign out on every browser and device where you're signed in, including this one.</p>
+                <button type="button" class="btn btn-secondary btn-sm" id="accountSignOutEverywhere">Sign out of all devices</button>
+                <p class="account-status" id="accountSignOutStatus" role="status" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <section id="reports" class="account-section" aria-labelledby="reports-h">
+            <h2 id="reports-h">Your reports</h2>
+            {% if reports %}
+            <div class="account-table-wrap">
+                <table class="account-table">
+                    <thead><tr><th scope="col">App</th><th scope="col">Geography</th><th scope="col">Date</th><th scope="col"><span class="visually-hidden">Open</span></th></tr></thead>
+                    <tbody>
+                        {% for r in reports %}
+                        <tr>
+                            <td>{{ r.app_name }}</td>
+                            <td>{{ r.geography }}</td>
+                            <td>{{ r.ran_on }}</td>
+                            <td><a href="{{ r.url }}">Open</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="account-muted">Reports you run will be listed here.</p>
+            {% endif %}
+        </section>
+
+        <section id="data" class="account-section" aria-labelledby="data-h">
+            <h2 id="data-h">Your data</h2>
+            <p>What JustData records about you:</p>
+            <ul>{% for line in recorded %}<li>{{ line }}</li>{% endfor %}</ul>
+            {% for line in not_recorded %}<p>{{ line }}</p>{% endfor %}
+        </section>
+
+        {% if agreements %}
+        <section id="agreements" class="account-section" aria-labelledby="agreements-h">
+            <h2 id="agreements-h">Agreements</h2>
+            {% if agreements.tester_date %}<p>You accepted the tester agreement on {{ agreements.tester_date }}.</p>{% endif %}
+            {% if agreements.links %}
+            <ul>{% for label, path in agreements.links %}<li><a href="{{ path }}">{{ label }}</a></li>{% endfor %}</ul>
+            {% endif %}
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/account.js') }}"></script>
+{% endblock %}

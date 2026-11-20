@@ -518,6 +518,11 @@ async function notifyBackendLogin(idToken, user) {
             // doesn't retry, and keep the account for a later admission.
             await firebaseAuth.signOut();
             window.location.href = data.redirect || '/access-refused';
+        } else if (data.code === 'session_revoked') {
+            // The user signed out of all devices (spec 14): this browser's
+            // Firebase sign-in predates that, so end it and start over.
+            await firebaseAuth.signOut();
+            window.location.href = '/';
         } else if (data.code === 'email_not_verified') {
             // Testing site (spec 08): a password account verifies its email
             // first. Stay signed in to Firebase so the verify page can resend

@@ -79,6 +79,8 @@ def create_app():
 
     # Register authentication blueprint
     app.register_blueprint(auth_bp)
+    from justdata.main.account import account_bp
+    app.register_blueprint(account_bp)
     print("[INFO] Auth blueprint registered at /api/auth")
 
     # NCRC report links for templates, from the one shared list

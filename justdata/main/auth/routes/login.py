@@ -9,6 +9,7 @@ Routes:
 - POST /email-verified      — Called after user verifies email; updates user type
 """
 
+import time
 from datetime import datetime
 from firebase_admin import auth as firebase_auth
 from flask import Blueprint, request, jsonify, session
@@ -36,6 +37,7 @@ from justdata.main.auth import (
 )
 from justdata.main.auth.access_overlay import is_testing_env
 from justdata.main.auth.session_keys import clear_app_session
+from justdata.main.auth.session_revocation import is_revoked
 from justdata.main.auth.services.tester_access import UNAVAILABLE_REASONS, admit_or_refuse
 
 login_bp = Blueprint("auth_login", __name__)
@@ -92,6 +94,11 @@ def auth_login():
     decoded = verify_firebase_token(id_token)
     if not decoded:
         return jsonify({'error': 'Invalid or expired token'}), 401
+    # Issued before the user signed out of all devices (spec 14): the browser
+    # must sign in again. auth.js signs Firebase out on this code.
+    if is_revoked(decoded.get('uid'), decoded.get('iat')):
+        clear_session_user()
+        return jsonify({'error': 'Signed out on all devices', 'code': 'session_revoked'}), 401
 
     # Create or update user in Firestore
     uid = decoded.get('uid')
@@ -155,7 +162,8 @@ def auth_login():
         'name': display_name or email.split('@')[0],
         'picture': photo_url,
         'email_verified': email_verified,
-        'provider': auth_provider
+        'provider': auth_provider,
+        'signed_in_at': int(time.time()),
     }
     # A new sign-in starts with no page state from whoever used this browser
     # before (BZ-022).
