@@ -1090,7 +1090,7 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     result_summary = {
         'counties': metadata.get('counties', []) if metadata else [],
         'years': metadata.get('years', []) if metadata else [],
-        'created_at': datetime.now().isoformat(),
+        'created_at': datetime.now(timezone.utc).isoformat(),
         'app_name': app_name,
         'total_records': metadata.get('total_records', 0) if metadata else 0,
         'loan_purpose': metadata.get('loan_purpose', ['purchase']) if metadata else ['purchase'],

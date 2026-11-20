@@ -14,6 +14,7 @@ from justdata.shared.core.hmda_years import is_valid_hmda_year
 from justdata.apps.lendsight.report_builder.formatting import sanitize_sheet_name
 from justdata.apps.lendsight.report_builder.sections.concentration import HHI_METHOD_SENTENCE, hhi_comparison_rows
 from justdata.shared.utils.no_data import dash_missing
+from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.apps.lendsight.report_builder.excel_export.demographic import (
     create_demographic_overview_table_for_excel,
     create_population_demographics_table_for_excel,
@@ -159,7 +160,7 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         methods_content.append(('', 'This analysis is provided for informational purposes and does not constitute legal or financial advice.'))
         methods_content.append(('', ''))
 
-        methods_content.append(('', f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'))
+        methods_content.append(('', f'Generated: {analysis_stamp(metadata)}'))
         from justdata.apps.lendsight.version import __version__ as lendsight_version
         methods_content.append(('', f'Platform: JustData LendSight v{lendsight_version}'))
         

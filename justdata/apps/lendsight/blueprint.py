@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request, jsonify, session, make_re
 from jinja2 import ChoiceLoader, FileSystemLoader
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, is_privileged_user
@@ -380,7 +380,7 @@ def analyze():
                         'total_records': result.get('metadata', {}).get('total_records', 0),
                         'loan_purpose': result.get('metadata', {}).get('loan_purpose', ['purchase']),
                         'census_data': result.get('metadata', {}).get('census_data', None),
-                        'generated_at': datetime.now().isoformat()
+                        'generated_at': datetime.now(timezone.utc).isoformat()
                     }
 
                     store_cached_result(

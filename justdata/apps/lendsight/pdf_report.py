@@ -60,6 +60,7 @@ from justdata.apps.lendsight.pdf_charts import (
 from justdata.apps.lendsight.version import __version__
 from justdata.apps.lendsight.report_builder.sections.concentration import HHI_METHOD_SENTENCE, hhi_comparison_rows
 from justdata.shared.utils.no_data import NO_DATA, is_missing
+from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 
 
 # ---------------------------------------------------------------------------
@@ -1146,6 +1147,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     doc.cover_title = 'Mortgage Lending\nAnalysis'
     doc.cover_subtitle = county_display
     doc.cover_date_range = date_range
+    doc.cover_generated = analysis_date(metadata)
     doc.cover_loan_purpose = loan_purpose_str
 
     # ==================================================================
@@ -1618,7 +1620,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     ))
 
     # About (compact single line)
-    gen_date = datetime.now().strftime('%B %d, %Y')
+    gen_date = analysis_date(metadata)
     about_style = ParagraphStyle(
         'AboutText', fontName='Georgia', fontSize=10,
         leading=13.5, textColor=HexColor('#333333'),

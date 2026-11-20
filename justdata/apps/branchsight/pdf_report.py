@@ -27,6 +27,7 @@ from reportlab.lib.colors import HexColor, white
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_JUSTIFY, TA_CENTER
 
+from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.shared.pdf.base_report import (
     MagazineDocTemplate, USABLE_WIDTH, L_USABLE_WIDTH, build_team_page,
 )
@@ -614,6 +615,7 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
     doc.cover_subtitle = county_display
     doc.cover_date_range = date_range
     doc.cover_loan_purpose = ''  # Not applicable for BranchSight
+    doc.cover_generated = analysis_date(metadata)
 
     # ==================================================================
     # PAGE 1: COVER
@@ -940,7 +942,7 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
         spaceAfter=6, spaceBefore=4,
     ))
 
-    gen_date = datetime.now().strftime('%B %d, %Y')
+    gen_date = analysis_date(metadata)
     about_style = ParagraphStyle(
         'BSAboutText', fontName='Georgia', fontSize=10,
         leading=13.5, textColor=HexColor('#333333'),

@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
 from typing import Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from .config import SOD_YEARS
 from .data_utils import find_exact_county_match, execute_branch_query
 from justdata.shared.reporting.report_builder import build_report
@@ -300,7 +300,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'counties': clarified_counties,
                 'years': years,
                 'total_records': len(all_results),
-                'generated_at': datetime.now().isoformat(),
+                'generated_at': datetime.now(timezone.utc).isoformat(),
                 'perf': perf_stages(),
                 'perf_ref': perf_ref,
             },

@@ -7,7 +7,7 @@ Similar structure to BranchSight but for HMDA mortgage data.
 import os
 import pandas as pd
 from typing import Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from justdata.apps.lendsight.data_utils import (
     find_exact_county_match, 
     execute_mortgage_query,
@@ -839,7 +839,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'counties': clarified_counties,
                 'years': years,
                 'total_records': len(all_results),
-                'generated_at': datetime.now().isoformat(),
+                'generated_at': datetime.now(timezone.utc).isoformat(),
                 'loan_purpose': loan_purpose if loan_purpose else ['purchase', 'refinance', 'equity'],  # Include loan purpose in metadata
                 'census_data': census_data_serialized,  # Include Census data for frontend display (serialized)
                 'hhi': convert_numpy_types(hhi_data),  # Include HHI data for frontend display

@@ -10,7 +10,7 @@ import os
 import re
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, is_privileged_user
 from justdata.backend import (
@@ -240,7 +240,7 @@ def analyze():
                         'total_records': result.get('metadata', {}).get('total_records', 0) if isinstance(result.get('metadata'), dict) else 0,
                         'loan_purpose': result.get('metadata', {}).get('loan_purpose', ['purchase']) if isinstance(result.get('metadata'), dict) else ['purchase'],
                         'census_data': result.get('metadata', {}).get('census_data', None) if isinstance(result.get('metadata'), dict) else None,
-                        'generated_at': datetime.now().isoformat()
+                        'generated_at': datetime.now(timezone.utc).isoformat()
                     }
 
                     store_cached_result(

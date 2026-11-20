@@ -8,10 +8,11 @@ Provides MagazineDocTemplate with four page templates:
   landscape   — 11x8.5 single-frame with header/footer
 """
 
+from justdata.shared.utils.report_time import analysis_date, et_date
 from justdata.shared.contact import NCRC_CONTACT
 import os
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timezone
 
 from reportlab.lib.pagesizes import letter, landscape as landscape_size
 from reportlab.lib.units import inch
@@ -195,7 +196,8 @@ def _draw_cover(canvas, doc):
         canvas.drawCentredString(cx, y, f'Loan Purpose: {loan_purpose}')
 
     # --- Bottom metadata (black on white) ---
-    gen_date = datetime.now().strftime('%B %d, %Y')
+    # The analysis date in ET (T3), set by each app; today only as a fallback.
+    gen_date = getattr(doc, 'cover_generated', None) or et_date(datetime.now(timezone.utc))
     canvas.setFont(BODY_FONT, 8)
     canvas.setFillColor(HexColor('#999999'))
     canvas.drawCentredString(cx, 50, f'Generated {gen_date}')
@@ -338,7 +340,7 @@ def build_cover_page(title, subtitle='', date_range='', metadata=None):
 
     # White area below the navy band
     story.append(Spacer(1, 2.0 * inch))
-    gen_date = datetime.now().strftime('%B %d, %Y')
+    gen_date = analysis_date(metadata)
     story.append(Paragraph(f'Generated {gen_date}', COVER_META))
     story.append(Paragraph('NCRC JustData Platform — justdata.org', COVER_META))
 
