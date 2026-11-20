@@ -11,6 +11,7 @@ from justdata.apps.analytics.bq.client import (
     _get_cached,
     _set_cached,
     get_bigquery_client,
+    run_query,
     get_valid_user_filter,
 )
 from justdata.apps.analytics.bq.transforms import (
@@ -57,20 +58,18 @@ def get_user_locations(
         return cached
 
     client = get_bigquery_client()
+    params = {'target_apps': TARGET_APPS, 'days': int(days), 'state': state, 'user_types': list(user_types or exclude_user_types or [])}
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # User type filter
     user_type_filter = ""
     if user_types:
-        types_str = "', '".join(user_types)
-        user_type_filter = f" AND user_type IN ('{types_str}')"
+        user_type_filter = f" AND user_type IN UNNEST(@user_types)"
     elif exclude_user_types:
-        types_str = "', '".join(exclude_user_types)
-        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
+        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN UNNEST(@user_types))"
 
     # Use target apps for user locations
-    target_apps_str = "', '".join(TARGET_APPS)
 
     query = f"""
         SELECT
@@ -84,14 +83,14 @@ def get_user_locations(
             hubspot_company_id,
             organization_name
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             AND state IS NOT NULL
             {date_filter}
             {user_type_filter}
     """
 
     if state:
-        query += f" AND state = '{state}'"
+        query += f" AND state = @state"
 
     query += """
         GROUP BY county_fips, state, county_name, hubspot_contact_id, hubspot_company_id, organization_name
@@ -100,7 +99,7 @@ def get_user_locations(
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         data = [dict(row) for row in results]
 
         # Enrich with county centroid coordinates
@@ -141,20 +140,18 @@ def get_research_activity(
         return cached
 
     client = get_bigquery_client()
+    params = {'target_apps': TARGET_APPS, 'days': int(days), 'state': state, 'app': app, 'user_types': list(user_types or exclude_user_types or [])}
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # User type filter
     user_type_filter = ""
     if user_types:
-        types_str = "', '".join(user_types)
-        user_type_filter = f" AND user_type IN ('{types_str}')"
+        user_type_filter = f" AND user_type IN UNNEST(@user_types)"
     elif exclude_user_types:
-        types_str = "', '".join(exclude_user_types)
-        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
+        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN UNNEST(@user_types))"
 
     # Use target apps for research activity
-    target_apps_str = "', '".join(TARGET_APPS)
 
     query = f"""
         SELECT
@@ -166,15 +163,15 @@ def get_research_activity(
             COUNT(*) AS report_count,
             MAX(event_timestamp) AS last_activity
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             {date_filter}
             {user_type_filter}
     """
 
     if app:
-        query += f" AND event_name = '{app}'"
+        query += f" AND event_name = @app"
     if state:
-        query += f" AND state = '{state}'"
+        query += f" AND state = @state"
 
     query += """
         GROUP BY county_fips, state, county_name, app_name
@@ -183,7 +180,7 @@ def get_research_activity(
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         data = [dict(row) for row in results]
 
         # Enrich with county names from geo table if missing
@@ -219,8 +216,9 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
         return cached
 
     client = get_bigquery_client()
+    params = {'target_apps': TARGET_APPS, 'days': int(days)}
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     query = f"""
         SELECT
@@ -235,7 +233,7 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         data = [dict(row) for row in results]
         _set_cached(cache_key, data)
         return data
