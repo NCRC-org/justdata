@@ -120,3 +120,16 @@ def test_branchsight_key_carries_its_report_revision():
     finally:
         analysis_cache.REPORT_REVISIONS.clear()
         analysis_cache.REPORT_REVISIONS.update(old)
+
+
+def test_lendsight_key_includes_loan_purpose():
+    """QA LS-001 (triage T2): a purchase-only run and a purchase-plus-refinance
+    run for the same county were served the same cached report."""
+    base = {'counties': 'Price County, Wisconsin', 'years': '2021,2022,2023,2024,2025'}
+    purchase = generate_cache_key('lendsight', {**base, 'loan_purpose': ['purchase']})
+    both = generate_cache_key('lendsight', {**base, 'loan_purpose': ['purchase', 'refinance']})
+    assert purchase != both
+    # Order, case and the default don't matter.
+    assert both == generate_cache_key('lendsight', {**base, 'loan_purpose': ['Refinance', 'purchase']})
+    assert purchase == generate_cache_key('lendsight', base)
+    assert purchase == generate_cache_key('lendsight', {**base, 'loan_purpose': []})
