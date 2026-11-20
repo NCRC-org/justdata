@@ -13,7 +13,7 @@ from typing import Dict
 from datetime import datetime, timezone
 from .config import SOD_YEARS
 from .data_utils import find_exact_county_match, execute_branch_query
-from justdata.shared.reporting.report_builder import build_report
+from justdata.shared.reporting.report_builder import build_report, bank_changes_for_narrative
 from justdata.shared.utils.error_ref import GENERIC_ERROR
 from justdata.shared.utils.perf import perf_stages, start_perf, timed
 
@@ -199,7 +199,9 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'hhi': convert_numpy_types(hhi_data),
                 'hhi_by_year': convert_numpy_types(report_data.get('hhi_by_year', [])),
                 'county_data': convert_numpy_types(county_df.to_dict('records') if not county_df.empty else []),
-                'by_bank': by_bank_data
+                'by_bank': by_bank_data,
+                # Opened, closed and acquired, precomputed per bank (T4).
+                'bank_changes': convert_numpy_types(bank_changes_for_narrative(raw_df, years)) if not raw_df.empty else {},
             }
 
             if progress_tracker:

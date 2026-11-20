@@ -501,6 +501,8 @@ Top Banks by Deposits:
             bank_data = data.get('by_bank', [])
             bank_text = json.dumps(bank_data, indent=2)[:1500] if bank_data else "No bank data available"
             latest_year = max(years) if years else ""
+            changes = data.get('bank_changes') or {}
+            changes_text = json.dumps(changes, indent=2)[:3000] if changes else "No branch change figures available"
             
             prompt = f"""
             Analyze the top banks table data and provide a narrative explanation:
@@ -510,18 +512,29 @@ Top Banks by Deposits:
             
             Top Banks Data (up to 10 banks shown, or fewer if there are fewer banks in the area):
             {bank_text}
+
+            Branch Changes, precomputed (first year to latest year, banks matched on FDIC RSSD ID):
+            {changes_text}
             
             IMPORTANT DEFINITIONS:
             - LMICT = Low-to-Moderate Income Census Tracts
             - MMCT = Majority-Minority Census Tracts
-            - The table shows: Total Branches, LMI Only Branches (with %), MMCT Only Branches (with %), Both LMICT/MMCT Branches (with %), and Net Change
+            - The table shows: Total Branches, LMI Only Branches (with %), MMCT Only Branches (with %), Both LMICT/MMCT Branches (with %), Net Change and Acquired
+            - Net Change counts all of a bank's branches. Acquired counts branches another institution held in the first year.
+            - In Branch Changes, "opened" are branches that did not exist in the first year, "closed" are first-year branches that no longer exist, "acquired" are branches that came from another institution, and "transferred_out" are branches that went to another institution.
+            - A bank with "new_to_county": true had no branches in the first year and acquired none.
+
+            RULES FOR BRANCH CHANGES (these override anything else):
+            - Use ONLY the opened, closed, acquired and transferred_out figures given in Branch Changes. Do not compute, estimate or combine your own.
+            - Never describe acquired branches as opened, new or built. Acquired branches came from another institution.
+            - Never describe transferred-out branches as closed.
             - These categories are mutually exclusive (deduplicated)
             
             Write exactly 2 paragraphs that focus on BROAD TRENDS and MAJOR GAPS OR CHANGES:
             
             Paragraph 1: Focus on broad trends over time
             - Identify which banks have grown the most or shrunk the most over the study period (use Net Change column)
-            - Note that bank mergers may result in large changes in some branch networks
+            - Where a bank's growth came from acquired branches, say so, using the acquired figure
             - Describe overall patterns in how banks serve LMICT and MMCT communities based on percentages
             - Note any broad trends in branch distribution across the top banks
             
