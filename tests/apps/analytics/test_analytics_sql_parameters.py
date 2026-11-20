@@ -117,5 +117,13 @@ def test_no_value_is_pasted_into_analytics_sql():
         text = path.read_text()
         assert not re.search(r"'\{[A-Za-z_][A-Za-z0-9_\[\]]*\}'", text), path
         assert not re.search(r"IN \(\s*'\{", text), path
+        sql_parts = [text] if path.suffix == ".sql" else re.findall(r'f"""(.*?)"""', text, re.S)
+        sql_parts += re.findall(r'f"([^"\n]*(?:INTERVAL|WHERE|AND|LIKE)[^"\n]*)"', text)
+        for sql in sql_parts:
+            # Values may only enter as @parameters. A {name} is allowed only
+            # for table names and pre-built clause fragments, never after an
+            # operator or inside an INTERVAL.
+            assert not re.search(r"INTERVAL\s*\{", sql), (path, sql[:120])
+            assert not re.search(r"(=|LIKE|>|<|IN)\s*\(?\s*'?\{(?!EVENTS_TABLE|[A-Z_]+\})", sql), (path, sql[:120])
         if path.name != "client.py" and path.suffix == ".py":
             assert "client.query(" not in text.replace("source_client.query(", ""), path
