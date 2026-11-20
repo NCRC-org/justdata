@@ -59,7 +59,7 @@ def get_lender_interest(
         return cached
 
     client = get_bigquery_client()
-    params = {'lender_apps': LENDER_APPS, 'target_apps': TARGET_APPS, 'days': int(days), 'min_users': int(min_users), 'user_types': list(user_types or exclude_user_types or [])}
+    params = {'lender_apps': LENDER_APPS, 'target_apps': TARGET_APPS, 'days': int(days), 'suffix_days': int(days) if days > 0 else 365, 'min_users': int(min_users), 'user_types': list(user_types or exclude_user_types or [])}
 
     date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
@@ -104,7 +104,7 @@ def get_lender_interest(
                 user_pseudo_id,
                 TIMESTAMP_MICROS(event_timestamp) as event_time
             FROM `justdata-ncrc.analytics_521852976.events_*` ga
-            WHERE _TABLE_SUFFIX >= FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL {days if days > 0 else 365} DAY))
+            WHERE _TABLE_SUFFIX >= FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL @suffix_days DAY))
                 AND event_name = 'page_view'
                 AND (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location') LIKE '%mergermeter%'
                 AND geo.region IS NOT NULL
