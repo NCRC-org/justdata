@@ -354,6 +354,7 @@ def api_user_types():
     """Get list of distinct user types for filtering."""
     try:
         from .bq import get_bigquery_client, EVENTS_TABLE
+        from .bq.client import run_query
         client = get_bigquery_client()
         query = f"""
             SELECT DISTINCT user_type
@@ -361,7 +362,7 @@ def api_user_types():
             WHERE user_type IS NOT NULL
             ORDER BY user_type
         """
-        results = client.query(query).result()
+        results = run_query(client, query).result()
         user_types = [row.user_type for row in results if row.user_type]
         return jsonify({'success': True, 'data': user_types})
     except Exception as e:
@@ -527,6 +528,7 @@ def api_export():
             get_bigquery_client, EVENTS_TABLE, get_users,
             get_coalition_opportunities, get_entity_users
         )
+        from .bq.client import run_query
 
         days = request.args.get('days', 90, type=int)
 
@@ -575,7 +577,7 @@ def api_export():
         ws_events.title = "Events"
 
         # Query all events
-        cutoff_clause = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+        cutoff_clause = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
         events_query = f"""
             SELECT
                 event_id,
@@ -592,7 +594,7 @@ def api_export():
             ORDER BY event_timestamp DESC
             LIMIT 10000
         """
-        events_results = list(client.query(events_query).result())
+        events_results = list(run_query(client, events_query, {'days': int(days)}).result())
 
         # Write headers
         event_headers = ["event_id", "event_timestamp", "app_name", "user_id",
@@ -663,7 +665,7 @@ def api_export():
             GROUP BY county_fips, county_name, state
             ORDER BY total_reports DESC
         """
-        counties_results = list(client.query(counties_query).result())
+        counties_results = list(run_query(client, counties_query, {'days': int(days)}).result())
 
         county_headers = ["county_fips", "county_name", "state", "total_reports",
                          "unique_users", "last_activity"]
@@ -700,7 +702,7 @@ def api_export():
             GROUP BY lender_id, lender_name
             ORDER BY total_reports DESC
         """
-        lenders_results = list(client.query(lenders_query).result())
+        lenders_results = list(run_query(client, lenders_query, {'days': int(days)}).result())
 
         lender_headers = ["lender_id", "lender_name", "total_reports",
                          "unique_users", "states_researching", "last_activity"]
