@@ -10,6 +10,7 @@ from justdata.apps.analytics.bq.client import (
     _get_cached,
     _set_cached,
     get_bigquery_client,
+    run_query,
 )
 
 
@@ -62,7 +63,6 @@ def get_cost_summary(days: int = 30, project_id: str = None, skip_cache: bool = 
         'electwatch@justdata-ncrc.iam.gserviceaccount.com',
         
     ]
-    service_accounts_str = "', '".join(SERVICE_ACCOUNTS)
     
     # Query both projects in PARALLEL for job metadata:
     # - justdata-ncrc: new project (Jan 2026+)
@@ -71,11 +71,11 @@ def get_cost_summary(days: int = 30, project_id: str = None, skip_cache: bool = 
     
     def query_project_costs(project: str, region: str) -> tuple:
         """Query a single project for cost data. Returns (project, app_results, daily_results) or (project, None, None) on error."""
-        app_query = load_sql("cost_summary_by_app.sql").format(days=days, project=project, region=region)
-        daily_query = load_sql("cost_summary_daily.sql").format(days=days, project=project, region=region)
+        app_query = load_sql("cost_summary_by_app.sql").format(project=project, region=region)
+        daily_query = load_sql("cost_summary_daily.sql").format(project=project, region=region)
         try:
-            app_results = list(client.query(app_query).result())
-            daily_results = list(client.query(daily_query).result())
+            app_results = list(run_query(client, app_query, {'days': int(days)}).result())
+            daily_results = list(run_query(client, daily_query, {'days': int(days)}).result())
             return (project, app_results, daily_results)
         except Exception as e:
             print(f"[COST] {project} failed: {str(e)[:80]}")
