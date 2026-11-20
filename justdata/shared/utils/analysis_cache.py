@@ -106,6 +106,15 @@ def _normalize_years(value: Any) -> str:
     return '' if value is None else str(value)
 
 
+def _normalize_purposes(value) -> str:
+    """LendSight loan purposes as a sorted, lower-case, comma-joined string.
+    Missing or empty means the analyze route's default, purchase only."""
+    if isinstance(value, str):
+        value = value.split(',')
+    purposes = sorted({str(p).strip().lower() for p in (value or []) if str(p).strip()})
+    return ','.join(purposes) or 'purchase'
+
+
 def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalize parameters to ensure consistent cache keys.
@@ -189,6 +198,9 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
             counties_list = [c.strip().lower() for c in counties.split(';') if c.strip()]
             normalized['counties'] = ';'.join(sorted(counties_list))
         normalized['years'] = _normalize_years(params.get('years'))
+        # The loan purposes change every figure, so they are part of the key
+        # (QA LS-001, triage T2). Same default as the analyze route.
+        normalized['loan_purpose'] = _normalize_purposes(params.get('loan_purpose'))
     
     elif app_name.lower() == 'branchmapper':
         counties = params.get('counties', '')
