@@ -40,7 +40,10 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # gaps (2026-11-17).
 # BranchSight 1: first revision; no data is an em dash and a missing year a
 # gap, not zero branches, and HHI keeps every requested year (2026-11-17).
-REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4, 'branchsight': 1}
+# BranchSight 2: bank Net Change matched on RSSD, not the name, plus the
+# Acquired column and opened, closed and acquired for the narrative (T4,
+# 2026-11-20).
+REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4, 'branchsight': 2}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 

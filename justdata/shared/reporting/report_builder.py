@@ -320,77 +320,136 @@ def create_summary_table(df: pd.DataFrame, counties: List[str], years: List[int]
     return result
 
 
+# Net change by bank (T4, Jad 2026-11-20). Banks are matched across years on
+# RSSD, never the name: the 2026 SOD table publishes names in title case and
+# 2017 to 2025 in upper case, banks rename, and unrelated banks share names.
+NEW_TO_COUNTY = 'New to this county'
+BANK_CHANGE_NOTE = ("Net change counts all of a bank's branches. "
+                    "Acquired shows how many came from another institution.")
+
+
+def bank_branch_changes(df: pd.DataFrame, first_year: int, latest_year: int) -> Dict[str, Dict[str, Any]]:
+    """Per-RSSD branch changes between the first and latest year.
+
+    For each bank in either year: ``first`` and ``latest`` branch counts,
+    ``opened`` (latest-year branches not in the first year at all),
+    ``acquired`` (latest-year branches that were another RSSD's in the first
+    year), ``closed`` (first-year branches gone by the latest year) and
+    ``transferred_out`` (first-year branches another RSSD holds in the latest
+    year). ``net = latest - first = opened + acquired - closed - transferred_out``.
+    Branches are UNINUMBR, which the FDIC keeps with a branch through mergers.
+    """
+    rows = df[['year', 'rssd', 'bank_name', 'uninumbr']].copy()
+    rows['rssd'] = rows['rssd'].astype(str)
+    rows['uninumbr'] = rows['uninumbr'].astype(str)
+    first = rows[rows['year'] == first_year].drop_duplicates('uninumbr')
+    latest = rows[rows['year'] == latest_year].drop_duplicates('uninumbr')
+    owner_first = dict(zip(first['uninumbr'], first['rssd']))
+    owner_latest = dict(zip(latest['uninumbr'], latest['rssd']))
+    names = {}
+    for frame in (first, latest):          # latest year's name wins
+        names.update(dict(zip(frame['rssd'], frame['bank_name'])))
+
+    changes = {}
+    for rssd in set(owner_first.values()) | set(owner_latest.values()):
+        had = {u for u, r in owner_first.items() if r == rssd}
+        has = {u for u, r in owner_latest.items() if r == rssd}
+        acquired = sum(1 for u in has if u in owner_first and owner_first[u] != rssd)
+        opened = sum(1 for u in has if u not in owner_first)
+        closed = sum(1 for u in had if u not in owner_latest)
+        transferred_out = sum(1 for u in had if u in owner_latest and owner_latest[u] != rssd)
+        changes[rssd] = {
+            'rssd': rssd, 'bank_name': names.get(rssd, ''),
+            'first': len(had), 'latest': len(has), 'net': len(has) - len(had),
+            'opened': opened, 'closed': closed, 'acquired': acquired,
+            'transferred_out': transferred_out,
+            'new_to_county': not had and acquired == 0 and bool(has),
+        }
+    return changes
+
+
+def bank_changes_for_narrative(df: pd.DataFrame, years: List[int]) -> Dict[str, Any]:
+    """The bank-change figures the Section 2 narrative may use, precomputed.
+
+    Opened, closed and acquired are separate figures; the narrative may not
+    call acquired branches opened (spec 11's rule, applied early here).
+    """
+    if not years or 'rssd' not in df.columns:
+        return {}
+    first_year, latest_year = min(years), max(years)
+    if first_year == latest_year or df[df['year'] == first_year].empty:
+        return {}
+    changes = bank_branch_changes(df, first_year, latest_year)
+    banks = sorted((c for c in changes.values() if c['latest'] > 0),
+                   key=lambda c: (-c['latest'], c['bank_name']))
+    left = sorted((c for c in changes.values() if c['latest'] == 0),
+                  key=lambda c: (-c['first'], c['bank_name']))
+    keep = ('bank_name', 'first', 'latest', 'opened', 'closed', 'acquired', 'transferred_out')
+    return {
+        'first_year': first_year, 'latest_year': latest_year,
+        'banks': [{k: c[k] for k in keep} | {'new_to_county': c['new_to_county']} for c in banks[:10]],
+        'banks_that_left': [{k: c[k] for k in keep} for c in left[:10]],
+        'county_totals': {k: sum(c[k] for c in changes.values())
+                          for k in ('first', 'latest', 'opened', 'closed', 'acquired')},
+    }
+
+
 def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFrame:
-    """Create summary by bank for the latest year with proper deduplication.
-    Returns all banks (for export) but marks top 10 for display.
-    Includes net change from first to last year."""
-    
+    """Summary by bank (RSSD) for the latest year, every bank, largest first.
+
+    Net Change is the bank's latest-year branch count minus its first-year
+    count, matched on RSSD; Acquired counts latest-year branches that another
+    RSSD held in the first year. A bank with no first-year branches and none
+    acquired shows "New to this county". With no first-year data at all, both
+    show the em dash.
+    """
     if years is None:
         years = sorted(df['year'].unique().tolist())
-    
+
     latest_year = max(years)
     first_year = min(years)
-    
-    # Filter to latest year for current counts
-    latest_year_df = df[df['year'] == latest_year].copy()
-    
-    # Filter to first year for net change calculation
-    first_year_df = df[df['year'] == first_year].copy() if first_year != latest_year else latest_year_df.copy()
-    
-    # Need unique branches per bank
+
     if 'uninumbr' not in df.columns or 'br_lmi' not in df.columns or 'br_minority' not in df.columns:
         raise ValueError("Missing required columns: uninumbr, br_lmi, br_minority")
-    
+    if 'rssd' not in df.columns:
+        raise ValueError("Missing required column: rssd")
+
+    df = df.copy()
+    df['rssd'] = df['rssd'].astype(str)
+    latest_year_df = df[df['year'] == latest_year]
+    has_first_year = not df[df['year'] == first_year].empty
+    changes = bank_branch_changes(df, first_year, latest_year)
+
     bank_data = []
-    
-    # Get all unique banks
-    all_banks = latest_year_df['bank_name'].unique()
-    
-    for bank_name in all_banks:
-        # Latest year data for this bank
-        bank_latest = latest_year_df[latest_year_df['bank_name'] == bank_name]
-        bank_first = first_year_df[first_year_df['bank_name'] == bank_name] if first_year != latest_year else bank_latest
-        
-        # Count unique branches
+    for rssd in latest_year_df['rssd'].unique():
+        bank_latest = latest_year_df[latest_year_df['rssd'] == rssd]
+        bank_name = bank_latest['bank_name'].iloc[0]
         total_branches_latest = bank_latest['uninumbr'].nunique()
-        total_branches_first = bank_first['uninumbr'].nunique()
-        
+
         # Dedupe: LMI only, MMCT only, both
         lmi_only_latest = bank_latest[(bank_latest['br_lmi'] == 1) & (bank_latest['br_minority'] == 0)]['uninumbr'].nunique()
         mmct_only_latest = bank_latest[(bank_latest['br_lmi'] == 0) & (bank_latest['br_minority'] == 1)]['uninumbr'].nunique()
         both_latest = bank_latest[(bank_latest['br_lmi'] == 1) & (bank_latest['br_minority'] == 1)]['uninumbr'].nunique()
-        
-        # Calculate percentages
+
         lmi_only_pct = round((lmi_only_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else None
         mmct_only_pct = round((mmct_only_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else None
         both_pct = round((both_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else None
-        
-        # Net change
-        net_change = total_branches_latest - total_branches_first
-        
-        # Calculate total deposits for this bank in latest year
-        # Sum deposits across all branches for this bank
-        total_deposits = 0
+
+        change = changes[rssd]
+        if first_year == latest_year:
+            net_change, acquired = 0, 0
+        elif not has_first_year:
+            net_change, acquired = NO_DATA, NO_DATA
+        elif change['new_to_county']:
+            net_change, acquired = NEW_TO_COUNTY, 0
+        else:
+            net_change, acquired = change['net'], change['acquired']
+
+        total_deposits = 0.0
         if 'total_deposits' in bank_latest.columns:
-            # Sum deposits, handling NaN values
-            deposits_series = pd.to_numeric(bank_latest['total_deposits'], errors='coerce').fillna(0)
-            total_deposits = float(deposits_series.sum())
-            # Debug for first bank
-            if bank_name == all_banks[0]:
-                print(f"[DEBUG] Bank '{bank_name}': {len(bank_latest)} branches, total_deposits sum = {total_deposits}")
-        else:
-            # Debug if column missing
-            if bank_name == all_banks[0]:
-                print(f"[DEBUG] Bank '{bank_name}': total_deposits column not found in data")
-        
-        # Format deposits in millions (no $ and no M suffix since header has it)
-        # Format with thousand separators as whole numbers: #,###
-        if total_deposits and total_deposits > 0:
-            deposits_millions = total_deposits / 1_000_000
-            deposits_formatted = f"{deposits_millions:,.0f}"
-        else:
-            deposits_formatted = NO_DATA
-        
+            total_deposits = float(pd.to_numeric(bank_latest['total_deposits'], errors='coerce').fillna(0).sum())
+        deposits_formatted = f"{total_deposits / 1_000_000:,.0f}" if total_deposits > 0 else NO_DATA
+
         bank_data.append({
             'Bank Name': bank_name,
             'Total Branches': total_branches_latest,
@@ -399,26 +458,15 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
             'MMCT Only Branches': f"{mmct_only_latest} ({_share_text(mmct_only_pct)})",
             'Both LMICT/MMCT Branches': f"{both_latest} ({_share_text(both_pct)})",
             'Net Change': net_change,
-            # Store raw values for sorting
+            'Acquired': acquired,
             '_total_branches': total_branches_latest,
-            '_total_deposits': total_deposits,
-            '_lmi_only': lmi_only_latest,
-            '_mmct_only': mmct_only_latest,
-            '_both': both_latest
         })
-    
+
     result = pd.DataFrame(bank_data)
-    
-    # Sort by total branches descending
-    result = result.sort_values('_total_branches', ascending=False).reset_index(drop=True)
-    
-    # Mark top 10 (for display purposes, but keep all for export)
-    result['_is_top_10'] = result.index < 10
-    
-    # Drop helper columns
-    result = result.drop(columns=['_total_branches', '_total_deposits', '_lmi_only', '_mmct_only', '_both', '_is_top_10'])
-    
-    return result
+    if result.empty:
+        return result
+    result = result.sort_values(['_total_branches', 'Bank Name'], ascending=[False, True]).reset_index(drop=True)
+    return result.drop(columns=['_total_branches'])
 
 
 def create_county_summary(df: pd.DataFrame, counties: List[str] = None, years: List[int] = None) -> pd.DataFrame:
@@ -552,7 +600,11 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
             run_years = (metadata or {}).get('years') or []
             bank_year = max((str(y) for y in run_years), default='') if isinstance(run_years, (list, tuple)) else str(run_years)
             bank_sheet = f'Section 2: Banks ({bank_year})' if bank_year else 'Section 2: Analysis by Bank'
-            dash_missing(report_data['by_bank']).to_excel(writer, sheet_name=sanitize_sheet_name(bank_sheet), index=False)
+            bank_sheet = sanitize_sheet_name(bank_sheet)
+            dash_missing(report_data['by_bank']).to_excel(writer, sheet_name=bank_sheet, index=False)
+            if 'Acquired' in report_data['by_bank'].columns:
+                # The one-line note under the table (T4).
+                writer.sheets[bank_sheet].cell(row=len(report_data['by_bank']) + 3, column=1, value=BANK_CHANGE_NOTE)
         
         # Section 3: County by County Analysis (only if multiple counties)
         if 'by_county' in report_data and not report_data['by_county'].empty:
@@ -641,7 +693,9 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         notes_content.append(('Calculations and Methods', ''))
         notes_content.append(('', ''))
         notes_content.append(('Branch Deduplication:', 'Each branch (uninumbr) appears only once per year. LMI Only, MMCT Only, and Both LMICT/MMCT categories are mutually exclusive.'))
-        notes_content.append(('Net Change Calculation:', 'Difference between the first year and final year of the analysis period. Positive values indicate growth, negative values indicate decline.'))
+        notes_content.append(('Net Change Calculation:', 'Difference between the first year and final year of the analysis period. Positive values indicate growth, negative values indicate decline. In the bank table, banks are matched across years on their FDIC RSSD ID, not their name, and the latest year\'s name is shown.'))
+        notes_content.append(('Acquired:', 'In the bank table, the number of a bank\'s latest-year branches that another institution held in the first year (same FDIC branch number, UNINUMBR). ' + BANK_CHANGE_NOTE))
+        notes_content.append(('New to this County:', 'A bank with no branches in the first year and none acquired. Its branch count is not shown as a change.'))
         notes_content.append(('HHI (Herfindahl-Hirschman Index):', 'Calculated using deposit shares of all banks in the study area for the most recent year. HHI < 1,500 = Low concentration; HHI 1,500-2,500 = Moderate concentration; HHI > 2,500 = High concentration.'))
         notes_content.append(('LMI Classification:', 'Branches located in Low-to-Moderate Income (LMI) census tracts'))
         notes_content.append(('MMCT Classification:', 'Branches located in Majority-Minority Census Tracts (MMCT)'))
