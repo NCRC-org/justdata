@@ -1,0 +1,80 @@
+/* /account, "Your account" (spec 14). Shared app standard: band header,
+   left rail of section anchors at desktop, stacked below 1100px, hairline
+   sections, no icons. The only red will be the delete section (phase 2). */
+
+.account-h1 { margin: 0; overflow-wrap: anywhere; }
+.account-role { margin: var(--s-2) 0 0; }
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--s-8);
+  padding-top: var(--s-8);
+  padding-bottom: var(--s-10);
+}
+
+.account-rail ul {
+  position: sticky;
+  top: var(--s-6);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.account-rail li + li { margin-top: var(--s-2); }
+.account-rail a { color: var(--color-fg-muted); text-decoration: none; }
+.account-rail a:hover, .account-rail a:focus-visible { color: var(--color-link); text-decoration: underline; }
+
+.account-section {
+  border-top: 1px solid var(--color-divider);
+  padding: var(--s-6) 0;
+  scroll-margin-top: var(--s-6);
+}
+.account-section:first-child { border-top: 0; padding-top: 0; }
+.account-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin: 0 0 var(--s-4);
+}
+.account-section p, .account-section li { max-width: 68ch; }
+
+.account-form label { display: block; font-weight: 600; margin-bottom: var(--s-2); }
+.account-form-row { display: flex; gap: var(--s-3); flex-wrap: wrap; align-items: center; }
+.account-form input[type="text"] {
+  flex: 1 1 260px;
+  max-width: 420px;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font: inherit;
+}
+.account-form input[type="text"]:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
+
+.account-facts { margin: var(--s-5) 0 0; }
+.account-facts div { display: flex; gap: var(--s-4); padding: var(--s-2) 0; }
+.account-facts dt { flex: 0 0 140px; color: var(--color-fg-muted); }
+.account-facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.account-action + .account-action { margin-top: var(--s-5); }
+.account-action p { margin: 0 0 var(--s-2); }
+
+.account-status { min-height: 1.4em; margin: var(--s-2) 0 0; color: var(--color-fg-muted); }
+.account-status.is-ok { color: var(--color-success-text); }
+.account-muted { color: var(--color-fg-muted); }
+
+.account-table-wrap { overflow-x: auto; }
+.account-table { border-collapse: collapse; width: 100%; }
+.account-table th, .account-table td {
+  text-align: left;
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: 1px solid var(--color-divider);
+  vertical-align: top;
+}
+.account-table th { font-weight: 600; color: var(--color-fg-muted); }
+
+@media (max-width: 1099px) {
+  .account-layout { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+  .account-rail ul { position: static; display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); }
+  .account-rail li + li { margin-top: 0; }
+}
+
+.account-section ul { padding-left: var(--s-5); margin: 0 0 var(--s-3); }
