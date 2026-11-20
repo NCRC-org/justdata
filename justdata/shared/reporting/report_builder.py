@@ -5,10 +5,17 @@ Handles data processing, trend analysis, and Excel export.
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 import os
 import re
+
+from justdata.shared.utils.no_data import NO_DATA, dash_missing, is_missing
+
+
+def _share_text(pct) -> str:
+    """"34.5%", or the em dash when there is no base."""
+    return NO_DATA if is_missing(pct) else f"{pct}%"
 
 
 def sanitize_sheet_name(name: str) -> str:
@@ -74,7 +81,7 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
     hhi_data = calculate_hhi(df)
 
     # Calculate HHI for all years (for chart and table)
-    hhi_by_year_data = calculate_hhi_by_year(df)
+    hhi_by_year_data = calculate_hhi_by_year(df, years)
 
     # Build different report sections
     report_data = {
@@ -157,18 +164,23 @@ def calculate_hhi(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
-def calculate_hhi_by_year(df: pd.DataFrame) -> List[Dict[str, Any]]:
+def calculate_hhi_by_year(df: pd.DataFrame, years: Optional[List[int]] = None) -> List[Dict[str, Any]]:
     """
     Calculate Herfindahl-Hirschman Index (HHI) for bank deposits for each year.
 
+    Every requested year gets a row. A year with no deposit data has
+    hhi_value None, so it shows as a gap (an em dash in tables), never as a
+    zero and never silently dropped (no-data decision, 2026-11-17; BS-002).
+
     Returns:
-        List of dictionaries with year and hhi_value for each year in the data
+        List of dictionaries with year and hhi_value
     """
     if 'total_deposits' not in df.columns or 'year' not in df.columns:
         return []
 
     results = []
-    years = sorted(df['year'].unique())
+    data_years = {int(y) for y in df['year'].unique()}
+    years = sorted({int(y) for y in years} | data_years) if years else sorted(data_years)
 
     for year in years:
         year_df = df[df['year'] == year].copy()
@@ -177,11 +189,9 @@ def calculate_hhi_by_year(df: pd.DataFrame) -> List[Dict[str, Any]]:
         bank_deposits = year_df.groupby('bank_name')['total_deposits'].sum().reset_index()
         bank_deposits = bank_deposits[bank_deposits['total_deposits'] > 0]
 
-        if bank_deposits.empty:
-            continue
-
-        total_deposits = bank_deposits['total_deposits'].sum()
+        total_deposits = bank_deposits['total_deposits'].sum() if not bank_deposits.empty else 0
         if total_deposits == 0:
+            results.append({'year': int(year), 'hhi_value': None})
             continue
 
         # Calculate market shares (as percentages)
@@ -262,6 +272,13 @@ def create_summary_table(df: pd.DataFrame, counties: List[str], years: List[int]
     # Calculate for each year
     for year in sorted(years):
         year_df = df[df['year'] == year].copy()
+
+        # No rows at all: the whole year is no data, an em dash, never 0
+        # (no-data decision, 2026-11-17; a geography gap such as BS-002 shows
+        # as no data instead of zero branches).
+        if year_df.empty:
+            result_data[str(year)] = [None, None, None, None]
+            continue
         
         # Count unique total branches
         total_unique = year_df['uninumbr'].nunique()
@@ -293,7 +310,8 @@ def create_summary_table(df: pd.DataFrame, counties: List[str], years: List[int]
         for idx, row in result.iterrows():
             first_val = row[first_year]
             last_val = row[last_year]
-            net_change = last_val - first_val
+            # No change when either end has no data
+            net_change = None if is_missing(first_val) or is_missing(last_val) else last_val - first_val
             net_changes.append(net_change)
         
         result['Net Change'] = net_changes
@@ -342,9 +360,9 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
         both_latest = bank_latest[(bank_latest['br_lmi'] == 1) & (bank_latest['br_minority'] == 1)]['uninumbr'].nunique()
         
         # Calculate percentages
-        lmi_only_pct = round((lmi_only_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else 0.0
-        mmct_only_pct = round((mmct_only_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else 0.0
-        both_pct = round((both_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else 0.0
+        lmi_only_pct = round((lmi_only_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else None
+        mmct_only_pct = round((mmct_only_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else None
+        both_pct = round((both_latest / total_branches_latest * 100), 1) if total_branches_latest > 0 else None
         
         # Net change
         net_change = total_branches_latest - total_branches_first
@@ -370,15 +388,15 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
             deposits_millions = total_deposits / 1_000_000
             deposits_formatted = f"{deposits_millions:,.0f}"
         else:
-            deposits_formatted = "N/A"
+            deposits_formatted = NO_DATA
         
         bank_data.append({
             'Bank Name': bank_name,
             'Total Branches': total_branches_latest,
             'Deposits ($ Millions)': deposits_formatted,
-            'LMI Only Branches': f"{lmi_only_latest} ({lmi_only_pct}%)",
-            'MMCT Only Branches': f"{mmct_only_latest} ({mmct_only_pct}%)",
-            'Both LMICT/MMCT Branches': f"{both_latest} ({both_pct}%)",
+            'LMI Only Branches': f"{lmi_only_latest} ({_share_text(lmi_only_pct)})",
+            'MMCT Only Branches': f"{mmct_only_latest} ({_share_text(mmct_only_pct)})",
+            'Both LMICT/MMCT Branches': f"{both_latest} ({_share_text(both_pct)})",
             'Net Change': net_change,
             # Store raw values for sorting
             '_total_branches': total_branches_latest,
@@ -441,16 +459,16 @@ def create_county_summary(df: pd.DataFrame, counties: List[str] = None, years: L
         num_banks = county_df['bank_name'].nunique()
         
         # Calculate percentages
-        lmi_only_pct = round((lmi_only / total_unique * 100), 1) if total_unique > 0 else 0.0
-        mmct_only_pct = round((mmct_only / total_unique * 100), 1) if total_unique > 0 else 0.0
-        both_pct = round((both / total_unique * 100), 1) if total_unique > 0 else 0.0
+        lmi_only_pct = round((lmi_only / total_unique * 100), 1) if total_unique > 0 else None
+        mmct_only_pct = round((mmct_only / total_unique * 100), 1) if total_unique > 0 else None
+        both_pct = round((both / total_unique * 100), 1) if total_unique > 0 else None
         
         county_data.append({
             'County': county,
             'Total Branches': total_unique,
-            'LMI Only Branches': f"{lmi_only} ({lmi_only_pct}%)",
-            'MMCT Only Branches': f"{mmct_only} ({mmct_only_pct}%)",
-            'Both LMICT/MMCT Branches': f"{both} ({both_pct}%)",
+            'LMI Only Branches': f"{lmi_only} ({_share_text(lmi_only_pct)})",
+            'MMCT Only Branches': f"{mmct_only} ({_share_text(mmct_only_pct)})",
+            'Both LMICT/MMCT Branches': f"{both} ({_share_text(both_pct)})",
             'Number of Banks': num_banks
         })
     
@@ -524,7 +542,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         # Write report tables matching the report sections
         # Section 1: Yearly Breakdown
         if 'summary' in report_data and not report_data['summary'].empty:
-            report_data['summary'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 1: Yearly Breakdown'), index=False)
+            dash_missing(report_data['summary']).to_excel(writer, sheet_name=sanitize_sheet_name('Section 1: Yearly Breakdown'), index=False)
         
         # Section 2: Analysis by Bank. Branch counts are for the last year of
         # the run, which the sheet name states (Jay round 2 #11); the name
@@ -533,7 +551,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
             run_years = (metadata or {}).get('years') or []
             bank_year = max((str(y) for y in run_years), default='') if isinstance(run_years, (list, tuple)) else str(run_years)
             bank_sheet = f'Section 2: Banks ({bank_year})' if bank_year else 'Section 2: Analysis by Bank'
-            report_data['by_bank'].to_excel(writer, sheet_name=sanitize_sheet_name(bank_sheet), index=False)
+            dash_missing(report_data['by_bank']).to_excel(writer, sheet_name=sanitize_sheet_name(bank_sheet), index=False)
         
         # Section 3: County by County Analysis (only if multiple counties)
         if 'by_county' in report_data and not report_data['by_county'].empty:
@@ -545,7 +563,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
                     multiple_counties = True
             
             if multiple_counties:
-                report_data['by_county'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 3: County by County'), index=False)
+                dash_missing(report_data['by_county']).to_excel(writer, sheet_name=sanitize_sheet_name('Section 3: County by County'), index=False)
         
         # Raw Data sheet
         if 'raw_data' in report_data and not report_data['raw_data'].empty:

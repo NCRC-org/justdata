@@ -94,38 +94,48 @@ def render_branch_trend_chart(branch_counts_by_year):
                     continue
                 try:
                     yr = int(str(k).strip())
-                    if 2000 <= yr <= 2030:
-                        val = float(str(v).replace(',', '')) if v else 0
-                        years.append(yr)
-                        values.append(int(val))
                 except (ValueError, TypeError):
-                    pass
+                    continue
+                if not 2000 <= yr <= 2030:
+                    continue
+                # A year with no data is a gap in the line, never a zero
+                # (no-data decision, 2026-11-17).
+                try:
+                    val = float(str(v).replace(',', ''))
+                    val = None if val != val else int(val)
+                except (ValueError, TypeError):
+                    val = None
+                years.append(yr)
+                values.append(val)
 
-    if len(years) < 2:
+    if sum(v is not None for v in values) < 2:
         return None
 
     # Sort by year
     paired = sorted(zip(years, values))
     years, values = zip(*paired)
+    present = [v for v in values if v is not None]
 
     fig, ax = plt.subplots(figsize=(5.0, 2.5), dpi=150)
     _apply_base_style(ax, fig)
 
-    ax.plot(years, values, color=NAVY, linewidth=2.5, marker='o',
+    ax.plot(years, [np.nan if v is None else v for v in values], color=NAVY, linewidth=2.5, marker='o',
             markersize=6, zorder=3, markerfacecolor=NAVY, markeredgecolor='white',
             markeredgewidth=1.5)
 
     # Value labels on each point
     for yr, val in zip(years, values):
-        label = f'{val:,}'
-        ax.text(yr, val + max(values) * 0.04, label, ha='center',
+        if val is None:
+            ax.text(yr, min(present), '\u2014', ha='center', fontsize=7, color='#666666')
+            continue
+        ax.text(yr, val + max(present) * 0.04, f'{val:,}', ha='center',
                 fontsize=7, color='#333', fontweight='bold')
 
     ax.set_title('Branch Count Over Time', fontsize=10, fontweight='bold',
                  color=NAVY, pad=6)
     ax.set_xticks(years)
     ax.set_xticklabels([str(y) for y in years], fontsize=8)
-    ax.set_ylim(min(values) * 0.9, max(values) * 1.15)
+    ax.set_ylim(min(present) * 0.9, max(present) * 1.15)
     ax.yaxis.set_visible(False)
     ax.grid(False)
     ax.spines['left'].set_visible(False)
