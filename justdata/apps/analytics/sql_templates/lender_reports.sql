@@ -10,8 +10,8 @@
         FROM `justdata-ncrc.cache.usage_log`
         WHERE app_name = 'mergermeter'
             AND error_message IS NULL
-            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
-                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
+            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = @lender_id
+                 OR JSON_VALUE(parameters_json, '$.target_lei') = @lender_id)
             AND {user_filter_usage}
             {date_filter}
         ORDER BY timestamp DESC

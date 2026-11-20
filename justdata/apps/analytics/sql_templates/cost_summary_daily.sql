@@ -35,6 +35,6 @@
             SUM(total_bytes_processed) as total_bytes,
             SUM(total_bytes_billed) as total_bytes_billed
         FROM `{project}`.`{region}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
-        WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
             AND job_type = 'QUERY' AND state = 'DONE' AND error_result IS NULL
         GROUP BY date, app_name

@@ -131,6 +131,45 @@ def get_valid_user_filter(table_alias: str = '') -> str:
     """.strip()
 
 
+def query_parameters(query: str, values: dict) -> list:
+    """BigQuery parameters for every @name in `query` that `values` holds.
+
+    Every value that reaches Analytics SQL goes through here, never into the
+    query text (Workflow ticket, 2026-11-20). Types: bool BOOL, int INT64,
+    float FLOAT64, list or tuple ARRAY<STRING>, anything else STRING.
+    """
+    import re
+    from google.cloud import bigquery
+
+    # Ignore '@' inside string literals, quoted names and comments
+    # ('lendsight@%' in the cost templates is text, not a parameter).
+    code = re.sub(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"|`[^`]*`|--[^\n]*", ' ', query)
+    params = []
+    for name in sorted(set(re.findall(r'@([A-Za-z_][A-Za-z0-9_]*)', code))):
+        if name not in values:
+            raise KeyError(f"query parameter @{name} has no value")
+        value = values[name]
+        if isinstance(value, (list, tuple, set)):
+            params.append(bigquery.ArrayQueryParameter(name, 'STRING', [str(v) for v in value]))
+        elif isinstance(value, bool):
+            params.append(bigquery.ScalarQueryParameter(name, 'BOOL', value))
+        elif isinstance(value, int):
+            params.append(bigquery.ScalarQueryParameter(name, 'INT64', value))
+        elif isinstance(value, float):
+            params.append(bigquery.ScalarQueryParameter(name, 'FLOAT64', value))
+        else:
+            params.append(bigquery.ScalarQueryParameter(name, 'STRING', None if value is None else str(value)))
+    return params
+
+
+def run_query(client, query: str, values: Optional[dict] = None):
+    """client.query() with every @name bound as a parameter."""
+    from google.cloud import bigquery
+
+    config = bigquery.QueryJobConfig(query_parameters=query_parameters(query, values or {}))
+    return client.query(query, job_config=config)
+
+
 def get_bigquery_client():
     """Get or create the BigQuery client for the Analytics app.
 
