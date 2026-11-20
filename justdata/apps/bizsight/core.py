@@ -8,7 +8,7 @@ import sys
 import json
 import pandas as pd
 from typing import Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Add repo root to path
@@ -1042,7 +1042,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             'county_minority_threshold': float(county_minority_pct),
             'total_tracts': len(tract_summary),
             'income_categories_exist': income_categories_exist,
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now(timezone.utc).isoformat()
         }
         
         # Prepare report data

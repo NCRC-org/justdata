@@ -6,10 +6,11 @@ Handles data processing, trend analysis, and Excel export.
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import re
 
+from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.shared.utils.no_data import NO_DATA, dash_missing, is_missing
 
 
@@ -579,17 +580,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         # Report Information
         notes_content.append(('Report Information', ''))
         notes_content.append(('', ''))
-        if metadata:
-            if 'generated_at' in metadata:
-                try:
-                    gen_date = datetime.fromisoformat(metadata['generated_at'].replace('Z', '+00:00'))
-                    notes_content.append(('Report Generated:', gen_date.strftime('%Y-%m-%d %H:%M:%S UTC')))
-                except:
-                    notes_content.append(('Report Generated:', metadata.get('generated_at', 'Not available')))
-            else:
-                notes_content.append(('Report Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')))
-        else:
-            notes_content.append(('Report Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')))
+        notes_content.append(('Report Generated:', analysis_stamp(metadata)))
 
         # Add application version
         if app_version:
@@ -707,7 +698,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
 def generate_report_metadata(counties: List[str], years: List[int], record_count: int) -> Dict[str, Any]:
     """Generate metadata for the report."""
     return {
-        'generated_at': datetime.now().isoformat(),
+        'generated_at': datetime.now(timezone.utc).isoformat(),
         'counties': counties,
         'years': years,
         'total_records': record_count,

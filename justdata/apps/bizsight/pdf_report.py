@@ -22,6 +22,7 @@ import re
 from io import BytesIO
 from datetime import datetime
 
+from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.shared.utils.no_data import NO_DATA, is_missing
 
 import pandas as pd
@@ -653,6 +654,7 @@ def generate_bizsight_pdf(result_data, metadata):
     doc.cover_title = 'Small Business\nLending Analysis'
     doc.cover_subtitle = county_display
     doc.cover_date_range = date_range
+    doc.cover_generated = analysis_date(metadata)
 
     # ==================================================================
     # PAGE 1: COVER
@@ -1102,7 +1104,7 @@ def generate_bizsight_pdf(result_data, metadata):
 
     # Suggested Citation
     meth_elements.append(Paragraph('Suggested Citation', _meth_h3))
-    gen_date = datetime.now().strftime('%B %d, %Y')
+    gen_date = analysis_date(metadata)
     meth_elements.append(Paragraph(
         f'National Community Reinvestment Coalition. "Small Business Lending Analysis: '
         f'{pdf_text(county_display)}." BizSight Report, NCRC JustData Platform, {gen_date}.',

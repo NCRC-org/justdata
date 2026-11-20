@@ -7,6 +7,8 @@ Each tabbed table gets separate sheets (e.g., "County Summary - Number" and "Cou
 
 import pandas as pd
 import os
+from justdata.shared.utils.report_time import download_stamp
+from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.apps.bizsight.config import BizSightConfig
 from typing import Dict, Any, List
 from datetime import datetime
@@ -99,7 +101,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         if state_name:
             notes_content.append(('', f'State: {state_name}'))
         notes_content.append(('', f'Years: {years_str}'))
-        notes_content.append(('', f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'))
+        notes_content.append(('', f'Generated: {analysis_stamp(metadata or analysis_result.get("metadata"))}'))
         from justdata.shared.utils.versions import get_version
         notes_content.append(('', f'Application Version: {get_version("bizsight")}'))
         notes_content.append(('', ''))
@@ -368,7 +370,7 @@ def download_excel(analysis_result, metadata):
         county_data = metadata.get('county_data', {})
         county_name = county_data.get('name', 'County') if isinstance(county_data, dict) else str(county_data) if county_data else 'County'
         safe_name = re.sub(r'[^\w\s-]', '', county_name).replace(' ', '_')[:50]
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = download_stamp()
         xlsx_filename = f'BizSight_{safe_name}_{timestamp}.xlsx'
         zip_filename = f'BizSight_{safe_name}_{timestamp}.zip'
 
