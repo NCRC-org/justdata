@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from justdata.apps.analytics.bq.client import get_bigquery_client
+from justdata.apps.analytics.bq.client import get_bigquery_client, run_query
 from justdata.apps.analytics.bq.centroids import (
     lookup_county_centroid,
     validate_coordinates,
@@ -237,13 +237,12 @@ def _enrich_lender_names(data: List[Dict]) -> List[Dict]:
     if leis_to_lookup:
         try:
             client = get_bigquery_client()
-            leis_str = "', '".join(leis_to_lookup)
             query = f"""
                 SELECT lei, display_name
                 FROM `justdata-ncrc.shared.lender_names_gleif`
-                WHERE lei IN ('{leis_str}')
+                WHERE lei IN UNNEST(@leis)
             """
-            results = client.query(query).result()
+            results = run_query(client, query, {'leis': sorted(leis_to_lookup)}).result()
             for row in results:
                 _lender_names_cache[row.lei] = row.display_name
             print(f"[INFO] Loaded {len(leis_to_lookup)} lender names from GLEIF")
@@ -303,15 +302,14 @@ def _enrich_with_county_names(client, data: List[Dict]) -> List[Dict]:
     if not fips_list:
         return data
 
-    fips_str = "', '".join(fips_list)
     query = f"""
         SELECT DISTINCT geoid5 AS county_fips, County AS county_name
         FROM `justdata-ncrc.shared.cbsa_to_county`
-        WHERE geoid5 IN ('{fips_str}')
+        WHERE geoid5 IN UNNEST(@fips)
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, {'fips': sorted(set(fips_list))}).result()
         name_lookup = {row['county_fips']: row['county_name'] for row in results}
 
         for item in data:
@@ -401,10 +399,10 @@ def _lookup_single_lender_name(lender_id: str) -> Optional[str]:
         query = f"""
             SELECT display_name
             FROM `justdata-ncrc.shared.lender_names_gleif`
-            WHERE lei = '{lender_id}'
+            WHERE lei = @lender_id
             LIMIT 1
         """
-        results = list(client.query(query).result())
+        results = list(run_query(client, query, {'lender_id': lender_id}).result())
         if results:
             name = results[0].display_name
             _lender_names_cache[lender_id] = name

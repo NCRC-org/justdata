@@ -44,6 +44,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from google.cloud import bigquery
 from justdata.apps.analytics.sql_loader import load_sql
+from justdata.apps.analytics.bq.client import run_query
 
 # Source project (JustData app data)
 SOURCE_PROJECT = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
@@ -235,14 +236,14 @@ def backfill_from_usage_log(
         cache_key,
         cache_hit
     FROM `{SOURCE_PROJECT}.{SOURCE_DATASET}.usage_log`
-    WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days_back} DAY)
+    WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days_back DAY)
         AND app_name IN ('lendsight', 'bizsight', 'branchsight', 'branchsight',
                          'branchmapper', 'mergermeter', 'dataexplorer', 'lenderprofile')
     ORDER BY timestamp ASC
     """
 
     print(f"Querying usage_log for last {days_back} days...")
-    results = source_client.query(query).result()
+    results = run_query(source_client, query, {'days_back': int(days_back)}).result()
 
     rows_to_insert = []
     total_inserted = 0
@@ -331,7 +332,7 @@ def create_unified_view(client: bigquery.Client) -> None:
     view_sql = load_sql("backfill_view.sql").format(TARGET_DATASET=TARGET_DATASET, TARGET_PROJECT=TARGET_PROJECT)
 
     try:
-        client.query(view_sql).result()
+        run_query(client, view_sql).result()
         print(f"Created unified view: {TARGET_PROJECT}.{TARGET_DATASET}.all_events")
     except Exception as e:
         print(f"Warning: Could not create unified view: {e}")
@@ -352,7 +353,7 @@ def get_backfill_summary(client: bigquery.Client) -> Dict[str, Any]:
     ORDER BY event_count DESC
     """
 
-    results = client.query(query).result()
+    results = run_query(client, query).result()
     summary = []
     for row in results:
         summary.append({

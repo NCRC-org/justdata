@@ -11,6 +11,7 @@ from justdata.apps.analytics.bq.client import (
     _get_cached,
     _set_cached,
     get_bigquery_client,
+    run_query,
     get_valid_user_filter,
 )
 from justdata.apps.analytics.bq.transforms import (
@@ -55,12 +56,12 @@ def get_users(
         return cached
 
     client = get_bigquery_client()
-    target_apps_str = "', '".join(TARGET_APPS)
+    params = {'target_apps': TARGET_APPS, 'days': int(days), 'search': search}
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
     search_filter = ""
     if search:
-        search_filter = f"AND user_id LIKE '%{search}%'"
+        search_filter = f"AND user_id LIKE CONCAT('%', @search, '%')"
 
     # Apply valid user filter to exclude test/anonymous users
     user_filter = get_valid_user_filter()
@@ -75,7 +76,7 @@ def get_users(
             MIN(event_timestamp) AS first_activity,
             ARRAY_AGG(DISTINCT event_name ORDER BY event_name) AS apps_used
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             AND {user_filter}
             {date_filter}
             {search_filter}
@@ -85,7 +86,7 @@ def get_users(
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         data = [dict(row) for row in results]
 
         # Enrich with Firestore user profile data
@@ -113,9 +114,9 @@ def get_user_activity(
         Dict with user details and activity breakdown
     """
     client = get_bigquery_client()
-    target_apps_str = "', '".join(TARGET_APPS)
+    params = {'target_apps': TARGET_APPS, 'days': int(days), 'user_id': user_id}
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # Get user summary (user email, type, org from Firestore, not BigQuery)
     summary_query = f"""
@@ -127,8 +128,8 @@ def get_user_activity(
             MAX(event_timestamp) AS last_activity,
             MIN(event_timestamp) AS first_activity
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
-            AND user_id = '{user_id}'
+        WHERE event_name IN UNNEST(@target_apps)
+            AND user_id = @user_id
             {date_filter}
         GROUP BY user_id
     """
@@ -139,8 +140,8 @@ def get_user_activity(
             event_name,
             COUNT(*) AS count
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
-            AND user_id = '{user_id}'
+        WHERE event_name IN UNNEST(@target_apps)
+            AND user_id = @user_id
             {date_filter}
         GROUP BY event_name
         ORDER BY count DESC
@@ -156,8 +157,8 @@ def get_user_activity(
             lender_name,
             lender_id
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
-            AND user_id = '{user_id}'
+        WHERE event_name IN UNNEST(@target_apps)
+            AND user_id = @user_id
             {date_filter}
         ORDER BY event_timestamp DESC
         LIMIT 20
@@ -171,8 +172,8 @@ def get_user_activity(
             state,
             COUNT(*) AS report_count
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
-            AND user_id = '{user_id}'
+        WHERE event_name IN UNNEST(@target_apps)
+            AND user_id = @user_id
             AND county_fips IS NOT NULL
             {date_filter}
         GROUP BY county_fips, county_name, state
@@ -187,8 +188,8 @@ def get_user_activity(
             lender_name,
             COUNT(*) AS report_count
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
-            AND user_id = '{user_id}'
+        WHERE event_name IN UNNEST(@target_apps)
+            AND user_id = @user_id
             AND lender_id IS NOT NULL
             {date_filter}
         GROUP BY lender_id, lender_name
@@ -198,11 +199,11 @@ def get_user_activity(
 
     try:
         # Execute queries
-        summary_result = list(client.query(summary_query).result())
-        by_app_result = [dict(row) for row in client.query(by_app_query).result()]
-        recent_result = [dict(row) for row in client.query(recent_query).result()]
-        counties_result = [dict(row) for row in client.query(counties_query).result()]
-        lenders_result = [dict(row) for row in client.query(lenders_query).result()]
+        summary_result = list(run_query(client, summary_query, params).result())
+        by_app_result = [dict(row) for row in run_query(client, by_app_query, params).result()]
+        recent_result = [dict(row) for row in run_query(client, recent_query, params).result()]
+        counties_result = [dict(row) for row in run_query(client, counties_query, params).result()]
+        lenders_result = [dict(row) for row in run_query(client, lenders_query, params).result()]
 
         if not summary_result:
             return {'error': 'User not found'}
@@ -241,17 +242,17 @@ def get_entity_users(
         List of user records with activity counts for this entity
     """
     client = get_bigquery_client()
-    target_apps_str = "', '".join(TARGET_APPS)
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    params = {'target_apps': TARGET_APPS, 'days': int(days), 'entity_id': entity_id}
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)" if days > 0 else ""
 
     # Apply valid user filter to exclude test/anonymous users
     user_filter = get_valid_user_filter()
 
     # Build entity filter based on type
     if entity_type == 'county':
-        entity_filter = f"AND county_fips = '{entity_id}'"
+        entity_filter = f"AND county_fips = @entity_id"
     elif entity_type == 'lender':
-        entity_filter = f"AND lender_id = '{entity_id}'"
+        entity_filter = f"AND lender_id = @entity_id"
     else:
         return []
 
@@ -262,7 +263,7 @@ def get_entity_users(
             MAX(event_timestamp) AS last_activity,
             MIN(event_timestamp) AS first_activity
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN UNNEST(@target_apps)
             AND {user_filter}
             {entity_filter}
             {date_filter}
@@ -272,7 +273,7 @@ def get_entity_users(
     """
 
     try:
-        results = client.query(query).result()
+        results = run_query(client, query, params).result()
         users = [dict(row) for row in results]
 
         # Enrich with Firestore user profile data
