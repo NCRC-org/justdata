@@ -72,3 +72,10 @@ def analysis_date(metadata) -> str:
 
 def analysis_stamp(metadata) -> str:
     return et_stamp(analysis_time(metadata))
+
+
+def download_stamp() -> str:
+    """Download file names: the download time in ET, labeled, e.g.
+    '20261120_143705_ET'. File names keep the download time (Jad, 2026-11-20);
+    the analysis time is inside the file."""
+    return datetime.now(ET).strftime("%Y%m%d_%H%M%S") + "_ET"

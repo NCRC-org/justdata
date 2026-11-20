@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from datetime import datetime, timezone
 
+from justdata.shared.utils.report_time import download_stamp
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, is_privileged_user
 from justdata.backend import (
     new_job_id, run_in_background, sse_response,
@@ -680,7 +681,7 @@ def download():
         metadata = _export_metadata(result, job_id)
         county_name = metadata.get('county_name') or 'County'
         safe_name = re.sub(r'[^\w\s-]', '', county_name).replace(' ', '_')[:50]
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = download_stamp()
 
         if format_type in ('excel', 'xlsx', 'zip'):
             from justdata.apps.bizsight.excel_export import save_bizsight_excel_report

@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import math
 
+from justdata.shared.utils.report_time import download_stamp
 from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.main.auth import (
     require_access, get_user_permissions, get_user_type, login_required,
@@ -504,7 +505,7 @@ def download_excel(report_data, metadata):
         response = send_file(
             tmp_path,
             as_attachment=True,
-            download_name=f'BranchSight_{_county_slug(metadata)}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            download_name=f'BranchSight_{_county_slug(metadata)}_{download_stamp()}.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
@@ -538,7 +539,7 @@ def download_pdf(report_data, metadata, analysis_result):
 
         counties = metadata.get('counties', [])
         county_slug = str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
-        filename = f'branchsight_{county_slug}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        filename = f'branchsight_{county_slug}_{download_stamp()}.pdf'
 
         response = send_file(
             tmp_path,
@@ -581,7 +582,7 @@ def download_csv(report_data, metadata):
             output.getvalue(),
             mimetype='text/csv',
             headers={
-                'Content-Disposition': f'attachment; filename=branchsight_summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+                'Content-Disposition': f'attachment; filename=branchsight_summary_{download_stamp()}.csv'
             }
         )
     except Exception as e:
@@ -610,7 +611,7 @@ def download_json(report_data, metadata):
             json.dumps(export_data, indent=2),
             mimetype='application/json',
             headers={
-                'Content-Disposition': f'attachment; filename=branchsight_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+                'Content-Disposition': f'attachment; filename=branchsight_data_{download_stamp()}.json'
             }
         )
     except Exception as e:
@@ -621,7 +622,7 @@ def download_zip(report_data, metadata, analysis_result=None):
     """Download ZIP file with PDF and Excel"""
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            timestamp = download_stamp()
             counties = metadata.get('counties', [])
             county_slug = str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
 

@@ -54,3 +54,11 @@ def test_no_sight_export_stamps_the_download_time():
         # Download file names may still carry the download time; content may not.
         assert not re.search(r"gen_date = datetime\.now\(\)", text), rel
         assert not re.search(r"Generated[^\n]*datetime\.now\(\)\.strftime", text), rel
+
+
+def test_download_file_names_label_the_time_as_et():
+    from justdata.shared.utils.report_time import download_stamp
+    assert re.fullmatch(r"\d{8}_\d{6}_ET", download_stamp())
+    for rel in ["apps/lendsight/blueprint.py", "apps/bizsight/blueprint.py",
+                "apps/bizsight/excel_export.py", "apps/branchsight/blueprint.py"]:
+        assert "%Y%m%d_%H%M%S" not in (ROOT / rel).read_text(), rel
