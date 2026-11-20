@@ -23,7 +23,9 @@ def create_demographic_overview_table_for_excel(df: pd.DataFrame, years: List[in
     yearly_data = []
     for year in sorted(years):
         year_df = df[df['year'] == year].copy()
-        
+        if year_df.empty:
+            continue  # a year with no rows is no data, not zero
+
         hispanic = int(year_df['hispanic_originations'].sum())
         black = int(year_df['black_originations'].sum())
         white = int(year_df['white_originations'].sum())
@@ -125,7 +127,7 @@ def create_demographic_overview_table_for_excel(df: pd.DataFrame, years: List[in
         if year_data:
             result_data[str(year)].append(year_data['total_originations'])
         else:
-            result_data[str(year)].append(0)
+            result_data[str(year)].append(None)
     
     # Population Share column (empty for Total Loans row)
     if population_shares:
@@ -138,7 +140,7 @@ def create_demographic_overview_table_for_excel(df: pd.DataFrame, years: List[in
             count_change = last_year_data['total_originations'] - first_year_data['total_originations']
             result_data[f'Change Over Time ({time_span})'].append(count_change)
         else:
-            result_data[f'Change Over Time ({time_span})'].append(0)
+            result_data[f'Change Over Time ({time_span})'].append(None)
     
     # Add ALL race/ethnicity groups (not filtered by 1%)
     # Order: White, Hispanic, Black, Asian, Native American, HoPI, Multi-Racial
@@ -151,12 +153,12 @@ def create_demographic_overview_table_for_excel(df: pd.DataFrame, years: List[in
             if year_data:
                 count = year_data.get(group, 0)
                 loans_with_demo = year_data['loans_with_demographics']
-                pct = (count / loans_with_demo * 100) if loans_with_demo > 0 else 0.0
+                pct = (count / loans_with_demo * 100) if loans_with_demo > 0 else None
                 result_data[str(year)].append(pct)
                 group_changes.append((count, pct))
             else:
-                result_data[str(year)].append(0.0)
-                group_changes.append((0, 0.0))
+                result_data[str(year)].append(None)
+                group_changes.append((None, None))
         
         # Add Population Share column (if Census data available)
         if population_shares:
@@ -167,11 +169,11 @@ def create_demographic_overview_table_for_excel(df: pd.DataFrame, years: List[in
         if len(years) >= 2 and len(group_changes) >= 2:
             first_pct = group_changes[0][1]
             last_pct = group_changes[-1][1]
-            pct_change = last_pct - first_pct
+            pct_change = None if first_pct is None or last_pct is None else last_pct - first_pct
             result_data[f'Change Over Time ({time_span})'].append(pct_change)
         else:
             if len(years) >= 2:
-                result_data[f'Change Over Time ({time_span})'].append(0.0)
+                result_data[f'Change Over Time ({time_span})'].append(None)
     
     # Note: "No Data" row removed per user request
     

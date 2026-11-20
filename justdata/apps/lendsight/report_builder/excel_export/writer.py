@@ -13,6 +13,7 @@ from openpyxl.utils import get_column_letter
 from justdata.shared.core.hmda_years import is_valid_hmda_year
 from justdata.apps.lendsight.report_builder.formatting import sanitize_sheet_name
 from justdata.apps.lendsight.report_builder.sections.concentration import HHI_METHOD_SENTENCE, hhi_comparison_rows
+from justdata.shared.utils.no_data import dash_missing
 from justdata.apps.lendsight.report_builder.excel_export.demographic import (
     create_demographic_overview_table_for_excel,
     create_population_demographics_table_for_excel,
@@ -180,7 +181,7 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         if raw_df is not None:
             demo_table = create_demographic_overview_table_for_excel(raw_df, years, census_data=census_data_for_excel)
             if not demo_table.empty:
-                demo_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 1 - Demographic Overview'), index=False)
+                dash_missing(demo_table).to_excel(writer, sheet_name=sanitize_sheet_name('Section 1 - Demographic Overview'), index=False)
         else:
             # Use pre-computed demographic_overview table from report_data
             demographic_overview = report_data.get('demographic_overview', pd.DataFrame())
@@ -216,7 +217,7 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         if raw_df is not None:
             top_lenders_table = create_top_lenders_table_for_excel(raw_df, years)
             if not top_lenders_table.empty:
-                top_lenders_table.to_excel(writer, sheet_name=sanitize_sheet_name(f'Section 3 - Top Lenders ({max(years)})'), index=False)
+                dash_missing(top_lenders_table).to_excel(writer, sheet_name=sanitize_sheet_name(f'Section 3 - Top Lenders ({max(years)})'), index=False)
 
             # Section 3b: Top 10 Lenders Over Time - Excel Export Only
             # Guard to the exposed HMDA year range (see shared/core/hmda_years.py).
@@ -247,7 +248,7 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         hhi_rows = hhi_comparison_rows(market_concentration, report_data.get('market_concentration_state') or [],
                                        years, area)
         if hhi_rows:
-            pd.DataFrame(hhi_rows).to_excel(writer, sheet_name=sanitize_sheet_name('Section 4 - Concentration (HHI)'), index=False)
+            dash_missing(pd.DataFrame(hhi_rows)).to_excel(writer, sheet_name=sanitize_sheet_name('Section 4 - Concentration (HHI)'), index=False)
 
         # Style the header row for all data sheets (not Methods sheet)
         from openpyxl.styles import NamedStyle
