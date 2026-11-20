@@ -8,6 +8,14 @@ on:
       - testing
   workflow_dispatch:  # Allow manual trigger
 
+# One deploy per branch at a time. On 2026-11-20 the #268 and #269 deploys to
+# testing overlapped and the older commit finished last, so testing served it
+# without #268. Runs now wait for the one in progress. GitHub keeps only the
+# newest pending run per group, so the latest commit always deploys last.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   PROJECT_ID: justdata-ncrc
   REGION: us-east1
