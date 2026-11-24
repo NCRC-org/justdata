@@ -43,7 +43,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # BranchSight 2: bank Net Change matched on RSSD, not the name, plus the
 # Acquired column and opened, closed and acquired for the narrative (T4,
 # 2026-11-20).
-REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4, 'branchsight': 2}
+# BizSight 4: the state and national "$100K-$250K" amount share is built on
+# the BigQuery path the deployed services use (BZ-005, 2026-11-24).
+REPORT_REVISIONS = {'bizsight': 4, 'lendsight': 4, 'branchsight': 2}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
