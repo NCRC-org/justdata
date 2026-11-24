@@ -36,6 +36,7 @@ def build_benchmark_dict(row, year=2024, geo_key=None, geo_value=None):
     num_100k_250k = int(row.get('num_100k_250k', 0))
     num_250k_1m = int(row.get('num_250k_1m', 0))
     amt_under_100k = float(row.get('amt_under_100k', 0.0))
+    amt_100k_250k = float(row.get('amt_100k_250k', 0.0))
     amt_250k_1m = float(row.get('amt_250k_1m', 0.0))
     numsb_under_1m = int(row.get('numsb_under_1m', 0))
     amtsb_under_1m = float(row.get('amtsb_under_1m', 0.0))
@@ -68,6 +69,7 @@ def build_benchmark_dict(row, year=2024, geo_key=None, geo_value=None):
         'pct_loans_250k_1m': (num_250k_1m / total_loans * 100) if total_loans > 0 else 0.0,
         'pct_loans_sb_under_1m': (numsb_under_1m / total_loans * 100) if total_loans > 0 else 0.0,
         'pct_amount_under_100k': (amt_under_100k / total_amount * 100) if total_amount > 0 else 0.0,
+        'pct_amount_100k_250k': (amt_100k_250k / total_amount * 100) if total_amount > 0 else 0.0,
         'pct_amount_250k_1m': (amt_250k_1m / total_amount * 100) if total_amount > 0 else 0.0,
         'pct_amount_sb_under_1m': (amtsb_under_1m / total_amount * 100) if total_amount > 0 else 0.0,
         # LMI percentages (use known-income denominator)
@@ -162,6 +164,7 @@ def generate_cbsa_benchmarks(year=2024, bq_client=None):
         SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
         SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,
         SUM(COALESCE(a.amt_under_100k, 0)) as amt_under_100k,
+        SUM(COALESCE(a.amt_100k_250k, 0)) as amt_100k_250k,
         SUM(COALESCE(a.amt_250k_1m, 0)) as amt_250k_1m,
         SUM(COALESCE(a.numsbrev_under_1m, 0)) as numsb_under_1m,
         SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m,

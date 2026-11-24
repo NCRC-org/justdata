@@ -327,6 +327,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                         state_num_100k_250k = safe_int(row.get('num_100k_250k', 0))
                         state_num_250k_1m = safe_int(row.get('num_250k_1m', 0))
                         state_amt_under_100k = safe_float(row.get('amt_under_100k', 0.0))
+                        state_amt_100k_250k = safe_float(row.get('amt_100k_250k', 0.0))
                         state_amt_250k_1m = safe_float(row.get('amt_250k_1m', 0.0))
                         state_numsb_under_1m = safe_int(row.get('numsb_under_1m', 0))
                         state_amtsb_under_1m = safe_float(row.get('amtsb_under_1m', 0.0))
@@ -354,6 +355,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                             'pct_loans_sb_under_1m': (state_numsb_under_1m / state_total * 100) if state_total > 0 else 0.0,
                             'pct_loans_lmi_tract': (state_lmi_loans / state_classified * 100) if state_classified > 0 else 0.0,
                             'pct_amount_under_100k': (state_amt_under_100k / state_amount * 100) if state_amount > 0 else 0.0,
+                            'pct_amount_100k_250k': (state_amt_100k_250k / state_amount * 100) if state_amount > 0 else 0.0,
                             'pct_amount_250k_1m': (state_amt_250k_1m / state_amount * 100) if state_amount > 0 else 0.0,
                             'pct_amount_sb_under_1m': (state_amtsb_under_1m / state_amount * 100) if state_amount > 0 else 0.0,
                             # Income category percentages
@@ -386,6 +388,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                         national_num_100k_250k = safe_int(row.get('num_100k_250k', 0))
                         national_num_250k_1m = safe_int(row.get('num_250k_1m', 0))
                         national_amt_under_100k = safe_float(row.get('amt_under_100k', 0.0))
+                        national_amt_100k_250k = safe_float(row.get('amt_100k_250k', 0.0))
                         national_amt_250k_1m = safe_float(row.get('amt_250k_1m', 0.0))
                         national_numsb_under_1m = safe_int(row.get('numsb_under_1m', 0))
                         national_amtsb_under_1m = safe_float(row.get('amtsb_under_1m', 0.0))
@@ -413,6 +416,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                             'pct_loans_sb_under_1m': (national_numsb_under_1m / national_total * 100) if national_total > 0 else 0.0,
                             'pct_loans_lmi_tract': (national_lmi_loans / national_classified * 100) if national_classified > 0 else 0.0,
                             'pct_amount_under_100k': (national_amt_under_100k / national_amount * 100) if national_amount > 0 else 0.0,
+                            'pct_amount_100k_250k': (national_amt_100k_250k / national_amount * 100) if national_amount > 0 else 0.0,
                             'pct_amount_250k_1m': (national_amt_250k_1m / national_amount * 100) if national_amount > 0 else 0.0,
                             'pct_amount_sb_under_1m': (national_amtsb_under_1m / national_amount * 100) if national_amount > 0 else 0.0,
                             # Income category percentages
