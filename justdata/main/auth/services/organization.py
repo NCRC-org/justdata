@@ -43,6 +43,7 @@ ORG_TYPE_BY_COMPANY_TYPE = {
     'Social Services Provider': COMMUNITY,
     'Tenant Organizations': COMMUNITY,
     'Workforce Development': COMMUNITY,
+    'Housing Development': COMMUNITY,   # Jad, 2026-11-24
     'Government': GOVERNMENT,
     'Government-Local': GOVERNMENT,
     'Government-State': GOVERNMENT,
@@ -62,8 +63,6 @@ ORG_TYPE_BY_COMPANY_TYPE = {
     'Consultant': OTHER,
     'Technology': OTHER,
     'Hospital/Health System': OTHER,
-    # Open: Jad to choose Community organization or Other (2026-11-20).
-    'Housing Development': OTHER,
     'Arts/Cultural': OTHER,
     'Union': OTHER,
     'Systems Change and Financial Reform': OTHER,
@@ -111,7 +110,8 @@ def state_code(text: Optional[str]) -> str:
 
     The field is free text (247 spellings, 2026-11-20): codes and full names
     in any case, with stray periods and spaces. Anything else, including
-    places outside the US, is "unknown".
+    places outside the US, is "unknown". A territory is never inferred from a
+    city name ("san juan", "loiza", "st. thomas" stay unknown; Jad, 2026-11-24).
     """
     if not text:
         return UNKNOWN_STATE

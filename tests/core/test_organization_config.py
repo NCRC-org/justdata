@@ -37,6 +37,7 @@ def test_jads_changes():
     assert org_type_for('CDFI/Loan Fund') == CDFI
     for option in ('Foundation', 'Foundation-Local', 'Foundation-State', 'Foundation-National'):
         assert org_type_for(option) == PHILANTHROPY
+    assert org_type_for('Housing Development') == 'Community organization'
 
 
 def test_no_or_unknown_type_is_left_to_the_admin():
