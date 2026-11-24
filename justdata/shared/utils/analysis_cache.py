@@ -43,7 +43,9 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 # BranchSight 2: bank Net Change matched on RSSD, not the name, plus the
 # Acquired column and opened, closed and acquired for the narrative (T4,
 # 2026-11-20).
-REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4, 'branchsight': 2}
+# BranchSight 3: HHI, market share and the top-bank lists aggregate by RSSD,
+# not the name; same-named banks show their headquarters (2026-11-24).
+REPORT_REVISIONS = {'bizsight': 3, 'lendsight': 4, 'branchsight': 3}
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
