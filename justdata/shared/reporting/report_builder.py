@@ -12,6 +12,7 @@ import re
 
 from justdata.shared.utils.report_time import analysis_date, analysis_stamp
 from justdata.shared.utils.no_data import NO_DATA, dash_missing, is_missing
+from justdata.shared.utils import fdic_institutions
 
 
 def _share_text(pct) -> str:
@@ -78,8 +79,11 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
     # Clean and prepare data
     df = clean_data(df)
 
+    # One display name per bank (RSSD) for every table in the report.
+    names = bank_display_names(df)
+
     # Calculate HHI for deposits in latest year
-    hhi_data = calculate_hhi(df)
+    hhi_data = calculate_hhi(df, names)
 
     # Calculate HHI for all years (for chart and table)
     hhi_by_year_data = calculate_hhi_by_year(df, years)
@@ -87,7 +91,7 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
     # Build different report sections
     report_data = {
         'summary': create_summary_table(df, counties, years),
-        'by_bank': create_bank_summary(df, years),  # Pass years for net change calculation
+        'by_bank': create_bank_summary(df, years, names),  # Pass years for net change calculation
         'by_county': create_county_summary(df, counties, years),
         'trends': create_trend_analysis(df, years),
         'raw_data': df,
@@ -98,7 +102,60 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
     return report_data
 
 
-def calculate_hhi(df: pd.DataFrame) -> Dict[str, Any]:
+def _bank_key(df: pd.DataFrame) -> str:
+    """Banks are RSSDs. Name grouping adds unrelated banks that share a name
+    together (nine RSSDs are "Pinnacle Bank"), so it is only a fallback for
+    data without an RSSD column."""
+    return 'rssd' if 'rssd' in df.columns else 'bank_name'
+
+
+def bank_display_names(df: pd.DataFrame) -> Dict[str, str]:
+    """{rssd: name to show}: each bank's name in the latest year it appears.
+
+    Where two different RSSDs in the report would show the same name, each
+    gets its headquarters city and state from the FDIC, "Pinnacle Bank
+    (Nashville, TN)", or its RSSD if the FDIC lookup fails.
+    """
+    if 'rssd' not in df.columns or df.empty:
+        return {}
+    rows = df[['year', 'rssd', 'bank_name']].copy()
+    rows['rssd'] = rows['rssd'].astype(str)
+    latest = rows.sort_values('year').drop_duplicates('rssd', keep='last')
+    names = dict(zip(latest['rssd'], latest['bank_name'].astype(str)))
+
+    by_name: Dict[str, List[str]] = {}
+    for rssd, name in names.items():
+        by_name.setdefault(name.casefold().strip(), []).append(rssd)
+    shared = [r for group in by_name.values() if len(group) > 1 for r in group]
+    if shared:
+        hq = fdic_institutions.headquarters(shared)
+        for rssd in shared:
+            names[rssd] = f"{names[rssd]} ({hq.get(rssd) or 'RSSD ' + rssd})"
+        # Two same-named banks in the same city: add the RSSD too.
+        seen: Dict[str, List[str]] = {}
+        for rssd in shared:
+            seen.setdefault(names[rssd].casefold(), []).append(rssd)
+        for group in seen.values():
+            if len(group) > 1:
+                for rssd in group:
+                    names[rssd] = f"{names[rssd][:-1]}; RSSD {rssd})"
+    return names
+
+
+def _deposits_by_bank(year_df: pd.DataFrame, names: Optional[Dict[str, str]] = None) -> pd.DataFrame:
+    """Deposits summed per bank (RSSD) for one year, with the name to show."""
+    key = _bank_key(year_df)
+    frame = year_df.copy()
+    frame[key] = frame[key].astype(str)
+    frame['total_deposits'] = pd.to_numeric(frame['total_deposits'], errors='coerce').fillna(0)
+    out = frame.groupby(key, as_index=False)['total_deposits'].sum()
+    if key == 'rssd':
+        first_name = frame.drop_duplicates('rssd').set_index('rssd')['bank_name'].astype(str)
+        out['bank_name'] = out['rssd'].map(lambda r: (names or {}).get(r) or first_name.get(r, ''))
+    return out[out['total_deposits'] > 0]
+
+
+def calculate_hhi(df: pd.DataFrame, names: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """
     Calculate Herfindahl-Hirschman Index (HHI) for bank deposits in the latest year.
     
@@ -123,9 +180,8 @@ def calculate_hhi(df: pd.DataFrame) -> Dict[str, Any]:
     latest_year = df['year'].max()
     latest_year_df = df[df['year'] == latest_year].copy()
     
-    # Aggregate deposits by bank (across all counties)
-    bank_deposits = latest_year_df.groupby('bank_name')['total_deposits'].sum().reset_index()
-    bank_deposits = bank_deposits[bank_deposits['total_deposits'] > 0]  # Remove banks with zero deposits
+    # Aggregate deposits by bank (RSSD), across all counties
+    bank_deposits = _deposits_by_bank(latest_year_df, names if names is not None else bank_display_names(df))
     
     if bank_deposits.empty:
         return {
@@ -153,7 +209,8 @@ def calculate_hhi(df: pd.DataFrame) -> Dict[str, Any]:
         concentration_level = 'High concentration'
     
     # Get top banks by deposits
-    top_banks = bank_deposits.nlargest(10, 'total_deposits')[['bank_name', 'total_deposits', 'market_share']].to_dict('records')
+    top_cols = [c for c in ('rssd', 'bank_name', 'total_deposits', 'market_share') if c in bank_deposits.columns]
+    top_banks = bank_deposits.nlargest(10, 'total_deposits')[top_cols].to_dict('records')
     
     return {
         'hhi': round(hhi, 2),
@@ -186,9 +243,8 @@ def calculate_hhi_by_year(df: pd.DataFrame, years: Optional[List[int]] = None) -
     for year in years:
         year_df = df[df['year'] == year].copy()
 
-        # Aggregate deposits by bank (across all counties)
-        bank_deposits = year_df.groupby('bank_name')['total_deposits'].sum().reset_index()
-        bank_deposits = bank_deposits[bank_deposits['total_deposits'] > 0]
+        # Aggregate deposits by bank (RSSD), across all counties
+        bank_deposits = _deposits_by_bank(year_df) if not year_df.empty else pd.DataFrame()
 
         total_deposits = bank_deposits['total_deposits'].sum() if not bank_deposits.empty else 0
         if total_deposits == 0:
@@ -369,7 +425,8 @@ def bank_branch_changes(df: pd.DataFrame, first_year: int, latest_year: int) -> 
     return changes
 
 
-def bank_changes_for_narrative(df: pd.DataFrame, years: List[int]) -> Dict[str, Any]:
+def bank_changes_for_narrative(df: pd.DataFrame, years: List[int],
+                               names: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """The bank-change figures the Section 2 narrative may use, precomputed.
 
     Opened, closed and acquired are separate figures; the narrative may not
@@ -381,6 +438,9 @@ def bank_changes_for_narrative(df: pd.DataFrame, years: List[int]) -> Dict[str, 
     if first_year == latest_year or df[df['year'] == first_year].empty:
         return {}
     changes = bank_branch_changes(df, first_year, latest_year)
+    names = names if names is not None else bank_display_names(df)
+    for rssd, c in changes.items():
+        c['bank_name'] = names.get(rssd, c['bank_name'])
     banks = sorted((c for c in changes.values() if c['latest'] > 0),
                    key=lambda c: (-c['latest'], c['bank_name']))
     left = sorted((c for c in changes.values() if c['latest'] == 0),
@@ -395,7 +455,8 @@ def bank_changes_for_narrative(df: pd.DataFrame, years: List[int]) -> Dict[str, 
     }
 
 
-def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFrame:
+def create_bank_summary(df: pd.DataFrame, years: List[int] = None,
+                        names: Optional[Dict[str, str]] = None) -> pd.DataFrame:
     """Summary by bank (RSSD) for the latest year, every bank, largest first.
 
     Net Change is the bank's latest-year branch count minus its first-year
@@ -421,11 +482,12 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
     latest_year_df = df[df['year'] == latest_year]
     has_first_year = not df[df['year'] == first_year].empty
     changes = bank_branch_changes(df, first_year, latest_year)
+    names = names if names is not None else bank_display_names(df)
 
     bank_data = []
     for rssd in latest_year_df['rssd'].unique():
         bank_latest = latest_year_df[latest_year_df['rssd'] == rssd]
-        bank_name = bank_latest['bank_name'].iloc[0]
+        bank_name = names.get(rssd) or bank_latest['bank_name'].iloc[0]
         total_branches_latest = bank_latest['uninumbr'].nunique()
 
         # Dedupe: LMI only, MMCT only, both
@@ -700,7 +762,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         notes_content.append(('Acquired:', 'In the bank table, the number of a bank\'s latest-year branches that another institution held in the first year (same FDIC branch number, UNINUMBR). ' + BANK_CHANGE_NOTE))
         notes_content.append(('Transferred Out:', 'In the bank table, the number of a bank\'s first-year branches that another institution held in the latest year (same UNINUMBR).'))
         notes_content.append(('New to this County:', 'A bank with no branches in the first year and none acquired. Its branch count is not shown as a change.'))
-        notes_content.append(('HHI (Herfindahl-Hirschman Index):', 'Calculated using deposit shares of all banks in the study area for the most recent year. HHI < 1,500 = Low concentration; HHI 1,500-2,500 = Moderate concentration; HHI > 2,500 = High concentration.'))
+        notes_content.append(('HHI (Herfindahl-Hirschman Index):', 'Calculated using deposit shares of all banks in the study area for the most recent year. HHI < 1,500 = Low concentration; HHI 1,500-2,500 = Moderate concentration; HHI > 2,500 = High concentration. Each bank is one FDIC RSSD ID, never a name; same-named banks show their headquarters city and state.'))
         notes_content.append(('LMI Classification:', 'Branches located in Low-to-Moderate Income (LMI) census tracts'))
         notes_content.append(('MMCT Classification:', 'Branches located in Majority-Minority Census Tracts (MMCT)'))
         notes_content.append(('Deposit Aggregation:', 'Total deposits are summed across all branches for each bank in each county/year'))

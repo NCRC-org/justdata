@@ -1,0 +1,546 @@
+county_state,year,rssd,bank_name,branches,deposits_000s
+"Charleston County, South Carolina",2022,1017939,UNITED COMMUNITY BANK,3,234986
+"Charleston County, South Carolina",2022,1404481,BANK OF THE LOWCOUNTRY,2,46196
+"Charleston County, South Carolina",2022,1929247,SOUTHSTATE BANK,15,2427887
+"Charleston County, South Carolina",2022,2265456,WILMINGTON TRUST,1,0
+"Charleston County, South Carolina",2022,233031,REGIONS BANK,2,218693
+"Charleston County, South Carolina",2022,246022,THE BANK OF SOUTH CAROLINA,3,474916
+"Charleston County, South Carolina",2022,2728661,GRANDSOUTH BANK,1,37884
+"Charleston County, South Carolina",2022,2839790,FIRST RELIANCE BANK,1,144620
+"Charleston County, South Carolina",2022,2849463,FIRST CAPITAL BANK,2,268697
+"Charleston County, South Carolina",2022,2849801,SOUTHERN FIRST BANK,2,521475
+"Charleston County, South Carolina",2022,2925666,PINNACLE BANK,7,837243
+"Charleston County, South Carolina",2022,3348888,SERVISFIRST BANK,1,324639
+"Charleston County, South Carolina",2022,3637247,SOUTH ATLANTIC BANK,2,113328
+"Charleston County, South Carolina",2022,365325,UNITED BANK,4,353274
+"Charleston County, South Carolina",2022,379920,FIRST NATIONAL BANK OF PENNSYLVANIA,3,75364
+"Charleston County, South Carolina",2022,395238,SYNOVUS BANK,5,888209
+"Charleston County, South Carolina",2022,412751,WOODFOREST NATIONAL BANK,2,5212
+"Charleston County, South Carolina",2022,451965,WELLS FARGO BANK,16,3863425
+"Charleston County, South Carolina",2022,457426,ENTERPRISE BANK OF SOUTH CAROLINA,1,42349
+"Charleston County, South Carolina",2022,480228,BANK OF AMERICA,10,3277804
+"Charleston County, South Carolina",2022,485559,FIRST HORIZON BANK,1,141604
+"Charleston County, South Carolina",2022,491224,FIRST-CITIZENS BANK & TRUST COMPANY,9,835928
+"Charleston County, South Carolina",2022,497404,TD BANK,6,536743
+"Charleston County, South Carolina",2022,5136959,BEACON COMMUNITY BANK,2,330951
+"Charleston County, South Carolina",2022,586072,FIRST PALMETTO BANK,1,22002
+"Charleston County, South Carolina",2022,764030,AMERIS BANK,3,155960
+"Charleston County, South Carolina",2022,817824,PNC BANK,2,174881
+"Charleston County, South Carolina",2022,852218,JPMORGAN CHASE BANK,5,115370
+"Charleston County, South Carolina",2022,852320,TRUIST BANK,8,1796425
+"Charleston County, South Carolina",2023,1017939,UNITED COMMUNITY BANK,4,216584
+"Charleston County, South Carolina",2023,1404481,BANK OF THE LOWCOUNTRY,2,41900
+"Charleston County, South Carolina",2023,1929247,SOUTHSTATE BANK,13,2095196
+"Charleston County, South Carolina",2023,216922,FIRST BANK,1,44402
+"Charleston County, South Carolina",2023,2265456,WILMINGTON TRUST,1,0
+"Charleston County, South Carolina",2023,233031,REGIONS BANK,2,217875
+"Charleston County, South Carolina",2023,246022,THE BANK OF SOUTH CAROLINA,4,444048
+"Charleston County, South Carolina",2023,2594240,ENCORE BANK,1,34767
+"Charleston County, South Carolina",2023,2839790,FIRST RELIANCE BANK,1,126285
+"Charleston County, South Carolina",2023,2849463,FIRST CAPITAL BANK,2,448772
+"Charleston County, South Carolina",2023,2849801,SOUTHERN FIRST BANK,2,584246
+"Charleston County, South Carolina",2023,2925666,PINNACLE BANK,7,1044690
+"Charleston County, South Carolina",2023,3348888,SERVISFIRST BANK,1,276313
+"Charleston County, South Carolina",2023,3637247,SOUTH ATLANTIC BANK,2,135419
+"Charleston County, South Carolina",2023,365325,UNITED BANK,4,318270
+"Charleston County, South Carolina",2023,379920,FIRST NATIONAL BANK OF PENNSYLVANIA,3,90075
+"Charleston County, South Carolina",2023,395238,SYNOVUS BANK,5,772211
+"Charleston County, South Carolina",2023,412751,WOODFOREST NATIONAL BANK,2,5031
+"Charleston County, South Carolina",2023,451965,WELLS FARGO BANK,16,3160389
+"Charleston County, South Carolina",2023,457426,ENTERPRISE BANK OF SOUTH CAROLINA,1,33889
+"Charleston County, South Carolina",2023,480228,BANK OF AMERICA,10,2667151
+"Charleston County, South Carolina",2023,485559,FIRST HORIZON BANK,1,99950
+"Charleston County, South Carolina",2023,491224,FIRST-CITIZENS BANK & TRUST COMPANY,9,748580
+"Charleston County, South Carolina",2023,497404,TD BANK,6,376007
+"Charleston County, South Carolina",2023,5136959,BEACON COMMUNITY BANK,4,389343
+"Charleston County, South Carolina",2023,586072,FIRST PALMETTO BANK,1,25670
+"Charleston County, South Carolina",2023,764030,AMERIS BANK,3,136117
+"Charleston County, South Carolina",2023,817824,PNC BANK,2,144678
+"Charleston County, South Carolina",2023,852218,JPMORGAN CHASE BANK,5,179612
+"Charleston County, South Carolina",2023,852320,TRUIST BANK,8,1534231
+"Charleston County, South Carolina",2024,1017939,UNITED COMMUNITY BANK,3,213917
+"Charleston County, South Carolina",2024,1404481,BANK OF THE LOWCOUNTRY,3,57814
+"Charleston County, South Carolina",2024,1929247,SOUTHSTATE BANK,13,2131293
+"Charleston County, South Carolina",2024,216922,FIRST BANK,1,46356
+"Charleston County, South Carolina",2024,2265456,WILMINGTON TRUST,1,0
+"Charleston County, South Carolina",2024,233031,REGIONS BANK,2,204669
+"Charleston County, South Carolina",2024,246022,THE BANK OF SOUTH CAROLINA,4,403893
+"Charleston County, South Carolina",2024,2594240,ENCORE BANK,1,46199
+"Charleston County, South Carolina",2024,2839790,FIRST RELIANCE BANK,2,144991
+"Charleston County, South Carolina",2024,2849463,FIRST CAPITAL BANK,2,602180
+"Charleston County, South Carolina",2024,2849801,SOUTHERN FIRST BANK,2,595162
+"Charleston County, South Carolina",2024,2925666,PINNACLE BANK,7,953026
+"Charleston County, South Carolina",2024,3348888,SERVISFIRST BANK,1,284133
+"Charleston County, South Carolina",2024,3637247,SOUTH ATLANTIC BANK,2,155460
+"Charleston County, South Carolina",2024,365325,UNITED BANK,4,356724
+"Charleston County, South Carolina",2024,379920,FIRST NATIONAL BANK OF PENNSYLVANIA,3,96346
+"Charleston County, South Carolina",2024,395238,SYNOVUS BANK,5,758754
+"Charleston County, South Carolina",2024,412751,WOODFOREST NATIONAL BANK,2,4824
+"Charleston County, South Carolina",2024,451965,WELLS FARGO BANK,16,3102410
+"Charleston County, South Carolina",2024,457426,ENTERPRISE BANK OF SOUTH CAROLINA,1,33579
+"Charleston County, South Carolina",2024,480228,BANK OF AMERICA,10,2594409
+"Charleston County, South Carolina",2024,485559,FIRST HORIZON BANK,1,117020
+"Charleston County, South Carolina",2024,491224,FIRST-CITIZENS BANK & TRUST COMPANY,9,781047
+"Charleston County, South Carolina",2024,497404,TD BANK,6,419737
+"Charleston County, South Carolina",2024,5136959,BEACON COMMUNITY BANK,5,492258
+"Charleston County, South Carolina",2024,586072,FIRST PALMETTO BANK,1,23536
+"Charleston County, South Carolina",2024,723112,FIFTH THIRD BANK,2,315207
+"Charleston County, South Carolina",2024,764030,AMERIS BANK,3,150513
+"Charleston County, South Carolina",2024,817824,PNC BANK,2,127554
+"Charleston County, South Carolina",2024,852218,JPMORGAN CHASE BANK,6,252080
+"Charleston County, South Carolina",2024,852320,TRUIST BANK,8,1454429
+"Charleston County, South Carolina",2025,1017939,UNITED COMMUNITY BANK,3,271546
+"Charleston County, South Carolina",2025,12311,THE HUNTINGTON NATIONAL BANK,1,48561
+"Charleston County, South Carolina",2025,1404481,BANK OF THE LOWCOUNTRY,3,58999
+"Charleston County, South Carolina",2025,1929247,"SOUTHSTATE BANK, NATIONAL ASSOCIATION",13,2302252
+"Charleston County, South Carolina",2025,216922,FIRST BANK,1,35658
+"Charleston County, South Carolina",2025,2265456,"WILMINGTON TRUST, NATIONAL ASSOCIATION",1,0
+"Charleston County, South Carolina",2025,233031,REGIONS BANK,2,244882
+"Charleston County, South Carolina",2025,246022,THE BANK OF SOUTH CAROLINA,4,406532
+"Charleston County, South Carolina",2025,2594240,ENCORE BANK,1,40824
+"Charleston County, South Carolina",2025,2839790,FIRST RELIANCE BANK,2,178653
+"Charleston County, South Carolina",2025,2849463,FIRST CAPITAL BANK,2,656451
+"Charleston County, South Carolina",2025,2849801,SOUTHERN FIRST BANK,2,627521
+"Charleston County, South Carolina",2025,2925666,PINNACLE BANK,7,1091291
+"Charleston County, South Carolina",2025,3047659,DOGWOOD STATE BANK,1,20893
+"Charleston County, South Carolina",2025,3348888,SERVISFIRST BANK,1,325304
+"Charleston County, South Carolina",2025,3637247,SOUTH ATLANTIC BANK,2,220323
+"Charleston County, South Carolina",2025,365325,UNITED BANK,4,291139
+"Charleston County, South Carolina",2025,379920,FIRST NATIONAL BANK OF PENNSYLVANIA,3,95984
+"Charleston County, South Carolina",2025,395238,SYNOVUS BANK,5,685280
+"Charleston County, South Carolina",2025,412751,WOODFOREST NATIONAL BANK,3,6201
+"Charleston County, South Carolina",2025,451965,"WELLS FARGO BANK, NATIONAL ASSOCIATION",16,3628892
+"Charleston County, South Carolina",2025,457426,ENTERPRISE BANK OF SOUTH CAROLINA,1,36676
+"Charleston County, South Carolina",2025,480228,"BANK OF AMERICA, NATIONAL ASSOCIATION",10,2687963
+"Charleston County, South Carolina",2025,485559,FIRST HORIZON BANK,1,131311
+"Charleston County, South Carolina",2025,491224,FIRST-CITIZENS BANK & TRUST COMPANY,9,830086
+"Charleston County, South Carolina",2025,497404,"TD BANK, NATIONAL ASSOCIATION",6,388026
+"Charleston County, South Carolina",2025,5136959,BEACON COMMUNITY BANK,5,624401
+"Charleston County, South Carolina",2025,586072,FIRST PALMETTO BANK,1,25149
+"Charleston County, South Carolina",2025,723112,"FIFTH THIRD BANK, NATIONAL ASSOCIATION",2,446685
+"Charleston County, South Carolina",2025,764030,AMERIS BANK,3,129390
+"Charleston County, South Carolina",2025,817824,"PNC BANK, NATIONAL ASSOCIATION",2,131909
+"Charleston County, South Carolina",2025,852218,"JPMORGAN CHASE BANK, NATIONAL ASSOCIATION",6,293500
+"Charleston County, South Carolina",2025,852320,TRUIST BANK,8,1181450
+"Charleston County, South Carolina",2026,1017939,United Community Bank,3,281051
+"Charleston County, South Carolina",2026,12311,The Huntington National Bank,1,109952
+"Charleston County, South Carolina",2026,1404481,Bank of the Lowcountry,3,71220
+"Charleston County, South Carolina",2026,1929247,"SouthState Bank, National Association",13,2342020
+"Charleston County, South Carolina",2026,216922,First Bank,1,50095
+"Charleston County, South Carolina",2026,2265456,"Wilmington Trust, National Association",1,0
+"Charleston County, South Carolina",2026,233031,Regions Bank,2,278575
+"Charleston County, South Carolina",2026,246022,The Bank of South Carolina,5,426467
+"Charleston County, South Carolina",2026,2594240,ENCORE BANK,1,56691
+"Charleston County, South Carolina",2026,2797724,TowneBank,1,26753
+"Charleston County, South Carolina",2026,2839790,First Reliance Bank,2,184553
+"Charleston County, South Carolina",2026,2849463,First Capital Bank,2,880142
+"Charleston County, South Carolina",2026,2849801,Southern First Bank,2,760604
+"Charleston County, South Carolina",2026,2925666,Pinnacle Bank,12,1964516
+"Charleston County, South Carolina",2026,3348888,ServisFirst Bank,1,251247
+"Charleston County, South Carolina",2026,3637247,South Atlantic Bank,2,217665
+"Charleston County, South Carolina",2026,365325,United Bank,4,302259
+"Charleston County, South Carolina",2026,379920,First National Bank of Pennsylvania,4,87157
+"Charleston County, South Carolina",2026,412751,Woodforest National Bank,3,6297
+"Charleston County, South Carolina",2026,451965,"Wells Fargo Bank, National Association",16,4506325
+"Charleston County, South Carolina",2026,457426,Enterprise Bank of South Carolina,1,39247
+"Charleston County, South Carolina",2026,480228,"Bank of America, National Association",8,3052382
+"Charleston County, South Carolina",2026,485559,First Horizon Bank,1,128396
+"Charleston County, South Carolina",2026,491224,First-Citizens Bank & Trust Company,9,862900
+"Charleston County, South Carolina",2026,497404,"TD Bank, National Association",6,392248
+"Charleston County, South Carolina",2026,5136959,Beacon Community Bank,5,730612
+"Charleston County, South Carolina",2026,586072,First Palmetto Bank,1,32172
+"Charleston County, South Carolina",2026,723112,"Fifth Third Bank, National Association",3,434414
+"Charleston County, South Carolina",2026,764030,Ameris Bank,3,125410
+"Charleston County, South Carolina",2026,817824,"PNC Bank, National Association",2,141746
+"Charleston County, South Carolina",2026,852218,"JPMorgan Chase Bank, National Association",7,350092
+"Charleston County, South Carolina",2026,852320,Truist Bank,8,1286295
+"Jefferson County, Alabama",2022,1929247,SOUTHSTATE BANK,1,465952
+"Jefferson County, Alabama",2022,229801,VALLEY NATIONAL BANK,3,255413
+"Jefferson County, Alabama",2022,233031,REGIONS BANK,42,14184295
+"Jefferson County, Alabama",2022,259330,FIRST US BANK,1,71602
+"Jefferson County, Alabama",2022,2621285,MILLENNIAL BANK,1,101310
+"Jefferson County, Alabama",2022,2877484,ALAMERICA BANK,1,12198
+"Jefferson County, Alabama",2022,288376,PINNACLE BANK,3,64146
+"Jefferson County, Alabama",2022,292234,FIRST FINANCIAL BANK,3,131983
+"Jefferson County, Alabama",2022,3217331,THE HOMETOWN BANK OF ALABAMA,1,87010
+"Jefferson County, Alabama",2022,3348888,SERVISFIRST BANK,2,5148618
+"Jefferson County, Alabama",2022,3356191,BRYANT BANK,5,499239
+"Jefferson County, Alabama",2022,3385744,NOBLEBANK & TRUST,1,32146
+"Jefferson County, Alabama",2022,3386536,SOUTHPOINT BANK,4,562337
+"Jefferson County, Alabama",2022,342634,TRUSTMARK NATIONAL BANK,3,73785
+"Jefferson County, Alabama",2022,3629420,SOUTHERN STATES BANK,1,85053
+"Jefferson County, Alabama",2022,3690596,PROGRESS BANK AND TRUST,2,259075
+"Jefferson County, Alabama",2022,3720608,OAKWORTH CAPITAL BANK,1,875193
+"Jefferson County, Alabama",2022,395238,SYNOVUS BANK,7,2299269
+"Jefferson County, Alabama",2022,398668,THE BANK OF NEW YORK MELLON TRUST COMPANY,1,0
+"Jefferson County, Alabama",2022,412751,WOODFOREST NATIONAL BANK,7,17549
+"Jefferson County, Alabama",2022,430036,ROBERTSON BANKING COMPANY,2,29800
+"Jefferson County, Alabama",2022,436159,FIRSTBANK,1,60387
+"Jefferson County, Alabama",2022,451965,WELLS FARGO BANK,23,3446041
+"Jefferson County, Alabama",2022,460033,COMMUNITY BANK OF MISSISSIPPI,2,58037
+"Jefferson County, Alabama",2022,467733,UNION STATE BANK,4,69691
+"Jefferson County, Alabama",2022,485559,FIRST HORIZON BANK,7,1375062
+"Jefferson County, Alabama",2022,498531,EVABANK,1,46194
+"Jefferson County, Alabama",2022,501132,WEST ALABAMA BANK & TRUST,1,9160
+"Jefferson County, Alabama",2022,5227101,COMMERCEONE BANK,1,460855
+"Jefferson County, Alabama",2022,594433,CB&S BANK,1,12124
+"Jefferson County, Alabama",2022,60330,PEOPLES BANK OF ALABAMA,4,174235
+"Jefferson County, Alabama",2022,606046,CADENCE BANK,12,1519195
+"Jefferson County, Alabama",2022,680130,CITIZENS TRUST BANK,1,119998
+"Jefferson County, Alabama",2022,734538,FIRST NATIONAL BANKER'S BANK,1,88850
+"Jefferson County, Alabama",2022,749242,RENASANT BANK,1,65996
+"Jefferson County, Alabama",2022,817824,PNC BANK,25,8192384
+"Jefferson County, Alabama",2022,852218,JPMORGAN CHASE BANK,1,338
+"Jefferson County, Alabama",2022,852320,TRUIST BANK,10,1413173
+"Jefferson County, Alabama",2023,1017939,UNITED COMMUNITY BANK,2,165907
+"Jefferson County, Alabama",2023,1929247,SOUTHSTATE BANK,1,479519
+"Jefferson County, Alabama",2023,229801,VALLEY NATIONAL BANK,3,362063
+"Jefferson County, Alabama",2023,233031,REGIONS BANK,41,14672696
+"Jefferson County, Alabama",2023,259330,FIRST US BANK,1,50469
+"Jefferson County, Alabama",2023,2621285,MILLENNIAL BANK,1,98186
+"Jefferson County, Alabama",2023,2877484,ALAMERICA BANK,1,10637
+"Jefferson County, Alabama",2023,288376,PINNACLE BANK,3,52034
+"Jefferson County, Alabama",2023,292234,FIRST FINANCIAL BANK,3,124904
+"Jefferson County, Alabama",2023,2925666,PINNACLE BANK,1,250990
+"Jefferson County, Alabama",2023,3217331,THE HOMETOWN BANK OF ALABAMA,1,105138
+"Jefferson County, Alabama",2023,3348888,SERVISFIRST BANK,2,4027446
+"Jefferson County, Alabama",2023,3356191,BRYANT BANK,5,445206
+"Jefferson County, Alabama",2023,3385744,NOBLEBANK & TRUST,1,29926
+"Jefferson County, Alabama",2023,3386536,SOUTHPOINT BANK,4,683065
+"Jefferson County, Alabama",2023,342634,TRUSTMARK NATIONAL BANK,3,52289
+"Jefferson County, Alabama",2023,3437157,RIVER BANK & TRUST,1,62306
+"Jefferson County, Alabama",2023,3532641,SMARTBANK,1,31097
+"Jefferson County, Alabama",2023,3629420,SOUTHERN STATES BANK,1,63778
+"Jefferson County, Alabama",2023,3720608,OAKWORTH CAPITAL BANK,1,1017229
+"Jefferson County, Alabama",2023,395238,SYNOVUS BANK,7,2689774
+"Jefferson County, Alabama",2023,412751,WOODFOREST NATIONAL BANK,7,15767
+"Jefferson County, Alabama",2023,430036,ROBERTSON BANKING COMPANY,2,33091
+"Jefferson County, Alabama",2023,436159,FIRSTBANK,1,272894
+"Jefferson County, Alabama",2023,451965,WELLS FARGO BANK,23,3405181
+"Jefferson County, Alabama",2023,460033,COMMUNITY BANK OF MISSISSIPPI,2,58620
+"Jefferson County, Alabama",2023,467733,UNION STATE BANK,2,57386
+"Jefferson County, Alabama",2023,485559,FIRST HORIZON BANK,7,1094029
+"Jefferson County, Alabama",2023,498531,EVABANK,1,39396
+"Jefferson County, Alabama",2023,501132,WEST ALABAMA BANK & TRUST,1,8176
+"Jefferson County, Alabama",2023,5227101,COMMERCEONE BANK,1,536295
+"Jefferson County, Alabama",2023,594433,CB&S BANK,1,18862
+"Jefferson County, Alabama",2023,60330,PEOPLES BANK OF ALABAMA,5,193922
+"Jefferson County, Alabama",2023,606046,CADENCE BANK,10,1316362
+"Jefferson County, Alabama",2023,680130,CITIZENS TRUST BANK,1,86368
+"Jefferson County, Alabama",2023,734538,FIRST NATIONAL BANKER'S BANK,1,66076
+"Jefferson County, Alabama",2023,749242,RENASANT BANK,1,57754
+"Jefferson County, Alabama",2023,817824,PNC BANK,22,5838855
+"Jefferson County, Alabama",2023,852218,JPMORGAN CHASE BANK,1,27915
+"Jefferson County, Alabama",2023,852320,TRUIST BANK,10,1276165
+"Jefferson County, Alabama",2023,914648,BANKFIRST FINANCIAL SERVICES,1,0
+"Jefferson County, Alabama",2024,1017939,UNITED COMMUNITY BANK,2,178017
+"Jefferson County, Alabama",2024,1929247,SOUTHSTATE BANK,1,460890
+"Jefferson County, Alabama",2024,229801,VALLEY NATIONAL BANK,3,364624
+"Jefferson County, Alabama",2024,233031,REGIONS BANK,40,14432693
+"Jefferson County, Alabama",2024,259330,FIRST US BANK,1,153169
+"Jefferson County, Alabama",2024,2621285,MILLENNIAL BANK,1,110506
+"Jefferson County, Alabama",2024,2877484,ALAMERICA BANK,1,14950
+"Jefferson County, Alabama",2024,288376,PINNACLE BANK,3,47373
+"Jefferson County, Alabama",2024,292234,FIRST FINANCIAL BANK,3,119292
+"Jefferson County, Alabama",2024,2925666,PINNACLE BANK,2,322192
+"Jefferson County, Alabama",2024,3217331,THE HOMETOWN BANK OF ALABAMA,1,115479
+"Jefferson County, Alabama",2024,3348888,SERVISFIRST BANK,2,4210177
+"Jefferson County, Alabama",2024,3356191,BRYANT BANK,5,452854
+"Jefferson County, Alabama",2024,3385744,NOBLEBANK & TRUST,1,38706
+"Jefferson County, Alabama",2024,3386536,SOUTHPOINT BANK,5,1010045
+"Jefferson County, Alabama",2024,342634,TRUSTMARK NATIONAL BANK,3,98327
+"Jefferson County, Alabama",2024,3437157,RIVER BANK & TRUST,1,111785
+"Jefferson County, Alabama",2024,3532641,SMARTBANK,1,56345
+"Jefferson County, Alabama",2024,3629420,SOUTHERN STATES BANK,1,54130
+"Jefferson County, Alabama",2024,3720608,OAKWORTH CAPITAL BANK,1,1129956
+"Jefferson County, Alabama",2024,395238,SYNOVUS BANK,8,2766108
+"Jefferson County, Alabama",2024,412751,WOODFOREST NATIONAL BANK,7,13775
+"Jefferson County, Alabama",2024,430036,ROBERTSON BANKING COMPANY,2,43243
+"Jefferson County, Alabama",2024,436159,FIRSTBANK,1,328028
+"Jefferson County, Alabama",2024,451965,WELLS FARGO BANK,20,3472158
+"Jefferson County, Alabama",2024,460033,COMMUNITY BANK OF MISSISSIPPI,2,99586
+"Jefferson County, Alabama",2024,467733,UNION STATE BANK,2,57935
+"Jefferson County, Alabama",2024,485559,FIRST HORIZON BANK,7,1021869
+"Jefferson County, Alabama",2024,498531,EVABANK,1,44676
+"Jefferson County, Alabama",2024,501132,WEST ALABAMA BANK & TRUST,1,16727
+"Jefferson County, Alabama",2024,5227101,COMMERCEONE BANK,1,564004
+"Jefferson County, Alabama",2024,594433,CB&S BANK,1,23410
+"Jefferson County, Alabama",2024,60330,PEOPLES BANK OF ALABAMA,4,180444
+"Jefferson County, Alabama",2024,606046,CADENCE BANK,9,1383673
+"Jefferson County, Alabama",2024,680130,CITIZENS TRUST BANK,1,80574
+"Jefferson County, Alabama",2024,734538,FIRST NATIONAL BANKER'S BANK,1,83406
+"Jefferson County, Alabama",2024,749242,RENASANT BANK,1,75265
+"Jefferson County, Alabama",2024,817824,PNC BANK,18,5093896
+"Jefferson County, Alabama",2024,852218,JPMORGAN CHASE BANK,5,83271
+"Jefferson County, Alabama",2024,852320,TRUIST BANK,9,2079597
+"Jefferson County, Alabama",2024,914648,BANKFIRST FINANCIAL SERVICES,1,0
+"Jefferson County, Alabama",2025,1017939,UNITED COMMUNITY BANK,2,180794
+"Jefferson County, Alabama",2025,1929247,"SOUTHSTATE BANK, NATIONAL ASSOCIATION",1,484974
+"Jefferson County, Alabama",2025,229801,VALLEY NATIONAL BANK,3,348282
+"Jefferson County, Alabama",2025,233031,REGIONS BANK,41,14444966
+"Jefferson County, Alabama",2025,259330,FIRST US BANK,1,151840
+"Jefferson County, Alabama",2025,2621285,MILLENNIAL BANK,1,110391
+"Jefferson County, Alabama",2025,2877484,ALAMERICA BANK,1,15123
+"Jefferson County, Alabama",2025,288376,PINNACLE BANK,3,42404
+"Jefferson County, Alabama",2025,292234,FIRST FINANCIAL BANK,3,132698
+"Jefferson County, Alabama",2025,2925666,PINNACLE BANK,2,485196
+"Jefferson County, Alabama",2025,3217331,THE HOMETOWN BANK OF ALABAMA,1,111980
+"Jefferson County, Alabama",2025,3348888,SERVISFIRST BANK,2,4506123
+"Jefferson County, Alabama",2025,3356191,BRYANT BANK,5,501000
+"Jefferson County, Alabama",2025,3385744,NOBLEBANK & TRUST,1,33837
+"Jefferson County, Alabama",2025,3386536,SOUTHPOINT BANK,5,991254
+"Jefferson County, Alabama",2025,342634,TRUSTMARK NATIONAL BANK,3,130106
+"Jefferson County, Alabama",2025,3437157,RIVER BANK & TRUST,1,145661
+"Jefferson County, Alabama",2025,3532641,SMARTBANK,1,105139
+"Jefferson County, Alabama",2025,3629420,SOUTHERN STATES BANK,1,52915
+"Jefferson County, Alabama",2025,3720608,OAKWORTH CAPITAL BANK,1,1219862
+"Jefferson County, Alabama",2025,395238,SYNOVUS BANK,8,3043616
+"Jefferson County, Alabama",2025,412751,WOODFOREST NATIONAL BANK,7,15279
+"Jefferson County, Alabama",2025,430036,ROBERTSON BANKING COMPANY,2,50875
+"Jefferson County, Alabama",2025,436159,FIRSTBANK,2,509032
+"Jefferson County, Alabama",2025,451965,"WELLS FARGO BANK, NATIONAL ASSOCIATION",19,3278534
+"Jefferson County, Alabama",2025,460033,COMMUNITY BANK OF MISSISSIPPI,2,132995
+"Jefferson County, Alabama",2025,467733,UNION STATE BANK,2,56801
+"Jefferson County, Alabama",2025,485559,FIRST HORIZON BANK,7,1172270
+"Jefferson County, Alabama",2025,498531,EVABANK,1,50397
+"Jefferson County, Alabama",2025,501132,WEST ALABAMA BANK & TRUST,1,17853
+"Jefferson County, Alabama",2025,5227101,COMMERCEONE BANK,1,672310
+"Jefferson County, Alabama",2025,594433,"CB&S BANK, INC.",1,37799
+"Jefferson County, Alabama",2025,60330,PEOPLES BANK OF ALABAMA,4,189016
+"Jefferson County, Alabama",2025,606046,CADENCE BANK,9,1194811
+"Jefferson County, Alabama",2025,680130,CITIZENS TRUST BANK,1,77389
+"Jefferson County, Alabama",2025,734538,FIRST NATIONAL BANKER'S BANK,1,88912
+"Jefferson County, Alabama",2025,749242,RENASANT BANK,2,401111
+"Jefferson County, Alabama",2025,817824,"PNC BANK, NATIONAL ASSOCIATION",18,5800110
+"Jefferson County, Alabama",2025,852218,"JPMORGAN CHASE BANK, NATIONAL ASSOCIATION",5,109760
+"Jefferson County, Alabama",2025,852320,TRUIST BANK,9,2974449
+"Jefferson County, Alabama",2026,1017939,United Community Bank,2,129212
+"Jefferson County, Alabama",2026,12311,The Huntington National Bank,9,1757787
+"Jefferson County, Alabama",2026,1929247,"SouthState Bank, National Association",1,579924
+"Jefferson County, Alabama",2026,229801,Valley National Bank,2,359779
+"Jefferson County, Alabama",2026,233031,Regions Bank,39,13379803
+"Jefferson County, Alabama",2026,259330,First US Bank,1,165024
+"Jefferson County, Alabama",2026,2621285,Millennial Bank,1,133715
+"Jefferson County, Alabama",2026,2877484,BHM Bank,1,14248
+"Jefferson County, Alabama",2026,288376,Pinnacle Bank,3,37059
+"Jefferson County, Alabama",2026,292234,First Financial Bank,3,132520
+"Jefferson County, Alabama",2026,2925666,Pinnacle Bank,10,3552964
+"Jefferson County, Alabama",2026,3217331,The Hometown Bank of Alabama,1,108721
+"Jefferson County, Alabama",2026,3348888,ServisFirst Bank,2,4923517
+"Jefferson County, Alabama",2026,3356191,Bryant Bank,5,481312
+"Jefferson County, Alabama",2026,3385744,NobleBank & Trust,1,36946
+"Jefferson County, Alabama",2026,3386536,SouthPoint Bank,5,714695
+"Jefferson County, Alabama",2026,342634,Trustmark Bank,3,135900
+"Jefferson County, Alabama",2026,3437157,River Bank & Trust,1,213370
+"Jefferson County, Alabama",2026,3532641,SmartBank,1,145957
+"Jefferson County, Alabama",2026,3720608,Oakworth Capital Bank,1,1378492
+"Jefferson County, Alabama",2026,412751,Woodforest National Bank,7,15687
+"Jefferson County, Alabama",2026,430036,Robertson Banking Company,2,41899
+"Jefferson County, Alabama",2026,436159,FirstBank,2,666552
+"Jefferson County, Alabama",2026,451965,"Wells Fargo Bank, National Association",19,3152368
+"Jefferson County, Alabama",2026,460033,Community Bank of Mississippi,2,163938
+"Jefferson County, Alabama",2026,467733,Union State Bank,2,44191
+"Jefferson County, Alabama",2026,485559,First Horizon Bank,7,1100147
+"Jefferson County, Alabama",2026,498531,EvaBank,1,56092
+"Jefferson County, Alabama",2026,501132,West Alabama Bank & Trust,1,23521
+"Jefferson County, Alabama",2026,5227101,CommerceOne Bank,2,970204
+"Jefferson County, Alabama",2026,594433,"CB&S Bank, Inc.",1,48634
+"Jefferson County, Alabama",2026,60330,Peoples Bank of Alabama,4,194905
+"Jefferson County, Alabama",2026,680130,Citizens Trust Bank,1,77872
+"Jefferson County, Alabama",2026,723112,"Fifth Third Bank, National Association",2,36237
+"Jefferson County, Alabama",2026,734538,First National Banker's Bank,1,111778
+"Jefferson County, Alabama",2026,749242,Renasant Bank,2,476559
+"Jefferson County, Alabama",2026,817824,"PNC Bank, National Association",19,5867329
+"Jefferson County, Alabama",2026,852218,"JPMorgan Chase Bank, National Association",7,155635
+"Jefferson County, Alabama",2026,852320,Truist Bank,9,3054751
+"Philadelphia County, Pennsylvania",2022,1216321,REPUBLIC BANK,7,877006
+"Philadelphia County, Pennsylvania",2022,1225798,PORT RICHMOND SAVINGS,1,68795
+"Philadelphia County, Pennsylvania",2022,164377,SHARON BANK,1,13027
+"Philadelphia County, Pennsylvania",2022,1945247,UNITED BANK OF PHILADELPHIA,3,55874
+"Philadelphia County, Pennsylvania",2022,210434,THE NORTHERN TRUST COMPANY,1,0
+"Philadelphia County, Pennsylvania",2022,2265456,WILMINGTON TRUST,1,0
+"Philadelphia County, Pennsylvania",2022,2764212,PARKE BANK,2,144655
+"Philadelphia County, Pennsylvania",2022,2785477,ASIAN BANK,2,273120
+"Philadelphia County, Pennsylvania",2022,2796277,THE PHILADELPHIA TRUST COMPANY,1,6358
+"Philadelphia County, Pennsylvania",2022,280110,KEYBANK NATIONAL ASSOCIATION,1,66173
+"Philadelphia County, Pennsylvania",2022,3271799,MERIDIAN BANK,1,50258
+"Philadelphia County, Pennsylvania",2022,3303298,CITIZENS BANK,43,7907332
+"Philadelphia County, Pennsylvania",2022,3517590,HYPERION BANK,1,149461
+"Philadelphia County, Pennsylvania",2022,354310,UNIVEST BANK AND TRUST CO.,6,500061
+"Philadelphia County, Pennsylvania",2022,3595271,THE BANK OF PRINCETON,3,85138
+"Philadelphia County, Pennsylvania",2022,384018,WOORI AMERICA BANK,1,140895
+"Philadelphia County, Pennsylvania",2022,398668,THE BANK OF NEW YORK MELLON TRUST COMPANY,1,0
+"Philadelphia County, Pennsylvania",2022,433608,TOMPKINS COMMUNITY BANK,1,43707
+"Philadelphia County, Pennsylvania",2022,437914,WILMINGTON SAVINGS FUND SOCIETY,12,1976955
+"Philadelphia County, Pennsylvania",2022,451965,WELLS FARGO BANK,34,11385785
+"Philadelphia County, Pennsylvania",2022,459372,UNITED SAVINGS BANK,3,224684
+"Philadelphia County, Pennsylvania",2022,460275,SECOND FEDERAL SAVINGS AND LOAN ASSOCIATION OF PHILADELPHIA,1,18423
+"Philadelphia County, Pennsylvania",2022,474919,FULTON BANK,4,96417
+"Philadelphia County, Pennsylvania",2022,480228,BANK OF AMERICA,18,14536373
+"Philadelphia County, Pennsylvania",2022,497404,TD BANK,20,5117172
+"Philadelphia County, Pennsylvania",2022,501105,MANUFACTURERS AND TRADERS TRUST COMPANY,5,1421817
+"Philadelphia County, Pennsylvania",2022,582177,HUNTINGDON VALLEY BANK,3,55623
+"Philadelphia County, Pennsylvania",2022,641775,PRUDENTIAL BANK,8,475779
+"Philadelphia County, Pennsylvania",2022,664176,WILLIAM PENN BANK,2,120865
+"Philadelphia County, Pennsylvania",2022,722777,SANTANDER BANK,16,4220471
+"Philadelphia County, Pennsylvania",2022,762773,ABACUS FEDERAL SAVINGS BANK,1,24503
+"Philadelphia County, Pennsylvania",2022,815277,QUAINT OAK BANK,1,25518
+"Philadelphia County, Pennsylvania",2022,817824,PNC BANK,34,14606086
+"Philadelphia County, Pennsylvania",2022,852218,JPMORGAN CHASE BANK,14,761889
+"Philadelphia County, Pennsylvania",2022,852320,TRUIST BANK,9,735733
+"Philadelphia County, Pennsylvania",2022,85472,OCEANFIRST BANK,1,128077
+"Philadelphia County, Pennsylvania",2022,885579,TIOGA-FRANKLIN SAVINGS BANK,1,46899
+"Philadelphia County, Pennsylvania",2022,932978,FIRSTRUST SAVINGS BANK,5,1263781
+"Philadelphia County, Pennsylvania",2022,934329,BNY MELLON,1,0
+"Philadelphia County, Pennsylvania",2022,936426,S&T BANK,2,134176
+"Philadelphia County, Pennsylvania",2023,1216321,REPUBLIC BANK,5,704637
+"Philadelphia County, Pennsylvania",2023,1225798,PORT RICHMOND SAVINGS,1,60553
+"Philadelphia County, Pennsylvania",2023,164377,SHARON BANK,1,9771
+"Philadelphia County, Pennsylvania",2023,1945247,UNITED BANK OF PHILADELPHIA,3,50292
+"Philadelphia County, Pennsylvania",2023,210434,THE NORTHERN TRUST COMPANY,1,5990
+"Philadelphia County, Pennsylvania",2023,2265456,WILMINGTON TRUST,1,0
+"Philadelphia County, Pennsylvania",2023,2764212,PARKE BANK,2,116079
+"Philadelphia County, Pennsylvania",2023,2785477,ASIAN BANK,2,321377
+"Philadelphia County, Pennsylvania",2023,2796277,THE PHILADELPHIA TRUST COMPANY,1,4859
+"Philadelphia County, Pennsylvania",2023,280110,KEYBANK NATIONAL ASSOCIATION,1,58818
+"Philadelphia County, Pennsylvania",2023,3271799,MERIDIAN BANK,1,29222
+"Philadelphia County, Pennsylvania",2023,3303298,CITIZENS BANK,41,12903214
+"Philadelphia County, Pennsylvania",2023,3517590,HYPERION BANK,1,159209
+"Philadelphia County, Pennsylvania",2023,354310,UNIVEST BANK AND TRUST CO.,7,444715
+"Philadelphia County, Pennsylvania",2023,3595271,THE BANK OF PRINCETON,3,90212
+"Philadelphia County, Pennsylvania",2023,384018,WOORI AMERICA BANK,1,125074
+"Philadelphia County, Pennsylvania",2023,398668,THE BANK OF NEW YORK MELLON TRUST COMPANY,1,0
+"Philadelphia County, Pennsylvania",2023,433608,TOMPKINS COMMUNITY BANK,1,36023
+"Philadelphia County, Pennsylvania",2023,437914,WILMINGTON SAVINGS FUND SOCIETY,11,1546109
+"Philadelphia County, Pennsylvania",2023,451965,WELLS FARGO BANK,32,13010518
+"Philadelphia County, Pennsylvania",2023,459372,UNITED SAVINGS BANK,3,220324
+"Philadelphia County, Pennsylvania",2023,460275,SECOND FEDERAL SAVINGS AND LOAN ASSOCIATION OF PHILADELPHIA,1,17904
+"Philadelphia County, Pennsylvania",2023,474919,FULTON BANK,10,372267
+"Philadelphia County, Pennsylvania",2023,480228,BANK OF AMERICA,17,13934632
+"Philadelphia County, Pennsylvania",2023,497404,TD BANK,20,4273422
+"Philadelphia County, Pennsylvania",2023,501105,MANUFACTURERS AND TRADERS TRUST COMPANY,5,1347617
+"Philadelphia County, Pennsylvania",2023,664176,WILLIAM PENN BANK,2,108332
+"Philadelphia County, Pennsylvania",2023,722777,SANTANDER BANK,14,3844829
+"Philadelphia County, Pennsylvania",2023,762773,ABACUS FEDERAL SAVINGS BANK,1,26245
+"Philadelphia County, Pennsylvania",2023,815277,QUAINT OAK BANK,1,28888
+"Philadelphia County, Pennsylvania",2023,817824,PNC BANK,33,14180059
+"Philadelphia County, Pennsylvania",2023,852218,JPMORGAN CHASE BANK,15,978251
+"Philadelphia County, Pennsylvania",2023,852320,TRUIST BANK,9,700951
+"Philadelphia County, Pennsylvania",2023,85472,OCEANFIRST BANK,1,118142
+"Philadelphia County, Pennsylvania",2023,885579,TIOGA-FRANKLIN SAVINGS BANK,1,53979
+"Philadelphia County, Pennsylvania",2023,932978,FIRSTRUST SAVINGS BANK,5,1393780
+"Philadelphia County, Pennsylvania",2023,934329,BNY MELLON,1,0
+"Philadelphia County, Pennsylvania",2023,936426,S&T BANK,2,116562
+"Philadelphia County, Pennsylvania",2023,978118,FIRST CITIZENS COMMUNITY BANK,3,35744
+"Philadelphia County, Pennsylvania",2024,1225798,PORT RICHMOND SAVINGS,1,59679
+"Philadelphia County, Pennsylvania",2024,164377,SHARON BANK,1,10894
+"Philadelphia County, Pennsylvania",2024,1945247,UNITED BANK OF PHILADELPHIA,2,47465
+"Philadelphia County, Pennsylvania",2024,210434,THE NORTHERN TRUST COMPANY,1,40644
+"Philadelphia County, Pennsylvania",2024,2265456,WILMINGTON TRUST,1,0
+"Philadelphia County, Pennsylvania",2024,2764212,PARKE BANK,2,123249
+"Philadelphia County, Pennsylvania",2024,2785477,ASIAN BANK,3,344639
+"Philadelphia County, Pennsylvania",2024,2796277,THE PHILADELPHIA TRUST COMPANY,1,4912
+"Philadelphia County, Pennsylvania",2024,280110,KEYBANK NATIONAL ASSOCIATION,1,61553
+"Philadelphia County, Pennsylvania",2024,3271799,MERIDIAN BANK,1,113282
+"Philadelphia County, Pennsylvania",2024,3303298,CITIZENS BANK,39,12388183
+"Philadelphia County, Pennsylvania",2024,3517590,HYPERION BANK,1,166749
+"Philadelphia County, Pennsylvania",2024,354310,UNIVEST  BANK AND TRUST CO.,7,485968
+"Philadelphia County, Pennsylvania",2024,3595271,THE BANK OF PRINCETON,3,96506
+"Philadelphia County, Pennsylvania",2024,384018,WOORI AMERICA BANK,1,144411
+"Philadelphia County, Pennsylvania",2024,398668,THE BANK OF NEW YORK MELLON TRUST COMPANY,1,0
+"Philadelphia County, Pennsylvania",2024,433608,TOMPKINS COMMUNITY BANK,1,37866
+"Philadelphia County, Pennsylvania",2024,437914,WILMINGTON SAVINGS FUND SOCIETY,11,1373080
+"Philadelphia County, Pennsylvania",2024,451965,WELLS FARGO BANK,31,13716327
+"Philadelphia County, Pennsylvania",2024,459372,UNITED SAVINGS BANK,3,215315
+"Philadelphia County, Pennsylvania",2024,460275,SECOND FEDERAL SAVINGS AND LOAN ASSOCIATION OF PHILADELPHIA,1,21356
+"Philadelphia County, Pennsylvania",2024,474919,FULTON BANK,16,1086129
+"Philadelphia County, Pennsylvania",2024,480228,BANK OF AMERICA,16,14462918
+"Philadelphia County, Pennsylvania",2024,497404,TD BANK,20,3960478
+"Philadelphia County, Pennsylvania",2024,501105,MANUFACTURERS AND TRADERS TRUST COMPANY,5,3186023
+"Philadelphia County, Pennsylvania",2024,664176,WILLIAM PENN BANK,2,100215
+"Philadelphia County, Pennsylvania",2024,722777,SANTANDER BANK,12,4057313
+"Philadelphia County, Pennsylvania",2024,762773,ABACUS FEDERAL SAVINGS BANK,1,26133
+"Philadelphia County, Pennsylvania",2024,815277,QUAINT OAK BANK,1,30008
+"Philadelphia County, Pennsylvania",2024,817824,PNC BANK,33,12869891
+"Philadelphia County, Pennsylvania",2024,852218,JPMORGAN CHASE BANK,16,632163
+"Philadelphia County, Pennsylvania",2024,852320,TRUIST BANK,9,628177
+"Philadelphia County, Pennsylvania",2024,85472,OCEANFIRST BANK,1,106440
+"Philadelphia County, Pennsylvania",2024,885579,TIOGA-FRANKLIN SAVINGS BANK,1,63379
+"Philadelphia County, Pennsylvania",2024,932978,FIRSTRUST SAVINGS BANK,5,1502786
+"Philadelphia County, Pennsylvania",2024,934329,BNY MELLON,1,0
+"Philadelphia County, Pennsylvania",2024,936426,S&T BANK,2,114108
+"Philadelphia County, Pennsylvania",2024,978118,FIRST CITIZENS COMMUNITY BANK,3,27033
+"Philadelphia County, Pennsylvania",2025,1225798,PORT RICHMOND SAVINGS,1,58255
+"Philadelphia County, Pennsylvania",2025,164377,SHARON BANK,1,12438
+"Philadelphia County, Pennsylvania",2025,1945247,UNITED BANK OF PHILADELPHIA,2,42381
+"Philadelphia County, Pennsylvania",2025,210434,THE NORTHERN TRUST COMPANY,1,138139
+"Philadelphia County, Pennsylvania",2025,2265456,"WILMINGTON TRUST, NATIONAL ASSOCIATION",1,0
+"Philadelphia County, Pennsylvania",2025,2764212,PARKE BANK,2,135511
+"Philadelphia County, Pennsylvania",2025,2785477,ASIAN BANK,3,440428
+"Philadelphia County, Pennsylvania",2025,2796277,THE PHILADELPHIA TRUST COMPANY,1,5576
+"Philadelphia County, Pennsylvania",2025,280110,KEYBANK NATIONAL ASSOCIATION,1,64068
+"Philadelphia County, Pennsylvania",2025,3271799,MERIDIAN BANK,1,145837
+"Philadelphia County, Pennsylvania",2025,3303298,"CITIZENS BANK, NATIONAL ASSOCIATION",36,10629238
+"Philadelphia County, Pennsylvania",2025,3517590,HYPERION BANK,1,205404
+"Philadelphia County, Pennsylvania",2025,354310,UNIVEST  BANK AND TRUST CO.,7,484450
+"Philadelphia County, Pennsylvania",2025,3595271,THE BANK OF PRINCETON,3,98123
+"Philadelphia County, Pennsylvania",2025,398668,"THE BANK OF NEW YORK MELLON TRUST COMPANY, NATIONAL ASSOCIATION",1,0
+"Philadelphia County, Pennsylvania",2025,433608,TOMPKINS COMMUNITY BANK,1,41588
+"Philadelphia County, Pennsylvania",2025,437914,"WILMINGTON SAVINGS FUND SOCIETY, FSB",11,2369431
+"Philadelphia County, Pennsylvania",2025,451965,"WELLS FARGO BANK, NATIONAL ASSOCIATION",31,14444375
+"Philadelphia County, Pennsylvania",2025,459372,UNITED SAVINGS BANK,3,214140
+"Philadelphia County, Pennsylvania",2025,460275,SECOND FEDERAL SAVINGS AND LOAN ASSOCIATION OF PHILADELPHIA,1,23468
+"Philadelphia County, Pennsylvania",2025,474919,"FULTON BANK, NATIONAL ASSOCIATION",12,898636
+"Philadelphia County, Pennsylvania",2025,480228,"BANK OF AMERICA, NATIONAL ASSOCIATION",16,15988141
+"Philadelphia County, Pennsylvania",2025,497404,"TD BANK, NATIONAL ASSOCIATION",21,3851597
+"Philadelphia County, Pennsylvania",2025,501105,MANUFACTURERS AND TRADERS TRUST COMPANY,5,2858282
+"Philadelphia County, Pennsylvania",2025,722777,"SANTANDER BANK, N.A.",12,4123265
+"Philadelphia County, Pennsylvania",2025,762773,ABACUS FEDERAL SAVINGS BANK,1,28439
+"Philadelphia County, Pennsylvania",2025,786612,MID PENN BANK,2,97353
+"Philadelphia County, Pennsylvania",2025,815277,QUAINT OAK BANK,1,33470
+"Philadelphia County, Pennsylvania",2025,817824,"PNC BANK, NATIONAL ASSOCIATION",34,12697218
+"Philadelphia County, Pennsylvania",2025,852218,"JPMORGAN CHASE BANK, NATIONAL ASSOCIATION",18,712296
+"Philadelphia County, Pennsylvania",2025,852320,TRUIST BANK,9,620577
+"Philadelphia County, Pennsylvania",2025,85472,"OCEANFIRST BANK, NATIONAL ASSOCIATION",1,80210
+"Philadelphia County, Pennsylvania",2025,885579,TIOGA-FRANKLIN SAVINGS BANK,1,60773
+"Philadelphia County, Pennsylvania",2025,932978,FIRSTRUST SAVINGS BANK,5,1660850
+"Philadelphia County, Pennsylvania",2025,934329,"BNY MELLON, NATIONAL ASSOCIATION",1,0
+"Philadelphia County, Pennsylvania",2025,936426,S&T BANK,2,119522
+"Philadelphia County, Pennsylvania",2025,978118,FIRST CITIZENS COMMUNITY BANK,3,45378
+"Philadelphia County, Pennsylvania",2026,1225798,Port Richmond Savings,1,60775
+"Philadelphia County, Pennsylvania",2026,164377,Sharon Bank,1,12385
+"Philadelphia County, Pennsylvania",2026,1945247,United Bank of Philadelphia,2,40191
+"Philadelphia County, Pennsylvania",2026,210434,The Northern Trust Company,1,114578
+"Philadelphia County, Pennsylvania",2026,2265456,"Wilmington Trust, National Association",1,0
+"Philadelphia County, Pennsylvania",2026,2764212,Parke Bank,2,136859
+"Philadelphia County, Pennsylvania",2026,2785477,Asian Bank,3,456786
+"Philadelphia County, Pennsylvania",2026,2796277,The Philadelphia Trust Company,1,6031
+"Philadelphia County, Pennsylvania",2026,280110,KeyBank National Association,1,63019
+"Philadelphia County, Pennsylvania",2026,3271799,Meridian Bank,1,128247
+"Philadelphia County, Pennsylvania",2026,3303298,"Citizens Bank, National Association",35,10249731
+"Philadelphia County, Pennsylvania",2026,3517590,Hyperion Bank,1,252755
+"Philadelphia County, Pennsylvania",2026,354310,Univest  Bank and Trust Co.,7,491467
+"Philadelphia County, Pennsylvania",2026,3595271,The Bank of Princeton,3,101463
+"Philadelphia County, Pennsylvania",2026,398668,"The Bank of New York Mellon Trust Company, National Association",1,0
+"Philadelphia County, Pennsylvania",2026,433608,Tompkins Community Bank,1,40922
+"Philadelphia County, Pennsylvania",2026,437914,"Wilmington Savings Fund Society, FSB",11,2467643
+"Philadelphia County, Pennsylvania",2026,451965,"Wells Fargo Bank, National Association",31,14392766
+"Philadelphia County, Pennsylvania",2026,459372,United Savings Bank,3,219023
+"Philadelphia County, Pennsylvania",2026,460275,Second Federal Savings and Loan Association of Philadelphia,1,24542
+"Philadelphia County, Pennsylvania",2026,474919,"Fulton Bank, National Association",12,852115
+"Philadelphia County, Pennsylvania",2026,480228,"Bank of America, National Association",16,15645536
+"Philadelphia County, Pennsylvania",2026,497404,"TD Bank, National Association",19,3954394
+"Philadelphia County, Pennsylvania",2026,501105,Manufacturers and Traders Trust Company,5,3051030
+"Philadelphia County, Pennsylvania",2026,722777,"Santander Bank, N.A.",11,3974668
+"Philadelphia County, Pennsylvania",2026,762773,Abacus Federal Savings Bank,1,25686
+"Philadelphia County, Pennsylvania",2026,786612,Mid Penn Bank,2,99316
+"Philadelphia County, Pennsylvania",2026,815277,Quaint Oak Bank,1,37195
+"Philadelphia County, Pennsylvania",2026,817824,"PNC Bank, National Association",34,14180381
+"Philadelphia County, Pennsylvania",2026,852218,"JPMorgan Chase Bank, National Association",19,933532
+"Philadelphia County, Pennsylvania",2026,852320,Truist Bank,9,842523
+"Philadelphia County, Pennsylvania",2026,85472,"OceanFirst Bank, National Association",1,84105
+"Philadelphia County, Pennsylvania",2026,885579,Tioga-Franklin Savings Bank,1,66571
+"Philadelphia County, Pennsylvania",2026,932978,Firstrust Savings Bank,5,1738993
+"Philadelphia County, Pennsylvania",2026,934329,"BNY Mellon, National Association",1,0
+"Philadelphia County, Pennsylvania",2026,936426,S&T Bank,2,117508
+"Philadelphia County, Pennsylvania",2026,978118,First Citizens Community Bank,3,48508
