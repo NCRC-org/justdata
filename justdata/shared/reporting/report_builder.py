@@ -325,7 +325,8 @@ def create_summary_table(df: pd.DataFrame, counties: List[str], years: List[int]
 # 2017 to 2025 in upper case, banks rename, and unrelated banks share names.
 NEW_TO_COUNTY = 'New to this county'
 BANK_CHANGE_NOTE = ("Net change counts all of a bank's branches. "
-                    "Acquired shows how many came from another institution.")
+                    "Acquired shows how many came from another institution. "
+                    "Acquired and transferred show branches that moved between institutions.")
 
 
 def bank_branch_changes(df: pd.DataFrame, first_year: int, latest_year: int) -> Dict[str, Dict[str, Any]]:
@@ -399,7 +400,8 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
 
     Net Change is the bank's latest-year branch count minus its first-year
     count, matched on RSSD; Acquired counts latest-year branches that another
-    RSSD held in the first year. A bank with no first-year branches and none
+    RSSD held in the first year; Transferred Out counts first-year branches
+    another RSSD holds in the latest year. A bank with no first-year branches and none
     acquired shows "New to this county". With no first-year data at all, both
     show the em dash.
     """
@@ -437,13 +439,13 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
 
         change = changes[rssd]
         if first_year == latest_year:
-            net_change, acquired = 0, 0
+            net_change, acquired, transferred = 0, 0, 0
         elif not has_first_year:
-            net_change, acquired = NO_DATA, NO_DATA
+            net_change, acquired, transferred = NO_DATA, NO_DATA, NO_DATA
         elif change['new_to_county']:
-            net_change, acquired = NEW_TO_COUNTY, 0
+            net_change, acquired, transferred = NEW_TO_COUNTY, 0, 0
         else:
-            net_change, acquired = change['net'], change['acquired']
+            net_change, acquired, transferred = change['net'], change['acquired'], change['transferred_out']
 
         total_deposits = 0.0
         if 'total_deposits' in bank_latest.columns:
@@ -459,6 +461,7 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
             'Both LMICT/MMCT Branches': f"{both_latest} ({_share_text(both_pct)})",
             'Net Change': net_change,
             'Acquired': acquired,
+            'Transferred Out': transferred,
             '_total_branches': total_branches_latest,
         })
 
@@ -695,6 +698,7 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         notes_content.append(('Branch Deduplication:', 'Each branch (uninumbr) appears only once per year. LMI Only, MMCT Only, and Both LMICT/MMCT categories are mutually exclusive.'))
         notes_content.append(('Net Change Calculation:', 'Difference between the first year and final year of the analysis period. Positive values indicate growth, negative values indicate decline. In the bank table, banks are matched across years on their FDIC RSSD ID, not their name, and the latest year\'s name is shown.'))
         notes_content.append(('Acquired:', 'In the bank table, the number of a bank\'s latest-year branches that another institution held in the first year (same FDIC branch number, UNINUMBR). ' + BANK_CHANGE_NOTE))
+        notes_content.append(('Transferred Out:', 'In the bank table, the number of a bank\'s first-year branches that another institution held in the latest year (same UNINUMBR).'))
         notes_content.append(('New to this County:', 'A bank with no branches in the first year and none acquired. Its branch count is not shown as a change.'))
         notes_content.append(('HHI (Herfindahl-Hirschman Index):', 'Calculated using deposit shares of all banks in the study area for the most recent year. HHI < 1,500 = Low concentration; HHI 1,500-2,500 = Moderate concentration; HHI > 2,500 = High concentration.'))
         notes_content.append(('LMI Classification:', 'Branches located in Low-to-Moderate Income (LMI) census tracts'))

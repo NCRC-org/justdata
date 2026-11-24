@@ -380,14 +380,15 @@ def _build_bank_table(bank_data, max_rows=20):
 
     # Column definitions: (data_key, header_label, width_pt)
     _COL_DEFS = [
-        ('Bank Name', 'Bank Name', 118),
-        ('Total Branches', 'Branches', 56),
-        ('Deposits ($ Millions)', 'Deposits ($M)', 58),
-        ('LMI Only Branches', 'LMI Only', 60),
-        ('MMCT Only Branches', 'MMCT Only', 60),
-        ('Both LMICT/MMCT Branches', 'Both', 56),
-        ('Net Change', 'Net Chg.', 52),
-        ('Acquired', 'Acquired', 56),
+        ('Bank Name', 'Bank Name', 104),
+        ('Total Branches', 'Branches', 54),
+        ('Deposits ($ Millions)', 'Deposits ($M)', 54),
+        ('LMI Only Branches', 'LMI Only', 56),
+        ('MMCT Only Branches', 'MMCT Only', 56),
+        ('Both LMICT/MMCT Branches', 'Both', 50),
+        ('Net Change', 'Net Chg.', 48),
+        ('Acquired', 'Acquired', 52),
+        ('Transferred Out', 'Transf. Out', 52),
     ]
 
     # Filter to columns that exist in data
@@ -411,7 +412,7 @@ def _build_bank_table(bank_data, max_rows=20):
         leading=12, textColor=HexColor('#333333'),
     )
     _hdr = ParagraphStyle(
-        'BankHeader', fontName='Georgia-Bold', fontSize=9,
+        'BankHeader', fontName='Georgia-Bold', fontSize=8.5,
         leading=12, textColor=white, alignment=TA_CENTER,
     )
     _new_bank = ParagraphStyle(
@@ -434,7 +435,7 @@ def _build_bank_table(bank_data, max_rows=20):
                 cells.append(Paragraph(pdf_text(val), _new_bank))
             elif col == 'Net Change':
                 cells.append(_fmt_change(val))
-            elif col == 'Acquired':
+            elif col in ('Acquired', 'Transferred Out'):
                 cells.append(NO_DATA if is_missing(val) or val in ('', NO_DATA) else f'{int(val):,}')
             else:
                 cells.append(str(val))
@@ -720,7 +721,8 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
                 'columns show counts with percentages in parentheses. Net Change is '
                 'the difference in a bank\'s total branches between the first and last year, '
                 'matched on its FDIC RSSD ID. Acquired counts branches that another '
-                'institution held in the first year.',
+                'institution held in the first year; Transferred Out counts first-year '
+                'branches another institution held in the last year.',
                 _TABLE_INTRO,
             ),
         ]))
@@ -906,7 +908,9 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
         '<b>Net Change:</b> Difference between branch counts in the first year and '
         'the final year of the analysis period. In the bank table, banks are matched '
         'across years on their FDIC RSSD ID, not their name. <b>Acquired:</b> a bank\'s '
-        'latest-year branches that another institution held in the first year. A bank '
+        'latest-year branches that another institution held in the first year. '
+        '<b>Transferred Out:</b> a bank\'s first-year branches that another institution '
+        'held in the final year. A bank '
         'with no first-year branches and none acquired is shown as new to this county.',
         _METHODS_COMPACT))
 

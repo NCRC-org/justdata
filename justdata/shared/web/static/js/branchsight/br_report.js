@@ -34,7 +34,8 @@
   // A bank's net change, or "New to this county" (T4), as the server sends it.
   function netChange(v) { return typeof v === 'string' && !/^[-+\d.,\s]+$/.test(v) && v !== NO_DATA ? v : signed(v); }
   // Branch change footnote, the same line as the PDF and Excel (report_builder.BANK_CHANGE_NOTE).
-  var BANK_CHANGE_NOTE = "Net change counts all of a bank's branches. Acquired shows how many came from another institution.";
+  var BANK_CHANGE_NOTE = "Net change counts all of a bank's branches. Acquired shows how many came from another institution. " +
+    "Acquired and transferred show branches that moved between institutions.";
 
   function trendClass(v) { var n = num(v); return n > 0 ? ' br-up' : n < 0 ? ' br-down' : ''; }
 
@@ -137,7 +138,8 @@
       { key: 'MMCT Only Branches', label: 'MMCT only', numeric: true },
       { key: 'Both LMICT/MMCT Branches', label: 'Both', numeric: true },
       { key: 'Net Change', label: 'Net change', numeric: true, format: netChange },
-      { key: 'Acquired', label: 'Acquired', numeric: true, format: fmtInt }
+      { key: 'Acquired', label: 'Acquired', numeric: true, format: fmtInt },
+      { key: 'Transferred Out', label: 'Transferred out', numeric: true, format: fmtInt }
     ];
     R.sortableTable($('brBankTable'), rows, columns, {
       topN: 10, expandButton: $('brBankExpand'),

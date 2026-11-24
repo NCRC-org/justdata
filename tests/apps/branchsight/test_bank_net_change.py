@@ -75,7 +75,7 @@ def test_merger_shows_as_acquired_not_opened(counties):
     df = counties[MERGER]
     table = create_bank_summary(df, YEARS)
     pinnacle = table[table["Bank Name"] == "Pinnacle Bank"].iloc[0]
-    assert (pinnacle["Total Branches"], pinnacle["Net Change"], pinnacle["Acquired"]) == (12, 5, 5)
+    assert (pinnacle["Total Branches"], pinnacle["Net Change"], pinnacle["Acquired"], pinnacle["Transferred Out"]) == (12, 5, 5, 0)
     assert "SYNOVUS BANK" not in set(table["Bank Name"]) and "Synovus Bank" not in set(table["Bank Name"])
 
     changes = bank_branch_changes(df, 2022, 2026)
@@ -128,7 +128,9 @@ def test_note_is_on_screen_in_excel_and_in_the_pdf(tmp_path, counties):
     from openpyxl import load_workbook
     root = Path(__file__).resolve().parents[3] / "justdata"
     js = (root / "shared/web/static/js/branchsight/br_report.js").read_text()
-    assert BANK_CHANGE_NOTE in js and "'Acquired'" in js
+    assert "'Acquired'" in js and "'Transferred Out'" in js
+    assert "Acquired shows how many came from another institution." in js
+    assert "Acquired and transferred show branches that moved between institutions." in js
     assert "BANK_CHANGE_NOTE" in (root / "apps/branchsight/pdf_report.py").read_text()
 
     df = counties["Grainger County, Tennessee"]
@@ -138,4 +140,18 @@ def test_note_is_on_screen_in_excel_and_in_the_pdf(tmp_path, counties):
     save_excel_report(report, str(out), metadata={"years": YEARS, "counties": ["Grainger County, Tennessee"]})
     sheet = next(ws for ws in load_workbook(out).worksheets if ws.title.startswith("Section 2"))
     values = [c.value for row in sheet.iter_rows() for c in row]
-    assert "Acquired" in values and BANK_CHANGE_NOTE in values
+    assert "Acquired" in values and "Transferred Out" in values and BANK_CHANGE_NOTE in values
+    assert "Acquired and transferred show branches that moved between institutions." in BANK_CHANGE_NOTE
+
+
+@pytest.mark.parametrize("county", DECK + [MERGER])
+def test_table_figures_reconcile_with_the_bank_changes(counties, county):
+    """Every shown bank's Net Change, Acquired and Transferred Out match its
+    reconciled figures (net = opened + acquired - closed - transferred out)."""
+    df = counties[county]
+    changes = bank_branch_changes(df, 2022, 2026)
+    by_name = {c["bank_name"]: c for c in changes.values() if c["latest"] > 0}
+    for _, row in create_bank_summary(df, YEARS).iterrows():
+        c = by_name[row["Bank Name"]]
+        if row["Net Change"] != NEW_TO_COUNTY:
+            assert row["Net Change"] == c["opened"] + row["Acquired"] - c["closed"] - row["Transferred Out"]
