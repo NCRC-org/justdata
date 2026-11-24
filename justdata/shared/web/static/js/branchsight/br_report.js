@@ -31,6 +31,12 @@
     if (n === null) return NO_DATA;
     return (n > 0 ? '+' : '') + Math.round(n).toLocaleString();
   }
+  // A bank's net change, or "New to this county" (T4), as the server sends it.
+  function netChange(v) { return typeof v === 'string' && !/^[-+\d.,\s]+$/.test(v) && v !== NO_DATA ? v : signed(v); }
+  // Branch change footnote, the same line as the PDF and Excel (report_builder.BANK_CHANGE_NOTE).
+  var BANK_CHANGE_NOTE = "Net change counts all of a bank's branches. Acquired shows how many came from another institution. " +
+    "Acquired and transferred show branches that moved between institutions.";
+
   function trendClass(v) { var n = num(v); return n > 0 ? ' br-up' : n < 0 ? ' br-down' : ''; }
 
   function fill(attr, value) {
@@ -131,7 +137,9 @@
       { key: 'LMI Only Branches', label: 'LMI only', numeric: true },
       { key: 'MMCT Only Branches', label: 'MMCT only', numeric: true },
       { key: 'Both LMICT/MMCT Branches', label: 'Both', numeric: true },
-      { key: 'Net Change', label: 'Net change', numeric: true, format: signed }
+      { key: 'Net Change', label: 'Net change', numeric: true, format: netChange },
+      { key: 'Acquired', label: 'Acquired', numeric: true, format: fmtInt },
+      { key: 'Transferred Out', label: 'Transferred out', numeric: true, format: fmtInt }
     ];
     R.sortableTable($('brBankTable'), rows, columns, {
       topN: 10, expandButton: $('brBankExpand'),
@@ -146,7 +154,8 @@
       'Researchers should consult FDIC merger records for the ' + first + ' to ' + last + ' period to identify specific transactions that may have affected these figures.') + '</p>';
     $('brBankCaption').textContent = 'Source: FDIC Summary of Deposits. Year: ' + last + ' (most recent year in report). ' +
       'Deposits in millions of dollars. LMI only, MMCT only and Both show branches and their share of the bank\'s branches; ' +
-      'Both means tracts that are LMI and majority-minority. Net change is ' + first + ' to ' + last + '.';
+      'Both means tracts that are LMI and majority-minority. Net change is ' + first + ' to ' + last +
+      ', with banks matched across years on their FDIC RSSD ID. ' + BANK_CHANGE_NOTE;
   }
 
   // ---- Section 3: HHI -------------------------------------------------------

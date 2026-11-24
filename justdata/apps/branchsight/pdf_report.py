@@ -49,6 +49,7 @@ from justdata.apps.branchsight.pdf_charts import (
 )
 from justdata.apps.branchsight.version import __version__
 from justdata.shared.utils.no_data import NO_DATA, is_missing
+from justdata.shared.reporting.report_builder import BANK_CHANGE_NOTE, NEW_TO_COUNTY
 
 
 # ---------------------------------------------------------------------------
@@ -366,8 +367,8 @@ def _build_bank_table(bank_data, max_rows=20):
 
     bank_data: DataFrame or list of dicts from create_bank_summary.
     Columns: Bank Name, Total Branches, Deposits ($ Millions),
-             LMI Only Branches, MMCT Only Branches, Both LMICT\\MMCT Branches,
-             Net Change
+             LMI Only Branches, MMCT Only Branches, Both LMICT/MMCT Branches,
+             Net Change, Acquired
     """
     rows = _df_to_dicts(bank_data)
     if not rows:
@@ -379,13 +380,15 @@ def _build_bank_table(bank_data, max_rows=20):
 
     # Column definitions: (data_key, header_label, width_pt)
     _COL_DEFS = [
-        ('Bank Name', 'Bank Name', 180),
-        ('Total Branches', 'Branches', 60),
-        ('Deposits ($ Millions)', 'Deposits ($M)', 72),
-        ('LMI Only Branches', 'LMI Only', 72),
-        ('MMCT Only Branches', 'MMCT Only', 72),
-        ('Both LMICT\\MMCT Branches', 'Both', 60),
-        ('Net Change', 'Net Chg.', 52),
+        ('Bank Name', 'Bank Name', 104),
+        ('Total Branches', 'Branches', 54),
+        ('Deposits ($ Millions)', 'Deposits ($M)', 54),
+        ('LMI Only Branches', 'LMI Only', 56),
+        ('MMCT Only Branches', 'MMCT Only', 56),
+        ('Both LMICT/MMCT Branches', 'Both', 50),
+        ('Net Change', 'Net Chg.', 48),
+        ('Acquired', 'Acquired', 52),
+        ('Transferred Out', 'Transf. Out', 52),
     ]
 
     # Filter to columns that exist in data
@@ -409,8 +412,12 @@ def _build_bank_table(bank_data, max_rows=20):
         leading=12, textColor=HexColor('#333333'),
     )
     _hdr = ParagraphStyle(
-        'BankHeader', fontName='Georgia-Bold', fontSize=10,
+        'BankHeader', fontName='Georgia-Bold', fontSize=8.5,
         leading=12, textColor=white, alignment=TA_CENTER,
+    )
+    _new_bank = ParagraphStyle(
+        'NewBank', fontName='Georgia', fontSize=8, leading=9.5,
+        textColor=HexColor('#333333'), alignment=TA_CENTER,
     )
 
     header_row = [Paragraph(str(h), _hdr) for h in display_headers]
@@ -424,8 +431,12 @@ def _build_bank_table(bank_data, max_rows=20):
                 val = ''
             if col == 'Bank Name':
                 cells.append(Paragraph(pdf_text(val), _bank_name))
+            elif col == 'Net Change' and val == NEW_TO_COUNTY:
+                cells.append(Paragraph(pdf_text(val), _new_bank))
             elif col == 'Net Change':
                 cells.append(_fmt_change(val))
+            elif col in ('Acquired', 'Transferred Out'):
+                cells.append(NO_DATA if is_missing(val) or val in ('', NO_DATA) else f'{int(val):,}')
             else:
                 cells.append(str(val))
         table_data.append(cells)
@@ -708,11 +719,15 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
                 + '. '
                 'Deposits are in millions of dollars. LMI Only, MMCT Only, and Both '
                 'columns show counts with percentages in parentheses. Net Change is '
-                'the difference in total branches between the first and last year.',
+                'the difference in a bank\'s total branches between the first and last year, '
+                'matched on its FDIC RSSD ID. Acquired counts branches that another '
+                'institution held in the first year; Transferred Out counts first-year '
+                'branches another institution held in the last year.',
                 _TABLE_INTRO,
             ),
         ]))
         story.append(s2_table)
+        story.append(_caption(BANK_CHANGE_NOTE))
         story.append(_caption(
             'Source: FDIC Summary of Deposits. Full bank list available in Excel export.'
         ))
@@ -891,7 +906,12 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
         _METHODS_COMPACT))
     meth_elements.append(Paragraph(
         '<b>Net Change:</b> Difference between branch counts in the first year and '
-        'the final year of the analysis period.',
+        'the final year of the analysis period. In the bank table, banks are matched '
+        'across years on their FDIC RSSD ID, not their name. <b>Acquired:</b> a bank\'s '
+        'latest-year branches that another institution held in the first year. '
+        '<b>Transferred Out:</b> a bank\'s first-year branches that another institution '
+        'held in the final year. A bank '
+        'with no first-year branches and none acquired is shown as new to this county.',
         _METHODS_COMPACT))
 
     meth_elements.append(Paragraph('Herfindahl-Hirschman Index (HHI)', _meth_h4))
